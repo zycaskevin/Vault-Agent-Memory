@@ -51,42 +51,130 @@ def extract_frontmatter(content: str) -> tuple[dict, str]:
 
 def simple_aaak_compress(title: str, content: str) -> str:
     """
-    簡易 AAAK 壓縮：保留結構，去除冗餘。
-    不依賴 LLM，純規則壓縮。
+    AAAK 壓縮：把 Markdown 知識壓縮成 KEY:VALUE 格式。
+    目標：3-10x 壓縮率，保留核心資訊，人類可讀 + LLM 可解析。
+    
+    壓縮策略：
+    1. 標題 → TITLE:
+    2. 列表項 → 縮寫關鍵詞
+    3. 段落 → 取第一句 + 核心結論
+    4. 去除裝飾性內容（空行、重複、過度解釋）
+    5. 程式碼/指令 → 保留關鍵指令
     """
+    import re
+    
     lines = content.strip().split("\n")
-    compressed = []
-
+    
+    # ── 第一輪：提取結構化資訊 ──
+    sections = []  # (heading, items)
+    current_heading = ""
+    current_items = []
+    
     for line in lines:
-        # 去空行
-        if not line.strip():
+        stripped = line.strip()
+        
+        # 跳過空行
+        if not stripped:
             continue
-        # 去思考過程
-        if line.strip().startswith("思考:") or line.strip().startswith("思考："):
+        
+        # 跳過思考過程
+        if stripped.startswith("思考:") or stripped.startswith("思考："):
             continue
-        # 保留標題、列表、段落
-        compressed.append(line.strip())
-
-    result = "\n".join(compressed)
-
-    # 如果壓縮後仍然很長，做一次斷行去冗餘
-    if len(result) > 500:
-        # 只取前 5 個要點段落
-        paragraphs = []
-        current = []
-        for line in result.split("\n"):
-            if line.startswith("#") or line.startswith("- ") or line.startswith("* "):
-                if current:
-                    paragraphs.append("\n".join(current))
-                current = [line]
+        
+        # 標題行
+        if stripped.startswith("#"):
+            # 保存上一個 section
+            if current_items:
+                sections.append((current_heading, current_items))
+            current_heading = stripped.lstrip("#").strip()
+            current_items = []
+            continue
+        
+        # 列表項
+        if stripped.startswith("- ") or stripped.startswith("* "):
+            item = stripped[2:].strip()
+            # 進一步壓縮列表項：移除過度解釋
+            if "：" in item or ":" in item:
+                # KEY: VALUE 格式，保留
+                current_items.append(item)
             else:
-                current.append(line)
-        if current:
-            paragraphs.append("\n".join(current))
-
-        if len(paragraphs) > 5:
-            result = "\n".join(paragraphs[:5]) + f"\n... (原 {len(paragraphs)} 段，取前 5 段)"
-
+                current_items.append(item)
+            continue
+        
+        # 數字列表
+        if re.match(r"^\d+\.\s", stripped):
+            item = re.sub(r"^\d+\.\s", "", stripped)
+            current_items.append(item)
+            continue
+        
+        # 程式碼塊
+        if stripped.startswith("```"):
+            continue
+        
+        # 普通段落：取第一句
+        if current_heading or current_items:
+            # 附加到當前 section
+            first_sentence = stripped.split("。")[0].split(". ")[0]
+            if len(first_sentence) > 15:  # 只有有意義的才加
+                current_items.append(first_sentence + "。")
+        else:
+            # 沒有 heading 的開頭段落
+            current_items.append(stripped.split("。")[0] + "。")
+    
+    # 保存最後一個 section
+    if current_items:
+        sections.append((current_heading, current_items))
+    
+    # ── 第二輪：壓縮成 AAAK 格式 ──
+    result_parts = [f"TITLE:{title}"]
+    
+    # AAAK 縮寫對照
+    aaak_map = {
+        "架構": "ARCH", "設計": "DESIGN", "部署": "DEPLOY", "錯誤": "ERR",
+        "解法": "FIX", "步驟": "STEPS", "原因": "WHY", "結果": "RESULT",
+        "注意": "WARN", "重要": "IMP", "配置": "CFG", "效能": "PERF",
+        "安全": "SEC", "比較": "VS", "最佳實踐": "BEST", "踩坑": "PITFALL",
+        "經驗": "EXP", "結論": "CONC", "背景": "BG", "問題": "Q",
+        "方法": "HOW", "用途": "USE", "限制": "LIMIT",
+    }
+    
+    total_items = sum(len(items) for _, items in sections)
+    max_items = 8  # 最多保留 8 個要點
+    
+    item_count = 0
+    for heading, items in sections:
+        # 壓縮 heading
+        h = heading
+        for zh, en in aaak_map.items():
+            h = h.replace(zh, en)
+        
+        for item in items[:3]:  # 每 section 最多 3 條
+            if item_count >= max_items:
+                break
+            # 壓縮 item
+            compressed_item = item
+            for zh, en in aaak_map.items():
+                compressed_item = compressed_item.replace(zh, en)
+            # 截斷過長的 item
+            if len(compressed_item) > 100:
+                compressed_item = compressed_item[:97] + "..."
+            
+            result_parts.append(f"- {compressed_item}")
+            item_count += 1
+        
+        if item_count >= max_items:
+            remaining = total_items - item_count
+            if remaining > 0:
+                result_parts.append(f"... ({remaining} more)")
+            break
+    
+    result = "\n".join(result_parts)
+    
+    # 長度上限：500 字元
+    if len(result) > 500:
+        # 從後往前砍，保留 title
+        result = result[:497] + "..."
+    
     return result
 
 
