@@ -244,6 +244,7 @@ def cmd_lint(args):
     project_dir = find_project_dir()
     db = GuardrailsDB(str(project_dir / "guardrails.db"))
     db.connect()
+    embed = None  # Will be loaded lazily for semantic duplicate detection
 
     issues = []
 
@@ -279,7 +280,57 @@ def cmd_lint(args):
         if no_embed["cnt"] > 0:
             issues.append(f"ℹ️ {no_embed['cnt']} 筆知識缺少嵌入向量")
 
-    # 5. 統計
+    # 5. 語意重複偵測（用嵌入向量）
+    if db._vec_available and embed is None:
+        try:
+            from guardrails_lite.guardrails_embed import create_embedding_provider
+            embed = create_embedding_provider(
+                provider=db.get_config("embedding_provider", "auto"),
+                model_key=db.get_config("embedding_model", "mix"),
+            )
+        except Exception:
+            pass
+
+    if db._vec_available and embed is not None:
+        try:
+            import numpy as np
+            # 取所有嵌入
+            rows = db.conn.execute("SELECT id, title FROM knowledge").fetchall()
+            vec_rows = db.conn.execute("SELECT knowledge_id, embedding FROM knowledge_vec").fetchall()
+            if len(vec_rows) > 1:
+                import struct
+                ids = [r["knowledge_id"] for r in vec_rows]
+                vecs = []
+                for r in vec_rows:
+                    emb = r["embedding"]
+                    if isinstance(emb, bytes):
+                        dim = len(emb) // 4
+                        vecs.append(list(struct.unpack(f"{dim}f", emb)))
+                    else:
+                        vecs.append(emb)
+                vecs_np = np.array(vecs, dtype=np.float32)
+                # Normalize
+                norms = np.linalg.norm(vecs_np, axis=1, keepdims=True)
+                norms = np.clip(norms, a_min=1e-9, a_max=None)
+                vecs_np = vecs_np / norms
+                # Cosine similarity matrix
+                sim_matrix = vecs_np @ vecs_np.T
+                # Find high-similarity pairs (excluding self)
+                title_map = {r["id"]: r["title"] for r in rows}
+                checked = set()
+                for i in range(len(ids)):
+                    for j in range(i + 1, len(ids)):
+                        if sim_matrix[i][j] > 0.92:
+                            pair = tuple(sorted([ids[i], ids[j]]))
+                            if pair not in checked:
+                                checked.add(pair)
+                                t1 = title_map.get(ids[i], f"ID={ids[i]}")[:30]
+                                t2 = title_map.get(ids[j], f"ID={ids[j]}")[:30]
+                                issues.append(f"⚠️ 語意重複 (sim={sim_matrix[i][j]:.3f}): {t1} ↔ {t2}")
+        except Exception as e:
+            issues.append(f"ℹ️ 語意重複偵測失敗: {e}")
+
+    # 6. 統計
     stats = db.stats()
     issues.append(f"📊 知識 {stats['knowledge_count']} 筆, 嵌入 {stats['embedding_count']} 筆")
 
