@@ -1,163 +1,127 @@
-# Guardrails Setup Guide
+# Vault-for-LLM Setup Guide
 
-5 分鐘建置你的 AI 百科。
+Get your AI knowledge base running in 5 minutes.
 
-## 前置需求
+## Prerequisites
 
 - Python 3.10+
 - Git
 
-不需要 Supabase、不需要 Ollama、不需要任何付費服務。
+No cloud, no Docker, no GPU required.
 
 ---
 
-## 一鍵安裝
-
-```bash
-curl -sSL https://raw.githubusercontent.com/zycaskevin/guardrails-knowledge/main/scripts/guardrails_setup.sh | bash
-```
-
-或手動安裝：
+## Quick Install
 
 ```bash
 # 1. Clone
-git clone https://github.com/zycaskevin/guardrails-knowledge.git ~/.guardrails
-cd ~/.guardrails
+git clone https://github.com/YOUR_USERNAME/Vault-for-LLM.git
+cd Vault-for-LLM
 
-# 2. 建立目錄結構
-mkdir -p L0-identity L1-core-facts L2-context/recent-sessions L3-knowledge
-mkdir -p raw compiled/axioms compiled/concepts compiled/techniques compiled/workflows compiled/errors compiled/comparisons
+# 2. Install
+pip install -e .
 
-# 3. 從模板建立初始檔案
-cp templates/L0-identity.md L0-identity/identity.md
-cp templates/L1-core-facts.md L1-core-facts/current-projects.md
+# 3. Initialize
+guardrails init
+
+# 4. Verify
+guardrails doctor
 ```
 
+See [INSTALL.md](INSTALL.md) for detailed installation options (semantic search, Ollama, etc.)
+
 ---
 
-## 初始設定
+## Initial Setup
 
-### Step 1：填寫身份（L0）
+### Step 1: Fill in your identity (L0)
 
-編輯 `L0-identity/identity.md`，填入你的資訊：
-
-```yaml
----
-title: "你的名字"
-layer: 0
-tags: ["identity"]
-trust: 1.0
-source: "user-defined"
----
-
-# 你的名字
-
-## 基本身份
-- 角色/職業，城市
-- 時區
-
-## 溝通偏好
-- 語言
-- 格式偏好
-
-## 技術背景
-- 使用什麼 AI 工具
-- 技術棧
-
-## 核心價值
-- 你做事的方式
+Copy the template and edit:
+```bash
+cp templates/L0-identity/identity.md L0-identity/identity.md
+# Edit L0-identity/identity.md with your information
 ```
 
-### Step 2：填寫核心事實（L1）
+### Step 2: Fill in core facts (L1)
 
-編輯 `L1-core-facts/current-projects.md`，列出你正在做的事。
+```bash
+cp templates/L1-core-facts/current-projects.md L1-core-facts/current-projects.md
+# Edit with your current projects and environment
+```
 
-### Step 3：加入第一條知識（L3）
+### Step 3: Add your first knowledge entry (L3)
 
-在 `raw/` 資料夾建一個 .md 檔案：
+Create a `.md` file in `raw/`:
 
-```yaml
+```markdown
 ---
-title: "知識標題"
+title: "My First Knowledge Entry"
 category: "technique"
-layer: 3
+layer: L3
 tags: ["tag1", "tag2"]
 trust: 0.8
-source: "20260417"
+source: "real-experience"
 created: "2026-04-17"
-status: "active"
 ---
 
-# 知識標題
+# My First Knowledge Entry
 
-你踩過的坑、做過的決策、驗證過的方案。
+What you learned, what broke, what worked.
 ```
 
-### Step 4：執行編譯器
+### Step 4: Compile
 
 ```bash
-python3 scripts/guardrails_compiler.py
+guardrails compile
 ```
 
-這會：
-- 把 raw/ 的知識編譯到 compiled/（AAAK 6x 壓縮）
-- 自動 git commit（方便回滾）
-- 跑 Lint 健康檢查
+This will:
+- Compile `raw/` entries to `compiled/` (AAAK 6x compression)
+- Build the search index
+- Auto git commit (for easy rollback)
+- Run lint health checks
 
 ---
 
-## 讓 AI 讀取你的百科
+## Connect your AI
 
-### Hermes Agent
-自動讀取（已內建）
+### Claude Code / Cursor / Any AI IDE
+1. Copy `CLAUDE.md` to your project root — it contains the integration guide
+2. AI will auto-read L0 + L1, and search L3 on demand
 
-### Claude Code
-1. 把 `L0-identity/identity.md` 和 `L1-core-facts/current-projects.md` 的內容複製到你的 `CLAUDE.md`
-2. AI 需要深度知識時搜尋 `compiled/` 或 `raw/`
-
-### 任何 AI
-讀 `README.md` 了解架構 → 讀 L0 → 讀 L1 → 關鍵字搜尋 raw/compiled/
+### Any LLM Agent
+1. Read `README.md` to understand the architecture
+2. Read `L0-identity/identity.md` for user context
+3. Use `guardrails search "query"` for knowledge retrieval
 
 ---
 
-## 升級到 Full 版（可選）
-
-需要：
-- Supabase 免費帳號
-- Python 套件：`urllib3`, `hashlib`
+## Upgrade: Semantic Search (Optional)
 
 ```bash
-# 設定 .env
-cp .env.example .env
-# 填入 SUPABASE_URL 和 SUPABASE_SERVICE_KEY
-
-# 執行完整編譯（含雲端同步）
-python3 scripts/guardrails_compiler.py
+pip install guardrails-knowledge[semantic]
+guardrails install-embedding
+# Choose: zh (Chinese), en (English), mix (Mixed, recommended)
 ```
 
-Full 版額外功能：
-- pgvector 語意搜尋
-- 多裝置同步
-- 跨語言搜尋（中/英/日）
-- 矛盾偵測 + 信任分數
-- content_log 文章追蹤
+Benefits:
+- Vector similarity search (not just keyword)
+- Better recall for paraphrased queries
+- Knowledge graph with BFS expansion
 
 ---
 
-## 常見問題
+## FAQ
 
-**Q: 我已經有 Obsidian 筆記庫了，要遷移嗎？**
-A: 不需要。Guardrails 可以和 Obsidian 共存。把 Obsidian vault 當 raw/ 來源，Guardrails 負責編譯和搜尋。
+**Q: Do I need to use all four layers?**
+A: L0+L1 are essential (AI needs to know who you are). L2+L3 are optional but strongly recommended.
 
-**Q: 一定要分四層嗎？**
-A: L0+L1 是必要的（AI 每次都要知道你是誰）。L2+L3 可選，但強烈推薦——沒有它們，AI 就是從零推理。
+**Q: Token cost?**
+A: L0+L1 inject ~500-800 tokens per conversation. L3 uses AAAK compression — only 1/6 of original token cost.
 
-**Q: 信任分數有什麼用？**
-A: 當兩條知識互相矛盾時，AI 優先相信高分數的。用戶定義 = 1.0，驗證過 = 0.9，可信 = 0.7，未驗證 = 0.5。
-
-**Q: Token 成本呢？**
-A: L0+L1 每次注入約 500-800 token。L3 知識用 AAAK 壓縮，搜尋時只讀壓縮版，token 消耗是原文的 1/6。
+**Q: Trust scores?**
+A: User-defined = 1.0, verified = 0.9, documentation = 0.7, unverified = 0.5. When knowledge conflicts, AI trusts higher scores.
 
 ---
 
-*有問題歡迎開 GitHub Issue*
+*Questions? Open a GitHub Issue*
