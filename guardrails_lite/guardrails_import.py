@@ -1,21 +1,31 @@
 """
-Vault for LLM — 智慧分塊匯入模組（v1.5）。
+Vault for LLM — 智慧分塊匯入模組（v2）。
 
 論文基礎：
 - Semantic Chunking：計算相鄰句子嵌入相似度，驟降處切斷
 - Summary-Guided Segmentation (ACL 2025)：用全文摘要引導分塊邊界
 - Chapter Detection：正則偵測章/節/Chapter 結構
+- Contextual Retrieval (Anthropic 2024)：每塊前面加上下文摘要再嵌入
 
 策略：
 1. chapter — 章節偵測優先，短章直接當一塊，長章內部語意分塊
 2. semantic — 純語意分塊（相似度驟降處切斷）
-3. sliding — 固定大小滑動視窗（最後降級方案）
+3. summary-guided — 摘要引導分塊（ACL 2025）
+4. sliding — 固定大小滑動視窗（最後降級方案）
 
-每塊獨立進 DB + 嵌入，title 格式：{原文標題} §{chunk_index}
+Contextual Retrieval：
+- 用 Ollama 本地生成每塊的上下文摘要（1-2句）
+- 嵌入時用 context + content 而非純 content
+- 搜尋時 content_raw 存原文，content_aaak 存帶上下文的壓縮版
+- Ollama 不可用時自動降級（不加上下文）
 """
+
+from __future__ import annotations
 
 import re
 import hashlib
+import json
+import urllib.request
 from pathlib import Path
 from typing import Optional
 
@@ -49,19 +59,107 @@ MD_HEADING = re.compile(r"^(#{1,3})\s+(.+)$", re.MULTILINE)
 PARA_SPLIT = re.compile(r"\n\s*\n")
 
 
+# ── Contextual Retrieval（Anthropic 2024）──────────────────────
+
+def contextualize_chunks(
+    chunks: list[ChunkResult],
+    doc_title: str,
+    ollama_model: str = "qwen3:8b",
+    ollama_url: str = "http://localhost:11434",
+    max_context_length: int = 150,
+) -> list[ChunkResult]:
+    """
+    Contextual Retrieval：為每個分塊生成上下文摘要。
+
+    用 Ollama 本地生成 1-2 句上下文描述，前置到每塊。
+    嵌入時用 context + content，搜尋時用原文。
+
+    論文基礎：Anthropic Contextual Retrieval (2024/09)
+    - 檢索失敗率降低 49%（結合 BM25 可達 67%）
+    - 每塊只加 ~50 tokens，成本極低
+    """
+    # 檢查 Ollama 是否可用
+    try:
+        req = urllib.request.Request(
+            f"{ollama_url}/api/tags",
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            models = json.loads(resp.read()).get("models", [])
+            model_names = [m["name"] for m in models]
+            # 找最佳可用模型
+            available = None
+            for preferred in [ollama_model, "qwen3:8b", "llama3.2:3b", "gemma3:4b", "mistral:7b"]:
+                for name in model_names:
+                    if preferred in name or name.startswith(preferred.split(":")[0]):
+                        available = name
+                        break
+                if available:
+                    break
+            if not available and model_names:
+                available = model_names[0]  # 用第一個可用的
+            if not available:
+                print("[contextualize] ⚠️ Ollama 沒有可用模型，跳過上下文增強")
+                return chunks
+    except (urllib.error.URLError, ConnectionError, OSError):
+        print("[contextualize] ⚠️ Ollama 未啟動，跳過上下文增強")
+        return chunks
+
+    print(f"[contextualize] 使用 {available} 生成上下文摘要...")
+
+    for i, chunk in enumerate(chunks):
+        prompt = (
+            f"你是一個知識管理助手。以下是一份文件《{doc_title}》的第 {i+1}/{len(chunks)} 個片段。"
+            f"請用1-2句話簡要說明這個片段在整份文件中的位置和上下文（它前面和後面大概在說什麼）。"
+            f"只輸出上下文描述，不要解釋、不要加引號、不要加前綴。\n\n"
+            f"---片段開始---\n{chunk.content[:1500]}\n---片段結束---"
+        )
+
+        try:
+            payload = json.dumps({
+                "model": available,
+                "prompt": prompt,
+                "stream": False,
+                "options": {"temperature": 0.1, "num_predict": 100},
+            }).encode()
+
+            req = urllib.request.Request(
+                f"{ollama_url}/api/generate",
+                data=payload,
+                headers={"Content-Type": "application/json"},
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                result = json.loads(resp.read())
+                context = result.get("response", "").strip()
+
+            # 截斷過長的上下文
+            if len(context) > max_context_length:
+                context = context[:max_context_length - 3] + "..."
+
+            # 加上上下文前綴，但保留原始 content 在 content_raw
+            chunk.context_prefix = context
+
+        except Exception as e:
+            print(f"[contextualize] ⚠️ 塊 {i+1} 生成失敗: {e}")
+            chunk.context_prefix = ""
+
+    return chunks
+
+
 # ── 分塊器 ───────────────────────────────────────────────
 
 class ChunkResult:
     """分塊結果。"""
-    __slots__ = ("index", "title", "content", "start_char", "end_char", "chunk_type")
+    __slots__ = ("index", "title", "content", "start_char", "end_char", "chunk_type", "context_prefix")
 
-    def __init__(self, index, title, content, start_char, end_char, chunk_type="semantic"):
+    def __init__(self, index, title, content, start_char, end_char, chunk_type="semantic", context_prefix=""):
         self.index = index
         self.title = title
         self.content = content
         self.start_char = start_char
         self.end_char = end_char
-        self.chunk_type = chunk_type  # chapter, semantic, sliding
+        self.chunk_type = chunk_type  # chapter, semantic, sliding, summary-guided
+        self.context_prefix = context_prefix  # Contextual Retrieval 上下文
 
 
 def detect_chapters(text: str) -> list[tuple[str, int, int]]:
@@ -405,15 +503,22 @@ def import_document(
     chunk_size: int = 500,
     overlap: int = 100,
     similarity_threshold: float = 0.3,
+    contextualize: bool = False,
+    ollama_model: str = "qwen3:8b",
+    ollama_url: str = "http://localhost:11434",
 ) -> list[int]:
     """
     匯入長文件，自動分塊進 DB。
 
     策略：
-    - "chapter": 章節偵測優先，長章內部語意分塊（v1.5 預設）
+    - "chapter": 章節偵測優先，長章內部語意分塊（預設）
     - "semantic": 純語意分塊
     - "summary-guided": 摘要引導分塊（ACL 2025）
     - "sliding": 固定滑動視窗
+
+    contextualize: 是否用 Contextual Retrieval（Anthropic 2024）加上下文摘要
+    - 需要本機有 Ollama 運行
+    - 每塊生成 1-2 句上下文，嵌入時用 context+content
 
     回傳：[knowledge_id, ...]
     """
@@ -424,146 +529,97 @@ def import_document(
         title = file_path.stem.replace("-", " ").replace("_", " ")
 
     source = str(file_path)
-    knowledge_ids = []
 
-    # ── 策略一：章節偵測 ──────────────────────────────
+    # ── 階段一：分塊 ──────────────────────────────────────
+    all_chunks: list[tuple[ChunkResult, str, str]] = []  # (chunk, source_ref, parent_title)
+
     if strategy == "chapter":
         chapters = detect_chapters(text)
-
         if chapters:
-            # 有章節結構，每章獨立處理
             for ch_title, ch_start, ch_end in chapters:
                 ch_text = text[ch_start:ch_end].strip()
-
                 if not ch_text:
                     continue
-
-                # 短章直接當一塊
                 if len(ch_text) <= 2000:
-                    kid = _add_chunk(
-                        db=db,
-                        embed_provider=embed_provider,
-                        title=f"{title} — {ch_title}",
-                        content=ch_text,
-                        layer=layer,
-                        category=category,
-                        tags=tags,
-                        trust=trust,
-                        source=f"{source}#{ch_title}",
-                    )
-                    knowledge_ids.append(kid)
+                    all_chunks.append((
+                        ChunkResult(0, f"§1", ch_text, ch_start, ch_end, "chapter"),
+                        f"{source}#{ch_title}",
+                        f"{title} — {ch_title}",
+                    ))
                 else:
-                    # 長章內部語意分塊
                     sub_chunks = semantic_chunk(
                         ch_text, embed_provider,
                         similarity_threshold=similarity_threshold,
-                        min_chunk_size=200,
-                        max_chunk_size=2000,
+                        min_chunk_size=200, max_chunk_size=2000,
                     ) if embed_provider else sliding_window_chunk(
                         ch_text, chunk_size=chunk_size, overlap=overlap,
                     )
-
                     for sc in sub_chunks:
-                        kid = _add_chunk(
-                            db=db,
-                            embed_provider=embed_provider,
-                            title=f"{title} — {ch_title} {sc.title}",
-                            content=sc.content,
-                            layer=layer,
-                            category=category,
-                            tags=tags,
-                            trust=trust,
-                            source=f"{source}#{ch_title}",
-                        )
-                        knowledge_ids.append(kid)
+                        all_chunks.append((
+                            sc, f"{source}#{ch_title}",
+                            f"{title} — {ch_title} {sc.title}",
+                        ))
         else:
-            # 沒偵測到章節，降級到摘要引導分塊
-            return import_document(
-                file_path=file_path,
-                db=db,
-                embed_provider=embed_provider,
-                strategy="summary-guided",
-                title=title,
-                layer=layer,
-                category=category,
-                tags=tags,
-                trust=trust,
-                chunk_size=chunk_size,
-                overlap=overlap,
-                similarity_threshold=similarity_threshold,
-            )
+            # 沒偵測到章節，降級到摘要引導
+            if embed_provider is None:
+                chunks = sliding_window_chunk(text, chunk_size=chunk_size, overlap=overlap)
+            else:
+                chunks = summary_guided_chunk(text, embed_provider, min_chunk_size=200, max_chunk_size=2000)
+            for chunk in chunks:
+                all_chunks.append((chunk, source, f"{title} {chunk.title}"))
 
-    # ── 策略二：語意分塊 ──────────────────────────────
     elif strategy == "semantic":
         if embed_provider is None:
-            # 沒嵌入就降級到滑動視窗
             chunks = sliding_window_chunk(text, chunk_size=chunk_size, overlap=overlap)
         else:
-            chunks = semantic_chunk(
-                text, embed_provider,
-                similarity_threshold=similarity_threshold,
-                min_chunk_size=200,
-                max_chunk_size=2000,
-            )
-
+            chunks = semantic_chunk(text, embed_provider, similarity_threshold=similarity_threshold, min_chunk_size=200, max_chunk_size=2000)
         for chunk in chunks:
-            kid = _add_chunk(
-                db=db,
-                embed_provider=embed_provider,
-                title=f"{title} {chunk.title}",
-                content=chunk.content,
-                layer=layer,
-                category=category,
-                tags=tags,
-                trust=trust,
-                source=source,
-            )
-            knowledge_ids.append(kid)
+            all_chunks.append((chunk, source, f"{title} {chunk.title}"))
 
-    # ── 策略三：摘要引導分塊 ──────────────────────────
     elif strategy in ("summary-guided", "summary"):
         if embed_provider is None:
             chunks = sliding_window_chunk(text, chunk_size=chunk_size, overlap=overlap)
         else:
-            chunks = summary_guided_chunk(
-                text, embed_provider,
-                min_chunk_size=200,
-                max_chunk_size=2000,
-            )
-
+            chunks = summary_guided_chunk(text, embed_provider, min_chunk_size=200, max_chunk_size=2000)
         for chunk in chunks:
-            kid = _add_chunk(
-                db=db,
-                embed_provider=embed_provider,
-                title=f"{title} {chunk.title}",
-                content=chunk.content,
-                layer=layer,
-                category=category,
-                tags=tags,
-                trust=trust,
-                source=source,
-            )
-            knowledge_ids.append(kid)
+            all_chunks.append((chunk, source, f"{title} {chunk.title}"))
 
-    # ── 策略四：滑動視窗 ──────────────────────────────
     elif strategy == "sliding":
         chunks = sliding_window_chunk(text, chunk_size=chunk_size, overlap=overlap)
         for chunk in chunks:
-            kid = _add_chunk(
-                db=db,
-                embed_provider=embed_provider,
-                title=f"{title} {chunk.title}",
-                content=chunk.content,
-                layer=layer,
-                category=category,
-                tags=tags,
-                trust=trust,
-                source=source,
-            )
-            knowledge_ids.append(kid)
+            all_chunks.append((chunk, source, f"{title} {chunk.title}"))
 
     else:
         raise ValueError(f"未知分塊策略: {strategy}。支援: chapter, semantic, summary-guided, sliding")
+
+    # ── 階段二：Contextual Retrieval（可選）────────────────────
+    if contextualize:
+        chunk_list = [c for c, _, _ in all_chunks]
+        contextualized = contextualize_chunks(
+            chunk_list, doc_title=title,
+            ollama_model=ollama_model, ollama_url=ollama_url,
+        )
+        # 更新回 all_chunks
+        for i, (chunk, src, ttl) in enumerate(all_chunks):
+            all_chunks[i] = (contextualized[i], src, ttl)
+
+    # ── 階段三：寫入 DB ─────────────────────────────────
+    knowledge_ids = []
+    for chunk, src, ttl in all_chunks:
+        context_prefix = chunk.context_prefix if hasattr(chunk, "context_prefix") and chunk.context_prefix else ""
+        kid = _add_chunk(
+            db=db,
+            embed_provider=embed_provider,
+            title=ttl,
+            content=chunk.content,
+            context_prefix=context_prefix,
+            layer=layer,
+            category=category,
+            tags=tags,
+            trust=trust,
+            source=src,
+        )
+        knowledge_ids.append(kid)
 
     return knowledge_ids
 
@@ -578,16 +634,28 @@ def _add_chunk(
     tags: str,
     trust: float,
     source: str,
+    context_prefix: str = "",
 ) -> int:
-    """新增一個分塊到 DB，包含嵌入。"""
-    # AAAK 壓縮（簡化版）
+    """新增一個分塊到 DB，包含嵌入。
+
+    context_prefix: Contextual Retrieval 的上下文摘要。
+    - content_raw 存原文（搜尋時顯示原文）
+    - content_aaak 存帶上下文的壓縮版
+    - 嵌入用 context_prefix + content（這是關鍵！）
+    """
     from .guardrails_compile import simple_aaak_compress
-    aaak = simple_aaak_compress(title, content)
+
+    # AAAK 壓縮：如果有上下文，壓縮版包含上下文
+    if context_prefix:
+        content_for_aaak = f"【{context_prefix}】{content}"
+    else:
+        content_for_aaak = content
+    aaak = simple_aaak_compress(title, content_for_aaak)
 
     kid = db.add_knowledge(
         title=title,
-        content_raw=content,
-        content_aaak=aaak,
+        content_raw=content,  # 原文，搜尋時顯示
+        content_aaak=aaak,    # 帶上下文的壓縮版
         layer=layer,
         category=category,
         tags=tags,
@@ -595,10 +663,11 @@ def _add_chunk(
         source=source,
     )
 
-    # 生成嵌入
+    # 生成嵌入：用 context + content（Contextual Retrieval 核心）
     if embed_provider is not None:
         try:
-            vectors = embed_provider.encode([content])
+            embed_text = f"{context_prefix}\n{content}" if context_prefix else content
+            vectors = embed_provider.encode([embed_text])
             db.add_embedding(kid, vectors[0])
         except Exception as e:
             print(f"[import] ⚠️ 嵌入失敗 (id={kid}): {e}")
