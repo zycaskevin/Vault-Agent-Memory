@@ -1,12 +1,12 @@
 ---
 category: architecture
 hash: bc609625c04fc09c
-id: 18
+id: 19
 layer: L3
 tags: ''
 title: mempalace vs llmwiki comparison
 trust: 0.5
-updated_at: '2026-04-17T02:12:21.986949+00:00'
+updated_at: '2026-04-17T02:57:23.707823+00:00'
 ---
 
 TITLE:mempalace vs llmwiki comparison

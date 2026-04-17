@@ -6,7 +6,7 @@ layer: L3
 tags: guardrails-lite,contextual-retrieval,ollama,chunking,vector-search
 title: Guardrails Lite Contextual Retrieval — Ollama 本地上下文增強
 trust: 0.8
-updated_at: '2026-04-17T02:12:21.952520+00:00'
+updated_at: '2026-04-17T02:57:23.668579+00:00'
 ---
 
 TITLE:Guardrails Lite Contextual Retrieval — Ollama 本地上下文增強

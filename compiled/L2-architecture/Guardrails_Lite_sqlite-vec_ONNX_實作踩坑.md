@@ -1,12 +1,12 @@
 ---
 category: architecture
 hash: 695164b68f4c6372
-id: 17
+id: 18
 layer: L2
 tags: guardrails,sqlite-vec,onnx,embedding,local,踩坑
 title: Guardrails Lite sqlite-vec ONNX 實作踩坑
 trust: 0.95
-updated_at: '2026-04-17T02:12:21.980687+00:00'
+updated_at: '2026-04-17T02:57:23.702098+00:00'
 ---
 
 TITLE:Guardrails Lite sqlite-vec ONNX 實作踩坑

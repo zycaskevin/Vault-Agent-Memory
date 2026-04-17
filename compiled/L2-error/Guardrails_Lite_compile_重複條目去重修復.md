@@ -6,7 +6,7 @@ layer: L2
 tags: guardrails,sqlite-vec,compile,去重,bug-fix
 title: Guardrails Lite compile 重複條目去重修復
 trust: 0.95
-updated_at: '2026-04-17T02:12:21.957730+00:00'
+updated_at: '2026-04-17T02:57:23.674033+00:00'
 ---
 
 TITLE:Guardrails Lite compile 重複條目去重修復

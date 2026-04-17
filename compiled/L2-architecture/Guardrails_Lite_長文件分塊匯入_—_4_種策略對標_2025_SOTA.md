@@ -6,7 +6,7 @@ layer: L2
 tags: guardrails,RAG,分塊,語意分塊,摘要引導,chapter-detection,向量搜尋
 title: Guardrails Lite 長文件分塊匯入 — 4 種策略對標 2025 SOTA
 trust: 0.95
-updated_at: '2026-04-17T02:12:21.946922+00:00'
+updated_at: '2026-04-17T02:57:23.663122+00:00'
 ---
 
 TITLE:Guardrails Lite 長文件分塊匯入 — 4 種策略對標 2025 SOTA
