@@ -562,11 +562,26 @@ def cmd_import(args):
             trust=args.trust,
             chunk_size=args.chunk_size,
             overlap=args.overlap,
+            contextualize=args.contextualize,
+            ollama_model=args.ollama_model,
         )
 
         print(f"\n✅ 匯入完成！")
         print(f"   分塊數: {len(ids)}")
         print(f"   策略: {strategy}")
+        if args.contextualize:
+            # 檢查是否真的有上下文（Ollama 可能沒跑）
+            from guardrails_lite.guardrails_db import GuardrailsDB
+            db_check = GuardrailsDB(str(db_path))
+            db_check.connect()
+            has_context = db_check.conn.execute(
+                "SELECT COUNT(*) FROM knowledge WHERE content_aaak LIKE '【%' LIMIT 1"
+            ).fetchone()[0]
+            db_check.close()
+            if has_context > 0:
+                print(f"   上下文增強: ✅ (Contextual Retrieval)")
+            else:
+                print(f"   上下文增強: ⚠️ 未啟用（Ollama 未連線，已降級）")
         print(f"   ID 範圍: {ids[0]}-{ids[-1] if ids else '?'}")
 
     except Exception as e:
@@ -675,6 +690,8 @@ def main():
     p.add_argument("--chunk-size", type=int, default=500, help="滑動視窗塊大小")
     p.add_argument("--overlap", type=int, default=100, help="滑動視窗重疊")
     p.add_argument("--no-embed", action="store_true", help="跳過嵌入生成")
+    p.add_argument("--contextualize", action="store_true", help="Contextual Retrieval：用 Ollama 生成上下文摘要（Anthropic 2024）")
+    p.add_argument("--ollama-model", default="qwen3:8b", help="Ollama 模型（用於 contextualize）")
 
     # config
     p = sub.add_parser("config", help="配置管理")
