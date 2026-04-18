@@ -1,4 +1,4 @@
-# Guardrails Bridge — CLAUDE.md
+# Vault for LLM — CLAUDE.md
 
 ## How to Use
 Copy this file into your project root. Your AI IDE will read it automatically on startup.
@@ -6,14 +6,14 @@ Copy this file into your project root. Your AI IDE will read it automatically on
 ---
 
 ```markdown
-## Guardrails Knowledge Base
+## Vault Knowledge Base
 
 You have a layered knowledge base at the project root (or GUARDRAILS_PATH env variable).
 
 ### Architecture
-- **L0 Identity**: `L0-identity/identity.md` — read every conversation
-- **L1 Core Facts**: `L1-core-facts/current-projects.md` — read every conversation
-- **L2 Context**: `L2-context/recent-sessions/current.md` — read when needed
+- **L0 User Identity**: `L0-identity/identity.md` — who the user is, read every conversation
+- **L1 Core Facts**: `L1-core-facts/current-projects.md` — active projects, read every conversation
+- **L2 Context**: `L2-context/recent-sessions/current.md` — recent context, read when needed
 - **L3 Deep Knowledge**: `raw/` or `compiled/` — search on demand
 
 ### Read Rules
@@ -45,4 +45,4 @@ created: "YYYY-MM-DD"
 
 ---
 
-*Last updated: 2026-04-17*
+*Last updated: 2026-04-19*

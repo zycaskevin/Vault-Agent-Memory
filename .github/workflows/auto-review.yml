@@ -1,0 +1,106 @@
+name: Guardrails Auto Review
+
+on:
+  push:
+    paths:
+      - 'knowledge-base/**'
+      - 'error-base/**'
+      - 'experience-base/**'
+      - 'scripts/**'
+      - 'tests/**'
+  pull_request:
+    paths:
+      - 'knowledge-base/**'
+      - 'error-base/**'
+      - 'experience-base/**'
+      - 'scripts/**'
+
+jobs:
+  lint-and-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --quiet pyyaml
+
+      - name: Lint raw knowledge files
+        run: |
+          echo "🔍 Linting raw/ knowledge files..."
+          ERRORS=0
+
+          for f in raw/**/*.md raw/*.md; do
+            [ -f "$f" ] || continue
+
+            # Check YAML frontmatter exists
+            if ! head -1 "$f" | grep -q '^---'; then
+              echo "❌ $f: missing YAML frontmatter"
+              ERRORS=$((ERRORS + 1))
+              continue
+            fi
+
+            # Check required fields
+            for field in title category; do
+              if ! grep -q "^${field}:" "$f"; then
+                echo "⚠️ $f: missing '$field' in frontmatter"
+                ERRORS=$((ERRORS + 1))
+              fi
+            done
+
+            # Check content length
+            CONTENT_LEN=$(sed -n '/^---$/,/^---$/d; /^$/d; p' "$f" | wc -c)
+            if [ "$CONTENT_LEN" -lt 50 ]; then
+              echo "⚠️ $f: content too short ($CONTENT_LEN bytes)"
+              ERRORS=$((ERRORS + 1))
+            fi
+
+            # Check title not too long
+            TITLE=$(grep '^title:' "$f" | head -1 | sed 's/title: *//' | tr -d '"')
+            if [ ${#TITLE} -gt 80 ]; then
+              echo "⚠️ $f: title too long (${#TITLE} chars)"
+              ERRORS=$((ERRORS + 1))
+            fi
+          done
+
+          echo ""
+          if [ $ERRORS -gt 0 ]; then
+            echo "❌ Found $ERRORS issues"
+            exit 1
+          else
+            echo "✅ All knowledge files pass lint"
+          fi
+
+      - name: Check for duplicates
+        run: |
+          echo "🔍 Checking for duplicate titles..."
+          DUPES=$(grep -rh '^title:' raw/ 2>/dev/null | sed 's/title: *//' | tr -d '"' | sort | uniq -d)
+
+          if [ -n "$DUPES" ]; then
+            echo "⚠️ Duplicate titles found:"
+            echo "$DUPES"
+          else
+            echo "✅ No duplicate titles"
+          fi
+
+      - name: Knowledge stats
+        run: |
+          echo "📊 Knowledge stats:"
+          RAW=$(find raw/ -name '*.md' -type f 2>/dev/null | wc -l)
+          KB=$(find knowledge-base/ -name '*.md' -type f 2>/dev/null | wc -l)
+          EB=$(find error-base/ -name '*.md' -type f 2>/dev/null | wc -l)
+          XP=$(find experience-base/ -name '*.md' -type f 2>/dev/null | wc -l)
+          echo "  raw/: $RAW files"
+          echo "  knowledge-base/: $KB files"
+          echo "  error-base/: $EB files"
+          echo "  experience-base/: $XP files"
+          echo "  Total: $((RAW + KB + EB + XP)) files"

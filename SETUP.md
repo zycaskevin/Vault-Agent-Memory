@@ -34,12 +34,12 @@ See [INSTALL.md](INSTALL.md) for detailed installation options (semantic search,
 
 ## Initial Setup
 
-### Step 1: Fill in your identity (L0)
+### Step 1: Fill in who YOU are (L0)
 
-Copy the template and edit:
+Copy the template and edit — this is about you, the user, not the AI:
 ```bash
 cp templates/L0-identity/identity.md L0-identity/identity.md
-# Edit L0-identity/identity.md with your information
+# Edit L0-identity/identity.md with YOUR information
 ```
 
 ### Step 2: Fill in core facts (L1)
