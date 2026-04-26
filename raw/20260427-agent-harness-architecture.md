@@ -95,7 +95,7 @@ MCP 踩坑：如果 MCP 跟成熟 CLI 功能重疊，用 CLI（省 context windo
 R001 — config.yaml/.env 不可被 agent 覆蓋（block）
 R002 — Python 寫入後自動語法驗證（warning）
 R006 — send_message 非 DM 目標注入警告（warning）
-R011 — localhost:11434 注入警告（warning）
+R011 — 本地模型端點攔截（warning）
 R014 — 高風險 tool call 前自動搜尋知識庫（context injection）
 ```
 
