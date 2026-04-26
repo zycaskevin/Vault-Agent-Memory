@@ -15,7 +15,7 @@ No cloud, no Docker, no GPU required.
 
 ```bash
 # 1. Clone
-git clone https://github.com/YOUR_USERNAME/Vault-for-LLM.git
+git clone https://github.com/zycaskevin/Vault-for-LLM.git
 cd Vault-for-LLM
 
 # 2. Install

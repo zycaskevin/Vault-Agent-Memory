@@ -1,13 +1,13 @@
-# Guardrails Knowledge — Agent Installation Guide
+# Vault-for-LLM — Agent Installation Guide
 
-> This document is written for AI agents. If you're an AI reading this, follow the steps below to install Guardrails Knowledge for your user.
+> This document is written for AI agents. If you're an AI reading this, follow the steps below to install Vault-for-LLM for your user.
 
 ## Quick Install (Recommended)
 
 ```bash
 # 1. Create a virtual environment
-python3 -m venv ~/.guardrails-lite
-source ~/.guardrails-lite/bin/activate
+python3 -m venv ~/.vault-for-llm
+source ~/.vault-for-llm/bin/activate
 
 # 2. Install from local (or future PyPI)
 pip install -e /path/to/Vault-for-LLM
