@@ -64,29 +64,120 @@ L3 深度知識    → 架構、技術、經驗（按需搜尋）
 
 ---
 
-## 快速開始
+## 安裝
+
+### 快速安裝
 
 ```bash
-# 安裝
+# 1. Clone
+git clone https://github.com/zycaskevin/Vault-for-LLM.git
+cd Vault-for-LLM
+
+# 2. 安裝（建議使用虛擬環境）
+python3 -m venv ~/.vault-for-llm
+source ~/.vault-for-llm/bin/activate
 pip install -e .
 
-# 初始化專案
+# 3. 初始化專案
 vault init
 
-# 新增知識
-vault add "我的第一筆知識" --content "今天學到的東西"
-
-# 編譯（raw/ → 資料庫 + compiled/）
-vault compile
-
-# 搜尋
-vault search "我要找的關鍵字"
-
-# 健康檢查
+# 4. 驗證
 vault doctor
 ```
 
-詳細安裝選項請參閱 [INSTALL.md](INSTALL.md)。
+### 三種安裝模式
+
+**模式一：最小安裝** — 僅關鍵字搜尋
+```bash
+pip install vault-for-llm
+vault init
+# 僅支援關鍵字匹配搜尋
+```
+
+**模式二：語意搜尋** — 本地 ONNX 嵌入模型（~150MB，不需 PyTorch/GPU）
+```bash
+pip install vault-for-llm[semantic]
+vault init
+vault install-embedding
+# 選擇：zh（中文）、en（英文）、mix（混合，推薦）
+# 支援向量相似度搜尋（推薦）
+```
+
+**模式三：Ollama** — 已有 Ollama 則零額外安裝
+```bash
+pip install vault-for-llm
+vault init
+vault config set embedding.provider ollama
+vault config set embedding.model nomic-embed-text
+# 使用你現有的 Ollama 安裝
+```
+
+### 環境檢查
+
+```bash
+vault doctor
+```
+
+預期輸出：
+```
+Python               3.11.x ✅
+sqlite-vec           ✅ 0.1.9
+onnxruntime          ✅ 1.24.x  （未安裝則顯示 ❌）
+optimum[onnxruntime] ✅         （未安裝則顯示 ❌）
+Ollama               ✅/❌
+嵌入模型快取           ✅/❌
+```
+
+---
+
+## 初始設定
+
+### 步驟一：填寫你的身份（L0）
+
+複製模板並編輯 — 這是關於你（使用者），不是關於 AI：
+```bash
+cp templates/L0-identity/identity.md L0-identity/identity.md
+# 編輯 L0-identity/identity.md，填入你的個人資訊
+```
+
+### 步驟二：填寫核心事實（L1）
+
+```bash
+cp templates/L1-core-facts/current-projects.md L1-core-facts/current-projects.md
+# 編輯填入你目前的專案和環境
+```
+
+### 步驟三：新增第一筆知識條目（L3）
+
+在 `raw/` 目錄建立 `.md` 檔案：
+
+```markdown
+---
+title: "我的第一筆知識"
+category: "technique"
+layer: L3
+tags: ["tag1", "tag2"]
+trust: 0.8
+source: "real-experience"
+created: "2026-04-17"
+---
+
+# 我的第一筆知識
+
+你學到了什麼、踩了什麼坑、什麼方法有效。
+```
+
+### 步驟四：編譯
+
+```bash
+vault compile
+```
+
+這會：
+- 將 `raw/` 條目編譯到 `compiled/`（AAAK 6 倍壓縮）
+- 建立搜尋索引
+- 自動 git commit（方便回滾）
+- 執行 lint 健康檢查
 
 ---
 
@@ -258,6 +349,48 @@ vault compile
 - Python 3.10+
 - ~150MB（ONNX 嵌入模型，選用）
 - 不需要 GPU、不需要 Docker、不需要雲端帳號
+
+---
+
+## 常見問題
+
+**Q：我需要使用全部四層嗎？**
+A：L0+L1 是必要的（AI 需要知道你是誰）。L2+L3 是選用的，但強烈建議使用。
+
+**Q：Token 成本？**
+A：L0+L1 每次對話注入約 500-800 tokens。L3 使用 AAAK 壓縮 — 僅需原始 token 成本的 1/6。
+
+**Q：信任評分？**
+A：使用者自訂 = 1.0、已驗證 = 0.9、文件來源 = 0.7、未驗證 = 0.5。知識衝突時，AI 優先信任較高分數。
+
+---
+
+## 疑難排解
+
+### sqlite-vec 找不到
+```bash
+pip install sqlite-vec
+# 如果失敗，可能需要從原始碼編譯
+pip install sqlite-vec --no-binary :all:
+```
+
+### ONNX 模型下載失敗
+```bash
+# 手動下載
+python3 -c "
+from vault.guardrails_embed import ONNXEmbeddingProvider
+e = ONNXEmbeddingProvider(model_key='mix')
+e._ensure_model()
+"
+```
+
+### Ollama 無法連線
+```bash
+# 檢查 Ollama 是否運行中
+curl http://localhost:11434/api/tags
+# 確認已安裝嵌入模型
+ollama pull nomic-embed-text
+```
 
 ---
 
