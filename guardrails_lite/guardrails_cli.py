@@ -800,8 +800,8 @@ def cmd_config(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="guardrails",
-        description="Guardrails Lite — 純本地下知識系統",
+        prog="vault",
+        description="Vault-for-LLM — Local-first knowledge system for LLM agents",
     )
     sub = parser.add_subparsers(dest="command", help="子命令")
 
