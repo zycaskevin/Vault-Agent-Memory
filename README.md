@@ -55,29 +55,120 @@ See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ---
 
-## Quick Start
+## Installation
+
+### Quick Install
 
 ```bash
-# Install
+# 1. Clone
+git clone https://github.com/zycaskevin/Vault-for-LLM.git
+cd Vault-for-LLM
+
+# 2. Install (optionally use a venv)
+python3 -m venv ~/.vault-for-llm
+source ~/.vault-for-llm/bin/activate
 pip install -e .
 
-# Initialize a project
+# 3. Initialize a project
 vault init
 
-# Add knowledge
-vault add "My First Entry" --content "Something I learned today"
-
-# Compile (raw → database + compiled)
-vault compile
-
-# Search
-vault search "my query"
-
-# Health check
+# 4. Verify
 vault doctor
 ```
 
-See [INSTALL.md](INSTALL.md) for detailed installation options.
+### Three Install Modes
+
+**Mode 1: Minimal** — keyword search only
+```bash
+pip install vault-for-llm
+vault init
+# Search works with keyword matching only
+```
+
+**Mode 2: Semantic** — local ONNX embeddings (~150MB, no PyTorch/GPU needed)
+```bash
+pip install vault-for-llm[semantic]
+vault init
+vault install-embedding
+# Choose: zh (Chinese), en (English), mix (Mixed, recommended)
+# Search works with vector similarity (recommended)
+```
+
+**Mode 3: Ollama** — zero extra install if you already have Ollama
+```bash
+pip install vault-for-llm
+vault init
+vault config set embedding.provider ollama
+vault config set embedding.model nomic-embed-text
+# Uses your existing Ollama installation
+```
+
+### Environment Check
+
+```bash
+vault doctor
+```
+
+Expected output:
+```
+Python               3.11.x ✅
+sqlite-vec           ✅ 0.1.9
+onnxruntime          ✅ 1.24.x  (or ❌ if not installed)
+optimum[onnxruntime] ✅         (or ❌ if not installed)
+Ollama               ✅/❌
+Embedding cache       ✅/❌
+```
+
+---
+
+## Initial Setup
+
+### Step 1: Fill in who YOU are (L0)
+
+Copy the template and edit — this is about you, the user, not the AI:
+```bash
+cp templates/L0-identity/identity.md L0-identity/identity.md
+# Edit L0-identity/identity.md with YOUR information
+```
+
+### Step 2: Fill in core facts (L1)
+
+```bash
+cp templates/L1-core-facts/current-projects.md L1-core-facts/current-projects.md
+# Edit with your current projects and environment
+```
+
+### Step 3: Add your first knowledge entry (L3)
+
+Create a `.md` file in `raw/`:
+
+```markdown
+---
+title: "My First Knowledge Entry"
+category: "technique"
+layer: L3
+tags: ["tag1", "tag2"]
+trust: 0.8
+source: "real-experience"
+created: "2026-04-17"
+---
+
+# My First Knowledge Entry
+
+What you learned, what broke, what worked.
+```
+
+### Step 4: Compile
+
+```bash
+vault compile
+```
+
+This will:
+- Compile `raw/` entries to `compiled/` (AAAK 6x compression)
+- Build the search index
+- Auto git commit (for easy rollback)
+- Run lint health checks
 
 ---
 
@@ -252,6 +343,48 @@ What it does:
 - Python 3.10+
 - ~150MB for ONNX embedding model (optional)
 - No GPU, no Docker, no cloud account needed
+
+---
+
+## FAQ
+
+**Q: Do I need to use all four layers?**
+A: L0+L1 are essential (AI needs to know who you are). L2+L3 are optional but strongly recommended.
+
+**Q: Token cost?**
+A: L0+L1 inject ~500-800 tokens per conversation. L3 uses AAAK compression — only 1/6 of original token cost.
+
+**Q: Trust scores?**
+A: User-defined = 1.0, verified = 0.9, documentation = 0.7, unverified = 0.5. When knowledge conflicts, AI trusts higher scores.
+
+---
+
+## Troubleshooting
+
+### sqlite-vec not found
+```bash
+pip install sqlite-vec
+# If that fails, you may need to build from source
+pip install sqlite-vec --no-binary :all:
+```
+
+### ONNX model download fails
+```bash
+# Manual download
+python3 -c "
+from guardrails_lite.guardrails_embed import ONNXEmbeddingProvider
+e = ONNXEmbeddingProvider(model_key='mix')
+e._ensure_model()
+"
+```
+
+### Ollama not connecting
+```bash
+# Check if Ollama is running
+curl http://localhost:11434/api/tags
+# Make sure you have an embedding model installed
+ollama pull nomic-embed-text
+```
 
 ---
 
