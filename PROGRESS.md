@@ -1,8 +1,50 @@
 # Guardrails Document Map Upgrade — Progress
 
-Last updated: 2026-05-08 21:14 CST
+Last updated: 2026-05-08 23:35 CST
 
-## Current Sprint: Sprint 2 (B/E1) — COMPLETED
+## Current Maintenance Pass: Full Test Environment + Repo Hygiene + Audit — COMPLETED
+
+### Goal
+Restore the project to a cleaner post-Sprint-2 working state before Sprint 3 by:
+1. Auditing current repo/test/documentation state.
+2. Reproducing and fixing full `pytest -q` collection blockers when they are environment/dependency related.
+3. Classifying and resolving non-Sprint untracked files without mixing unrelated work into Sprint 2.
+
+### Guardrails
+- Do not start Sprint 3 feature work in this pass.
+- Do not hide real product test failures behind dependency changes.
+- Do not delete untracked files without evidence of what they contain.
+- Keep Sprint 2 commit `970784a Add document map MCP tools` as the baseline.
+
+### Results
+
+#### Audit ✅
+- Sprint 2 baseline remains `970784a Add document map MCP tools`.
+- Graphify report was reviewed after Sprint 2; main hubs remain `GuardrailsDB`, `GuardrailsSearch`, `EmbeddingProvider`, `GuardrailsGraph`, and Document Map MCP helpers.
+- Branch state observed during audit: local `main` is ahead of and behind `origin/main`; do not push/merge this maintenance commit until a sync/rebase strategy is chosen.
+
+#### Full test environment ✅
+- The earlier full-suite blockers were environment/dependency issues, not Sprint 2 product regressions.
+- Correct interpreter for verification is:
+  `/home/zycas/miniconda3/envs/guardrails-lite/bin/python`
+- Full suite now passes with the direct interpreter:
+  `45 passed`.
+- Caveat: `conda run -n guardrails-lite python` can be polluted by the previously activated `/tmp/research-scrapling-tinyfish/venv-scrapling` environment in this shell. Use the direct interpreter path above for reliable verification until shell environment state is reset.
+
+#### Untracked file classification ✅
+- `_knowledge_base/` contains local research notes (`ai-website-cloner`, `scrapling-tinyfish`, `siami-reading-ghost-fields`) unrelated to Sprint 2 source changes. It is now ignored as local research/scratch material.
+- `scripts/cross_validate_cloud_only.py` is a local cron-style wrapper around `scripts/cross_validate.py`. It compiles, but changes runtime behavior (`apply=True`, cloud-only, model/timeouts) and needs a separate operational review before becoming project source.
+- `scripts/guardrails_gap_scanner.py` is a local daily gap-scanner draft. It compiles, but has hard-coded local paths and the docstring mentions Telegram delivery while the current implementation only prints. It needs a separate operational review before becoming project source.
+- The two draft scripts are now ignored explicitly to keep Sprint maintenance commits clean.
+
+#### Final verification ✅
+- `git diff --check` passed.
+- Targeted Document Map suite passed: `41 passed in 23.33s`.
+- Script syntax check passed for `scripts/cross_validate.py`, `scripts/cross_validate_cloud_only.py`, and `scripts/guardrails_gap_scanner.py`.
+- Full suite passed with direct interpreter: `45 passed in 33.44s`.
+- Graphify was not rebuilt in this maintenance commit because no code files changed; only `.gitignore` and `PROGRESS.md` changed.
+
+## Previous Sprint: Sprint 2 (B/E1) — COMPLETED
 
 ### Goal
 Make Guardrails usable as an agent brain: search results point to Document Map spans, and MCP clients can inspect structure before reading bounded line ranges with fixed citations.
