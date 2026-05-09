@@ -1,8 +1,73 @@
 # Guardrails Document Map Upgrade — Progress
 
-Last updated: 2026-05-09 14:26 CST
+Last updated: 2026-05-09 15:21 CST
 
-## Current Sprint: Sprint 4B — Remote Document Map Read Path + Supabase DDL — COMPLETED
+## Current Sprint: Sprint 4C — Dashboard Health Integration — COMPLETED
+
+### Goal
+Expose Document Map health to the Hermes Dashboard by collecting local SQLite coverage metrics and upserting a daily snapshot into Supabase `hermes_guardrails_health`, without changing the Dashboard frontend or weakening the Sprint 3 citation policy harness.
+
+### Scope Delivered
+1. Added `guardrails_lite/guardrails_health.py` with a small, testable local SQLite collector for:
+   - `map_coverage = entries_with_nodes / total_entries`
+   - `claim_coverage = entries_with_claims / total_entries`
+   - `citation_coverage = sampled_search_results_with_best_span / sampled_search_results`
+   - `read_range_over_limit_violations` from local Document Map node bounds.
+2. Added `scripts/sync_to_supabase.py --health` / `--guardrails-health` with `--health-sample-limit` to write one daily Dashboard snapshot.
+3. Preserved SQLite as source of truth; Supabase remains a Dashboard/read target only.
+4. Reused the existing deployed `hermes_guardrails_health` schema instead of adding unverified columns:
+   - `total_knowledge = total_entries`
+   - `convergence_rate = map_coverage * 100`
+   - `avg_freshness = citation_coverage * 100`
+   - `contradiction_count = read_range_over_limit_violations`
+   - `gap_count = entries_without_nodes + entries_without_claims`
+5. Added fake-client and local SQLite tests in `tests/test_guardrails_health_metrics.py`; no real network/Supabase access is required.
+6. Preserved Sprint 3/4B behavior harness: search citations remain navigation hints only; final citations must come from local or remote `read_range`.
+
+### Guardrails Observed
+- Document-first: this progress file was updated before the implementation slice.
+- Schema-drift control: the first review found that deployed `hermes_guardrails_health` has no `id` column; the writer now upserts by `check_date` instead of the generic `id`-based helper.
+- Surgical scope: no Dashboard frontend changes and no citation policy relaxation.
+- Push safety: verification included an independent worktree checkout with the same patch applied before commit.
+
+### Final Verification
+```bash
+/home/zycas/miniconda3/envs/guardrails-lite/bin/python -m pytest \
+  tests/test_guardrails_health_metrics.py \
+  tests/test_sprint4a_document_map_sync.py \
+  tests/test_agent_behavior_policy.py \
+  tests/test_guardrails_mcp_map.py \
+  tests/test_search_map_integration.py -q
+# 30 passed in 5.60s
+
+/home/zycas/miniconda3/envs/guardrails-lite/bin/python -m pytest -q
+# 68 passed, 2 warnings in 41.29s
+
+git diff --check
+# passed
+
+/home/zycas/miniconda3/bin/python -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"
+# 1081 nodes, 2320 edges, 72 communities
+```
+
+Independent worktree verification also passed from detached HEAD `0076424` after applying the uncommitted patch:
+
+```bash
+git worktree add --detach /tmp/guardrails-s4c-worktree-verify HEAD
+git apply --whitespace=error-all /tmp/guardrails-s4c.patch
+git diff --check
+/home/zycas/miniconda3/envs/guardrails-lite/bin/python -m pytest \
+  tests/test_guardrails_health_metrics.py \
+  tests/test_sprint4a_document_map_sync.py \
+  tests/test_agent_behavior_policy.py \
+  tests/test_guardrails_mcp_map.py \
+  tests/test_search_map_integration.py -q
+# 30 passed in 5.60s
+/home/zycas/miniconda3/envs/guardrails-lite/bin/python -m pytest -q
+# 68 passed, 2 warnings in 41.29s
+```
+
+## Previous Sprint: Sprint 4B — Remote Document Map Read Path + Supabase DDL — COMPLETED
 
 ### Goal
 Complete the remote Document Map loop by adding Supabase DDL/migration support for synced map tables, exposing a remote MCP read path backed by `guardrails_knowledge_nodes` / `guardrails_knowledge_claims`, and extending the Sprint 3 citation policy harness to cover remote trace events.
