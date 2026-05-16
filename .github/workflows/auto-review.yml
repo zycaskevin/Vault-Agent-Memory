@@ -4,14 +4,14 @@ on:
   push:
     paths:
       - 'raw/**'
-      - 'guardrails_lite/**'
+      - 'vault/**'
       - 'scripts/**'
       - 'tests/**'
       - 'pyproject.toml'
   pull_request:
     paths:
       - 'raw/**'
-      - 'guardrails_lite/**'
+      - 'vault/**'
       - 'scripts/**'
       - 'tests/**'
 

@@ -1,8 +1,8 @@
-"""Deterministic policy checks for Guardrails agent reading loops.
+"""Deterministic policy checks for Vault agent reading loops.
 
 The harness is intentionally small and pure: tests can feed simulated tool
 calls plus a final answer and get a stable accept/reject payload. It enforces
-that final-answer citations come from ``guardrails_read_range`` outputs, not
+that final-answer citations come from ``vault_read_range`` outputs, not
 from search snippets.
 """
 
@@ -13,9 +13,9 @@ import re
 from typing import Any
 
 CITATION_RE = re.compile(r"#(?P<id>\d+)\s+[^#\n]+?\s+L\d+-L\d+")
-SEARCH_TOOLS = {"guardrails_search"}
-MAP_SHOW_TOOLS = {"guardrails_map_show", "guardrails_remote_map_show"}
-READ_RANGE_TOOLS = {"guardrails_read_range", "guardrails_remote_read_range"}
+SEARCH_TOOLS = {"vault_search"}
+MAP_SHOW_TOOLS = {"vault_map_show", "vault_remote_map_show"}
+READ_RANGE_TOOLS = {"vault_read_range", "vault_remote_read_range"}
 
 
 def _load_output(event: dict[str, Any]) -> Any:
@@ -110,14 +110,14 @@ def _failure(
 
 def _next_action(mode: str, knowledge_id: int | None = None) -> dict[str, Any]:
     if mode in {"missing_search", "invalid_trace"}:
-        return {"tool": "guardrails_search", "arguments": {}}
+        return {"tool": "vault_search", "arguments": {}}
     if mode in {"missing_map_show", "missing_read_range"}:
         args = {"knowledge_id": knowledge_id} if knowledge_id else {}
-        return {"tool": "guardrails_map_show", "arguments": args}
+        return {"tool": "vault_map_show", "arguments": args}
     if mode in {"missing_final_citation", "unsupported_citation", "wrong_tool_order", "knowledge_id_mismatch"}:
         args = {"knowledge_id": knowledge_id} if knowledge_id else {}
-        return {"tool": "guardrails_read_range", "arguments": args}
-    return {"tool": "guardrails_search", "arguments": {}}
+        return {"tool": "vault_read_range", "arguments": args}
+    return {"tool": "vault_search", "arguments": {}}
 
 
 def validate_agent_behavior(
@@ -130,7 +130,7 @@ def validate_agent_behavior(
 
     A passing trace must use the same ``knowledge_id`` across all three tools.
     If citations are required, every final-answer citation must exactly match a
-    citation emitted by ``guardrails_read_range``.
+    citation emitted by ``vault_read_range``.
     """
     events = tool_events or []
     final_citations = _extract_citations(final_answer)
@@ -154,7 +154,7 @@ def validate_agent_behavior(
     if not search_positions:
         return _failure(
             "missing_search",
-            "Trace must begin with guardrails_search before citing knowledge.",
+            "Trace must begin with vault_search before citing knowledge.",
             citations=final_citations,
         )
 
@@ -164,7 +164,7 @@ def validate_agent_behavior(
     if not read_positions:
         return _failure(
             "missing_read_range",
-            "Search citations are navigation hints only; call guardrails_read_range before final citation.",
+            "Search citations are navigation hints only; call vault_read_range before final citation.",
             knowledge_id=hinted_id,
             citations=final_citations,
         )
@@ -172,7 +172,7 @@ def validate_agent_behavior(
     if not map_positions:
         return _failure(
             "missing_map_show",
-            "Trace must inspect guardrails_map_show before guardrails_read_range.",
+            "Trace must inspect vault_map_show before vault_read_range.",
             knowledge_id=hinted_id,
             citations=final_citations,
         )
@@ -196,7 +196,7 @@ def validate_agent_behavior(
     if not (search_idx < map_idx < read_idx):
         return _failure(
             "wrong_tool_order",
-            "Required order is guardrails_search → guardrails_map_show → guardrails_read_range.",
+            "Required order is vault_search → vault_map_show → vault_read_range.",
             knowledge_id=knowledge_id,
             citations=final_citations,
         )
@@ -205,7 +205,7 @@ def validate_agent_behavior(
     if requires_citation and not final_citations:
         return _failure(
             "missing_final_citation",
-            "Final answer must include a citation emitted by guardrails_read_range.",
+            "Final answer must include a citation emitted by vault_read_range.",
             knowledge_id=knowledge_id,
             citations=[],
         )
@@ -214,7 +214,7 @@ def validate_agent_behavior(
     if unsupported:
         return _failure(
             "unsupported_citation",
-            "Final answer contains citations not emitted by guardrails_read_range.",
+            "Final answer contains citations not emitted by vault_read_range.",
             knowledge_id=knowledge_id,
             citations=final_citations,
             unsupported_citations=unsupported,
@@ -223,7 +223,7 @@ def validate_agent_behavior(
     return {
         "ok": True,
         "failure_mode": None,
-        "message": "Trace satisfies Guardrails reading loop policy.",
+        "message": "Trace satisfies Vault reading loop policy.",
         "knowledge_id": knowledge_id,
         "citations": final_citations,
         "read_range_citations": read_citations,

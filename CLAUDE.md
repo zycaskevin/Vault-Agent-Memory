@@ -49,7 +49,6 @@ created: "YYYY-MM-DD"
 
 ### Environment
 - Prefer `VAULT_PATH=/path/to/project` if the vault is not in the current working directory.
-- `GUARDRAILS_PATH` may still work as a legacy compatibility variable in some scripts.
 ```
 
 ---

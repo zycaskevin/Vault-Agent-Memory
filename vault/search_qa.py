@@ -13,8 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .guardrails_db import GuardrailsDB
-from .guardrails_search import GuardrailsSearch
+from .db import VaultDB
+from .search import VaultSearch
 
 METRIC_KEYS: tuple[str, ...] = (
     "total_cases",
@@ -55,15 +55,15 @@ def evaluate_search_qa(
     limit: int = 10,
     generated_at: str | None = None,
 ) -> dict[str, Any]:
-    """Run all QA cases through ``GuardrailsSearch`` and return a JSON snapshot."""
+    """Run all QA cases through ``VaultSearch`` and return a JSON snapshot."""
     qa_path = Path(qa_file)
     qa = load_search_qa_set(qa_path)
     limit = max(1, int(limit))
     generated_at = generated_at or datetime.now(timezone.utc).isoformat()
 
-    db = GuardrailsDB(db_path).connect()
+    db = VaultDB(db_path).connect()
     try:
-        search = GuardrailsSearch(db, embed_provider=None)
+        search = VaultSearch(db, embed_provider=None)
         case_summaries = [
             _evaluate_case(search, case, mode=mode, limit=limit)
             for case in qa["cases"]
@@ -165,7 +165,7 @@ def write_json(path: str | Path, payload: dict[str, Any]) -> None:
 
 
 def _evaluate_case(
-    search: GuardrailsSearch,
+    search: VaultSearch,
     case: dict[str, Any],
     *,
     mode: str,
@@ -301,13 +301,13 @@ def _citation_policy_violations(results: list[dict[str, Any]]) -> list[str]:
 
 
 def _has_map_guidance(result: dict[str, Any]) -> bool:
-    return _has_tool_guidance(result, "guardrails_map_show")
+    return _has_tool_guidance(result, "vault_map_show")
 
 
 def _has_read_range_guidance(result: dict[str, Any]) -> bool:
     return (
-        result.get("recommended_next_tool") == "guardrails_read_range"
-        or _has_tool_guidance(result, "guardrails_read_range")
+        result.get("recommended_next_tool") == "vault_read_range"
+        or _has_tool_guidance(result, "vault_read_range")
     )
 
 

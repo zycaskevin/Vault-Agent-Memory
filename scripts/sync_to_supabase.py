@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Sync Guardrails-knowledge local DB → Supabase
+Sync Vault-knowledge local DB → Supabase
 策略：每筆逐個處理，用 title/name 查 Supabase → 存在就更新，不存在就插入。
 失敗時用 ilike 模糊匹配做 fallback。
 
@@ -8,7 +8,7 @@ Sync Guardrails-knowledge local DB → Supabase
   sync_to_supabase.py              # 同步知識表（預設）
   sync_to_supabase.py --skills     # 同步技能表
   sync_to_supabase.py --document-map  # 同步 Document Map 表
-  sync_to_supabase.py --health        # 同步 Guardrails Dashboard health snapshot
+  sync_to_supabase.py --health        # 同步 Vault Dashboard health snapshot
 """
 
 import os
@@ -24,18 +24,18 @@ from scripts._utils import find_db_path, load_dotenv_cascade
 load_dotenv_cascade()
 
 from supabase import create_client
-from guardrails_lite.guardrails_db import GuardrailsDB
-from guardrails_lite.guardrails_health import (
+from vault.db import VaultDB
+from vault.health import (
     DEFAULT_SAMPLE_LIMIT,
-    GuardrailsHealthMetrics,
-    collect_guardrails_health_metrics,
+    VaultHealthMetrics,
+    collect_vault_health_metrics,
 )
 
 DB_PATH = str(find_db_path())
 
-DOCUMENT_MAP_NODE_TABLE = 'guardrails_knowledge_nodes'
-DOCUMENT_MAP_CLAIM_TABLE = 'guardrails_knowledge_claims'
-GUARDRAILS_HEALTH_TABLE = 'hermes_guardrails_health'
+DOCUMENT_MAP_NODE_TABLE = 'vault_knowledge_nodes'
+DOCUMENT_MAP_CLAIM_TABLE = 'vault_knowledge_claims'
+VAULT_HEALTH_TABLE = 'hermes_vault_health'
 
 DOCUMENT_MAP_NODE_COLUMNS = [
     'knowledge_id',
@@ -157,21 +157,21 @@ def _upsert_by_key(sb, table_name: str, payload: dict, key_fields: tuple[str, ..
     return 'inserted'
 
 
-def _upsert_guardrails_health_by_check_date(sb, payload: dict) -> str:
+def _upsert_vault_health_by_check_date(sb, payload: dict) -> str:
     """Upsert Dashboard health snapshots by check_date without requiring an id column."""
     check_date = payload['check_date']
     existing = (
-        sb.table(GUARDRAILS_HEALTH_TABLE)
+        sb.table(VAULT_HEALTH_TABLE)
         .select('check_date')
         .eq('check_date', check_date)
         .execute()
     )
 
     if existing.data:
-        sb.table(GUARDRAILS_HEALTH_TABLE).update(payload).eq('check_date', check_date).execute()
+        sb.table(VAULT_HEALTH_TABLE).update(payload).eq('check_date', check_date).execute()
         return 'updated'
 
-    sb.table(GUARDRAILS_HEALTH_TABLE).insert(payload).execute()
+    sb.table(VAULT_HEALTH_TABLE).insert(payload).execute()
     return 'inserted'
 
 
@@ -180,7 +180,7 @@ def sync(db_path=DB_PATH):
     if not sb:
         return
 
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     rows = db.conn.execute(
@@ -212,42 +212,42 @@ def sync(db_path=DB_PATH):
         }
 
         try:
-            existing = sb.table('guardrails_knowledge').select('id').ilike('title', title).execute()
+            existing = sb.table('vault_knowledge').select('id').ilike('title', title).execute()
             if existing.data:
                 for e in existing.data:
-                    sb.table('guardrails_knowledge').update(data).eq('id', e['id']).execute()
+                    sb.table('vault_knowledge').update(data).eq('id', e['id']).execute()
                 updated += len(existing.data)
             elif content_hash:
                 # Fallback: match by content_hash (title may differ)
-                hash_match = sb.table('guardrails_knowledge').select('id').eq('content_hash', content_hash).execute()
+                hash_match = sb.table('vault_knowledge').select('id').eq('content_hash', content_hash).execute()
                 if hash_match.data:
                     for h in hash_match.data:
-                        sb.table('guardrails_knowledge').update(data).eq('id', h['id']).execute()
+                        sb.table('vault_knowledge').update(data).eq('id', h['id']).execute()
                     updated += len(hash_match.data)
                 else:
                     data['created_at'] = created_at or datetime.now().isoformat()
-                    sb.table('guardrails_knowledge').insert(data).execute()
+                    sb.table('vault_knowledge').insert(data).execute()
                     inserted += 1
             else:
                 data['created_at'] = created_at or datetime.now().isoformat()
-                sb.table('guardrails_knowledge').insert(data).execute()
+                sb.table('vault_knowledge').insert(data).execute()
                 inserted += 1
         except Exception as e:
             err = str(e)
             if 'duplicate' in err.lower():
                 try:
                     # 1st: fuzzy title match
-                    fuzzy = sb.table('guardrails_knowledge').select('id').ilike('title', f'%{title[:30]}%').execute()
+                    fuzzy = sb.table('vault_knowledge').select('id').ilike('title', f'%{title[:30]}%').execute()
                     if fuzzy.data:
                         for f in fuzzy.data:
-                            sb.table('guardrails_knowledge').update(data).eq('id', f['id']).execute()
+                            sb.table('vault_knowledge').update(data).eq('id', f['id']).execute()
                         updated += len(fuzzy.data)
                     elif content_hash:
                         # 2nd: content_hash match
-                        hash_match = sb.table('guardrails_knowledge').select('id').eq('content_hash', content_hash).execute()
+                        hash_match = sb.table('vault_knowledge').select('id').eq('content_hash', content_hash).execute()
                         if hash_match.data:
                             for h in hash_match.data:
-                                sb.table('guardrails_knowledge').update(data).eq('id', h['id']).execute()
+                                sb.table('vault_knowledge').update(data).eq('id', h['id']).execute()
                             updated += len(hash_match.data)
                         else:
                             failed += 1
@@ -267,7 +267,7 @@ def sync(db_path=DB_PATH):
 
     db.close()
 
-    final = sb.table('guardrails_knowledge').select('id').execute().data
+    final = sb.table('vault_knowledge').select('id').execute().data
     print(f"\n✅ Knowledge sync complete:")
     print(f"   Inserted: {inserted}")
     print(f"   Updated: {updated}")
@@ -278,8 +278,8 @@ def sync(db_path=DB_PATH):
 def sync_skills(db_path=DB_PATH):
     """
     同步技能表到 Supabase。
-    Supabase 端需要先建立 guardrails_skills 表：
-      CREATE TABLE guardrails_skills (
+    Supabase 端需要先建立 vault_skills 表：
+      CREATE TABLE vault_skills (
         id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
         name TEXT NOT NULL UNIQUE,
         version TEXT DEFAULT '1.0.0',
@@ -300,7 +300,7 @@ def sync_skills(db_path=DB_PATH):
     if not sb:
         return
 
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     rows = db.conn.execute(
@@ -312,9 +312,9 @@ def sync_skills(db_path=DB_PATH):
 
     # 測試 Supabase 表是否存在
     try:
-        sb.table('guardrails_skills').select('id', count='exact').limit(1).execute()
+        sb.table('vault_skills').select('id', count='exact').limit(1).execute()
     except Exception as e:
-        print(f"⚠️ Supabase guardrails_skills 表不存在或無權限。跳過技能同步。")
+        print(f"⚠️ Supabase vault_skills 表不存在或無權限。跳過技能同步。")
         print(f"   請手動執行上方註解中的 CREATE TABLE。")
         db.close()
         return
@@ -342,14 +342,14 @@ def sync_skills(db_path=DB_PATH):
         }
 
         try:
-            existing = sb.table('guardrails_skills').select('id').eq('name', name).execute()
+            existing = sb.table('vault_skills').select('id').eq('name', name).execute()
             if existing.data:
                 for e in existing.data:
-                    sb.table('guardrails_skills').update(data).eq('id', e['id']).execute()
+                    sb.table('vault_skills').update(data).eq('id', e['id']).execute()
                 updated += len(existing.data)
             else:
                 data['created_at'] = created_at or datetime.now().isoformat()
-                sb.table('guardrails_skills').insert(data).execute()
+                sb.table('vault_skills').insert(data).execute()
                 inserted += 1
         except Exception as e:
             failed += 1
@@ -365,7 +365,7 @@ def sync_skills(db_path=DB_PATH):
     db.close()
 
     try:
-        final = sb.table('guardrails_skills').select('id').execute().data
+        final = sb.table('vault_skills').select('id').execute().data
     except Exception:
         final = []
     print(f"\n✅ Skill sync complete:")
@@ -381,7 +381,7 @@ def sync_document_map(db_path=DB_PATH):
     if not sb:
         return None
 
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     try:
@@ -453,13 +453,13 @@ def _health_check_date() -> str:
     return datetime.now(timezone.utc).date().isoformat()
 
 
-def _guardrails_health_payload(
-    metrics: GuardrailsHealthMetrics,
+def _vault_health_payload(
+    metrics: VaultHealthMetrics,
     check_date: str | None = None,
 ) -> dict:
     """Map Document Map health metrics into the existing Dashboard schema.
 
-    The deployed hermes_guardrails_health table has no JSONB/detail columns and
+    The deployed hermes_vault_health table has no JSONB/detail columns and
     no map_coverage/claim_coverage/citation_coverage columns.  To avoid schema
     drift in Sprint 4C we intentionally use the best existing numeric slots:
     - total_knowledge = total_entries
@@ -478,8 +478,8 @@ def _guardrails_health_payload(
     }
 
 
-def _print_guardrails_health(metrics: GuardrailsHealthMetrics, payload: dict) -> None:
-    print("📊 Guardrails Document Map health:")
+def _print_vault_health(metrics: VaultHealthMetrics, payload: dict) -> None:
+    print("📊 Vault Document Map health:")
     print(f"   Total entries: {metrics.total_entries}")
     print(f"   Entries with nodes: {metrics.entries_with_nodes}")
     print(f"   Entries without nodes: {metrics.entries_without_nodes}")
@@ -499,7 +499,7 @@ def _print_guardrails_health(metrics: GuardrailsHealthMetrics, payload: dict) ->
     print(f"     gap_count = {payload['gap_count']}")
 
 
-def sync_guardrails_health(
+def sync_vault_health(
     db_path=DB_PATH,
     sample_limit=DEFAULT_SAMPLE_LIMIT,
     sb_client=None,
@@ -510,12 +510,12 @@ def sync_guardrails_health(
     if not sb:
         return None
 
-    metrics = collect_guardrails_health_metrics(db_path, sample_limit=sample_limit)
-    payload = _guardrails_health_payload(metrics, check_date=check_date)
-    _print_guardrails_health(metrics, payload)
+    metrics = collect_vault_health_metrics(db_path, sample_limit=sample_limit)
+    payload = _vault_health_payload(metrics, check_date=check_date)
+    _print_vault_health(metrics, payload)
 
-    action = _upsert_guardrails_health_by_check_date(sb, payload)
-    print(f"\n✅ Guardrails health sync complete: {action}")
+    action = _upsert_vault_health_by_check_date(sb, payload)
+    print(f"\n✅ Vault health sync complete: {action}")
     return {
         'action': action,
         'payload': payload,
@@ -530,10 +530,10 @@ if __name__ == "__main__":
     parser.add_argument("--document-map", action="store_true", help="同步 Document Map 表（而非知識表）")
     parser.add_argument(
         "--health",
-        "--guardrails-health",
+        "--vault-health",
         dest="health",
         action="store_true",
-        help="同步 Guardrails / Document Map dashboard health snapshot",
+        help="同步 Vault / Document Map dashboard health snapshot",
     )
     parser.add_argument(
         "--health-sample-limit",
@@ -548,6 +548,6 @@ if __name__ == "__main__":
     if args.document_map:
         sync_document_map()
     if args.health:
-        sync_guardrails_health(sample_limit=args.health_sample_limit)
+        sync_vault_health(sample_limit=args.health_sample_limit)
     if not (args.skills or args.document_map or args.health):
         sync()

@@ -10,9 +10,9 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from guardrails_lite.guardrails_db import GuardrailsDB
-from guardrails_lite.guardrails_health import collect_guardrails_health_metrics
-from guardrails_lite.guardrails_map import build_document_map_for_entry
+from vault.db import VaultDB
+from vault.health import collect_vault_health_metrics
+from vault.docmap import build_document_map_for_entry
 from scripts import sync_to_supabase
 
 
@@ -30,11 +30,11 @@ class _FakeTableQuery:
         self.filters = []
 
     def _assert_health_does_not_reference_id(self, fields):
-        if self.table_name != sync_to_supabase.GUARDRAILS_HEALTH_TABLE:
+        if self.table_name != sync_to_supabase.VAULT_HEALTH_TABLE:
             return
         for field in fields:
             if field == "id":
-                raise AssertionError("hermes_guardrails_health fake schema has no id column")
+                raise AssertionError("hermes_vault_health fake schema has no id column")
 
     def select(self, *args, **kwargs):
         self.operation = "select"
@@ -75,7 +75,7 @@ class _FakeTableQuery:
         if self.operation == "insert":
             original_payload = dict(self.payload)
             payload = dict(self.payload)
-            if self.table_name != sync_to_supabase.GUARDRAILS_HEALTH_TABLE:
+            if self.table_name != sync_to_supabase.VAULT_HEALTH_TABLE:
                 payload.setdefault("id", self.client.next_id)
                 self.client.next_id += 1
             rows.append(payload)
@@ -95,7 +95,7 @@ class _FakeSupabaseClient:
     def __init__(self):
         self.next_id = 5000
         self.operations = []
-        self.tables = {sync_to_supabase.GUARDRAILS_HEALTH_TABLE: []}
+        self.tables = {sync_to_supabase.VAULT_HEALTH_TABLE: []}
 
     def table(self, table_name: str):
         if table_name not in self.tables:
@@ -103,7 +103,7 @@ class _FakeSupabaseClient:
         return _FakeTableQuery(self, table_name)
 
 
-def _add_entry(db: GuardrailsDB, title: str, raw: str, aaak: str = "") -> int:
+def _add_entry(db: VaultDB, title: str, raw: str, aaak: str = "") -> int:
     return db.add_knowledge(
         title=title,
         content_raw=raw,
@@ -115,8 +115,8 @@ def _add_entry(db: GuardrailsDB, title: str, raw: str, aaak: str = "") -> int:
 
 
 def _build_metrics_fixture(tmp_path: Path) -> Path:
-    db_path = tmp_path / "guardrails.db"
-    db = GuardrailsDB(db_path).connect()
+    db_path = tmp_path / "vault.db"
+    db = VaultDB(db_path).connect()
     try:
         both_id = _add_entry(
             db,
@@ -157,12 +157,12 @@ def _build_metrics_fixture(tmp_path: Path) -> Path:
     return db_path
 
 
-def test_collect_guardrails_health_metrics_empty_db_zero_denominators(tmp_path):
-    db_path = tmp_path / "guardrails.db"
-    db = GuardrailsDB(db_path).connect()
+def test_collect_vault_health_metrics_empty_db_zero_denominators(tmp_path):
+    db_path = tmp_path / "vault.db"
+    db = VaultDB(db_path).connect()
     db.close()
 
-    metrics = collect_guardrails_health_metrics(str(db_path), sample_limit=20)
+    metrics = collect_vault_health_metrics(str(db_path), sample_limit=20)
 
     assert metrics.total_entries == 0
     assert metrics.entries_with_nodes == 0
@@ -177,10 +177,10 @@ def test_collect_guardrails_health_metrics_empty_db_zero_denominators(tmp_path):
     assert metrics.read_range_over_limit_violations == 0
 
 
-def test_collect_guardrails_health_metrics_counts_map_claim_citation_and_boundary_gaps(tmp_path):
+def test_collect_vault_health_metrics_counts_map_claim_citation_and_boundary_gaps(tmp_path):
     db_path = _build_metrics_fixture(tmp_path)
 
-    metrics = collect_guardrails_health_metrics(str(db_path), sample_limit=20)
+    metrics = collect_vault_health_metrics(str(db_path), sample_limit=20)
 
     assert metrics.total_entries == 4
     assert metrics.entries_with_nodes == 3
@@ -195,10 +195,10 @@ def test_collect_guardrails_health_metrics_counts_map_claim_citation_and_boundar
     assert metrics.read_range_over_limit_violations == 1
 
 
-def test_collect_guardrails_health_metrics_sample_limit_zero_has_zero_citation_coverage(tmp_path):
+def test_collect_vault_health_metrics_sample_limit_zero_has_zero_citation_coverage(tmp_path):
     db_path = _build_metrics_fixture(tmp_path)
 
-    metrics = collect_guardrails_health_metrics(str(db_path), sample_limit=0)
+    metrics = collect_vault_health_metrics(str(db_path), sample_limit=0)
 
     assert metrics.total_entries == 4
     assert metrics.sampled_search_results == 0
@@ -208,9 +208,9 @@ def test_collect_guardrails_health_metrics_sample_limit_zero_has_zero_citation_c
     assert metrics.citation_coverage == 0.0
 
 
-def test_collect_guardrails_health_metrics_read_range_boundary_is_strictly_over_80(tmp_path):
-    db_path = tmp_path / "guardrails.db"
-    db = GuardrailsDB(db_path).connect()
+def test_collect_vault_health_metrics_read_range_boundary_is_strictly_over_80(tmp_path):
+    db_path = tmp_path / "vault.db"
+    db = VaultDB(db_path).connect()
     try:
         eighty_id = _add_entry(
             db,
@@ -227,23 +227,23 @@ def test_collect_guardrails_health_metrics_read_range_boundary_is_strictly_over_
     finally:
         db.close()
 
-    metrics = collect_guardrails_health_metrics(str(db_path), sample_limit=0)
+    metrics = collect_vault_health_metrics(str(db_path), sample_limit=0)
 
     assert metrics.total_entries == 2
     assert metrics.entries_with_nodes == 2
     assert metrics.read_range_over_limit_violations == 1
 
 
-def test_sync_guardrails_health_maps_payload_and_upserts_without_network(tmp_path, monkeypatch):
+def test_sync_vault_health_maps_payload_and_upserts_without_network(tmp_path, monkeypatch):
     db_path = _build_metrics_fixture(tmp_path)
     fake = _FakeSupabaseClient()
 
     def fail_if_real_client_requested():
-        raise AssertionError("sync_guardrails_health should use injected fake client")
+        raise AssertionError("sync_vault_health should use injected fake client")
 
     monkeypatch.setattr(sync_to_supabase, "_get_sb_client", fail_if_real_client_requested)
 
-    result = sync_to_supabase.sync_guardrails_health(
+    result = sync_to_supabase.sync_vault_health(
         str(db_path),
         sample_limit=20,
         sb_client=fake,
@@ -259,16 +259,16 @@ def test_sync_guardrails_health_maps_payload_and_upserts_without_network(tmp_pat
         "contradiction_count": 1,
         "gap_count": 4,
     }
-    assert fake.tables[sync_to_supabase.GUARDRAILS_HEALTH_TABLE][0]["check_date"] == "2026-05-09"
-    assert "id" not in fake.tables[sync_to_supabase.GUARDRAILS_HEALTH_TABLE][0]
+    assert fake.tables[sync_to_supabase.VAULT_HEALTH_TABLE][0]["check_date"] == "2026-05-09"
+    assert "id" not in fake.tables[sync_to_supabase.VAULT_HEALTH_TABLE][0]
 
-    db = GuardrailsDB(db_path).connect()
+    db = VaultDB(db_path).connect()
     try:
         _add_entry(db, "Epsilon No Map", "# Epsilon\n- New unmapped entry.")
     finally:
         db.close()
 
-    second = sync_to_supabase.sync_guardrails_health(
+    second = sync_to_supabase.sync_vault_health(
         str(db_path),
         sample_limit=20,
         sb_client=fake,
@@ -276,8 +276,8 @@ def test_sync_guardrails_health_maps_payload_and_upserts_without_network(tmp_pat
     )
 
     assert second["action"] == "updated"
-    assert len(fake.tables[sync_to_supabase.GUARDRAILS_HEALTH_TABLE]) == 1
-    stored = fake.tables[sync_to_supabase.GUARDRAILS_HEALTH_TABLE][0]
+    assert len(fake.tables[sync_to_supabase.VAULT_HEALTH_TABLE]) == 1
+    stored = fake.tables[sync_to_supabase.VAULT_HEALTH_TABLE][0]
     assert stored["total_knowledge"] == 5
     assert stored["gap_count"] == 6
     update_ops = [op for op in fake.operations if op[0] == "update"]
@@ -296,5 +296,5 @@ def test_sync_cli_help_exposes_health_flags():
     )
 
     assert "--health" in result.stdout
-    assert "--guardrails-health" in result.stdout
+    assert "--vault-health" in result.stdout
     assert "--health-sample-limit" in result.stdout

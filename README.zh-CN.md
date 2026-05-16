@@ -159,15 +159,9 @@ your-project/
 ├── L3-knowledge/             # 可搜索的深知识
 ├── raw/                      # 原始 Markdown 知识条目
 ├── compiled/                 # 编译/压缩后的知识 artifact
-├── guardrails.db             # vault 生成的本地 SQLite database
+├── vault.db             # vault 生成的本地 SQLite database
 └── templates/                # 起始模板
 ```
-
-### 历史命名说明
-
-部分内部模块与文件名仍沿用历史名称 `guardrails_lite` / `guardrails.db`。公开产品名称是 **Vault-for-LLM**，公开命令是 `vault` 与 `vault-mcp`。这些旧命名会在 alpha 阶段为了兼容性暂时保留。
-
----
 
 ## CLI 命令参考
 
@@ -253,7 +247,7 @@ python scripts/sync_to_supabase.py --document-map
 
 Vault-for-LLM 仍是 alpha：
 
-- 公开 CLI 是 `vault`，但部分内部名称仍含 `guardrails`。
+- 内部 package、module、database 与 MCP tool 名称已统一为 Vault 品牌。
 - convergence、cross-validation、Search QA、skills、Supabase sync 等进阶功能仍在演进。
 - 默认安装方式是从源码本地开发。
 - 稳定版前，API 与 schema 可能变动。

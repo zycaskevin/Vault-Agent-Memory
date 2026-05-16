@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Guardrails 新鮮度追蹤 — 檢查知識條目的新鮮度並標記過期條目。
+Vault 新鮮度追蹤 — 檢查知識條目的新鮮度並標記過期條目。
 
 策略：
 1. 計算每條知識的 freshness 分數基於：
@@ -27,9 +27,9 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from guardrails_lite.guardrails_db import GuardrailsDB
+from vault.db import VaultDB
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "guardrails.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "vault.db")
 
 
 def calc_freshness(updated_at: str, last_verified: str = "", entity_count: int = 0) -> float:
@@ -84,7 +84,7 @@ def calc_freshness(updated_at: str, last_verified: str = "", entity_count: int =
     return round(freshness, 3)
 
 
-def get_entity_count(db: GuardrailsDB, kid: int) -> int:
+def get_entity_count(db: VaultDB, kid: int) -> int:
     """取得條目的實體關聯數。"""
     try:
         entities = db.get_entities_for_knowledge(kid)
@@ -101,7 +101,7 @@ def check_freshness(
 ):
     """執行新鮮度檢查。"""
 
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     # 查詢所有條目
@@ -237,7 +237,7 @@ def check_freshness(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Guardrails 新鮮度追蹤")
+    parser = argparse.ArgumentParser(description="Vault 新鮮度追蹤")
     parser.add_argument("--apply", action="store_true", help="實際更新 DB（預設為預覽模式）")
     parser.add_argument("--limit", type=int, default=0, help="最多處理幾條（0=全部）")
     parser.add_argument("--stale-only", action="store_true", help="只顯示過期條目")

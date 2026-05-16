@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Guardrails Lite 完整端到端測試"""
+"""Vault-for-LLM 完整端到端測試"""
 import sys
 import os
 import tempfile
@@ -30,10 +30,10 @@ print("=" * 60)
 print("1. DB LAYER TEST")
 print("=" * 60)
 
-from guardrails_lite.guardrails_db import GuardrailsDB
+from vault.db import VaultDB
 
 test_db = tempfile.mktemp(suffix='.db')
-db = GuardrailsDB(test_db)
+db = VaultDB(test_db)
 db.connect()
 
 ver = db.get_config("schema_version", "0")
@@ -91,7 +91,7 @@ print("2. EMBEDDING TEST")
 print("=" * 60)
 
 try:
-    from guardrails_lite.guardrails_embed import ONNXEmbeddingProvider
+    from vault.embed import ONNXEmbeddingProvider
     HAS_ONNX = True
 except ImportError:
     HAS_ONNX = False
@@ -135,11 +135,11 @@ print("=" * 60)
 print("3. SEARCH TEST (Keyword + Vector + Hybrid)")
 print("=" * 60)
 
-from guardrails_lite.guardrails_search import GuardrailsSearch
-from guardrails_lite.guardrails_graph import GuardrailsGraph
+from vault.search import VaultSearch
+from vault.graph import VaultGraph
 
-gk = GuardrailsGraph(db)
-search = GuardrailsSearch(db, embed_provider=embed_prov, graph=gk)
+gk = VaultGraph(db)
+search = VaultSearch(db, embed_provider=embed_prov, graph=gk)
 
 kw_results = search.search_keyword("超時")
 check("Keyword '超時'", len(kw_results) >= 1)
@@ -208,7 +208,7 @@ print("=" * 60)
 print("5. IMPORT TEST")
 print("=" * 60)
 
-from guardrails_lite.guardrails_import import import_document
+from vault.importer import import_document
 
 test_md = tempfile.mktemp(suffix='.md')
 with open(test_md, 'w') as f:
@@ -241,9 +241,9 @@ print("=" * 60)
 print("6. COMPILE TEST")
 print("=" * 60)
 
-from guardrails_lite.guardrails_compile import GuardrailsCompiler
+from vault.compiler import VaultCompiler
 
-compiler = GuardrailsCompiler(project_dir=PROJECT_ROOT, db=db, embed_provider=embed_prov)
+compiler = VaultCompiler(project_dir=PROJECT_ROOT, db=db, embed_provider=embed_prov)
 try:
     compile_result = compiler.compile(dry_run=True)
     check("Compile (dry run)", True)
@@ -270,11 +270,11 @@ else:
         from supabase import create_client
         sp = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-        for t in ["guardrails_knowledge", "gr_entities", "gr_edges", "gr_entity_knowledge"]:
+        for t in ["vault_knowledge", "gr_entities", "gr_edges", "gr_entity_knowledge"]:
             r = sp.table(t).select("id", count="exact").range(0, 0).execute()
             print(f"  {t}: {r.count} rows")
 
-        r = sp.table("guardrails_knowledge").select("id,title,category").ilike("title", "%sqlite%").execute()
+        r = sp.table("vault_knowledge").select("id,title,category").ilike("title", "%sqlite%").execute()
         check("Supabase 'sqlite'", len(r.data) >= 1, f"got {len(r.data)}")
 
         r = sp.table("gr_entities").select("id,name,entity_type").eq("name", "sqlite-vec").execute()

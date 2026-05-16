@@ -8,9 +8,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from guardrails_lite.guardrails_compile import GuardrailsCompiler
-from guardrails_lite.guardrails_db import GuardrailsDB
-from guardrails_lite.guardrails_map import build_document_map_for_entry
+from vault.compiler import VaultCompiler
+from vault.db import VaultDB
+from vault.docmap import build_document_map_for_entry
 from scripts import sync_to_supabase
 
 
@@ -109,12 +109,12 @@ def _write_raw(project_dir: Path, body: str) -> Path:
     return raw_file
 
 
-def _count(db: GuardrailsDB, table: str) -> int:
+def _count(db: VaultDB, table: str) -> int:
     return db.conn.execute(f"SELECT COUNT(*) AS c FROM {table}").fetchone()["c"]
 
 
 def test_compile_refreshes_document_map_for_new_and_updated_entries_but_not_dry_run_or_skipped(tmp_path):
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         _write_raw(
             tmp_path,
@@ -123,7 +123,7 @@ def test_compile_refreshes_document_map_for_new_and_updated_entries_but_not_dry_
             "## Details\n"
             "- Second compile hook claim should also remain traceable.",
         )
-        compiler = GuardrailsCompiler(tmp_path, db=db, embed_provider=None)
+        compiler = VaultCompiler(tmp_path, db=db, embed_provider=None)
 
         dry_stats = compiler.compile(dry_run=True)
         assert dry_stats["new"] == 1
@@ -161,7 +161,7 @@ def test_compile_refreshes_document_map_for_new_and_updated_entries_but_not_dry_
 
 
 def test_sync_document_map_upserts_nodes_and_claims_without_network(tmp_path, monkeypatch):
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         knowledge_id = db.add_knowledge(
             title="Remote Map Resolver Entry",
@@ -185,7 +185,7 @@ def test_sync_document_map_upserts_nodes_and_claims_without_network(tmp_path, mo
         db.close()
 
     fake = _FakeSupabaseClient()
-    first_node = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    first_node = VaultDB(tmp_path / "vault.db").connect()
     try:
         existing_node = first_node.conn.execute(
             "SELECT knowledge_id, node_uid FROM knowledge_nodes ORDER BY line_start LIMIT 1"
@@ -198,7 +198,7 @@ def test_sync_document_map_upserts_nodes_and_claims_without_network(tmp_path, mo
 
     monkeypatch.setattr(sync_to_supabase, "_get_sb_client", lambda: fake)
 
-    stats = sync_to_supabase.sync_document_map(str(tmp_path / "guardrails.db"))
+    stats = sync_to_supabase.sync_document_map(str(tmp_path / "vault.db"))
 
     assert stats["nodes_updated"] == 1
     assert stats["nodes_inserted"] >= 1
@@ -219,7 +219,7 @@ def test_sync_document_map_upserts_nodes_and_claims_without_network(tmp_path, mo
 
 
 def test_document_map_sync_columns_match_sqlite_schema(tmp_path):
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         node_columns = {row["name"] for row in db.conn.execute("PRAGMA table_info(knowledge_nodes)")}
         claim_columns = {row["name"] for row in db.conn.execute("PRAGMA table_info(knowledge_claims)")}

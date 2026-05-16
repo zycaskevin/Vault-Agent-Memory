@@ -1,5 +1,5 @@
 # entity_rules.yaml
-# Guardrails Lite — 實體推斷規則
+# Vault-for-LLM — 實體推斷規則
 #
 # 格式：
 #   entity_type:

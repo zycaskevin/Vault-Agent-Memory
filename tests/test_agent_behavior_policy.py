@@ -5,19 +5,19 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from guardrails_lite.agent_policy import validate_agent_behavior
+from vault.agent_policy import validate_agent_behavior
 
 
 def _search_event(knowledge_id: int = 42, citation: str = "#42 Example L3-L4") -> dict:
     return {
-        "tool": "guardrails_search",
+        "tool": "vault_search",
         "arguments": {"query": "tool-gated reading"},
         "output": [
             {
                 "id": knowledge_id,
                 "title": "Example",
                 "citation": citation,
-                "recommended_next_tool": "guardrails_read_range",
+                "recommended_next_tool": "vault_read_range",
             }
         ],
     }
@@ -26,7 +26,7 @@ def _search_event(knowledge_id: int = 42, citation: str = "#42 Example L3-L4") -
 def _map_event(
     knowledge_id: int = 42,
     node_uid: str = "title-tool",
-    tool: str = "guardrails_map_show",
+    tool: str = "vault_map_show",
 ) -> dict:
     return {
         "tool": tool,
@@ -50,7 +50,7 @@ def _read_event(
     knowledge_id: int = 42,
     citation: str = "#42 Example L3-L4",
     node_uid: str = "title-tool",
-    tool: str = "guardrails_read_range",
+    tool: str = "vault_read_range",
 ) -> dict:
     return {
         "tool": tool,
@@ -85,7 +85,7 @@ def test_search_citation_alone_is_navigation_hint_not_final_support():
 
     assert result["ok"] is False
     assert result["failure_mode"] == "missing_read_range"
-    assert result["next_action"]["tool"] == "guardrails_map_show"
+    assert result["next_action"]["tool"] == "vault_map_show"
 
 
 def test_citation_free_answer_fails_when_citation_required():
@@ -97,7 +97,7 @@ def test_citation_free_answer_fails_when_citation_required():
 
     assert result["ok"] is False
     assert result["failure_mode"] == "missing_final_citation"
-    assert result["next_action"]["tool"] == "guardrails_read_range"
+    assert result["next_action"]["tool"] == "vault_read_range"
 
 
 def test_invented_final_citation_fails_even_after_read_range():
@@ -119,15 +119,15 @@ def test_loop_must_use_same_knowledge_id_across_tools():
 
     assert result["ok"] is False
     assert result["failure_mode"] == "knowledge_id_mismatch"
-    assert result["next_action"]["tool"] == "guardrails_read_range"
+    assert result["next_action"]["tool"] == "vault_read_range"
 
 
 def test_remote_alias_loop_accepts_remote_map_and_read_range_citation():
     result = validate_agent_behavior(
         [
             _search_event(),
-            _map_event(tool="guardrails_remote_map_show"),
-            _read_event(tool="guardrails_remote_read_range"),
+            _map_event(tool="vault_remote_map_show"),
+            _read_event(tool="vault_remote_read_range"),
         ],
         "Tool-gated reading keeps agents bounded. #42 Example L3-L4",
     )
@@ -139,7 +139,7 @@ def test_remote_alias_loop_accepts_remote_map_and_read_range_citation():
 
 def test_remote_map_without_remote_read_range_fails_search_citation_only():
     result = validate_agent_behavior(
-        [_search_event(), _map_event(tool="guardrails_remote_map_show")],
+        [_search_event(), _map_event(tool="vault_remote_map_show")],
         "Tool-gated reading keeps agents bounded. #42 Example L3-L4",
     )
 
@@ -152,8 +152,8 @@ def test_remote_search_citation_alone_still_cannot_support_final_answer():
     result = validate_agent_behavior(
         [
             _search_event(citation="#42 Example L9-L9"),
-            _map_event(tool="guardrails_remote_map_show"),
-            _read_event(tool="guardrails_remote_read_range"),
+            _map_event(tool="vault_remote_map_show"),
+            _read_event(tool="vault_remote_read_range"),
         ],
         "Search hinted this, but final support must not use it. #42 Example L9-L9",
     )

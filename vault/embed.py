@@ -1,5 +1,5 @@
 """
-Guardrails Lite — 嵌入生成模組。
+Vault-for-LLM — 嵌入生成模組。
 
 支援三種嵌入來源：
 1. ONNX Runtime（本地模型，不需要 PyTorch 2GB+）
@@ -16,7 +16,7 @@ import os
 from pathlib import Path
 from typing import Optional
 
-from .guardrails_log import log
+from .log import log
 
 # ── 模型定義 ─────────────────────────────────────────────
 
@@ -68,7 +68,7 @@ class ONNXEmbeddingProvider(EmbeddingProvider):
         self.model_key = model_key
         self.model_info = MODELS[model_key]
         self._dim = self.model_info["dim"]
-        self.cache_dir = Path(cache_dir or os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))) / "guardrails-lite" / "models"
+        self.cache_dir = Path(cache_dir or os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache"))) / "vault-mcp" / "models"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._session = None
         self._tokenizer = None

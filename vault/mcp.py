@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
-"""
-Vault-for-LLM MCP server.
-
-The public MCP tool names use the ``vault_*`` prefix. Legacy ``guardrails_*``
-tool names are kept as compatibility aliases while the project is alpha.
-"""
+"""Vault-for-LLM MCP server with public ``vault_*`` tool names."""
 
 import argparse
-import copy
 import hashlib
 import json
 import sqlite3
@@ -21,59 +15,46 @@ except Exception:  # pragma: no cover - direct script fallback
     __version__ = "0.1.0"
 
 # 確保模組路徑
-GUARDRAILS_DIR = str(Path(__file__).parent.parent)
-if GUARDRAILS_DIR not in sys.path:
-    sys.path.insert(0, GUARDRAILS_DIR)
+VAULT_DIR = str(Path(__file__).parent.parent)
+if VAULT_DIR not in sys.path:
+    sys.path.insert(0, VAULT_DIR)
 
 DB_PATH = os.path.join(
-    os.environ.get("VAULT_PATH") or os.environ.get("GUARDRAILS_PATH") or GUARDRAILS_DIR,
-    "guardrails.db",
+    os.environ.get("VAULT_PATH") or VAULT_DIR,
+    "vault.db",
 )
-REMOTE_NODE_TABLE = "guardrails_knowledge_nodes"
-REMOTE_CLAIM_TABLE = "guardrails_knowledge_claims"
-REMOTE_KNOWLEDGE_TABLE = "guardrails_knowledge"
+REMOTE_NODE_TABLE = "vault_knowledge_nodes"
+REMOTE_CLAIM_TABLE = "vault_knowledge_claims"
+REMOTE_KNOWLEDGE_TABLE = "vault_knowledge"
 
 
 def _set_project_dir(project_dir: str | os.PathLike[str]) -> None:
     """Point the MCP server at a project's local SQLite vault."""
     global DB_PATH
     project_path = Path(project_dir).expanduser().resolve()
-    DB_PATH = str(project_path / "guardrails.db")
-
-
-VAULT_TOOL_ALIASES = {
-    "vault_search": "guardrails_search",
-    "vault_add": "guardrails_add",
-    "vault_stats": "guardrails_stats",
-    "vault_converge": "guardrails_converge",
-    "vault_freshness": "guardrails_freshness",
-    "vault_map_show": "guardrails_map_show",
-    "vault_read_range": "guardrails_read_range",
-    "vault_remote_map_show": "guardrails_remote_map_show",
-    "vault_remote_read_range": "guardrails_remote_read_range",
-}
+    DB_PATH = str(project_path / "vault.db")
 
 
 def _canonical_tool_name(name: str) -> str:
-    """Map public vault_* aliases to legacy implementation handlers."""
-    return VAULT_TOOL_ALIASES.get(name, name)
+    """Return the public Vault MCP tool name unchanged."""
+    return name
 
 
 def _get_db():
     """取得資料庫連線。"""
-    from guardrails_lite.guardrails_db import GuardrailsDB
-    db = GuardrailsDB(DB_PATH)
+    from vault.db import VaultDB
+    db = VaultDB(DB_PATH)
     db.connect()
     return db
 
 
 def _get_search():
     """取得搜尋引擎。"""
-    from guardrails_lite.guardrails_db import GuardrailsDB
-    from guardrails_lite.guardrails_search import GuardrailsSearch
-    from guardrails_lite.guardrails_embed import create_embedding_provider
+    from vault.db import VaultDB
+    from vault.search import VaultSearch
+    from vault.embed import create_embedding_provider
 
-    db = GuardrailsDB(DB_PATH)
+    db = VaultDB(DB_PATH)
     db.connect()
 
     embed = None
@@ -85,7 +66,7 @@ def _get_search():
     except Exception:
         pass
 
-    return db, GuardrailsSearch(db, embed_provider=embed)
+    return db, VaultSearch(db, embed_provider=embed)
 
 
 def _get_supabase_client():
@@ -102,7 +83,7 @@ def _get_supabase_client():
 # ── Document Map helpers ───────────────────────────────
 
 def _open_readonly_db(db_path: str | None = None) -> sqlite3.Connection | None:
-    """Open the local Guardrails DB read-only without creating missing files."""
+    """Open the local Vault DB read-only without creating missing files."""
     path = Path(db_path or DB_PATH)
     if not path.exists():
         return None
@@ -124,30 +105,30 @@ def _next_action_for_error(code: str, extra: dict | None = None) -> dict:
     extra = extra or {}
     knowledge_id = extra.get("knowledge_id") or extra.get("entry_id")
     if code in {"invalid_knowledge_id", "not_found", "db_not_found", "db_open_failed"}:
-        return {"tool": "guardrails_search", "arguments": {}}
+        return {"tool": "vault_search", "arguments": {}}
     if code == "no_document_map_nodes":
         return {
-            "tool": "guardrails_map_build",
+            "tool": "vault_map_build",
             "arguments": {"knowledge_id": knowledge_id} if knowledge_id else {},
         }
     if code in {"invalid_range", "node_not_found", "range_outside_node", "range_outside_content"}:
         return {
-            "tool": "guardrails_map_show",
+            "tool": "vault_map_show",
             "arguments": {"knowledge_id": knowledge_id} if knowledge_id else {},
         }
     if code == "range_too_large":
         return {
-            "tool": "guardrails_read_range",
+            "tool": "vault_read_range",
             "arguments": {"knowledge_id": knowledge_id} if knowledge_id else {},
         }
-    return {"tool": "guardrails_search", "arguments": {}}
+    return {"tool": "vault_search", "arguments": {}}
 
 
 def _remote_next_action_for_error(code: str, extra: dict | None = None) -> dict:
     extra = extra or {}
     knowledge_id = extra.get("knowledge_id") or extra.get("entry_id")
     if code in {"invalid_knowledge_id", "not_found", "remote_client_missing", "remote_read_failed"}:
-        return {"tool": "guardrails_search", "arguments": {}}
+        return {"tool": "vault_search", "arguments": {}}
     if code in {
         "invalid_range",
         "node_not_found",
@@ -157,15 +138,15 @@ def _remote_next_action_for_error(code: str, extra: dict | None = None) -> dict:
         "no_document_map_nodes",
     }:
         return {
-            "tool": "guardrails_remote_map_show",
+            "tool": "vault_remote_map_show",
             "arguments": {"knowledge_id": knowledge_id} if knowledge_id else {},
         }
     if code == "range_too_large":
         return {
-            "tool": "guardrails_remote_read_range",
+            "tool": "vault_remote_read_range",
             "arguments": {"knowledge_id": knowledge_id} if knowledge_id else {},
         }
-    return {"tool": "guardrails_search", "arguments": {}}
+    return {"tool": "vault_search", "arguments": {}}
 
 
 def _error(code: str, message: str, **extra) -> dict:
@@ -194,14 +175,14 @@ def _remote_error(code: str, message: str, **extra) -> dict:
     return payload
 
 
-def guardrails_map_show(knowledge_id: int, compact: bool = False) -> dict:
+def vault_map_show(knowledge_id: int, compact: bool = False) -> dict:
     """Return a knowledge entry's Document Map structure."""
-    return _guardrails_map_show_payload(knowledge_id, compact=compact)
+    return _vault_map_show_payload(knowledge_id, compact=compact)
 
 
-def guardrails_remote_map_show(knowledge_id: int, compact: bool = False) -> dict:
+def vault_remote_map_show(knowledge_id: int, compact: bool = False) -> dict:
     """Return a synced Supabase Document Map structure (read-only target)."""
-    return _guardrails_remote_map_show_payload(knowledge_id, compact=compact)
+    return _vault_remote_map_show_payload(knowledge_id, compact=compact)
 
 
 def _compact_node(node: dict) -> dict:
@@ -230,7 +211,7 @@ def _read_range_action(knowledge_id: int, node: dict) -> dict:
     if node.get("line_start") and node.get("line_end"):
         args["line_start"] = int(node["line_start"])
         args["line_end"] = int(node["line_end"])
-    return {"tool": "guardrails_read_range", "arguments": args}
+    return {"tool": "vault_read_range", "arguments": args}
 
 
 def _remote_read_range_action(knowledge_id: int, node: dict) -> dict:
@@ -240,7 +221,7 @@ def _remote_read_range_action(knowledge_id: int, node: dict) -> dict:
     if node.get("line_start") and node.get("line_end"):
         args["line_start"] = int(node["line_start"])
         args["line_end"] = int(node["line_end"])
-    return {"tool": "guardrails_remote_read_range", "arguments": args}
+    return {"tool": "vault_remote_read_range", "arguments": args}
 
 
 def _supabase_rows(sb_client, table_name: str, columns: str = "*", filters: dict | None = None) -> list[dict]:
@@ -287,7 +268,7 @@ def _remote_node_payload(row: dict) -> dict:
     return {key: row.get(key) for key in keys if key in row}
 
 
-def _guardrails_remote_map_show_payload(
+def _vault_remote_map_show_payload(
     knowledge_id: int,
     *,
     compact: bool = False,
@@ -344,7 +325,7 @@ def _guardrails_remote_map_show_payload(
     return payload
 
 
-def _guardrails_map_show_payload(
+def _vault_map_show_payload(
     knowledge_id: int,
     db_path: str | None = None,
     compact: bool = False,
@@ -359,9 +340,9 @@ def _guardrails_map_show_payload(
     try:
         conn = _open_readonly_db(db_path)
     except sqlite3.Error as exc:
-        return _error("db_open_failed", f"Unable to open guardrails.db read-only: {exc}")
+        return _error("db_open_failed", f"Unable to open vault.db read-only: {exc}")
     if conn is None:
-        return _error("db_not_found", f"guardrails.db not found at {db_path or DB_PATH}")
+        return _error("db_not_found", f"vault.db not found at {db_path or DB_PATH}")
 
     try:
         entry = conn.execute(
@@ -398,7 +379,7 @@ def _guardrails_map_show_payload(
                 _error(
                     "no_document_map_nodes",
                     "No document map nodes found. Run: "
-                    f"guardrails map build {knowledge_id}",
+                    f"vault map build {knowledge_id}",
                     knowledge_id=knowledge_id,
                 )
             )
@@ -407,14 +388,14 @@ def _guardrails_map_show_payload(
         conn.close()
 
 
-def guardrails_read_range(
+def vault_read_range(
     knowledge_id: int,
     node_uid: str = "",
     line_start: int = 0,
     line_end: int = 0,
 ) -> dict:
     """Return a bounded, line-numbered source range with a fixed citation."""
-    return _guardrails_read_range_payload(
+    return _vault_read_range_payload(
         knowledge_id,
         node_uid=node_uid,
         line_start=line_start,
@@ -422,14 +403,14 @@ def guardrails_read_range(
     )
 
 
-def guardrails_remote_read_range(
+def vault_remote_read_range(
     knowledge_id: int,
     node_uid: str = "",
     line_start: int = 0,
     line_end: int = 0,
 ) -> dict:
     """Return a bounded remote source/claim range with a fixed citation."""
-    return _guardrails_remote_read_range_payload(
+    return _vault_remote_read_range_payload(
         knowledge_id,
         node_uid=node_uid,
         line_start=line_start,
@@ -464,7 +445,7 @@ def _content_hash_for_text(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def _guardrails_remote_read_range_payload(
+def _vault_remote_read_range_payload(
     knowledge_id: int,
     node_uid: str = "",
     line_start: int = 0,
@@ -671,7 +652,7 @@ def _guardrails_remote_read_range_payload(
     }
 
 
-def _guardrails_read_range_payload(
+def _vault_read_range_payload(
     knowledge_id: int,
     node_uid: str = "",
     line_start: int = 0,
@@ -697,9 +678,9 @@ def _guardrails_read_range_payload(
     try:
         conn = _open_readonly_db(db_path)
     except sqlite3.Error as exc:
-        return _error("db_open_failed", f"Unable to open guardrails.db read-only: {exc}")
+        return _error("db_open_failed", f"Unable to open vault.db read-only: {exc}")
     if conn is None:
-        return _error("db_not_found", f"guardrails.db not found at {db_path or DB_PATH}")
+        return _error("db_not_found", f"vault.db not found at {db_path or DB_PATH}")
 
     try:
         entry = conn.execute(
@@ -822,8 +803,8 @@ def _guardrails_read_range_payload(
 
 TOOLS = [
     {
-        "name": "guardrails_search",
-        "description": "搜尋 Guardrails 百科知識庫。支援關鍵字、向量、混合搜尋。",
+        "name": "vault_search",
+        "description": "搜尋 Vault 百科知識庫。支援關鍵字、向量、混合搜尋。",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -852,8 +833,8 @@ TOOLS = [
         }
     },
     {
-        "name": "guardrails_add",
-        "description": "新增一筆知識到 Guardrails 百科。",
+        "name": "vault_add",
+        "description": "新增一筆知識到 Vault 百科。",
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -890,15 +871,15 @@ TOOLS = [
         }
     },
     {
-        "name": "guardrails_stats",
-        "description": "取得 Guardrails 百科統計資訊。",
+        "name": "vault_stats",
+        "description": "取得 Vault 百科統計資訊。",
         "inputSchema": {
             "type": "object",
             "properties": {}
         }
     },
     {
-        "name": "guardrails_converge",
+        "name": "vault_converge",
         "description": "執行收斂檢查 — 判斷哪些知識條目內容不夠完整。",
         "inputSchema": {
             "type": "object",
@@ -917,7 +898,7 @@ TOOLS = [
         }
     },
     {
-        "name": "guardrails_freshness",
+        "name": "vault_freshness",
         "description": "檢查知識條目的新鮮度 — 哪些條目過期了。",
         "inputSchema": {
             "type": "object",
@@ -931,7 +912,7 @@ TOOLS = [
         }
     },
     {
-        "name": "guardrails_map_show",
+        "name": "vault_map_show",
         "description": "讀取指定知識的 Document Map 結構（章節、路徑、行號）。",
         "inputSchema": {
             "type": "object",
@@ -950,7 +931,7 @@ TOOLS = [
         }
     },
     {
-        "name": "guardrails_read_range",
+        "name": "vault_read_range",
         "description": "讀取指定知識的受限行號範圍；成功回傳固定 citation，預設最多 80 行。",
         "inputSchema": {
             "type": "object",
@@ -979,7 +960,7 @@ TOOLS = [
         }
     },
     {
-        "name": "guardrails_remote_map_show",
+        "name": "vault_remote_map_show",
         "description": "從 Supabase 同步目標讀取 Document Map 結構（唯讀；SQLite 仍是 source of truth）。",
         "inputSchema": {
             "type": "object",
@@ -998,7 +979,7 @@ TOOLS = [
         }
     },
     {
-        "name": "guardrails_remote_read_range",
+        "name": "vault_remote_read_range",
         "description": "從 Supabase 同步目標讀取受限行號範圍；成功回傳固定 citation，預設最多 80 行。",
         "inputSchema": {
             "type": "object",
@@ -1029,31 +1010,11 @@ TOOLS = [
 ]
 
 
-def _public_tool_alias(tool: dict) -> dict:
-    """Return a public vault_* alias for a legacy guardrails_* tool definition."""
-    alias = copy.deepcopy(tool)
-    name = str(alias.get("name", ""))
-    if name.startswith("guardrails_"):
-        alias["name"] = "vault_" + name.removeprefix("guardrails_")
-    description = str(alias.get("description", ""))
-    alias["description"] = (
-        description
-        .replace("Guardrails 百科知識庫", "Vault-for-LLM knowledge vault")
-        .replace("Guardrails 百科", "Vault-for-LLM knowledge vault")
-        .replace("Guardrails", "Vault-for-LLM")
-    )
-    return alias
-
-
-LEGACY_TOOLS = TOOLS
-TOOLS = [_public_tool_alias(tool) for tool in LEGACY_TOOLS] + LEGACY_TOOLS
-
-
 def handle_tool_call(name: str, arguments: dict) -> dict:
     """處理 MCP tool call，回傳結果。"""
     name = _canonical_tool_name(name)
     try:
-        if name == "guardrails_search":
+        if name == "vault_search":
             compact = bool(arguments.get("compact", False))
             db, search = _get_search()
             results = search.search(
@@ -1116,7 +1077,7 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
             db.close()
             return {"result": json.dumps(output, ensure_ascii=False, indent=2)}
 
-        elif name == "guardrails_add":
+        elif name == "vault_add":
             db = _get_db()
             kid = db.add_knowledge(
                 title=arguments.get("title", ""),
@@ -1134,13 +1095,13 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
                 "message": f"已新增知識 #{kid}: {arguments.get('title', '')}",
             }, ensure_ascii=False)}
 
-        elif name == "guardrails_stats":
+        elif name == "vault_stats":
             db = _get_db()
             stats = db.stats()
             db.close()
             return {"result": json.dumps(stats, ensure_ascii=False, indent=2)}
 
-        elif name == "guardrails_converge":
+        elif name == "vault_converge":
             # 使用關鍵詞 fallback，不依賴 LLM
             from scripts.convergence_check import check_convergence
             results = check_convergence(
@@ -1159,7 +1120,7 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
             } for r in results]
             return {"result": json.dumps(output, ensure_ascii=False, indent=2)}
 
-        elif name == "guardrails_freshness":
+        elif name == "vault_freshness":
             from scripts.freshness_check import check_freshness
             results = check_freshness(
                 db_path=DB_PATH,
@@ -1176,15 +1137,15 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
             } for r in results[:20]]  # 最多回傳 20 條
             return {"result": json.dumps(output, ensure_ascii=False, indent=2)}
 
-        elif name == "guardrails_map_show":
-            payload = _guardrails_map_show_payload(
+        elif name == "vault_map_show":
+            payload = _vault_map_show_payload(
                 arguments.get("knowledge_id", 0),
                 compact=bool(arguments.get("compact", False)),
             )
             return {"result": json.dumps(payload, ensure_ascii=False, indent=2)}
 
-        elif name == "guardrails_read_range":
-            payload = _guardrails_read_range_payload(
+        elif name == "vault_read_range":
+            payload = _vault_read_range_payload(
                 knowledge_id=arguments.get("knowledge_id", 0),
                 node_uid=arguments.get("node_uid", ""),
                 line_start=arguments.get("line_start", 0),
@@ -1192,15 +1153,15 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
             )
             return {"result": json.dumps(payload, ensure_ascii=False, indent=2)}
 
-        elif name == "guardrails_remote_map_show":
-            payload = _guardrails_remote_map_show_payload(
+        elif name == "vault_remote_map_show":
+            payload = _vault_remote_map_show_payload(
                 arguments.get("knowledge_id", 0),
                 compact=bool(arguments.get("compact", False)),
             )
             return {"result": json.dumps(payload, ensure_ascii=False, indent=2)}
 
-        elif name == "guardrails_remote_read_range":
-            payload = _guardrails_remote_read_range_payload(
+        elif name == "vault_remote_read_range":
+            payload = _vault_remote_read_range_payload(
                 knowledge_id=arguments.get("knowledge_id", 0),
                 node_uid=arguments.get("node_uid", ""),
                 line_start=arguments.get("line_start", 0),
@@ -1310,7 +1271,7 @@ def main(argv: list[str] | None = None):
     )
     parser.add_argument(
         "--project-dir",
-        help="Project directory containing guardrails.db (defaults to VAULT_PATH or package root)",
+        help="Project directory containing vault.db (defaults to VAULT_PATH or package root)",
     )
     parser.add_argument(
         "--cli",

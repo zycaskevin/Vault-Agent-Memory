@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Guardrails 收斂驗證 — KAL (Knowledge Acquisition Loop) 自問收斂檢查。
+Vault 收斂驗證 — KAL (Knowledge Acquisition Loop) 自問收斂檢查。
 
 對每條知識自動生成 3 個自問問題，評估知識是否充足。
 支援：
@@ -26,9 +26,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from guardrails_lite.guardrails_db import GuardrailsDB
+from vault.db import VaultDB
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "guardrails.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "vault.db")
 
 
 def generate_questions(title: str, content_raw: str) -> list[dict]:
@@ -237,7 +237,7 @@ def check_convergence(
 ):
     """執行收斂檢查。"""
 
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     # 篩選待檢查條目
@@ -362,7 +362,7 @@ def check_convergence(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Guardrails 收斂檢查 — KAL 自問收斂")
+    parser = argparse.ArgumentParser(description="Vault 收斂檢查 — KAL 自問收斂")
     parser.add_argument("--apply", action="store_true", help="實際更新資料庫（預設為預覽模式）")
     parser.add_argument("--limit", type=int, default=0, help="最多檢查幾條（0=全部）")
     parser.add_argument("--min-trust", type=float, default=1.0, help="只檢查 trust 低於此值的條目")

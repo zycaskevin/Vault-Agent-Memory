@@ -5,9 +5,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from guardrails_lite.guardrails_db import GuardrailsDB
-from guardrails_lite.guardrails_map import build_document_map_for_entry
-from guardrails_lite.guardrails_search import GuardrailsSearch
+from vault.db import VaultDB
+from vault.docmap import build_document_map_for_entry
+from vault.search import VaultSearch
 
 
 RAW_CONTENT = "\n".join(
@@ -45,10 +45,10 @@ def _create_entry(db, *, build_map: bool = True) -> int:
 
 
 def test_search_results_include_document_map_metadata_when_available(tmp_path):
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         knowledge_id = _create_entry(db, build_map=True)
-        search = GuardrailsSearch(db, embed_provider=None)
+        search = VaultSearch(db, embed_provider=None)
 
         results = search.search(
             "tool-gated reading",
@@ -68,13 +68,13 @@ def test_search_results_include_document_map_metadata_when_available(tmp_path):
         assert result["best_span"] == "L3-L4"
         assert result["best_node"]["path"] == "Title/Tool-gated Reading"
         assert result["citation"] == f"#{knowledge_id} Example L3-L4"
-        assert result["recommended_next_tool"] == "guardrails_read_range"
+        assert result["recommended_next_tool"] == "vault_read_range"
         assert result["next_action"] == {
-            "tool": "guardrails_map_show",
+            "tool": "vault_map_show",
             "arguments": {"knowledge_id": knowledge_id},
         }
         assert result["next_actions"][-1] == {
-            "tool": "guardrails_read_range",
+            "tool": "vault_read_range",
             "arguments": {
                 "knowledge_id": knowledge_id,
                 "node_uid": result["node_uid"],
@@ -101,10 +101,10 @@ def test_search_results_include_document_map_metadata_when_available(tmp_path):
 
 
 def test_search_results_stay_backward_compatible_without_document_map(tmp_path):
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         knowledge_id = _create_entry(db, build_map=False)
-        search = GuardrailsSearch(db, embed_provider=None)
+        search = VaultSearch(db, embed_provider=None)
 
         results = search.search(
             "tool-gated reading",

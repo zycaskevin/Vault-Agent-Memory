@@ -1,4 +1,4 @@
-"""CLI tests for Guardrails Document Map commands."""
+"""CLI tests for Vault Document Map commands."""
 
 import sys
 from pathlib import Path
@@ -7,8 +7,8 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from guardrails_lite.guardrails_db import GuardrailsDB
-from guardrails_lite.guardrails_cli import main
+from vault.db import VaultDB
+from vault.cli import main
 
 
 RAW_CONTENT = "\n".join(
@@ -40,7 +40,7 @@ def _create_project_with_entry(
     content_aaak=AAAK_CONTENT,
 ):
     monkeypatch.chdir(tmp_path)
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         knowledge_id = db.add_knowledge(
             title,
@@ -55,7 +55,7 @@ def _create_project_with_entry(
 
 
 def _run_cli(monkeypatch, *args):
-    monkeypatch.setattr(sys, "argv", ["guardrails", *args])
+    monkeypatch.setattr(sys, "argv", ["vault", *args])
     main()
 
 
@@ -69,7 +69,7 @@ def test_map_build_one_entry_creates_nodes_and_claims(tmp_path, monkeypatch, cap
     assert "nodes" in out
     assert "claims" in out
 
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         node_count = db.conn.execute(
             "SELECT COUNT(*) AS c FROM knowledge_nodes WHERE knowledge_id=?",
@@ -95,7 +95,7 @@ def test_map_build_without_id_creates_nodes_and_claims_for_all_entries(tmp_path,
     out = capsys.readouterr().out.lower()
     assert "built 2 entries" in out
 
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         for knowledge_id in (first_id, second_id):
             node_count = db.conn.execute(
@@ -140,9 +140,9 @@ def test_map_show_prints_title_structure_paths_and_line_ranges(tmp_path, monkeyp
 @pytest.mark.parametrize(
     ("args", "expected"),
     [
-        (("map", "show", "1"), "guardrails.db"),
-        (("map", "read", "1", "--lines", "1-1"), "guardrails.db"),
-        (("map", "query", "anything"), "guardrails.db"),
+        (("map", "show", "1"), "vault.db"),
+        (("map", "read", "1", "--lines", "1-1"), "vault.db"),
+        (("map", "query", "anything"), "vault.db"),
     ],
 )
 def test_map_read_only_commands_do_not_create_missing_database(
@@ -155,7 +155,7 @@ def test_map_read_only_commands_do_not_create_missing_database(
     out = capsys.readouterr().out
     assert expected in out
     assert "not found" in out.lower()
-    assert not (tmp_path / "guardrails.db").exists()
+    assert not (tmp_path / "vault.db").exists()
 
 
 @pytest.mark.parametrize(
@@ -166,7 +166,7 @@ def test_map_read_only_commands_do_not_create_missing_database(
         ("map", "query", "tool-gated"),
     ],
 )
-def test_map_read_only_commands_do_not_use_guardrailsdb_connect(
+def test_map_read_only_commands_do_not_use_vaultdb_connect(
     tmp_path, monkeypatch, capsys, args
 ):
     knowledge_id = _create_project_with_entry(tmp_path, monkeypatch)
@@ -176,7 +176,7 @@ def test_map_read_only_commands_do_not_use_guardrailsdb_connect(
     def fail_connect(self):  # pragma: no cover - failure path asserted by test
         raise AssertionError("read-only map commands must not initialize DB")
 
-    monkeypatch.setattr(GuardrailsDB, "connect", fail_connect)
+    monkeypatch.setattr(VaultDB, "connect", fail_connect)
 
     _run_cli(monkeypatch, *args)
 
@@ -191,7 +191,7 @@ def test_map_show_without_nodes_suggests_build(tmp_path, monkeypatch, capsys):
 
     out = capsys.readouterr().out
     assert "No document map nodes" in out
-    assert f"guardrails map build {knowledge_id}" in out
+    assert f"vault map build {knowledge_id}" in out
 
 
 def test_map_read_prints_clamped_range_with_citation(tmp_path, monkeypatch, capsys):

@@ -1,7 +1,7 @@
 # Security & Code Quality Audit Report — Vault-for-LLM v0.4.0
 
-**Date:** 2026-04-26  
-**Auditor:** Automated audit  
+**Date:** 2026-04-26
+**Auditor:** Automated audit
 **Scope:** Full codebase, pre-open-source release
 
 ---
@@ -20,7 +20,7 @@
 
 ### P0-001: SQL Injection via `update_knowledge()` kwargs
 
-**File:** `guardrails_lite/guardrails_db.py`, line 289-291  
+**File:** `vault/db.py`, line 289-291
 **Issue:** Column names in `update_knowledge()` are built via f-string from `**fields` dict keys. While the caller currently controls the keys, this is a dangerous pattern — any user-controlled dict passed here enables SQL injection via column names.
 
 ```python
@@ -30,7 +30,7 @@ self.conn.execute(f"UPDATE knowledge SET {sets} WHERE id=?", vals)
 
 **Fix:** Whitelist allowed column names:
 ```python
-ALLOWED_COLUMNS = {"title", "layer", "category", "tags", "trust", "content_raw", 
+ALLOWED_COLUMNS = {"title", "layer", "category", "tags", "trust", "content_raw",
                    "content_aaak", "content_hash", "source", "convergence_status",
                    "convergence_score", "convergence_checked_at", "last_verified", "freshness"}
 fields = {k: v for k, v in fields.items() if k in ALLOWED_COLUMNS}
@@ -40,7 +40,7 @@ fields = {k: v for k, v in fields.items() if k in ALLOWED_COLUMNS}
 
 ### P0-002: SQL Injection via `get_edges()` dynamic WHERE clause
 
-**File:** `guardrails_lite/guardrails_db.py`, line 487-499  
+**File:** `vault/db.py`, line 487-499
 **Issue:** The `where` clause is built via f-string. While `conditions` values are hardcoded strings (`source_id=?`, `target_id=?`), the `relation` parameter is user-controlled and concatenated directly:
 
 ```python
@@ -55,7 +55,7 @@ This particular case is safe (uses `?`), but the f-string pattern `f"SELECT * FR
 
 ### P0-003: SQL Injection in `convergence_check.py` — LIMIT via f-string
 
-**File:** `scripts/convergence_check.py`, line 255  
+**File:** `scripts/convergence_check.py`, line 255
 **Issue:** The `limit` parameter is directly interpolated into SQL:
 ```python
 if limit > 0:
@@ -69,7 +69,7 @@ Although `limit` is typed as `int`, the f-string interpolation is a bad pattern.
 
 ### P0-004: SQL Injection in `cross_validate.py` — LIMIT via f-string
 
-**File:** `scripts/cross_validate.py`, line 293-294  
+**File:** `scripts/cross_validate.py`, line 293-294
 **Issue:** Same pattern as P0-003:
 ```python
 if limit > 0:
@@ -91,7 +91,7 @@ if limit > 0:
 
 ### P0-006: Personal path exposure — environment comment
 
-**File:** `scripts/sync_to_supabase.py`, line 23  
+**File:** `scripts/sync_to_supabase.py`, line 23
 **Issue:** Comment references internal tool:
 ```python
 # Load .env from the project directory first, then standard user-level fallbacks.
@@ -105,13 +105,13 @@ if limit > 0:
 
 **Decision:** Open-source projects benefit from detailed error messages for debugging and issue reporting. No personal/private data found in error messages after thorough scan. Keeping as-is is the right call for open-source.
 
-**Files:** Multiple  
+**Files:** Multiple
 **Issue:** Exception details are printed directly to users, potentially exposing filesystem paths, internal architecture, and debug info:
 
-- `guardrails_lite/guardrails_db.py:218` — prints vector table rebuild details
-- `guardrails_lite/guardrails_cli.py:143` — prints embedding exception details
-- `guardrails_lite/guardrails_cli.py:766` — `traceback.print_exc()` in import
-- `guardrails_lite/guardrails_mcp.py:273` — `str(e)` returned to MCP client
+- `vault/db.py:218` — prints vector table rebuild details
+- `vault/cli.py:143` — prints embedding exception details
+- `vault/cli.py:766` — `traceback.print_exc()` in import
+- `vault/mcp.py:273` — `str(e)` returned to MCP client
 - `scripts/cross_validate.py:60` — prints vLLM error details
 
 **Fix:** Use a generic error message for users, log details only when debug mode is on.
@@ -122,7 +122,7 @@ if limit > 0:
 
 ### P1-001: Missing CLI commands documented in README — FIXED
 
-**File:** `guardrails_lite/guardrails_cli.py` vs `README.md`  
+**File:** `vault/cli.py` vs `README.md`
 **Issue:** The README documents these commands but they were NOT implemented as CLI subcommands:
 
 | Documented Command | Status |
@@ -140,35 +140,30 @@ if limit > 0:
 
 ### P1-002: Version mismatch — `__init__.py` says 0.3.2, `pyproject.toml` says 0.4.0
 
-**File:** `guardrails_lite/__init__.py`, line 3  
+**File:** `vault/__init__.py`, line 3
 **Issue:** `__version__ = "0.3.2"` but `pyproject.toml` declares `version = "0.4.0"`.
 
 **Fix:** Update `__init__.py` to `__version__ = "0.4.0"`.
 
 ---
 
-### P1-003: Inconsistent naming — "Guardrails" vs "Vault" branding
+### P1-003: Inconsistent naming — branding cleanup
 
-**Files:** Throughout codebase  
-**Issue:** The project is branded "Vault-for-LLM" (README, pyproject.toml, GitHub URL), while several compatibility-layer implementation details still use historical "Guardrails" names:
-- Package name: `guardrails_lite`
-- DB file: `guardrails.db`
-- Cache dir: `~/.cache/guardrails-lite`
-- Logger: `guardrails-lite`
-- Class names such as `GuardrailsDB`, `GuardrailsCompiler`, `GuardrailsSearch`
+**Files:** Throughout codebase
+**Previous issue:** The project branding and several internal implementation names were inconsistent.
 
-**Status:** Public CLI/MCP entry points now use `vault` / `vault-mcp`, and README/SCHEMA explain the legacy naming. A full internal rename to `vault_for_llm` can be handled as a future breaking change.
+**Status:** Fixed. The package is `vault`, default database is `vault.db`, console scripts point to `vault.cli` / `vault.mcp`, MCP publishes only `vault_*` tools, and core classes use names such as `VaultDB`, `VaultCompiler`, and `VaultSearch`.
 
 ---
 
-### P1-004: DB resource leak — `GuardrailsDB` not used as context manager in many places
+### P1-004: DB resource leak — `VaultDB` not used as context manager in many places
 
-**Files:** `guardrails_cli.py` (lines 241, 268, 474, etc.), `scripts/*.py`  
-**Issue:** Throughout the CLI, `db = GuardrailsDB(...)` + `db.connect()` is used without a `try/finally` block. If an exception occurs between `connect()` and `close()`, the DB connection leaks.
+**Files:** `cli.py` (lines 241, 268, 474, etc.), `scripts/*.py`
+**Issue:** Throughout the CLI, `db = VaultDB(...)` + `db.connect()` is used without a `try/finally` block. If an exception occurs between `connect()` and `close()`, the DB connection leaks.
 
 Example (`cmd_stats`, line 503):
 ```python
-db = GuardrailsDB(str(db_path))
+db = VaultDB(str(db_path))
 db.connect()
 # ... code that may throw ...
 db.close()
@@ -176,7 +171,7 @@ db.close()
 
 **Fix:** Use the context manager:
 ```python
-with GuardrailsDB(str(db_path)) as db:
+with VaultDB(str(db_path)) as db:
     ...
 ```
 Or wrap in `try/finally`.
@@ -185,15 +180,15 @@ Or wrap in `try/finally`.
 
 ### P1-005: Duplicate DB connections in `cmd_install_embedding`
 
-**File:** `guardrails_lite/guardrails_cli.py`, lines 474-486  
+**File:** `vault/cli.py`, lines 474-486
 **Issue:** Opens two separate DB connections back-to-back just to call `_init_vec_table()`:
 ```python
-db = GuardrailsDB(...)
+db = VaultDB(...)
 db.connect()
 ...
 db.close()
 
-db2 = GuardrailsDB(...)  # Second connection!
+db2 = VaultDB(...)  # Second connection!
 db2.connect()
 db2._init_vec_table()
 db2.close()
@@ -205,7 +200,7 @@ db2.close()
 
 ### P1-006: Duplicate DB connections in `cmd_import`
 
-**File:** `guardrails_lite/guardrails_cli.py`, lines 707-768  
+**File:** `vault/cli.py`, lines 707-768
 **Issue:** Opens a temp DB to read config, closes it, then opens another for import, then opens a THIRD to check context.
 
 **Fix:** Reuse a single DB connection.
@@ -214,19 +209,19 @@ db2.close()
 
 ### P1-007: Duplicate `import re` inside functions
 
-**File:** `guardrails_lite/guardrails_compile.py`, lines 89, 134  
+**File:** `vault/compiler.py`, lines 89, 134
 **Issue:** `import re` appears inside function bodies when it's already imported at the module level (line 18). This is unnecessary overhead.
 
 **Fix:** Remove the local `import re` statements.
 
 ---
 
-### P1-008: Unused import in `guardrails_search.py`
+### P1-008: Unused import in `search.py`
 
-**File:** `guardrails_lite/guardrails_search.py`, lines 14-19  
+**File:** `vault/search.py`, lines 14-19
 **Issue:** `MODELS` and `DEFAULT_MODEL_KEY` are imported but never used:
 ```python
-from .guardrails_embed import (
+from .embed import (
     create_embedding_provider,
     EmbeddingProvider,
     MODELS,           # unused
@@ -240,11 +235,11 @@ from .guardrails_embed import (
 
 ### P1-009: Test uses `conda run` — not portable
 
-**File:** `tests/test_new_features.py`, line 150  
-**Issue:** Test hardcodes `conda run -n guardrails-lite` which won't work in other environments:
+**File:** `tests/test_new_features.py`, line 150
+**Issue:** Test hardcoded a project-local conda environment name, which does not work in other environments:
 ```python
 result = subprocess.run(
-    ["conda", "run", "-n", "guardrails-lite", "python", ...],
+    ["conda", "run", "-n", "project-env", "python", ...],
 )
 ```
 
@@ -259,7 +254,7 @@ result = subprocess.run(
 
 ### P1-010: CLI `shell=True` in test — command injection risk
 
-**File:** `tests/test_e2e.py`, line 309  
+**File:** `tests/test_e2e.py`, line 309
 **Issue:** Uses `shell=True` with string interpolation:
 ```python
 r = subprocess.run(
@@ -290,7 +285,7 @@ r = subprocess.run(
 
 **Issue:** Missing test coverage for:
 - Empty database (0 entries) — search, list, lint
-- Missing `guardrails.db` file
+- Missing `vault.db` file
 - Corrupt YAML in frontmatter (partially covered but could be more thorough)
 - Concurrent DB access
 - Very large content (>100KB)
@@ -309,7 +304,7 @@ r = subprocess.run(
 
 ### P2-004: `test_lite.py` temp file leak
 
-**File:** `tests/test_lite.py`, line 19  
+**File:** `tests/test_lite.py`, line 19
 **Issue:** Uses `tempfile.mktemp()` (deprecated, creates race condition) instead of `tempfile.mkstemp()` or `tmp_path` fixture.
 
 **Fix:** Use `tempfile.mkstemp()` or pytest's `tmp_path` fixture.
@@ -337,16 +332,16 @@ graphify-out/
 
 ### P2-006: MCP server project directory selection — FIXED
 
-**File:** `guardrails_lite/guardrails_mcp.py`
-**Previous issue:** The MCP server originally resolved `guardrails.db` relative to the package directory, which could point at the wrong database after installation.
+**File:** `vault/mcp.py`
+**Previous issue:** The MCP server originally resolved `vault.db` relative to the package directory, which could point at the wrong database after installation.
 
-**Status:** `vault-mcp` now supports `--project-dir`, honors `VAULT_PATH` / legacy `GUARDRAILS_PATH`, reports serverInfo as `vault-mcp`, and exposes public `vault_*` tool aliases while retaining legacy `guardrails_*` compatibility aliases.
+**Status:** `vault-mcp` supports `--project-dir`, honors `VAULT_PATH`, reports serverInfo as `vault-mcp`, and exposes only public `vault_*` tools.
 
 ---
 
 ### P2-007: `vault.yaml` referenced in README but never created
 
-**File:** `README.md`, line 179  
+**File:** `README.md`, line 179
 **Issue:** README shows `vault.yaml` in the directory structure but `cmd_init` never creates it. There's no code that reads from `vault.yaml`.
 
 **Fix:** Either create `vault.yaml` in `init` or remove it from the README directory structure.

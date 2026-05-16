@@ -1,4 +1,4 @@
-"""Markdown section parser for Guardrails Document Map."""
+"""Markdown section parser for Vault Document Map."""
 
 from __future__ import annotations
 

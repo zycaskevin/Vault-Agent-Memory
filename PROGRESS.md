@@ -1,31 +1,36 @@
 # Vault-for-LLM Public Release Progress
 
-Last updated: 2026-05-16 23:31 CST
+Last updated: 2026-05-17 00:40 CST
 
-## Current Task: Public README and Positioning Cleanup
+## Current Task: Remove pre-Vault internal naming from public codebase — IN PROGRESS
 
 ### Goal
-Make the repository present Vault-for-LLM as an open-source, local-first memory layer for LLM agents, not as an internal/private knowledge base.
+Rename internal modules, file names, database names, CLI/MCP surfaces, docs, and tests to the public Vault-for-LLM naming. The repository should no longer tell users that old names are kept for compatibility.
 
 ### Scope
-- Replace the GitHub default `README.md` with public product positioning.
-- Keep `README.zh-Hant.md` and `README.zh-CN.md` aligned with the same positioning.
-- Make CLI help use the public command name `vault`.
-- Sanitize public docs so SQLite is described as the local source of truth and Supabase as optional sync infrastructure.
-- Remove or rewrite obvious private paths, internal dashboards, personal names, and internal agent wiring from public-facing Markdown.
+- Rename Python package/module path to the Vault-branded `vault` package.
+- Rename internal module files to Vault-branded/generic file names such as `cli.py`, `mcp.py`, `db.py`, etc.
+- Make console scripts point to Vault-branded modules.
+- Make MCP public names use `vault_*` and `vault-mcp`; remove old public tool aliases unless a migration shim is strictly required internally.
+- Prefer `vault.db` as the default generated database name.
+- Update tests, docs, schema, audit report, and examples to stop presenting old names as the default.
+- Keep changes surgical: do not redesign retrieval, schema, sync, or search behavior beyond renaming/migration compatibility.
 
 ### Public Repository Constraints
 - Public-facing brand: **Vault-for-LLM**, `vault`, `vault-mcp`.
 - Core promise: local-first SQLite knowledge vault for LLM agents.
 - SQLite is the source of truth; Supabase is optional sync/read infrastructure.
-- Historical implementation names such as `guardrails_lite` and `guardrails.db` may remain for compatibility, but should be framed as legacy implementation details in public docs.
-- Advanced features such as convergence, cross-validation, Search QA, skills, and Supabase sync should be marked alpha/experimental.
+- No private/internal context or user-specific paths in public docs.
+- Any backward compatibility shim must be minimal, hidden from public docs, and covered by tests.
 
 ### Verification Checklist
-- [ ] `vault --help` shows `usage: vault`.
-- [ ] README files do not mention private/internal systems.
-- [ ] Markdown scan has no obvious private path/dashboard/personal-name leakage in public docs.
-- [ ] `git diff --check` passes.
-- [ ] Targeted tests or CLI smoke checks pass.
-- [ ] Graphify report is rebuilt after code/doc changes.
-- [ ] Changes are reviewed before commit.
+- [ ] `vault --help` works and points at Vault-branded modules.
+- [ ] `vault-mcp --help` works and points at Vault-branded modules.
+- [ ] New projects create/use `vault.db` by default.
+- [ ] New and existing Vault-branded projects consistently use `vault.db`.
+- [ ] MCP `tools/list` exposes `vault_*` tools and no old public tool aliases.
+- [ ] Full pytest passes in the project env.
+- [ ] `git diff --check` and Python compile checks pass.
+- [ ] Markdown/code scans show no public-facing old naming except deliberate historical audit notes.
+- [ ] Graphify is rebuilt after code changes.
+- [ ] Independent review passes before commit/PR.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Guardrails 審核佇列
+Vault 審核佇列
 標記需要人工審核的知識（低 trust、缺少分類、內容太短、可疑來源）。
 
 使用方式：
@@ -18,7 +18,7 @@ import argparse
 from datetime import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from guardrails_lite.guardrails_db import GuardrailsDB
+from vault.db import VaultDB
 
 from scripts._utils import find_db_path
 DB_PATH = str(find_db_path())
@@ -31,7 +31,7 @@ SUSPECT_SOURCES = ["session-extract", "test"]
 
 def get_review_queue(db_path=DB_PATH):
     """取得待審核佇列"""
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     rows = db.conn.execute(
@@ -76,7 +76,7 @@ def get_review_queue(db_path=DB_PATH):
 
 def approve(kid, db_path=DB_PATH):
     """通過審核"""
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
     row = db.conn.execute("SELECT title, trust FROM knowledge WHERE id = ?", (kid,)).fetchone()
     if not row:
@@ -92,7 +92,7 @@ def approve(kid, db_path=DB_PATH):
 
 def reject(kid, db_path=DB_PATH):
     """退回"""
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
     row = db.conn.execute("SELECT title, trust FROM knowledge WHERE id = ?", (kid,)).fetchone()
     if not row:
@@ -108,7 +108,7 @@ def reject(kid, db_path=DB_PATH):
 
 def fix(kid, category=None, trust=None, tags=None, db_path=DB_PATH):
     """修補知識"""
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
     row = db.conn.execute("SELECT title FROM knowledge WHERE id = ?", (kid,)).fetchone()
     if not row:
@@ -164,7 +164,7 @@ def show_queue(queue, summary_only=False):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Guardrails 審核佇列")
+    parser = argparse.ArgumentParser(description="Vault 審核佇列")
     parser.add_argument("--queue", action="store_true", help="只顯示摘要")
     parser.add_argument("--approve", type=int, metavar="ID", help="通過審核")
     parser.add_argument("--reject", type=int, metavar="ID", help="退回")

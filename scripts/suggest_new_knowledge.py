@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Guardrails 主動建議 — 掃描知識缺口，建議應補充的知識。
+Vault 主動建議 — 掃描知識缺口，建議應補充的知識。
 
 策略：
 1. 掃描所有 tags，找出孤立標籤（只出現 1 次的）
@@ -20,7 +20,7 @@ import argparse
 from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from guardrails_lite.guardrails_db import GuardrailsDB
+from vault.db import VaultDB
 
 from scripts._utils import find_db_path
 DB_PATH = str(find_db_path())
@@ -104,7 +104,7 @@ def check_error_without_knowledge(rows):
 
 def suggest(db_path=DB_PATH):
     """主分析"""
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     rows = db.conn.execute(
@@ -170,7 +170,7 @@ def suggest(db_path=DB_PATH):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Guardrails 主動建議")
+    parser = argparse.ArgumentParser(description="Vault 主動建議")
     parser.add_argument("--json", action="store_true", help="JSON 格式輸出")
     args = parser.parse_args()
 
