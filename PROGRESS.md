@@ -1,8 +1,13 @@
 # Vault-for-LLM Public Release Progress
 
-Last updated: 2026-05-17 00:40 CST
+Last updated: 2026-05-17 01:45 CST
 
-## Current Task: Remove pre-Vault internal naming from public codebase — IN PROGRESS
+## Current Task: Clarify public positioning and alpha roadmap — DONE
+
+### Goal
+Position Vault-for-LLM as a local-first agent memory layer with experimental quality tools, without overstating alpha-stage maturity. Public docs should explain that the project is evolving toward an agent memory QA layer while keeping the stable path centered on `vault init`, `vault add`, `vault compile`, `vault search`, and `vault-mcp`.
+
+## Previous Task: Remove pre-Vault internal naming from public codebase — DONE
 
 ### Goal
 Rename internal modules, file names, database names, CLI/MCP surfaces, docs, and tests to the public Vault-for-LLM naming. The repository should no longer tell users that old names are kept for compatibility.
