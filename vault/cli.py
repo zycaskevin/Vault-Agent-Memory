@@ -1,18 +1,18 @@
 """
-Vault for LLM — CLI 入口。
+Vault-for-LLM — CLI 入口。
 
 用法：
-  guardrails init              # 初始化專案
-  guardrails add "標題"         # 加入知識
-  guardrails import novel.md   # 匯入長文件（自動分塊）
-  guardrails compile           # 編譯 raw/ → db + compiled/
-  guardrails search "查詢"     # 搜尋知識
-  guardrails list              # 列出知識
-  guardrails lint              # 健康檢查
-  guardrails doctor            # 環境診斷
-  guardrails stats             # 統計
-  guardrails install-embedding # 安裝嵌入模型
-  guardrails config set/get    # 配置管理
+  vault init              # 初始化專案
+  vault add "標題"         # 加入知識
+  vault import novel.md   # 匯入長文件（自動分塊）
+  vault compile           # 編譯 raw/ → db + compiled/
+  vault search "查詢"     # 搜尋知識
+  vault list              # 列出知識
+  vault lint              # 健康檢查
+  vault doctor            # 環境診斷
+  vault stats             # 統計
+  vault install-embedding # 安裝嵌入模型
+  vault config set/get    # 配置管理
 """
 
 import argparse
@@ -28,10 +28,10 @@ from typing import Optional
 # ── 專案偵測 ─────────────────────────────────────────────
 
 def find_project_dir() -> Path:
-    """往上找含有 guardrails.db 或 raw/ 的目錄。"""
+    """往上找含有 vault.db 或 raw/ 的目錄。"""
     cwd = Path.cwd()
     for d in [cwd] + list(cwd.parents):
-        if (d / "guardrails.db").exists() or (d / "raw").is_dir():
+        if (d / "vault.db").exists() or (d / "raw").is_dir():
             return d
     return cwd
 
@@ -39,7 +39,7 @@ def find_project_dir() -> Path:
 # ── 子命令 ──────────────────────────────────────────────
 
 def cmd_init(args):
-    """初始化 Vault for LLM 專案。"""
+    """初始化 Vault-for-LLM 專案。"""
     project_dir = Path(args.project_dir or ".")
     dirs = ["raw", "compiled", "L0-identity", "L1-core-facts", "L2-context", "L3-knowledge"]
 
@@ -48,9 +48,9 @@ def cmd_init(args):
         print(f"  ✅ {d}/")
 
     # 初始化資料庫
-    from vault.guardrails_db import GuardrailsDB
-    db_path = project_dir / "guardrails.db"
-    with GuardrailsDB(str(db_path)) as db:
+    from vault.db import VaultDB
+    db_path = project_dir / "vault.db"
+    with VaultDB(str(db_path)) as db:
         db.set_config("embedding_provider", "auto")
         db.set_config("embedding_model", "mix")
         db.set_config("embedding_dim", "384")
@@ -61,7 +61,7 @@ def cmd_init(args):
     if gitignore.exists():
         gi_lines = gitignore.read_text().splitlines()
 
-    additions = ["# Vault for LLM", "*.db", "__pycache__/", ".cache/"]
+    additions = ["# Vault-for-LLM", "*.db", "__pycache__/", ".cache/"]
     for a in additions:
         if a not in gi_lines:
             gi_lines.append(a)
@@ -70,13 +70,13 @@ def cmd_init(args):
     print(f"\n✅ 專案初始化完成: {project_dir.resolve()}")
     print("下一步：")
     print("  1. 在 raw/ 放入 .md 知識檔案")
-    print("  2. guardrails compile")
-    print("  3. guardrails search \"查詢\"")
+    print("  2. vault compile")
+    print("  3. vault search \"查詢\"")
 
 
 def cmd_add(args):
     """新增一筆知識。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
 
@@ -91,7 +91,7 @@ def cmd_add(args):
         print("請輸入內容（Ctrl+D 結束）:")
         content = sys.stdin.read()
 
-    with GuardrailsDB(str(project_dir / "guardrails.db")) as db:
+    with VaultDB(str(project_dir / "vault.db")) as db:
         kid = db.add_knowledge(
             title=args.title,
             content_raw=content,
@@ -121,18 +121,18 @@ def cmd_add(args):
 
 def cmd_compile(args):
     """編譯 raw/ → db + compiled/。"""
-    from vault.guardrails_db import GuardrailsDB
-    from vault.guardrails_compile import GuardrailsCompiler
+    from vault.db import VaultDB
+    from vault.compiler import VaultCompiler
 
     project_dir = find_project_dir()
-    db_path = project_dir / "guardrails.db"
+    db_path = project_dir / "vault.db"
 
     # 載入嵌入（如果啟用）
     embed = None
     if not args.no_embed:
         try:
-            from vault.guardrails_embed import create_embedding_provider
-            db_temp = GuardrailsDB(str(db_path))
+            from vault.embed import create_embedding_provider
+            db_temp = VaultDB(str(db_path))
             db_temp.connect()
             provider_name = db_temp.get_config("embedding_provider", "auto")
             model_key = db_temp.get_config("embedding_model", "mix")
@@ -143,9 +143,9 @@ def cmd_compile(args):
         except Exception as e:
             print(f"[compile] ⚠️ 嵌入未啟用: {e}")
 
-    db = GuardrailsDB(str(db_path))
+    db = VaultDB(str(db_path))
     db.connect()
-    compiler = GuardrailsCompiler(project_dir, db=db, embed_provider=embed)
+    compiler = VaultCompiler(project_dir, db=db, embed_provider=embed)
     stats = compiler.compile(dry_run=args.dry_run)
     db.close()
 
@@ -159,14 +159,14 @@ def cmd_compile(args):
 
 def cmd_search(args):
     """搜尋知識。"""
-    from vault.guardrails_db import GuardrailsDB
-    from vault.guardrails_search import GuardrailsSearch
-    from vault.guardrails_embed import create_embedding_provider
+    from vault.db import VaultDB
+    from vault.search import VaultSearch
+    from vault.embed import create_embedding_provider
 
     project_dir = find_project_dir()
-    db_path = project_dir / "guardrails.db"
+    db_path = project_dir / "vault.db"
 
-    db = GuardrailsDB(str(db_path))
+    db = VaultDB(str(db_path))
     db.connect()
 
     # 嵌入
@@ -184,13 +184,13 @@ def cmd_search(args):
     graph = None
     if args.graph_expand > 0:
         try:
-            from vault.guardrails_graph import GuardrailsGraph
-            graph = GuardrailsGraph(db)
+            from vault.graph import VaultGraph
+            graph = VaultGraph(db)
         except Exception as e:
             print(f"[search] ⚠️ 圖譜未啟用: {e}")
 
     mode = "keyword" if args.keyword_only else args.mode
-    search = GuardrailsSearch(db, embed_provider=embed, graph=graph)
+    search = VaultSearch(db, embed_provider=embed, graph=graph)
 
     results = search.search(
         args.query,
@@ -236,10 +236,10 @@ def cmd_search(args):
 
 def cmd_list(args):
     """列出知識。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
-    db = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db = VaultDB(str(project_dir / "vault.db"))
     db.connect()
 
     items = db.list_knowledge(
@@ -263,10 +263,10 @@ def cmd_list(args):
 
 def cmd_lint(args):
     """健康檢查。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
-    db = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db = VaultDB(str(project_dir / "vault.db"))
     db.connect()
     embed = None  # Will be loaded lazily for semantic duplicate detection
 
@@ -307,7 +307,7 @@ def cmd_lint(args):
     # 5. 語意重複偵測（用嵌入向量）
     if db._vec_available and embed is None:
         try:
-            from vault.guardrails_embed import create_embedding_provider
+            from vault.embed import create_embedding_provider
             embed = create_embedding_provider(
                 provider=db.get_config("embedding_provider", "auto"),
                 model_key=db.get_config("embedding_model", "mix"),
@@ -370,7 +370,7 @@ def cmd_lint(args):
 
 def cmd_doctor(args):
     """環境診斷。"""
-    print("🏥 Vault for LLM 環境診斷\n")
+    print("🏥 Vault-for-LLM 環境診斷\n")
 
     checks = []
 
@@ -415,17 +415,17 @@ def cmd_doctor(args):
 
     # 專案目錄
     project_dir = find_project_dir()
-    db_exists = (project_dir / "guardrails.db").exists()
+    db_exists = (project_dir / "vault.db").exists()
     raw_exists = (project_dir / "raw").is_dir()
     checks.append(("專案", f"{'✅' if db_exists else '❌'} DB | {'✅' if raw_exists else '❌'} raw/", db_exists and raw_exists))
 
     # 嵌入模型快取
-    cache_dir = Path.home() / ".cache" / "guardrails-lite" / "models"
+    cache_dir = Path.home() / ".cache" / "vault-mcp" / "models"
     if cache_dir.exists():
         models = [d.name for d in cache_dir.iterdir() if d.is_dir()]
         checks.append(("嵌入模型快取", f"✅ {len(models)} 模型", True))
     else:
-        checks.append(("嵌入模型快取", "❌ 無 (guardrails install-embedding)", False))
+        checks.append(("嵌入模型快取", "❌ 無 (vault install-embedding)", False))
 
     # 輸出
     all_ok = True
@@ -444,9 +444,9 @@ def cmd_doctor(args):
 
 def cmd_install_embedding(args):
     """安裝嵌入模型。"""
-    from vault.guardrails_embed import MODELS, ONNXEmbeddingProvider
+    from vault.embed import MODELS, ONNXEmbeddingProvider
 
-    print("📦 Vault for LLM 嵌入模型安裝\n")
+    print("📦 Vault-for-LLM 嵌入模型安裝\n")
     print("可選模型:")
     for key, info in MODELS.items():
         print(f"  {key}: {info['name']} ({info['language']}, {info['dim']}d, ~{info['size_mb']}MB)")
@@ -470,9 +470,9 @@ def cmd_install_embedding(args):
         return
 
     # 更新 config
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
     project_dir = find_project_dir()
-    db = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db = VaultDB(str(project_dir / "vault.db"))
     db.connect()
     db.set_config("embedding_provider", "onnx")
     db.set_config("embedding_model", model_key)
@@ -481,31 +481,31 @@ def cmd_install_embedding(args):
 
     # 重建向量表（維度可能不同）
     print("重建向量索引...")
-    db2 = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db2 = VaultDB(str(project_dir / "vault.db"))
     db2.connect()
     db2._init_vec_table()
     db2.close()
 
     print(f"\n✅ 完成！語意搜尋已啟用")
-    print(f"   試試: guardrails search \"查詢\"")
+    print(f"   試試: vault search \"查詢\"")
 
 
 def cmd_stats(args):
     """顯示統計。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
-    db_path = project_dir / "guardrails.db"
+    db_path = project_dir / "vault.db"
 
     if not db_path.exists():
-        print("❌ 尚未初始化，先執行 guardrails init")
+        print("❌ 尚未初始化，先執行 vault init")
         return
 
-    db = GuardrailsDB(str(db_path))
+    db = VaultDB(str(db_path))
     db.connect()
     stats = db.stats()
 
-    print("📊 Vault for LLM 統計\n")
+    print("📊 Vault-for-LLM 統計\n")
     print(f"  知識筆數:   {stats['knowledge_count']}")
     print(f"  嵌入筆數:   {stats['embedding_count']}")
     print(f"  圖譜邊數:   {stats.get('edge_count', 0)}")
@@ -546,19 +546,19 @@ def cmd_stats(args):
 
 def cmd_graph(args):
     """圖譜操作：build / show / export / link / stats。"""
-    from vault.guardrails_db import GuardrailsDB
-    from vault.guardrails_graph import GuardrailsGraph
+    from vault.db import VaultDB
+    from vault.graph import VaultGraph
 
     project_dir = find_project_dir()
-    db_path = project_dir / "guardrails.db"
+    db_path = project_dir / "vault.db"
 
     if not db_path.exists():
-        print("❌ 尚未初始化，先執行 guardrails init")
+        print("❌ 尚未初始化，先執行 vault init")
         return
 
-    db = GuardrailsDB(str(db_path))
+    db = VaultDB(str(db_path))
     db.connect()
-    graph = GuardrailsGraph(db)
+    graph = VaultGraph(db)
 
     action = args.graph_action
 
@@ -570,14 +570,14 @@ def cmd_graph(args):
         print(f"   掃描條目: {result['total_knowledge']}")
         print(f"   新增實體: {result['entities_created']}")
         print(f"   新增關聯: {result['edges_created']}")
-        print(f"\n   試試: guardrails graph show")
-        print(f"         guardrails graph export --format mermaid")
-        print(f"         guardrails search '查詢' --graph-expand 1")
+        print(f"\n   試試: vault graph show")
+        print(f"         vault graph export --format mermaid")
+        print(f"         vault search '查詢' --graph-expand 1")
 
     elif action == "show":
         """顯示圖譜摘要。"""
         stats = graph.stats()
-        print("🕸️ Vault for LLM 圖譜\n")
+        print("🕸️ Vault-for-LLM 圖譜\n")
         print(f"  邊（總計）: {stats['edges_total']}")
         print(f"    自動推斷: {stats['edges_auto']}")
         print(f"    手動建立: {stats['edges_manual']}")
@@ -689,11 +689,11 @@ def cmd_graph(args):
 
 def cmd_import(args):
     """匯入長文件，自動分塊進 DB。"""
-    from vault.guardrails_db import GuardrailsDB
-    from vault.guardrails_import import import_document
+    from vault.db import VaultDB
+    from vault.importer import import_document
 
     project_dir = find_project_dir()
-    db_path = project_dir / "guardrails.db"
+    db_path = project_dir / "vault.db"
     file_path = Path(args.file)
 
     if not file_path.exists():
@@ -704,8 +704,8 @@ def cmd_import(args):
     embed = None
     if not args.no_embed:
         try:
-            from vault.guardrails_embed import create_embedding_provider
-            db_temp = GuardrailsDB(str(db_path))
+            from vault.embed import create_embedding_provider
+            db_temp = VaultDB(str(db_path))
             db_temp.connect()
             provider_name = db_temp.get_config("embedding_provider", "auto")
             model_key = db_temp.get_config("embedding_model", "mix")
@@ -716,7 +716,7 @@ def cmd_import(args):
         except Exception as e:
             print(f"[import] ⚠️ 嵌入未啟用: {e}")
 
-    db = GuardrailsDB(str(db_path))
+    db = VaultDB(str(db_path))
     db.connect()
 
     strategy = args.strategy
@@ -748,8 +748,8 @@ def cmd_import(args):
         print(f"   策略: {strategy}")
         if args.contextualize:
             # 檢查是否真的有上下文（Ollama 可能沒跑）
-            from vault.guardrails_db import GuardrailsDB
-            db_check = GuardrailsDB(str(db_path))
+            from vault.db import VaultDB
+            db_check = VaultDB(str(db_path))
             db_check.connect()
             has_context = db_check.conn.execute(
                 "SELECT COUNT(*) FROM knowledge WHERE content_aaak LIKE '%【%' LIMIT 1"
@@ -782,15 +782,15 @@ def cmd_skill(args):
     elif args.skill_action == "stats":
         cmd_skill_stats(args)
     else:
-        print("用法: guardrails skill {push|search|pull|list|stats}")
+        print("用法: vault skill {push|search|pull|list|stats}")
 
 
 def cmd_skill_push(args):
     """向技能市場註冊一個技能。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
-    db = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db = VaultDB(str(project_dir / "vault.db"))
     db.connect()
 
     # 讀取 SKILL.md
@@ -852,10 +852,10 @@ def cmd_skill_push(args):
 
 def cmd_skill_search(args):
     """搜尋技能市場。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
-    db = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db = VaultDB(str(project_dir / "vault.db"))
     db.connect()
 
     results = db.search_skills(
@@ -887,10 +887,10 @@ def cmd_skill_search(args):
 
 def cmd_skill_pull(args):
     """從技能市場下載技能到本機 skills/。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
-    db = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db = VaultDB(str(project_dir / "vault.db"))
     db.connect()
 
     skill = db.get_skill(args.name)
@@ -912,10 +912,10 @@ def cmd_skill_pull(args):
 
 def cmd_skill_list(args):
     """列出技能市場所有技能。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
-    db = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db = VaultDB(str(project_dir / "vault.db"))
     db.connect()
 
     results = db.list_skills(
@@ -941,10 +941,10 @@ def cmd_skill_list(args):
 
 def cmd_skill_stats(args):
     """技能市場統計。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
-    db = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db = VaultDB(str(project_dir / "vault.db"))
     db.connect()
 
     stats = db.stats()
@@ -961,15 +961,15 @@ def cmd_skill_stats(args):
 
 def cmd_map(args):
     """Document Map 操作：build / show / read / query。"""
-    from vault.guardrails_db import GuardrailsDB
-    from vault.guardrails_map import build_document_map_for_entry
+    from vault.db import VaultDB
+    from vault.docmap import build_document_map_for_entry
 
     project_dir = find_project_dir()
-    db_path = project_dir / "guardrails.db"
+    db_path = project_dir / "vault.db"
     action = args.map_action
 
     if action == "build":
-        db = GuardrailsDB(str(db_path))
+        db = VaultDB(str(db_path))
         db.connect()
         try:
             if args.knowledge_id is not None:
@@ -1022,7 +1022,7 @@ def cmd_map(args):
                 if not rows:
                     print(
                         "No document map nodes found. "
-                        f"Run: guardrails map build {args.knowledge_id}"
+                        f"Run: vault map build {args.knowledge_id}"
                     )
                     return
 
@@ -1091,19 +1091,19 @@ def cmd_map(args):
             conn.close()
         return
 
-    print("用法: guardrails map {build|show|read|query}")
+    print("用法: vault map {build|show|read|query}")
 
 
 def _connect_map_readonly(db_path: Path) -> sqlite3.Connection | None:
-    """Open guardrails.db in SQLite read-only mode for map navigation commands."""
+    """Open vault.db in SQLite read-only mode for map navigation commands."""
     if not db_path.exists():
-        print(f"guardrails.db not found at {db_path}. Run guardrails init/compile first.")
+        print(f"vault.db not found at {db_path}. Run vault init/compile first.")
         return None
 
     try:
         conn = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
     except sqlite3.OperationalError as exc:
-        print(f"Unable to open guardrails.db read-only at {db_path}: {exc}")
+        print(f"Unable to open vault.db read-only at {db_path}: {exc}")
         return None
     conn.row_factory = sqlite3.Row
     return conn
@@ -1126,7 +1126,7 @@ def _positive_int(value: str) -> int:
 
 
 def _parse_map_line_range(value: str) -> tuple[int, int]:
-    """Parse an inclusive START-END line range for `guardrails map read`."""
+    """Parse an inclusive START-END line range for `vault map read`."""
     if not value or "-" not in value:
         raise ValueError("--lines must be START-END")
     start_raw, end_raw = value.split("-", 1)
@@ -1142,10 +1142,10 @@ def _parse_map_line_range(value: str) -> tuple[int, int]:
 
 def cmd_config(args):
     """配置管理。"""
-    from vault.guardrails_db import GuardrailsDB
+    from vault.db import VaultDB
 
     project_dir = find_project_dir()
-    db = GuardrailsDB(str(project_dir / "guardrails.db"))
+    db = VaultDB(str(project_dir / "vault.db"))
     db.connect()
 
     if args.config_action == "set" and len(args.config_args) >= 2:
@@ -1161,9 +1161,9 @@ def cmd_config(args):
         for row in rows:
             print(f"  {row['key']} = {row['value']}")
     else:
-        print("用法: guardrails config set <key> <value>")
-        print("      guardrails config get <key>")
-        print("      guardrails config list")
+        print("用法: vault config set <key> <value>")
+        print("      vault config get <key>")
+        print("      vault config list")
 
     db.close()
 
@@ -1172,7 +1172,7 @@ def cmd_converge(args):
     """收斂檢查 — 自問知識是否充足。"""
     from scripts.convergence_check import check_convergence
 
-    db_path = str(find_project_dir() / "guardrails.db")
+    db_path = str(find_project_dir() / "vault.db")
     check_convergence(
         db_path=db_path,
         apply=args.apply,
@@ -1188,7 +1188,7 @@ def cmd_cross_validate(args):
     """跨模型不對稱驗證。"""
     from scripts.cross_validate import cross_validate
 
-    db_path = str(find_project_dir() / "guardrails.db")
+    db_path = str(find_project_dir() / "vault.db")
     cross_validate(
         db_path=db_path,
         apply=args.apply,
@@ -1204,7 +1204,7 @@ def cmd_freshness(args):
     """知識新鮮度追蹤與審查排程。"""
     from scripts.freshness_check import check_freshness
 
-    db_path = str(find_project_dir() / "guardrails.db")
+    db_path = str(find_project_dir() / "vault.db")
     check_freshness(
         db_path=db_path,
         apply=args.apply,
@@ -1217,7 +1217,7 @@ def cmd_dedup(args):
     """語意去重 — 檢測與合併重複知識。"""
     from scripts.deduplicate_semantic import find_duplicates, merge_duplicates
 
-    db_path = str(find_project_dir() / "guardrails.db")
+    db_path = str(find_project_dir() / "vault.db")
     duplicates = find_duplicates(db_path=db_path, threshold=args.threshold)
     if duplicates:
         if args.merge:
@@ -1243,7 +1243,7 @@ def cmd_search_qa(args):
 
     action = args.search_qa_action
     if action == "run":
-        db_path = Path(args.db_path) if args.db_path else find_project_dir() / "guardrails.db"
+        db_path = Path(args.db_path) if args.db_path else find_project_dir() / "vault.db"
         snapshot = evaluate_search_qa(
             db_path=db_path,
             qa_file=args.qa_file,
@@ -1470,7 +1470,7 @@ def main():
     qp.add_argument("--output", "-o", help="snapshot JSON 輸出路徑")
     qp.add_argument("--mode", choices=["auto", "keyword", "vector", "hybrid"], default="keyword")
     qp.add_argument("--limit", "-n", type=int, default=10)
-    qp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/guardrails.db）")
+    qp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/vault.db）")
 
     qp = qa_sub.add_parser("compare", help="比較兩個 Search QA snapshot JSON")
     qp.add_argument("--before", required=True, help="before snapshot JSON")

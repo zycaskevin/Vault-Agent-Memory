@@ -108,6 +108,6 @@ Public docs should describe:
 - what users can install and run
 - which features are stable versus experimental
 - how local and optional remote modes differ
-- compatibility notes for legacy internal names
+- migration notes for old internal names
 
 Public docs should not include private paths, personal names, internal dashboards, or deployment-specific instructions from one user's environment.

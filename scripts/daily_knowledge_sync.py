@@ -11,7 +11,7 @@ Vault-for-LLM 每日知識同步 — 整合所有同步步驟的入口腳本。
 6. 審核佇列摘要
 
 環境變數設定：
-  VAULT_DIR    — 專案根目錄（含 guardrails.db）。不設定則自動從 cwd 往上搜尋。
+  VAULT_DIR    — 專案根目錄（含 vault.db）。不設定則自動從 cwd 往上搜尋。
 
 用法：
   python3 scripts/daily_knowledge_sync.py
@@ -98,9 +98,9 @@ def main():
         "待審核佇列"
     )
 
-    # 7. 統計提示（guardrails_wakeup.py 已移除）
+    # 7. 統計提示（vault_wakeup.py 已移除）
     results['stats_note'] = run(
-        'echo "改用 MCP guardrails_stats 或 guardrails stats 取得統計" 2>&1',
+        'echo "改用 MCP vault_stats 或 vault stats 取得統計" 2>&1',
         "知識庫統計提示"
     )
 

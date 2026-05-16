@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Guardrails 跨模型不對稱驗證 — 用不同家族的模型交叉驗證知識品質。
+Vault 跨模型不對稱驗證 — 用不同家族的模型交叉驗證知識品質。
 
 策略：
   - 本地 Qwen3-8B（vLLM）作為提取模型（Recall-first）
@@ -32,10 +32,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from vault.guardrails_db import GuardrailsDB
-from vault.guardrails_compile import extract_claims
+from vault.db import VaultDB
+from vault.compiler import extract_claims
 
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "guardrails.db")
+DB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "vault.db")
 
 # ── LLM 介面 ──────────────────────────────────────────
 
@@ -135,7 +135,7 @@ VALIDATION_PROMPT = """你是知識驗證專家。請驗證以下知識條目的
 
 
 def validate_entry(
-    db: GuardrailsDB,
+    db: VaultDB,
     kid: int,
     title: str,
     content_raw: str,
@@ -278,7 +278,7 @@ def cross_validate(
 ):
     """執行跨模型不對稱驗證。"""
 
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     # 篩選待驗證條目
@@ -393,7 +393,7 @@ def cross_validate(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Guardrails 跨模型不對稱驗證")
+    parser = argparse.ArgumentParser(description="Vault 跨模型不對稱驗證")
     parser.add_argument("--apply", action="store_true", help="實際更新 DB（預設為預覽模式）")
     parser.add_argument("--limit", type=int, default=0, help="最多驗證幾條（0=全部）")
     parser.add_argument("--min-trust", type=float, default=0.8, help="只驗證 trust 低於此值的條目")

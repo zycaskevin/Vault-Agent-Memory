@@ -1,5 +1,5 @@
 """
-Vault for LLM — 搜尋模組。
+Vault-for-LLM — 搜尋模組。
 
 關鍵字 + 向量混合搜尋，自動降級。
 - 有嵌入→語意搜尋（向量）
@@ -8,10 +8,11 @@ Vault for LLM — 搜尋模組。
 """
 
 import re
+import sqlite3
 from typing import Optional
 
-from .guardrails_db import GuardrailsDB
-from .guardrails_embed import (
+from .db import VaultDB
+from .embed import (
     create_embedding_provider,
     EmbeddingProvider,
     MODELS,
@@ -24,12 +25,12 @@ def _normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", (value or "").strip().lower())
 
 
-class GuardrailsSearch:
-    """Vault for LLM 搜尋引擎。"""
+class VaultSearch:
+    """Vault-for-LLM 搜尋引擎。"""
 
     def __init__(
         self,
-        db: GuardrailsDB,
+        db: VaultDB,
         embed_provider=None,
         embed_provider_name: str = "auto",
         embed_model_key: str = "mix",
@@ -39,7 +40,7 @@ class GuardrailsSearch:
         self._embed = embed_provider
         self._embed_provider_name = embed_provider_name
         self._embed_model_key = embed_model_key
-        self._graph = graph  # GuardrailsGraph 實例（可選）
+        self._graph = graph  # VaultGraph 實例（可選）
 
     @property
     def has_embeddings(self) -> bool:
@@ -58,6 +59,23 @@ class GuardrailsSearch:
             return self._embed
         except RuntimeError:
             return None
+
+    @staticmethod
+    def _is_vector_db_fallback_error(exc: sqlite3.OperationalError) -> bool:
+        """Return True for sqlite-vec/vector-table errors safe to keyword-fallback."""
+        msg = str(exc).lower()
+        return any(
+            marker in msg
+            for marker in (
+                "dimension mismatch",
+                "query vector",
+                "embedding column",
+                "vector table",
+                "knowledge_vec",
+                "sqlite-vec",
+                "vec0",
+            )
+        )
 
     # ── 搜尋入口 ──────────────────────────────────────────
 
@@ -175,18 +193,18 @@ class GuardrailsSearch:
             result["best_span"] = f"L{line_start}-L{line_end}"
             result["best_node"] = node
             result["citation"] = f"#{knowledge_id} {title} L{line_start}-L{line_end}"
-            result["recommended_next_tool"] = "guardrails_read_range"
+            result["recommended_next_tool"] = "vault_read_range"
             result["next_action"] = {
-                "tool": "guardrails_map_show",
+                "tool": "vault_map_show",
                 "arguments": {"knowledge_id": int(knowledge_id)},
             }
             result["next_actions"] = [
                 {
-                    "tool": "guardrails_map_show",
+                    "tool": "vault_map_show",
                     "arguments": {"knowledge_id": int(knowledge_id)},
                 },
                 {
-                    "tool": "guardrails_read_range",
+                    "tool": "vault_read_range",
                     "arguments": {
                         "knowledge_id": int(knowledge_id),
                         "node_uid": node["node_uid"],
@@ -458,10 +476,16 @@ class GuardrailsSearch:
         try:
             query_vec = embed.encode(query)[0]
         except Exception as e:
-            print(f"[guardrails-lite] ⚠️ 嵌入失敗，降級到關鍵字: {e}")
+            print(f"[vault-mcp] ⚠️ 嵌入失敗，降級到關鍵字: {e}")
             return self.search_keyword(query, limit, min_trust, layer, category)
 
-        results = self.db.search_vector(query_vec, limit=limit * 2, min_trust=min_trust)
+        try:
+            results = self.db.search_vector(query_vec, limit=limit * 2, min_trust=min_trust)
+        except sqlite3.OperationalError as e:
+            if self._is_vector_db_fallback_error(e):
+                print(f"[vault-mcp] ⚠️ 向量搜尋失敗，降級到關鍵字: {e}")
+                return self.search_keyword(query, limit, min_trust, layer, category)
+            raise
 
         # 後過濾
         if layer:

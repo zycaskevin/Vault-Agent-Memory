@@ -1,4 +1,4 @@
-"""Document Map schema tests for GuardrailsDB."""
+"""Document Map schema tests for VaultDB."""
 
 import hashlib
 import sys
@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from vault.guardrails_db import GuardrailsDB
+from vault.db import VaultDB
 
 
 EXPECTED_SCHEMA_VERSION = "5"
@@ -47,15 +47,15 @@ KNOWLEDGE_CLAIMS_COLUMNS = {
 }
 
 
-def _columns(db: GuardrailsDB, table: str) -> dict[str, dict]:
+def _columns(db: VaultDB, table: str) -> dict[str, dict]:
     return {row["name"]: dict(row) for row in db.conn.execute(f"PRAGMA table_info({table})")}
 
 
-def _index_columns(db: GuardrailsDB, index_name: str) -> list[str]:
+def _index_columns(db: VaultDB, index_name: str) -> list[str]:
     return [row["name"] for row in db.conn.execute(f"PRAGMA index_info({index_name})")]
 
 
-def _indexes(db: GuardrailsDB, table: str) -> dict[str, dict]:
+def _indexes(db: VaultDB, table: str) -> dict[str, dict]:
     indexes = {}
     for row in db.conn.execute(f"PRAGMA index_list({table})"):
         index = dict(row)
@@ -64,7 +64,7 @@ def _indexes(db: GuardrailsDB, table: str) -> dict[str, dict]:
     return indexes
 
 
-def _foreign_keys(db: GuardrailsDB, table: str) -> list[dict]:
+def _foreign_keys(db: VaultDB, table: str) -> list[dict]:
     return [dict(row) for row in db.conn.execute(f"PRAGMA foreign_key_list({table})")]
 
 
@@ -76,7 +76,7 @@ def _assert_columns(table_columns: dict[str, dict], expected: dict[str, dict]) -
             assert actual[attr] == expected_value, f"{column_name}.{attr}"
 
 
-def _assert_foreign_key_to_knowledge(db: GuardrailsDB, table: str) -> None:
+def _assert_foreign_key_to_knowledge(db: VaultDB, table: str) -> None:
     foreign_keys = _foreign_keys(db, table)
     assert any(
         fk["from"] == "knowledge_id" and fk["table"] == "knowledge" and fk["to"] == "id"
@@ -84,26 +84,26 @@ def _assert_foreign_key_to_knowledge(db: GuardrailsDB, table: str) -> None:
     )
 
 
-def _assert_index(db: GuardrailsDB, table: str, index_name: str, columns: list[str]) -> None:
+def _assert_index(db: VaultDB, table: str, index_name: str, columns: list[str]) -> None:
     indexes = _indexes(db, table)
     assert index_name in indexes
     assert indexes[index_name]["columns"] == columns
     assert indexes[index_name]["unique"] == 0
 
 
-def _assert_unique_index(db: GuardrailsDB, table: str, columns: list[str]) -> None:
+def _assert_unique_index(db: VaultDB, table: str, columns: list[str]) -> None:
     indexes = _indexes(db, table)
     assert any(index["unique"] == 1 and index["columns"] == columns for index in indexes.values())
 
 
 def _parse_sections(content: str):
-    from vault.guardrails_map import parse_markdown_sections
+    from vault.docmap import parse_markdown_sections
 
     return parse_markdown_sections(content)
 
 
 def _parse_claims(content_aaak: str):
-    from vault.guardrails_map import parse_aaak_claims
+    from vault.docmap import parse_aaak_claims
 
     return parse_aaak_claims(content_aaak)
 
@@ -123,7 +123,7 @@ def _claims_as_dicts(content_aaak: str) -> list[dict]:
 
 
 def test_document_map_tables_are_created_for_new_db(tmp_path):
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         tables = {
             row["name"]
@@ -138,7 +138,7 @@ def test_document_map_tables_are_created_for_new_db(tmp_path):
 
 
 def test_document_map_columns_and_constraints(tmp_path):
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         _assert_columns(_columns(db, "knowledge_nodes"), KNOWLEDGE_NODES_COLUMNS)
         _assert_columns(_columns(db, "knowledge_claims"), KNOWLEDGE_CLAIMS_COLUMNS)
@@ -149,7 +149,7 @@ def test_document_map_columns_and_constraints(tmp_path):
 
 
 def test_document_map_indexes_exist(tmp_path):
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         _assert_index(db, "knowledge_nodes", "idx_knowledge_nodes_knowledge_id", ["knowledge_id"])
         _assert_index(db, "knowledge_nodes", "idx_knowledge_nodes_node_uid", ["node_uid"])
@@ -165,12 +165,12 @@ def test_document_map_indexes_exist(tmp_path):
 
 
 def test_document_map_schema_init_is_idempotent(tmp_path):
-    db_path = tmp_path / "guardrails.db"
+    db_path = tmp_path / "vault.db"
 
-    GuardrailsDB(db_path).connect().close()
-    GuardrailsDB(db_path).connect().close()
+    VaultDB(db_path).connect().close()
+    VaultDB(db_path).connect().close()
 
-    db = GuardrailsDB(db_path).connect()
+    db = VaultDB(db_path).connect()
     try:
         assert "knowledge_nodes" in {row["name"] for row in db.conn.execute("PRAGMA table_list")}
         assert "knowledge_claims" in {row["name"] for row in db.conn.execute("PRAGMA table_list")}
@@ -182,7 +182,7 @@ def test_document_map_schema_init_is_idempotent(tmp_path):
 def test_document_map_migrates_existing_partial_tables_idempotently(tmp_path):
     import sqlite3
 
-    db_path = tmp_path / "guardrails.db"
+    db_path = tmp_path / "vault.db"
     conn = sqlite3.connect(db_path)
     try:
         conn.executescript(
@@ -251,10 +251,10 @@ def test_document_map_migrates_existing_partial_tables_idempotently(tmp_path):
     finally:
         conn.close()
 
-    GuardrailsDB(db_path).connect().close()
-    GuardrailsDB(db_path).connect().close()
+    VaultDB(db_path).connect().close()
+    VaultDB(db_path).connect().close()
 
-    db = GuardrailsDB(db_path).connect()
+    db = VaultDB(db_path).connect()
     try:
         _assert_columns(_columns(db, "knowledge_nodes"), KNOWLEDGE_NODES_COLUMNS)
         _assert_columns(_columns(db, "knowledge_claims"), KNOWLEDGE_CLAIMS_COLUMNS)
@@ -484,7 +484,7 @@ def test_parse_aaak_claims_skips_malformed_and_truncated_lines():
 
 
 def test_assign_claim_node_uid_prefers_deepest_narrowest_node():
-    from vault.guardrails_map import assign_claim_node_uid
+    from vault.docmap import assign_claim_node_uid
 
     nodes = _parse_sections(
         "\n".join(
@@ -507,9 +507,9 @@ def test_assign_claim_node_uid_prefers_deepest_narrowest_node():
 
 
 def test_build_document_map_for_entry_backfills_nodes_and_claims_idempotently(tmp_path):
-    from vault.guardrails_map import build_document_map_for_entry
+    from vault.docmap import build_document_map_for_entry
 
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         raw = "\n".join(
             [
@@ -624,9 +624,9 @@ def test_build_document_map_for_entry_backfills_nodes_and_claims_idempotently(tm
 
 
 def test_build_document_map_for_entry_raises_for_missing_knowledge_id(tmp_path):
-    from vault.guardrails_map import build_document_map_for_entry
+    from vault.docmap import build_document_map_for_entry
 
-    db = GuardrailsDB(tmp_path / "guardrails.db").connect()
+    db = VaultDB(tmp_path / "vault.db").connect()
     try:
         try:
             build_document_map_for_entry(db.conn, 999)

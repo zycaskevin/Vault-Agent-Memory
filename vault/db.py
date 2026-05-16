@@ -1,5 +1,5 @@
 """
-Vault for LLM — SQLite + sqlite-vec 資料庫抽象層。
+Vault-for-LLM — SQLite + sqlite-vec 資料庫抽象層。
 
 設計原則：
 - 一個 .db 檔案搞定所有資料
@@ -25,12 +25,12 @@ except ImportError:
     pass
 
 
-class GuardrailsDB:
-    """Vault for LLM 資料庫層。"""
+class VaultDB:
+    """Vault-for-LLM 資料庫層。"""
 
     SCHEMA_VERSION = 5
 
-    def __init__(self, db_path: str | Path = "guardrails.db"):
+    def __init__(self, db_path: str | Path = "vault.db"):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn: Optional[sqlite3.Connection] = None
@@ -38,7 +38,7 @@ class GuardrailsDB:
 
     # ── 連線 ──────────────────────────────────────────────
 
-    def connect(self) -> "GuardrailsDB":
+    def connect(self) -> "VaultDB":
         """開啟資料庫連線，註冊 sqlite-vec 擴展。"""
         self.conn = sqlite3.connect(str(self.db_path))
         self.conn.row_factory = sqlite3.Row
@@ -347,7 +347,7 @@ class GuardrailsDB:
         except Exception as e:
             # 維度變了需要重建
             if "already exists" in str(e).lower() or "different" in str(e).lower():
-                print(f"[guardrails-lite] ⚠️ 向量表維度不匹配，重建中（舊向量會遺失）: {e}", file=sys.stderr)
+                print(f"[vault-mcp] ⚠️ 向量表維度不匹配，重建中（舊向量會遺失）: {e}", file=sys.stderr)
                 self.conn.execute("DROP TABLE IF EXISTS knowledge_vec")
                 self.conn.execute(
                     f"CREATE VIRTUAL TABLE knowledge_vec USING vec0("

@@ -26,7 +26,7 @@ DB_PATH = find_db_path()
 
 def get_supabase_id_map(sp_client):
     """Build mapping: Lite title → Supabase UUID."""
-    rows = sp_client.table("guardrails_knowledge").select("id, title").execute()
+    rows = sp_client.table("vault_knowledge").select("id, title").execute()
     title_to_id = {}
     for r in rows.data:
         title_to_id[r["title"]] = r["id"]
@@ -215,7 +215,7 @@ def sync_entity_knowledge(sp, ek, lite_id_to_supabase_id, entity_map):
 def main():
     sp = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-    print("=== Guardrails Graph → Supabase Sync ===\n")
+    print("=== Vault Graph → Supabase Sync ===\n")
 
     # 1. Get Supabase knowledge id map (title → UUID)
     print("1. Loading Supabase knowledge IDs...")

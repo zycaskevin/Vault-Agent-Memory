@@ -1,5 +1,5 @@
 """
-Vault for LLM — LLM Provider 統一介面（策略模式）。
+Vault-for-LLM — LLM Provider 統一介面（策略模式）。
 
 讓 proposition_chunk、contextualize_chunks 等功能可以使用任何 LLM backend，
 不強制依賴 Ollama。
@@ -11,7 +11,7 @@ Vault for LLM — LLM Provider 統一介面（策略模式）。
 - MockLLMProvider：測試用，不需 API
 
 使用方式：
-  from .guardrails_llm import create_llm_provider
+  from .llm import create_llm_provider
   llm = create_llm_provider("auto")
   result = llm.generate("請總結以下文本...")
 """
@@ -22,7 +22,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Optional
 
-from .guardrails_log import log
+from .log import log
 
 
 class LLMProvider(ABC):

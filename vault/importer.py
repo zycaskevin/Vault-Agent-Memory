@@ -1,5 +1,5 @@
 """
-Vault for LLM — 智慧分塊匯入模組（v3）。
+Vault-for-LLM — 智慧分塊匯入模組（v3）。
 
 論文基礎：
 - Semantic Chunking：計算相鄰句子嵌入相似度，驟降處切斷
@@ -28,10 +28,10 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from .guardrails_db import GuardrailsDB
-from .guardrails_embed import EmbeddingProvider
-from .guardrails_llm import LLMProvider, OllamaLLMProvider
-from .guardrails_log import log
+from .db import VaultDB
+from .embed import EmbeddingProvider
+from .llm import LLMProvider, OllamaLLMProvider
+from .log import log
 
 
 # ── 章節偵測正則 ──────────────────────────────────────────
@@ -665,7 +665,7 @@ def _decompose_with_llm(
 
 def import_document(
     file_path: str | Path,
-    db: GuardrailsDB,
+    db: VaultDB,
     embed_provider: Optional[EmbeddingProvider] = None,
     strategy: str = "chapter",  # chapter, semantic, summary-guided, sliding, proposition
     title: Optional[str] = None,
@@ -810,7 +810,7 @@ def import_document(
 
 
 def _add_chunk(
-    db: GuardrailsDB,
+    db: VaultDB,
     embed_provider: Optional[EmbeddingProvider],
     title: str,
     content: str,
@@ -828,7 +828,7 @@ def _add_chunk(
     - content_aaak 存帶上下文的壓縮版
     - 嵌入用 context_prefix + content（這是關鍵！）
     """
-    from .guardrails_compile import simple_aaak_compress
+    from .compiler import simple_aaak_compress
 
     # AAAK 壓縮：如果有上下文，壓縮版包含上下文
     if context_prefix:

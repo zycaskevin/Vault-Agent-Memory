@@ -1,5 +1,5 @@
 """
-Vault for LLM — 輕量知識圖譜模組。
+Vault-for-LLM — 輕量知識圖譜模組。
 
 功能：
 - 自動從 tags/title 內容推斷實體和關聯
@@ -15,8 +15,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from .guardrails_db import GuardrailsDB
-from .guardrails_log import log
+from .db import VaultDB
+from .log import log
 
 # ── 預設規則（YAML 不存在時的 fallback）────────────────────
 _DEFAULT_ENTITY_RULES = {
@@ -66,10 +66,10 @@ def _load_entity_rules(project_dir: Optional[Path] = None) -> dict:
     return _DEFAULT_ENTITY_RULES
 
 
-class GuardrailsGraph:
-    """Vault for LLM 圖譜引擎。"""
+class VaultGraph:
+    """Vault-for-LLM 圖譜引擎。"""
 
-    def __init__(self, db: GuardrailsDB, project_dir: Optional[Path] = None):
+    def __init__(self, db: VaultDB, project_dir: Optional[Path] = None):
         self.db = db
         # 從 YAML 動態載入規則，讓不同 domain 的使用者可以自訂
         self.ENTITY_RULES = _load_entity_rules(project_dir)
@@ -424,7 +424,7 @@ class GuardrailsGraph:
         """
         匯出為 Graphviz DOT 語法。
         """
-        lines = ['digraph GuardrailsGraph {',
+        lines = ['digraph VaultGraph {',
                  '    rankdir=LR;',
                  '    node [shape=box, style=filled];',
                  '']

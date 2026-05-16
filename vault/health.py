@@ -1,4 +1,4 @@
-"""Guardrails Document Map health metrics collector.
+"""Vault Document Map health metrics collector.
 
 SQLite remains the source of truth.  These metrics are intentionally compact and
 pure enough for unit tests; Supabase sync maps them into the existing Dashboard
@@ -9,16 +9,16 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 
-from .guardrails_db import GuardrailsDB
-from .guardrails_search import GuardrailsSearch
+from .db import VaultDB
+from .search import VaultSearch
 
 DEFAULT_SAMPLE_LIMIT = 20
-# Keep this aligned with guardrails_mcp._guardrails_read_range_payload default.
+# Keep this aligned with vault_mcp._vault_read_range_payload default.
 DEFAULT_MAX_READ_RANGE_LINES = 80
 
 
 @dataclass(frozen=True)
-class GuardrailsHealthMetrics:
+class VaultHealthMetrics:
     """Daily health snapshot for the Document Map integration."""
 
     total_entries: int
@@ -49,7 +49,7 @@ def _has_usable_best_span(result: dict) -> bool:
     best_node = result.get("best_node") or {}
     next_actions = result.get("next_actions") or []
     has_read_action = any(
-        action.get("tool") == "guardrails_read_range"
+        action.get("tool") == "vault_read_range"
         for action in next_actions
         if isinstance(action, dict)
     )
@@ -59,18 +59,18 @@ def _has_usable_best_span(result: dict) -> bool:
         and result.get("line_start")
         and result.get("line_end")
         and (
-            result.get("recommended_next_tool") == "guardrails_read_range"
+            result.get("recommended_next_tool") == "vault_read_range"
             or result.get("next_action")
             or has_read_action
         )
     )
 
 
-def collect_guardrails_health_metrics(
+def collect_vault_health_metrics(
     db_path: str,
     sample_limit: int = DEFAULT_SAMPLE_LIMIT,
     max_read_range_lines: int = DEFAULT_MAX_READ_RANGE_LINES,
-) -> GuardrailsHealthMetrics:
+) -> VaultHealthMetrics:
     """Collect Document Map health metrics from the local SQLite database.
 
     Coverage denominator behavior is explicit:
@@ -79,11 +79,11 @@ def collect_guardrails_health_metrics(
 
     citation_coverage samples deterministic local keyword searches by knowledge
     title and counts results that were enriched with a best span / node / next
-    action by GuardrailsSearch.
+    action by VaultSearch.
     """
-    db = GuardrailsDB(db_path).connect()
+    db = VaultDB(db_path).connect()
     try:
-        return collect_guardrails_health_metrics_from_db(
+        return collect_vault_health_metrics_from_db(
             db,
             sample_limit=sample_limit,
             max_read_range_lines=max_read_range_lines,
@@ -92,14 +92,14 @@ def collect_guardrails_health_metrics(
         db.close()
 
 
-def collect_guardrails_health_metrics_from_db(
-    db: GuardrailsDB,
+def collect_vault_health_metrics_from_db(
+    db: VaultDB,
     sample_limit: int = DEFAULT_SAMPLE_LIMIT,
     max_read_range_lines: int = DEFAULT_MAX_READ_RANGE_LINES,
-) -> GuardrailsHealthMetrics:
-    """Collect metrics from an already-open GuardrailsDB instance."""
+) -> VaultHealthMetrics:
+    """Collect metrics from an already-open VaultDB instance."""
     if db.conn is None:
-        raise ValueError("GuardrailsDB must be connected before collecting health metrics")
+        raise ValueError("VaultDB must be connected before collecting health metrics")
 
     try:
         sample_limit = int(sample_limit)
@@ -133,7 +133,7 @@ def collect_guardrails_health_metrics_from_db(
     sampled_search_results = 0
     search_results_with_best_span = 0
     if sample_limit > 0 and total_entries > 0:
-        search = GuardrailsSearch(db, embed_provider=None, embed_provider_name="none")
+        search = VaultSearch(db, embed_provider=None, embed_provider_name="none")
         sample_rows = conn.execute(
             "SELECT id, title FROM knowledge ORDER BY id LIMIT ?", (sample_limit,)
         ).fetchall()
@@ -157,7 +157,7 @@ def collect_guardrails_health_metrics_from_db(
         (max_read_range_lines,),
     ).fetchone()["c"]
 
-    return GuardrailsHealthMetrics(
+    return VaultHealthMetrics(
         total_entries=total_entries,
         entries_with_nodes=entries_with_nodes,
         entries_with_claims=entries_with_claims,

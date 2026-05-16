@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Guardrails 動態信任調整腳本
+Vault 動態信任調整腳本
 根據使用頻率、時間衰減、品質指標自動調整 trust 分數。
 
 策略：
@@ -14,7 +14,7 @@ Guardrails 動態信任調整腳本
   python3 scripts/trust_adjustment.py              # 預覽（不修改）
   python3 scripts/trust_adjustment.py --apply       # 實際更新
   python3 scripts/trust_adjustment.py --min 0.3     # 只調整 trust < 0.3 的
-  python3 scripts/trust_adjustment.py --db /path/to/guardrails.db
+  python3 scripts/trust_adjustment.py --db /path/to/vault.db
 """
 
 import os
@@ -25,33 +25,33 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from vault.guardrails_db import GuardrailsDB
+from vault.db import VaultDB
 
 
 def _find_db(explicit_path: str | None) -> Path:
     """
-    搜尋 guardrails.db：
+    搜尋 vault.db：
       1. CLI 明確指定的路徑（--db）
-      2. 環境變數 GUARDRAILS_PATH
-      3. 往上找含 guardrails.db 的目錄（從 cwd 開始）
+      2. 環境變數 VAULT_PATH
+      3. 往上找含 vault.db 的目錄（從 cwd 開始）
       4. 此腳本的 repo root（scripts/ 的上一層）
     """
     if explicit_path:
         return Path(explicit_path)
 
-    env = os.environ.get("GUARDRAILS_PATH")
+    env = os.environ.get("VAULT_PATH")
     if env:
         p = Path(env)
-        return p if p.suffix == ".db" else p / "guardrails.db"
+        return p if p.suffix == ".db" else p / "vault.db"
 
     cwd = Path.cwd()
     for d in [cwd] + list(cwd.parents):
-        candidate = d / "guardrails.db"
+        candidate = d / "vault.db"
         if candidate.exists():
             return candidate
 
     # fallback：repo root
-    return Path(__file__).parent.parent / "guardrails.db"
+    return Path(__file__).parent.parent / "vault.db"
 
 
 def compute_quality_score(row: dict) -> float:
@@ -104,7 +104,7 @@ def adjust_trust(
         print(f"❌ 找不到資料庫：{db_path}")
         sys.exit(1)
 
-    db = GuardrailsDB(str(db_path))
+    db = VaultDB(str(db_path))
     db.connect()
 
     rows = db.conn.execute(
@@ -235,10 +235,10 @@ def adjust_trust(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Guardrails 動態信任調整")
+    parser = argparse.ArgumentParser(description="Vault 動態信任調整")
     parser.add_argument("--apply", action="store_true", help="實際更新（預設只預覽）")
     parser.add_argument("--min", type=float, dest="min_trust", help="只調整 trust 低於此值的")
-    parser.add_argument("--db", type=str, dest="db_path", help="指定 guardrails.db 路徑")
+    parser.add_argument("--db", type=str, dest="db_path", help="指定 vault.db 路徑")
     parser.add_argument("--no-report", action="store_true", help="不輸出 trust_report.json")
     args = parser.parse_args()
 

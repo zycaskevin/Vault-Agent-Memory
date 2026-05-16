@@ -9,8 +9,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from vault.guardrails_db import GuardrailsDB
-from vault.guardrails_map import build_document_map_for_entry
+from vault.db import VaultDB
+from vault.docmap import build_document_map_for_entry
 from vault.search_qa import (
     _matches_expected,
     compare_search_qa_snapshots,
@@ -47,8 +47,8 @@ BETA_RAW = "\n".join(
 
 
 def _build_fixture_db(tmp_path: Path) -> Path:
-    db_path = tmp_path / "guardrails.db"
-    db = GuardrailsDB(db_path).connect()
+    db_path = tmp_path / "vault.db"
+    db = VaultDB(db_path).connect()
     try:
         alpha_id = db.add_knowledge(
             "Tool-gated Reading Guide",
@@ -259,7 +259,7 @@ def test_search_qa_cli_run_and_compare_smoke(tmp_path):
     run_cmd = [
         sys.executable,
         "-m",
-        "vault.guardrails_cli",
+        "vault.cli",
         "search-qa",
         "run",
         "--db-path",
@@ -287,7 +287,7 @@ def test_search_qa_cli_run_and_compare_smoke(tmp_path):
     compare_cmd = [
         sys.executable,
         "-m",
-        "vault.guardrails_cli",
+        "vault.cli",
         "search-qa",
         "compare",
         "--before",

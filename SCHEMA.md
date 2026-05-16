@@ -39,11 +39,10 @@ your-project/
 ├── L3-knowledge/
 ├── raw/
 ├── compiled/
-├── guardrails.db
+├── vault.db
 └── templates/
 ```
 
-Historical naming note: the generated SQLite file is currently named `guardrails.db` for compatibility. Public commands use `vault` and `vault-mcp`.
 
 ---
 
@@ -179,7 +178,7 @@ A remote store should not silently overwrite local source data. If bidirectional
 | Use | Avoid in public docs |
 |---|---|
 | Vault-for-LLM | internal project names |
-| `vault` CLI | legacy command names in examples |
+| `vault` CLI | non-Vault command names in examples |
 | local SQLite vault | private/internal main database |
 | optional Supabase sync | required cloud dependency |
 | MCP server | product-specific internal wiring |

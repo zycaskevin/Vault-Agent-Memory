@@ -27,7 +27,7 @@ def main():
 
     # 1. Load Supabase data
     print("Loading Supabase mappings...")
-    titles = {r["title"]: r["id"] for r in sp.table("guardrails_knowledge").select("id,title").execute().data}
+    titles = {r["title"]: r["id"] for r in sp.table("vault_knowledge").select("id,title").execute().data}
     
     # Get ALL existing EK links (handle pagination with range)
     existing_ek = set()

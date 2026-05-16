@@ -7,9 +7,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from vault.guardrails_db import GuardrailsDB
-from vault.guardrails_search import GuardrailsSearch
-from vault.guardrails_compile import simple_aaak_compress, extract_claims
+from vault.db import VaultDB
+from vault.search import VaultSearch
+from vault.compiler import simple_aaak_compress, extract_claims
 
 passed = 0
 failed = 0
@@ -30,7 +30,7 @@ print("=" * 60)
 print("1. CONVERGENCE + FRESHNESS FIELDS")
 print("=" * 60)
 
-db = GuardrailsDB(tempfile.mktemp(suffix='.db'))
+db = VaultDB(tempfile.mktemp(suffix='.db'))
 db.connect()
 
 kid = db.add_knowledge(title='Test convergence', content_raw='Test content for convergence check', category='concept', tags='test,convergence')
@@ -105,7 +105,7 @@ print("\n" + "=" * 60)
 print("4. SEARCH RERANKER")
 print("=" * 60)
 
-db2 = GuardrailsDB(tempfile.mktemp(suffix='.db2'))
+db2 = VaultDB(tempfile.mktemp(suffix='.db2'))
 db2.connect()
 
 # 建立測試資料
@@ -115,7 +115,7 @@ db2.update_freshness(kid1, 0.9)
 kid2 = db2.add_knowledge(title="Ollama 超時處理", content_raw="Ollama 本地推理超時常見原因", category="error", tags="ollama,timeout", trust=0.5)
 db2.update_freshness(kid2, 0.3)
 
-search = GuardrailsSearch(db2)
+search = VaultSearch(db2)
 results = search.search("sqlite", mode="keyword", limit=10, use_rerank=True)
 check("Search with rerank works", len(results) > 0, f"got {len(results)} results")
 

@@ -1,23 +1,24 @@
 """
-Vault for LLM 端到端測試。
+Vault-for-LLM 端到端測試。
 """
 
 import os
+import sqlite3
 import tempfile
 from pathlib import Path
 
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from vault.guardrails_db import GuardrailsDB
-from vault.guardrails_search import GuardrailsSearch
-from vault.guardrails_compile import GuardrailsCompiler
+from vault.db import VaultDB
+from vault.search import VaultSearch
+from vault.compiler import VaultCompiler
 
 
 def test_db_crud():
     """測試資料庫 CRUD"""
     db_path = tempfile.mktemp(suffix=".db")
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     # 新增
@@ -57,13 +58,13 @@ def test_db_crud():
 def test_keyword_search():
     """測試關鍵字搜尋"""
     db_path = tempfile.mktemp(suffix=".db")
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     db.add_knowledge("vLLM 超時", "vLLM timeout GPU retry", category="error", trust=0.9)
     db.add_knowledge("sqlite-vec 搜尋", "向量搜尋架構", category="architecture", trust=0.8)
 
-    search = GuardrailsSearch(db, embed_provider=None)
+    search = VaultSearch(db, embed_provider=None)
     results = search.search("GPU", mode="keyword")
     assert len(results) > 0, "關鍵字搜尋應該有結果"
     assert "vLLM" in results[0]["title"]
@@ -94,18 +95,18 @@ trust: 0.7
 這是編譯測試內容。
 """, encoding="utf-8")
 
-    db_path = Path(project_dir) / "guardrails.db"
-    db = GuardrailsDB(str(db_path))
+    db_path = Path(project_dir) / "vault.db"
+    db = VaultDB(str(db_path))
     db.connect()
 
-    compiler = GuardrailsCompiler(project_dir, db=db, embed_provider=None)
+    compiler = VaultCompiler(project_dir, db=db, embed_provider=None)
     stats = compiler.compile()
 
     assert stats["total_files"] == 1, f"應該有1個檔案，實際{stats}"
     assert stats["new"] == 1, f"應該新增1筆，實際{stats}"
 
     # 搜尋
-    search = GuardrailsSearch(db, embed_provider=None)
+    search = VaultSearch(db, embed_provider=None)
     results = search.search("編譯", mode="keyword")
     assert len(results) > 0
 
@@ -120,7 +121,7 @@ trust: 0.7
 def test_lint():
     """測試 Lint"""
     db_path = tempfile.mktemp(suffix=".db")
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     # 正常知識
@@ -140,9 +141,55 @@ def test_lint():
     print("✅ test_lint")
 
 
+def test_vector_dimension_mismatch_falls_back_to_keyword():
+    """Vector/hybrid search should not crash on sqlite-vec dimension mismatch."""
+    db_path = tempfile.mktemp(suffix=".db")
+    db = VaultDB(db_path)
+    db.connect()
+
+    db.add_knowledge(
+        "PyPI smoke test",
+        "Vault-for-LLM installed from wheel and can add, compile, and search local knowledge.",
+        category="test",
+        trust=0.9,
+    )
+    db._vec_available = True
+
+    class MismatchedEmbeddingProvider:
+        def encode(self, texts):
+            return [[0.0] * 768]
+
+    def raise_dimension_mismatch(*args, **kwargs):
+        raise sqlite3.OperationalError(
+            'Dimension mismatch for query vector for the "embedding" column. '
+            'Expected 384 dimensions but received 768.'
+        )
+
+    db.search_vector = raise_dimension_mismatch
+    search = VaultSearch(db, embed_provider=MismatchedEmbeddingProvider())
+
+    vector_results = search.search("installed from wheel", mode="vector")
+    assert len(vector_results) > 0
+    assert vector_results[0]["title"] == "PyPI smoke test"
+    assert vector_results[0]["_mode"] == "keyword"
+
+    hybrid_results = search.search("installed from wheel", mode="hybrid")
+    assert len(hybrid_results) > 0
+    assert hybrid_results[0]["title"] == "PyPI smoke test"
+
+    auto_results = search.search("installed from wheel", mode="auto")
+    assert len(auto_results) > 0
+    assert auto_results[0]["title"] == "PyPI smoke test"
+
+    db.close()
+    os.unlink(db_path)
+    print("✅ test_vector_dimension_mismatch_falls_back_to_keyword")
+
+
 if __name__ == "__main__":
     test_db_crud()
     test_keyword_search()
     test_compile_and_search()
     test_lint()
+    test_vector_dimension_mismatch_falls_back_to_keyword()
     print("\n🎉 All tests passed!")

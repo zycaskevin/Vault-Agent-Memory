@@ -1,5 +1,5 @@
 """
-Vault for LLM — 本地編譯器。
+Vault-for-LLM — 本地編譯器。
 
 將 raw/ 目錄的 Markdown 知識編譯進 SQLite + sqlite-vec，
 同時產出 compiled/ 的 AAAK 壓縮版本。
@@ -377,8 +377,8 @@ def assign_layer(metadata: dict) -> str:
     return "L3"
 
 
-class GuardrailsCompiler:
-    """Vault for LLM 本地編譯器。"""
+class VaultCompiler:
+    """Vault-for-LLM 本地編譯器。"""
 
     def __init__(
         self,
@@ -389,7 +389,7 @@ class GuardrailsCompiler:
         self.project_dir = Path(project_dir)
         self.raw_dir = self.project_dir / "raw"
         self.compiled_dir = self.project_dir / "compiled"
-        self.db = db  # GuardrailsDB，延遲初始化
+        self.db = db  # VaultDB，延遲初始化
         self.embed = embed_provider  # 嵌入 provider，可選
 
     def compile(self, dry_run: bool = False) -> dict:
@@ -405,13 +405,13 @@ class GuardrailsCompiler:
             "errors": N,
         }
         """
-        from .guardrails_db import GuardrailsDB
+        from .db import VaultDB
 
         # 延遲連接
         close_db = False
         if self.db is None:
-            db_path = self.project_dir / "guardrails.db"
-            self.db = GuardrailsDB(str(db_path))
+            db_path = self.project_dir / "vault.db"
+            self.db = VaultDB(str(db_path))
             self.db.connect()
             close_db = True
 
@@ -586,7 +586,7 @@ class GuardrailsCompiler:
 
     def _refresh_document_map(self, knowledge_id: int) -> None:
         """Refresh Document Map rows for a changed knowledge entry."""
-        from .guardrails_map import build_document_map_for_entry
+        from .docmap import build_document_map_for_entry
 
         build_document_map_for_entry(self.db.conn, knowledge_id)
 
@@ -719,7 +719,7 @@ class GuardrailsCompiler:
                 # 沒變更，跳過 commit
                 return
 
-            msg = f"guardrails: compile {stats['new']} new, {stats['updated']} updated"
+            msg = f"vault: compile {stats['new']} new, {stats['updated']} updated"
             subprocess.run(["git", "commit", "-m", msg],
                            cwd=str(self.project_dir), capture_output=True, timeout=10)
             print(f"[compiler] ✅ Git commit: {msg}")

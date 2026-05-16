@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Guardrails 智能去重腳本
+Vault 智能去重腳本
 透過語意向量計算相似度，找出並合併重複知識。
 
 純 Python 實作，不依賴 numpy。
@@ -20,18 +20,18 @@ from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from vault.guardrails_db import GuardrailsDB
-from vault.guardrails_embed import create_embedding_provider
+from vault.db import VaultDB
+from vault.embed import create_embedding_provider
 
 
 def _find_db_path() -> str:
-    """從 cwd 往上搜尋 guardrails.db，找不到就用 cwd/guardrails.db。"""
+    """從 cwd 往上搜尋 vault.db，找不到就用 cwd/vault.db。"""
     cwd = Path.cwd()
     for d in [cwd] + list(cwd.parents):
-        candidate = d / "guardrails.db"
+        candidate = d / "vault.db"
         if candidate.exists():
             return str(candidate)
-    return str(cwd / "guardrails.db")
+    return str(cwd / "vault.db")
 
 DB_PATH = _find_db_path()
 
@@ -61,7 +61,7 @@ def flatten(vec):
 
 def find_duplicates(db_path=DB_PATH, threshold=0.85):
     """找出語意重複的知識條目"""
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     rows = db.conn.execute(
@@ -176,7 +176,7 @@ def merge_duplicates(db_path=DB_PATH, report_path=None, dry_run=True):
         print("✅ 無需合併")
         return
 
-    db = GuardrailsDB(db_path)
+    db = VaultDB(db_path)
     db.connect()
 
     merged = 0
@@ -209,7 +209,7 @@ def merge_duplicates(db_path=DB_PATH, report_path=None, dry_run=True):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Guardrails 智能去重")
+    parser = argparse.ArgumentParser(description="Vault 智能去重")
     parser.add_argument("--merge", action="store_true", help="實際合併")
     parser.add_argument("--threshold", type=float, default=0.85, help="相似度閾值")
     args = parser.parse_args()
