@@ -1,21 +1,24 @@
 # Vault-for-LLM Public Release Progress
 
-Last updated: 2026-05-17 18:15 CST
+Last updated: 2026-05-17 22:52 CST
 
 ## Current Status
 
-Vault-for-LLM `0.4.1` has been published to PyPI and pushed to GitHub at `d8c4c2d`; tag `v0.4.1` points to the same commit. Do not re-upload `0.4.1` because PyPI versions are immutable.
+Vault-for-LLM `0.4.2` has been published to PyPI and pushed to GitHub at `76be7a1`; tag `v0.4.2` points to the same commit. Do not re-upload `0.4.1` or `0.4.2` because PyPI versions are immutable.
 
-Active patch branch: `fix/cli-non-git-diff-hygiene` from `origin/main` (`d8c4c2d`). Current post-release task: prepare `0.4.2` after the CLI hygiene fix that skips Git auto-commit outside worktrees and suppresses non-Git `git diff --cached` / `git diff --no-index` stderr noise.
+GitHub Release notes for `v0.4.2` are published at <https://github.com/zycaskevin/Vault-for-LLM/releases/tag/v0.4.2>. GitHub Actions `Vault CI` passed for both `main` and `v0.4.2` on commit `76be7a1`.
+
+Current post-release task: harden repo hygiene and design PyPI Trusted Publishing so future releases no longer require manual API-token upload from local machines.
 
 Latest planning/review artifacts:
 
+- `docs/release_hygiene_trusted_publishing_design.md` — post-0.4.2 repo hygiene and Trusted Publishing implementation design.
 - `docs/agent_memory_qa_roadmap.md` — Agent Memory QA roadmap and Kanban execution graph inspired by agentmemory, while preserving Vault-for-LLM's local-first Markdown + SQLite positioning.
 - `docs/p0_public_string_audit.md` — public-boundary audit and remediation notes.
 - `docs/readme_claim_matrix.md` — README claim → proof → maturity matrix.
 - `docs/document_map_citation_policy.md` — public Document Map citation policy and CLI/MCP demo for search → map show → read range.
 - `docs/search_qa_benchmarking.md` and `benchmarks/search_qa/` — public-safe Search QA fixture docs and English / Traditional Chinese retrieval smoke fixtures.
-- `docs/release_checklist_0_4_1.md` — no-side-effect release checklist used for the 0.4.1 publishing step.
+- `docs/release_checklist_0_4_1.md` — historical no-side-effect release checklist used for the 0.4.1 publishing step.
 - `docs/p1_release_readiness_report.md` — final local release-readiness report and command evidence.
 
 Kanban board:
@@ -38,8 +41,9 @@ The public project should not try to become a broad capture-first memory runtime
 
 ### P1 — Stable local core verification / release hygiene
 
-- `0.4.1` is published; do not re-upload the same immutable PyPI version.
-- For this post-release hygiene fix, run the PyPI release gate from `open-source-repo-operations`, then publish `0.4.2` if the gate passes.
+- `0.4.2` is published; do not re-upload immutable PyPI versions `0.4.1` or `0.4.2`.
+- GitHub Release notes for `v0.4.2` exist and CI passed on both `main` and tag `v0.4.2`.
+- Next release-hygiene priority: implement the design in `docs/release_hygiene_trusted_publishing_design.md` so release builds happen from a clean GitHub Actions checkout and publishing uses PyPI Trusted Publishing instead of manual local tokens.
 - License metadata warning remediation is complete: `project.license` now uses the SPDX `MIT` string, `project.license-files` includes `LICENSE`, and the deprecated license classifier has been removed.
 - Keep checking README command examples against actual CLI parser behavior before each release.
 
