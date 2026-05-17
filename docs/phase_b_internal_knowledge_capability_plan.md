@@ -2,7 +2,7 @@
 
 > **For Hermes:** 這是 Guardrails 內部百科主線，不是 Vault-for-LLM public release 支線。實作時先用 `subagent-driven-development` 拆任務；每個子任務完成後更新本文件與 `PROGRESS.md` / handoff。
 
-**Last updated:** 2026-05-18 01:39 CST
+**Last updated:** 2026-05-18 01:47 CST
 
 **Scope:** Nancy / Hermes / Guardrails 內部 dogfood 能力建設
 
@@ -50,7 +50,7 @@ Guardrails 內部 Phase B 對應關係：
 | B3 Search QA metrics | Phase 3 | P0 |
 | B4 CJK 搜尋 | Phase 3 + Phase 4 | P1 |
 | B5 session capture draft queue | Phase 5 | P1 |
-| B6 privacy scanner | Phase 6 | P0 |
+| B6 privacy scanner | Phase 6 | P0 — design complete |
 | B7 多 Agent 寫入與收斂 | Phase 5/6 + Guardrails convergence/freshness | P1 |
 
 Public roadmap 的 Phase 0/1/F release hygiene 已經在 Vault-for-LLM 0.4.1/0.4.2 期間處理一輪；後續仍重要，但不是內部百科主線。
@@ -287,6 +287,8 @@ normal search
 
 ## 8. B6 — Privacy scanner
 
+**Status:** COMPLETE (design) — see `docs/privacy_scanner_design.md`.
+
 **Goal:** 任何寫入、capture、compile、sync 前，都先阻擋高風險資料。
 
 ### B6 scan scope
@@ -316,6 +318,10 @@ normal search
 - raw secrets 不會進 normal search。
 - scanner 是 best-effort，文檔不做合規過度承諾。
 - 對醫美/CRM/人生側寫有專門規則：原文不共享，只沉澱協作規則。
+
+### B6 design artifact
+
+- `docs/privacy_scanner_design.md` defines the shared scanner boundary, outcomes, finding categories, redaction preview, override/audit policy, CLI/MCP/capture/compile/sync integration points, and deterministic smoke cases.
 
 ---
 
@@ -365,16 +371,15 @@ B1 governance spec
 
 ## 11. Immediate next task
 
-建立 B6 詳細設計：`docs/privacy_scanner_design.md`。
+建立 B5 session capture draft queue 設計。
 
 必須包含：
 
-1. scanner module boundary and supported entry points
-2. blocker / redact / private-only / clear outcomes
-3. secret, PII, CRM, life-profile, and internal credential patterns
-4. redaction preview rules
-5. explicit override policy and audit trail
-6. integration points for CLI add, MCP add, capture import, compile, and sync
-7. smoke cases derived from `docs/session_writeback_governance.md`
+1. draft storage schema or file format
+2. dry-run capture flow from Hermes sessions / Feishu transcripts / manual notes
+3. routing through B1 classification and B6 privacy scanner outcomes
+4. dedupe/merge review lifecycle before promotion
+5. proof that unpromoted drafts do not enter normal search
+6. promote path back into raw/ + compile/map/sync
 
-完成 B6 設計後，再拆 B5 draft queue。
+完成 B5 設計後，再拆 B2 Document Map coverage pass or B6 implementation, depending on priority.
