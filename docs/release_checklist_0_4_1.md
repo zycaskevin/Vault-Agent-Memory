@@ -2,7 +2,7 @@
 
 Status: prepared checklist only. Do not publish, tag, push, upload, or call external release services while completing this document.
 
-This checklist is for a future `0.4.1` PyPI release that refreshes public package metadata and long description after the P0 public-boundary cleanup and P1/A1 license metadata cleanup. It intentionally separates local verification from release side effects.
+This checklist is for a future `0.4.1` PyPI release that refreshes public package metadata and long description after the P0 public-boundary cleanup, P1/A1 license metadata cleanup, P2 Document Map citation-policy docs, and P3 repository Search QA fixtures. It intentionally separates local verification from release side effects.
 
 ## Current package parity snapshot
 
@@ -26,7 +26,7 @@ Verified locally on 2026-05-17:
 | `README.zh-CN.md` | 15 | 4 | 10 | 6 | 22 | aligned |
 | `README.zh-Hant.md` | 15 | 4 | 10 | 6 | 22 | aligned |
 
-Parity conclusion: the Simplified Chinese and Traditional Chinese READMEs still mirror the English README's public P0/P1 claims: local-first SQLite core, no cloud requirement for core usage, optional embeddings, optional Supabase sync/read target, alpha/CLI-first maturity, `vault skill` as experimental local-only registry rather than hosted marketplace, and the same CLI/MCP command surface. No localized README wording edit is required for 0.4.1.
+Parity conclusion: the Simplified Chinese and Traditional Chinese READMEs still mirror the English README's P0/P1 public-claim shape: local-first SQLite core, no cloud requirement for core usage, optional embeddings, optional Supabase sync/read target, alpha/CLI-first maturity, `vault skill` as experimental local-only registry rather than hosted marketplace, and the same CLI/MCP command surface. English README now also links the P2/P3 deep-dive docs (`docs/document_map_citation_policy.md`, `docs/search_qa_benchmarking.md`) that are included in the source repository and PyPI long description links; localized README deep-link parity can be handled in a later docs pass and is not a package metadata blocker.
 
 ## Release gates before any side effects
 
