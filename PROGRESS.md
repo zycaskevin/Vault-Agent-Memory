@@ -1,10 +1,10 @@
 # Vault-for-LLM Public Release Progress
 
-Last updated: 2026-05-17 12:14 CST
+Last updated: 2026-05-17 12:44 CST
 
 ## Current Status
 
-P0 public boundary cleanup, P1 local release hygiene, and P2 Document Map demo / citation policy cleanup are completed through Kanban and locally verified. No PyPI upload, git tag, push, or GitHub release is authorized yet.
+P0 public boundary cleanup, P1 local release hygiene, P2 Document Map demo / citation policy cleanup, and P3 Search QA repository fixtures are completed locally through Kanban task `t_7cc24fa3`. No PyPI upload, git tag, push, or GitHub release is authorized yet.
 
 Latest planning/review artifacts:
 
@@ -12,6 +12,7 @@ Latest planning/review artifacts:
 - `docs/p0_public_string_audit.md` — public-boundary audit and remediation notes.
 - `docs/readme_claim_matrix.md` — README claim → proof → maturity matrix.
 - `docs/document_map_citation_policy.md` — public Document Map citation policy and CLI/MCP demo for search → map show → read range.
+- `docs/search_qa_benchmarking.md` and `benchmarks/search_qa/` — public-safe Search QA fixture docs and English / Traditional Chinese retrieval smoke fixtures.
 - `docs/release_checklist_0_4_1.md` — no-side-effect release checklist for a future manually approved 0.4.1 publishing step.
 - `docs/p1_release_readiness_report.md` — final local release-readiness report and command evidence.
 
@@ -29,7 +30,7 @@ Vault-for-LLM should be positioned as:
 
 > Local-first Markdown + SQLite memory QA for LLM agents.
 
-The public project should not try to become a broad capture-first memory runtime. It should borrow useful patterns from adjacent tools such as agentmemory — onboarding, capture/import, retrieval fusion, privacy filtering, benchmark packaging — but keep the core product small, inspectable, and open-source-user facing.
+The public project should not try to become a broad capture-first memory runtime. It should borrow useful patterns from adjacent tools such as agentmemory — onboarding, capture/import, retrieval fusion, privacy filtering, repository benchmark fixtures — but keep the core product small, inspectable, and open-source-user facing.
 
 ## Recommended Next Roadmap
 
@@ -49,8 +50,12 @@ The public project should not try to become a broad capture-first memory runtime
 
 ### P3 — Search QA and retrieval roadmap
 
-- Add public-safe Search QA fixtures, including CJK cases.
-- Use before/after snapshots before changing ranking.
+- Added public-safe Search QA repository fixtures under `benchmarks/search_qa/`:
+  - `basic.en.json` covers English Document Map / `read_range`, citation-policy, and no-result retrieval cases.
+  - `basic.zh-Hant.json` covers Traditional Chinese / CJK equivalents.
+  - `README.md` documents fixture scope, schema, and limits.
+- Added `docs/search_qa_benchmarking.md` with local demo DB setup, `vault search-qa run`, before/after comparison examples, metric definitions, CI guidance, and retrieval-only benchmark limits.
+- Updated README and `docs/readme_claim_matrix.md` to link the benchmarking guide and source-checkout fixtures without claiming wheel inclusion or end-to-end agent task success.
 - Plan FTS/BM25 + vector + graph + RRF only after regression gates exist.
 
 ### P4 — Review-gated capture/import
@@ -99,6 +104,17 @@ Verified after Kanban execution:
 - Temp-project CLI demo smoke using module-equivalent commands for `vault init`, `vault add`, `vault compile --no-embed`, `vault map build`, `vault search --keyword-only`, `vault map show`, and `vault map read` passed.
 - `git diff --check` passed.
 - Graphify rebuild completed after code changes: 117 nodes, 5 edges, 114 communities.
+
+## Verification Notes From P3 Search QA Repository Fixtures
+
+- `python -m pytest -q tests/test_search_quality_metrics.py` passed: `8 passed`.
+- Full local test suite passed after P3 changes: `81 passed`.
+- `python -m compileall -q vault scripts tests` passed.
+- Module-equivalent CLI demo smoke created a temporary public-safe DB, ran `map build`, and produced English / Traditional Chinese Search QA snapshots with `top1_hits=2`, `topk_hits=2`, nonzero map/read guidance, and `citation_policy_violations=0`.
+- `git diff --check` passed.
+- Public repository fixtures validated locally against a temporary SQLite DB with English and Traditional Chinese entries; Document Map / `read_range` guidance metrics are nonzero and citation-policy violations remain zero.
+- Public wording was corrected to say these are repository/source-checkout fixtures, not wheel-installed files.
+- Graphify rebuild completed after code/test changes: 117 nodes, 5 edges, 114 communities.
 
 ## Historical Archive
 
