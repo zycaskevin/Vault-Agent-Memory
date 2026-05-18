@@ -2,7 +2,7 @@
 
 > **For Hermes:** 這是 Guardrails 內部百科主線，不是 Vault-for-LLM public release 支線。實作時先用 `subagent-driven-development` 拆任務；每個子任務完成後更新本文件與 `PROGRESS.md` / handoff。
 
-**Last updated:** 2026-05-18 01:47 CST
+**Last updated:** 2026-05-18 09:51 CST
 
 **Scope:** Nancy / Hermes / Guardrails 內部 dogfood 能力建設
 
@@ -49,7 +49,7 @@ Guardrails 內部 Phase B 對應關係：
 | B2 Document Map 強化 | Phase 2 | P0 |
 | B3 Search QA metrics | Phase 3 | P0 |
 | B4 CJK 搜尋 | Phase 3 + Phase 4 | P1 |
-| B5 session capture draft queue | Phase 5 | P1 |
+| B5 session capture draft queue | Phase 5 | P1 — design complete |
 | B6 privacy scanner | Phase 6 | P0 — design complete |
 | B7 多 Agent 寫入與收斂 | Phase 5/6 + Guardrails convergence/freshness | P1 |
 
@@ -247,6 +247,8 @@ review / promote
 
 ## 7. B5 — Session capture draft queue
 
+**Status:** COMPLETE (design) — see `docs/session_capture_draft_queue_design.md`.
+
 **Goal:** 借鑑 agentmemory capture 的好處，但所有 capture 先進 draft，不直接污染正式百科。
 
 ### B5 pipeline
@@ -282,6 +284,10 @@ normal search
 - capture 預設 dry-run。
 - 未 promote 的 draft 不會被 `guardrails search` 命中。
 - promote 走與手動 raw entry 同一套 compile/map/sync 流程。
+
+### B5 design artifact
+
+- `docs/session_capture_draft_queue_design.md` defines the dry-run-first capture pipeline, SQLite draft queue schema, optional Markdown review export, B1/B6 routing matrix, dedupe/merge/contradiction workflow, promotion path, normal-search invisibility proof, CLI/MCP/Feishu/cron boundaries, and deterministic smoke cases.
 
 ---
 
@@ -371,15 +377,15 @@ B1 governance spec
 
 ## 11. Immediate next task
 
-建立 B5 session capture draft queue 設計。
+建立 B2 Document Map coverage plan。
 
 必須包含：
 
-1. draft storage schema or file format
-2. dry-run capture flow from Hermes sessions / Feishu transcripts / manual notes
-3. routing through B1 classification and B6 privacy scanner outcomes
-4. dedupe/merge review lifecycle before promotion
-5. proof that unpromoted drafts do not enter normal search
-6. promote path back into raw/ + compile/map/sync
+1. identify high-value entries without map nodes
+2. define Document Map / claim / citation coverage metrics
+3. build/verify workflow for map_show and read_range
+4. priority list for Guardrails SOPs, Phase B docs, release/repo hygiene, and Arthur-confirmed decisions
+5. search → map_show → read_range trace requirements
+6. how to record coverage gaps and feed B3 Search QA
 
-完成 B5 設計後，再拆 B2 Document Map coverage pass or B6 implementation, depending on priority.
+完成 B2 設計後，再拆 B3 internal Search QA set or decide whether to implement B1/B6/B5 first.
