@@ -1265,6 +1265,33 @@ def cmd_search_qa(args):
     print("error: search-qa requires action: run or compare", file=sys.stderr)
     raise SystemExit(2)
 
+
+def cmd_b7(args):
+    """B7 report-only review queue export."""
+    from guardrails_lite.b7_report import build_b7_report, write_b7_report
+
+    action = args.b7_action
+    if action == "report":
+        project_dir = find_project_dir()
+        db_path = Path(args.db_path) if args.db_path else project_dir / "guardrails.db"
+        raw_dir = Path(args.raw_dir) if args.raw_dir else db_path.parent / "raw"
+        compiled_dir = Path(args.compiled_dir) if args.compiled_dir else db_path.parent / "compiled"
+        report = build_b7_report(
+            db_path=db_path,
+            raw_dir=raw_dir,
+            compiled_dir=compiled_dir,
+            limit=args.limit,
+        )
+        write_b7_report(args.output, report)
+        print(
+            f"✅ B7 report-only queue exported: {args.output} "
+            f"({report['counts']['items']} items; auto_promote=false, destructive_merge=false)"
+        )
+        return
+
+    print("error: b7 requires action: report", file=sys.stderr)
+    raise SystemExit(2)
+
 # ── CLI 入口 ─────────────────────────────────────────────
 
 def main():
@@ -1477,6 +1504,16 @@ def main():
     qp.add_argument("--after", required=True, help="after snapshot JSON")
     qp.add_argument("--output", "-o", help="comparison JSON 輸出路徑")
 
+    # b7 — report-only local review queue export
+    p = sub.add_parser("b7", help="B7 report-only review queue export")
+    b7_sub = p.add_subparsers(dest="b7_action", help="B7 子命令")
+    bp = b7_sub.add_parser("report", help="匯出 B7 report-only review queue JSON")
+    bp.add_argument("--output", "-o", required=True, help="JSON 輸出路徑")
+    bp.add_argument("--limit", type=int, default=0, help="最多輸出幾個 queue items（0=全部）")
+    bp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/guardrails.db）")
+    bp.add_argument("--raw-dir", help="raw/ 目錄路徑（預設 DB 同層 raw/）")
+    bp.add_argument("--compiled-dir", help="compiled/ 目錄路徑（預設 DB 同層 compiled/）")
+
     args = parser.parse_args()
 
     commands = {
@@ -1499,6 +1536,7 @@ def main():
         "freshness": cmd_freshness,
         "dedup": cmd_dedup,
         "search-qa": cmd_search_qa,
+        "b7": cmd_b7,
     }
 
     if args.command in commands:

@@ -1,8 +1,8 @@
 # Guardrails Internal Knowledge Capability — Progress
 
-Last updated: 2026-05-18 12:11 CST
+Last updated: 2026-05-18 20:20 CST
 
-## Current Phase: Phase B — 內部百科真正能力建設 — B1/B6/B5/B2/B3/B4/B7 DESIGN COMPLETE / B7 IMPLEMENTATION NEXT
+## Current Phase: Phase B — 內部百科真正能力建設 — B1/B6/B5/B2/B3/B4 COMPLETE / B7 REPORT-ONLY IMPLEMENTATION IN PROGRESS
 
 ### Goal
 Let Nancy / Hermes / Guardrails dogfood the internal knowledge base every day so real retrieval, citation, capture, privacy, CJK search, and multi-agent convergence problems surface before public Vault-for-LLM productization.
@@ -26,7 +26,15 @@ Let Nancy / Hermes / Guardrails dogfood the internal knowledge base every day so
 7. B7 multi-agent writing and convergence workflow — COMPLETE (design)
 
 ### Immediate Next Task
-Implement the smallest safe B7 slice: report-only duplicate/conflict detection plus convergence/freshness queue integration. Do not auto-promote, destructively merge, or sync private material.
+Implement and verify the smallest safe B7 slice: a report-only CLI/export that produces duplicate/conflict signals plus convergence/freshness review items. Do not auto-promote, destructively merge, or sync private material.
+
+### Active Implementation Slice — 2026-05-18 20:20 CST
+- ✅ Added report-only CLI/export: `guardrails b7 report --output <json>`.
+- ✅ Scope is read-only/report-only over local SQLite knowledge rows; the command opens DB read-only and does not promote, merge, sync, or export public material.
+- ✅ Implemented signals: normalized title duplicates, content-hash duplicates, low convergence, stale freshness, and DB-only/provenance gaps for missing raw/compiled/map handles.
+- ✅ Safety flags in report: `report_only=true`, `auto_promote=false`, `destructive_merge=false`, `private_public_sync=false`, `remote_overwrite=false`.
+- ✅ Report emits safe metadata only: IDs, titles, issue types, safe reasons, review-only recommended actions, counts, and handles; tests assert raw content is not emitted.
+- ✅ Verification: targeted B7 tests passed, full pytest passed, CLI smoke JSON parsed, reviewer PASS.
 
 ---
 
