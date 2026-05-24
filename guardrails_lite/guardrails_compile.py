@@ -385,12 +385,14 @@ class GuardrailsCompiler:
         project_dir: str | Path = ".",
         db=None,
         embed_provider=None,
+        auto_git: bool = True,
     ):
         self.project_dir = Path(project_dir)
         self.raw_dir = self.project_dir / "raw"
         self.compiled_dir = self.project_dir / "compiled"
         self.db = db  # GuardrailsDB，延遲初始化
         self.embed = embed_provider  # 嵌入 provider，可選
+        self.auto_git = auto_git
 
     def compile(self, dry_run: bool = False) -> dict:
         """
@@ -476,7 +478,7 @@ class GuardrailsCompiler:
                 self._update_compiled()
 
             # Git commit
-            if not dry_run and stats["new"] + stats["updated"] > 0:
+            if self.auto_git and not dry_run and stats["new"] + stats["updated"] > 0:
                 self._git_commit(stats)
 
         finally:
@@ -512,10 +514,11 @@ class GuardrailsCompiler:
 
         # 檢查是否已存在（用 source_file 或 title）
         source_file = str(md_file.relative_to(self.raw_dir))
-        # 先用 source_file 找
+        source_with_raw_prefix = f"raw/{source_file}"
+        # 先用 source 精確匹配找；不要用 SQL LIKE，因為檔名底線會被當成萬用字元。
         existing = self.db.conn.execute(
-            "SELECT id, content_hash FROM knowledge WHERE source LIKE ?",
-            (f"%{source_file}%",),
+            "SELECT id, content_hash FROM knowledge WHERE source IN (?, ?)",
+            (source_file, source_with_raw_prefix),
         ).fetchone()
         if not existing:
             # 用 title 找同名知識（add 命令可能已經建了）
@@ -564,7 +567,7 @@ class GuardrailsCompiler:
                 category=category,
                 tags=tags,
                 trust=trust,
-                source=str(source_file),
+                source=str(source),
             )
             self._refresh_document_map(knowledge_id)
             return "updated"
@@ -579,7 +582,7 @@ class GuardrailsCompiler:
                 category=category,
                 tags=tags,
                 trust=trust,
-                source=str(source_file),
+                source=str(source),
             )
             self._refresh_document_map(knowledge_id)
             return "new"

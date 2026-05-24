@@ -1,8 +1,8 @@
 # Guardrails Internal Knowledge Capability — Progress
 
-Last updated: 2026-05-18 20:20 CST
+Last updated: 2026-05-24 CST
 
-## Current Phase: Phase B — 內部百科真正能力建設 — B1/B6/B5/B2/B3/B4 COMPLETE / B7 REPORT-ONLY IMPLEMENTATION IN PROGRESS
+## Current Phase: Phase B — 內部百科真正能力建設 — B1/B6/B5/B2/B3/B4 COMPLETE / B7 REPORT-ONLY + DREAM/LIBRARIAN DL-9 COMPLETE
 
 ### Goal
 Let Nancy / Hermes / Guardrails dogfood the internal knowledge base every day so real retrieval, citation, capture, privacy, CJK search, and multi-agent convergence problems surface before public Vault-for-LLM productization.
@@ -15,6 +15,7 @@ Let Nancy / Hermes / Guardrails dogfood the internal knowledge base every day so
 - `docs/document_map_coverage_plan.md` — B2 coverage plan for high-value Document Map/read_range/citation gaps.
 - `docs/search_qa_metrics_plan.md` — B3 internal Search QA metrics plan, internal dogfood QA set, baseline, self-compare, and daily reporting boundary.
 - `docs/multi_agent_convergence_workflow.md` — B7 local-first multi-agent writing, dedupe/conflict, convergence/freshness queue, safe sync, and public-safe export design contract.
+- `docs/guardrails_dream_librarian_system_plan.md` — Guardrails Dream & Librarian System：每日候選整理、每週百科去重/過時/收斂治理、每月深度健康檢查的完整實施計畫。
 
 ### Phase B Priority Order
 1. B1 對話回寫治理 — COMPLETE (design)
@@ -26,9 +27,85 @@ Let Nancy / Hermes / Guardrails dogfood the internal knowledge base every day so
 7. B7 multi-agent writing and convergence workflow — COMPLETE (design)
 
 ### Immediate Next Task
-Implement and verify the smallest safe B7 slice: a report-only CLI/export that produces duplicate/conflict signals plus convergence/freshness review items. Do not auto-promote, destructively merge, or sync private material.
+Pick the next Dream/Librarian slice from `docs/guardrails_dream_librarian_system_plan.md` after DL-9 historical trend store: either create/verify the live Hermes cron after Arthur confirms delivery target, or add a safe trend-summary consumer for monthly/dashboard comparisons. Keep auto-promote off; review/triage/dashboard/monthly/history reports remain report-only/local-only, and `dream promote` remains explicit manual local-only with required `--no-sync`.
 
-### Active Implementation Slice — 2026-05-18 20:20 CST
+### Active Implementation Slice — 2026-05-24 — Dream/Librarian DL-9 COMPLETE
+- ✅ Added runtime-only historical trend store: `guardrails_lite/report_history.py` writes count-only JSONL snapshots under runtime `dream-review/history/dashboard_history.jsonl` for dashboard/monthly comparison baselines.
+- ✅ Integrated DL-9 into `scripts/dream_daily_review.py`: daily runs now append/replace a `guardrails.report_history.snapshot.v1` record and include `history_path` in `latest.json` and Feishu/no-agent stdout when candidates exist.
+- ✅ Idempotency: repeated daily runs for the same `snapshot_date` replace the existing JSONL record instead of duplicating it, keeping history append-like by date while avoiding repeated cron noise.
+- ✅ Path safety: history paths are validated and rejected if they live under project `raw/` or `compiled/`; history remains a runtime artifact store, not a source-of-truth knowledge store.
+- ✅ Privacy/count-only hardening after three independent-review blocker rounds: forbidden keys (`candidate_id`, `title`, `knowledge_id`, `summary`, `content_draft`, raw/private payload fields) are rejected; unknown snapshot/aggregate fields are rejected; metric values must be non-bool integers; metadata fields must be valid date/ISO timestamp values; `source_schema` is validated before JSONL persistence.
+- ✅ Added TDD coverage in `tests/test_report_history.py` and expanded `tests/test_dream_daily_review_script.py`: count-only summaries, latest/previous/delta behavior, forbidden key rejection, forbidden value rejection, metadata validation, raw/compiled path rejection, and daily-script history idempotency.
+- ✅ Verification: report-history + daily-script tests passed (`10 passed`); related DL6-DL8/report tests passed (`28 passed`); Dream/B7 regression suite passed (`107 passed`); scoped `compileall`, `git diff --check`, malicious-candidate script smoke, runtime static scans, and final independent security/code-quality review all passed.
+- ⚠️ No commit and no live Hermes cron creation performed. Worktree still contains uncommitted DL-2.5/DL-3/DL-4/DL-5/DL-6/DL-7/DL-8/DL-9 changes and repo remote divergence remains a known constraint; do not force push.
+
+### Previous Implementation Slice — 2026-05-24 — Dream/Librarian DL-6/DL-7/DL-8 COMPLETE
+- ✅ DL-6 local-model-assisted triage packet: added `guardrails_lite/dream_triage.py`, producing `schema=guardrails.dream.local_model_triage.v1` prompt-only packets from Dream reviewer UX action items. Packets are local-model-ready but do not call Ollama/vLLM/network by default, do not write formal knowledge/raw, do not sync, and exclude candidate `summary` / `content_draft`.
+- ✅ DL-7 count-only dashboard aggregate: added `guardrails_lite/dashboard_aggregate.py`, aggregating safe Dream/B7 report counts into `schema=guardrails.dashboard.aggregate.v1` with `count_only=true` and no titles, candidate IDs, knowledge IDs, raw content, or private payload.
+- ✅ DL-8 monthly deep cleanup report-only: added `guardrails_lite/librarian_monthly.py` plus `guardrails librarian monthly --output <json> --markdown <md>`. The report summarizes B7 duplicate/freshness/convergence/provenance queues, baseline trend metrics, and top cleanup priorities without merge/delete/promote/sync/remote overwrite side effects.
+- ✅ Extended `scripts/dream_daily_review.py`: each daily run now writes JSON/Markdown review artifacts, DL-6 triage packet, DL-7 dashboard aggregate, and `latest.json` paths under runtime `dream-review/<date>/`; stdout remains bounded/no-agent-friendly and empty when there are zero candidates.
+- ✅ Updated `docs/guardrails_dream_cron_manifest.md` to document the additional prompt-only triage and count-only dashboard artifacts, including the invariant that local model APIs are not called by default.
+- ✅ Added TDD coverage: `tests/test_dream_local_triage.py`, `tests/test_guardrails_dashboard_aggregate.py`, `tests/test_librarian_monthly.py`, and expanded `tests/test_dream_daily_review_script.py` for new artifacts/latest pointer invariants.
+- ✅ Verification: DL-6~DL-8 focused tests passed (`12 passed`); Dream/B7 regression suite passed (`107 passed`); scoped `compileall`, malicious-candidate daily script smoke, runtime static scans, `git diff --check`, and independent security/code-quality review all passed.
+- ⚠️ No commit and no live Hermes cron creation performed. Worktree still contains uncommitted DL-2.5/DL-3/DL-4/DL-5/DL-6/DL-7/DL-8 changes and repo remote divergence remains a known constraint; do not force push.
+
+### Previous Implementation Slice — 2026-05-24 — Dream/Librarian DL-5 COMPLETE
+- ✅ Added repo-owned cron-ready daily Dream review entrypoint: `scripts/dream_daily_review.py`. It builds local JSON/Markdown review artifacts for a date, updates a local `dream-review/latest.json` pointer atomically, and prints a short no-agent-friendly Feishu message only when candidates exist.
+- ✅ Added source-controlled cron specification: `docs/guardrails_dream_cron_manifest.md`, including schedule (`10 8 * * *`), no-agent recommendation, direct smoke command, thin Hermes wrapper template, safety invariants, restore notes, and verification checklist. No live Hermes cron job was created in this slice.
+- ✅ Preserved report-only/local-only boundaries: script writes only runtime report artifacts, rejects runtime dirs under project `raw/` or `compiled/`, does not change candidate status, does not write formal knowledge, does not write curated raw knowledge, does not sync, and does not call network APIs.
+- ✅ Cron/no-agent behavior: non-empty queue emits bounded summary-only stdout with `MEDIA:<markdown_path>`; empty queue emits empty stdout so `no_agent=True` cron stays silent.
+- ✅ Added TDD coverage in `tests/test_dream_daily_review_script.py`: artifact/latest pointer creation, no-agent stdout contract, DB/raw side-effect invariants, empty queue silence, and raw/compiled runtime-dir rejection.
+- ✅ Verification: daily review script tests passed (`3 passed`); report tests passed (`19 passed`); all Dream tests passed (`101 passed`); scoped `compileall`, `git diff --check`, malicious candidate-id script smoke, static security scans, and final independent review passed.
+- ⚠️ No commit and no live cron creation performed. Worktree still contains uncommitted DL-2.5/DL-3/DL-4/DL-5 changes and repo remote divergence remains a known constraint; do not force push.
+
+### Previous Implementation Slice — 2026-05-24 — Dream/Librarian DL-4 COMPLETE
+- ✅ Added reviewer-friendly Dream review UX in `guardrails_lite/dream_report.py`: `reviewer_ux.conclusion`, numbered `action_items`, Feishu `quick_replies`, and Markdown sections `## 結論`, `## Feishu 快速回覆`, and `## 編號審核清單`.
+- ✅ Preserved hard safety invariants: review-report remains report-only/local-only with `auto_promote=false`, `formal_knowledge_written=false`, `raw_written=false`, and `sync_invoked=false`; no candidate status, raw, formal knowledge, sync, or network side effects are introduced.
+- ✅ Hardened copyable reviewer commands: both new `reviewer_ux.action_items[*].decide_command` and legacy per-candidate Markdown `Feishu CTA:` now shell-quote candidate IDs via `shlex.quote(...)`, with regression coverage for malicious candidate IDs such as `dream_ux_bad; touch /tmp/pwned`.
+- ✅ Kept report privacy boundaries: reviewer UX uses safe metadata only, excludes candidate `summary` and `content_draft`, keeps private/blocked metadata redacted, and avoids a top-level `summary` key to preserve existing leak-detection tests.
+- ✅ Added TDD coverage in `tests/test_dream_report.py`: reviewer UX conclusion/action-items/quick-replies, report-only invariants, private payload redaction, CLI smoke-visible Markdown sections, and command quoting for both new and legacy CTA command paths.
+- ✅ Verification: targeted report tests passed (`19 passed`); all Dream tests passed (`98 passed`); scoped `compileall`, `git diff --check`, CLI smoke with malicious candidate ID, static security scans, and final independent review passed.
+- ⚠️ No commit performed. Worktree still contains uncommitted DL-2.5/DL-3/DL-4 changes and repo remote divergence remains a known constraint; do not force push.
+
+### Previous Implementation Slice — 2026-05-24 — Dream/Librarian DL-3 COMPLETE
+- ✅ Added explicit safe promotion API in `guardrails_lite/dream_promote.py`: approved Dream candidates can be promoted into local formal knowledge only after hard gates pass before side effects.
+- ✅ Added `guardrails dream promote <candidate_id> --reviewer <name> --no-sync` CLI with optional `--skip-compile` / `--skip-map` test/smoke flags. The first implementation is local-only; sync requests fail closed.
+- ✅ Promotion hard gates: reviewer required, `no_sync=True`, candidate `status=approved`, `privacy_status=clear`, `classification=shared_knowledge`, dedupe not `duplicate` / `near_duplicate` / `conflict`, final recursive privacy scan must return `clear`, and existing formal title/source collisions are blocked before raw/formal/status side effects.
+- ✅ Success path writes a safe unique `raw/*.md` file with JSON frontmatter (`title`, `layer`, `category`, `tags`, `trust`, `summary`, `source`, `source_candidate_id`, `source_agent`, `source_type`, `created`), creates one formal `knowledge` row, updates candidate status to `promoted`, appends audit metadata, and verifies readback.
+- ✅ Safety flags are explicit in result/audit: `formal_knowledge_written=true`, `raw_written=true`, `sync_invoked=false`, `auto_promote=false`, `no_sync=true`, plus compile/map/readback flags.
+- ✅ Added TDD coverage in `tests/test_dream_promote.py`: success/readback/audit, CLI JSON smoke, default single-file compile/map with trailing-newline normalization, no unintended Git stage/commit during compile verification, raw-title collision isolation, SQL `LIKE` wildcard source-hijack regression, formal-title duplicate blocking, formal-source collision blocking before side effects, and failure invariants proving unsafe cases leave formal knowledge count, raw directory, and candidate status unchanged.
+- ✅ Verification: RED evidence captured as missing module before implementation, then as default compile/readback failure, raw-title collision failure, SQL `LIKE` wildcard source-hijack failure, and exact source-collision failure; targeted DL-3 tests passed (`17 passed`); all Dream tests passed (`96 passed`); compile regression smoke `tests/test_lite.py` passed (`4 passed`); CLI smoke created one local knowledge row/raw file with `sync_invoked=false`; default compile/map smoke produced `compile_invoked=true`, `map_invoked=true`, one Document Map node, unchanged Git HEAD, unrelated tracked edits left unstaged, and promoted source preserved despite unrelated same-title raw; scoped `compileall`, `git diff --check`, static security scans, and final independent review passed.
+- ⚠️ No commit performed. Worktree still contains uncommitted DL-2.5/DL-3 changes and repo remote divergence remains a known constraint; do not force push.
+
+### Previous Implementation Slice — 2026-05-23 — Dream/Librarian DL-2.5 COMPLETE
+- ✅ Added review decision workflow hardening via `guardrails dream decide`: decisions update only `knowledge_candidates`, append audit metadata, and always return `formal_knowledge_written=false`, `raw_written=false`, and `sync_invoked=false`.
+- ✅ Added approval safety gates: `approved` now requires `privacy_status=clear`, `classification=shared_knowledge`, non-blocking dedupe status, and a non-reopened terminal status. Unsafe/private/duplicate/conflict candidates must be blocked, discarded, merged only when safe, or escalated to Arthur.
+- ✅ Added merge safety gates: `merge_suggested` rejects blocked/private/no_write candidates and refuses to reopen terminal `blocked`/`discarded`/`promoted` rows.
+- ✅ Hardened review reports for Feishu/JSON: non-clear privacy statuses (`unknown`, `redact_required`, `private_only`, `blocked`) redact user metadata fields, tags, and dedupe candidate titles; clear candidates remain readable.
+- ✅ Hardened privacy flag summaries so arbitrary `kind` / `rule_id` strings are bucketed to safe labels instead of leaking user/private payloads into report JSON/Markdown.
+- ✅ Added CLI guardrails: `dream review-report --output/--markdown` rejects paths under project `raw/` or `compiled/`, and `--limit` must be non-negative.
+- ✅ Local-model route check: Ollama is reachable at localhost with `qwen3.6:35b` and `gpt-oss:120b`; local models are a backup direction for Dream/Librarian triage rather than the primary route, with cloud/mainline reasoning kept as default unless privacy, cost, or availability requires fallback.
+- ✅ Verification: targeted report-hardening tests passed (`10 passed`); DL decision/report/queue/CLI tests passed (`66 passed`); all `tests/test_dream_*.py` passed (`79 passed`); scoped `compileall`, `git diff --check`, and scoped diff check passed.
+
+### Previous Implementation Slice — 2026-05-23 — Dream/Librarian DL-2 COMPLETE
+- ✅ Added deterministic recursive candidate privacy preflight with safe findings/audit summaries, redacted output, key-path hashing, secret-in-key detection, placeholder false-positive guards, normal-candidate clear path, and private/blocked action mapping.
+- ✅ Added safe candidate dedupe checks for exact title, normalized title, content hash, and title-keyword near matches; persisted dedupe results are metadata-only and do not override stronger privacy recommendations (`block` / `ask_arthur`).
+- ✅ Added `guardrails dream review-report` JSON/Markdown output via read-only DB access. Reports include `schema=guardrails.dream.review.v1`, `report_only=true`, `auto_promote=false`, `formal_knowledge_written=false`, `raw_written=false`, and `sync_invoked=false`; they exclude summary/content_draft and redact blocked/private metadata.
+- ✅ Added DL-2 tests: `tests/test_dream_privacy.py`, `tests/test_dream_dedupe.py`, and `tests/test_dream_report.py`.
+- ✅ Verification: DL-2 targeted tests passed (`16 passed`); DL-1+DL-2 targeted tests passed (`32 passed`); scoped `git diff --check` passed; scoped ruff on Dream/Librarian files/tests passed.
+- ⚠️ Full `python -m pytest -q` is still blocked before complete collection by unrelated/pre-existing environment issues: missing `onnxruntime` and `supabase.create_client` import failure.
+- ⚠️ Broad ruff over the whole legacy `guardrails_lite/guardrails_cli.py` still reports pre-existing F401/F541/F841 issues outside the DL-2 touched section; scoped Dream/Librarian ruff passes.
+
+### Previous Implementation Slice — 2026-05-23 — Dream/Librarian DL-1 COMPLETE
+- ✅ Added local SQLite schema foundation for `knowledge_candidates` and `knowledge_review_items` inside `guardrails_lite/guardrails_db.py`; schema creation is idempotent and candidate indexes cover status, created_at, source_session_id, and proposed_title.
+- ✅ Added `guardrails_lite/dream_queue.py` with candidate create/list/status-update/audit helpers, enum validation, JSON field round-trip handling, generated `dream_YYYYMMDD_<short uuid>` IDs, and safe defaults.
+- ✅ Added `guardrails dream submit` CLI. The command requires title, summary, content-file, category, tags, source-agent, and source-type; it writes only to `knowledge_candidates` and returns `formal_knowledge_written=false`.
+- ✅ Added DL-1 tests: `tests/test_dream_librarian_schema.py`, `tests/test_dream_queue.py`, and `tests/test_dream_cli.py`.
+- ✅ Verification: targeted DL-1 tests passed (`16 passed`), scoped `git diff --check` passed, scoped `ruff check` passed, temp-dir CLI smoke passed, spec review PASS, code-quality review APPROVED after fixing executable-bit drift.
+- ⚠️ Full `python -m pytest -q` is blocked by environment/pre-existing dependency issues before DL-1 tests collect: missing `onnxruntime` and `supabase.create_client` import failure.
+- ⚠️ Post-edit Graphify rebuild is blocked by local environment/tooling: default Python cannot import `graphify`, while the documented `/home/zycas/miniconda3/bin/python` Graphify rebuild command timed out in this session.
+
+### Previous Implementation Slice — 2026-05-18 20:20 CST
 - ✅ Added report-only CLI/export: `guardrails b7 report --output <json>`.
 - ✅ Scope is read-only/report-only over local SQLite knowledge rows; the command opens DB read-only and does not promote, merge, sync, or export public material.
 - ✅ Implemented signals: normalized title duplicates, content-hash duplicates, low convergence, stale freshness, and DB-only/provenance gaps for missing raw/compiled/map handles.

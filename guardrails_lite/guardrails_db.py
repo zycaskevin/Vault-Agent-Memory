@@ -28,7 +28,7 @@ except ImportError:
 class GuardrailsDB:
     """Guardrails Lite 資料庫層。"""
 
-    SCHEMA_VERSION = 5
+    SCHEMA_VERSION = 6
 
     def __init__(self, db_path: str | Path = "guardrails.db"):
         self.db_path = Path(db_path)
@@ -289,6 +289,115 @@ class GuardrailsDB:
         """)
         c.execute("CREATE INDEX IF NOT EXISTS idx_ek_entity ON entity_knowledge(entity_id)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_ek_knowledge ON entity_knowledge(knowledge_id)")
+
+        # Dream/Librarian candidate queue tables (local-first, review-gated).
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS knowledge_candidates (
+                candidate_id TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                source_type TEXT NOT NULL,
+                source_agent TEXT NOT NULL,
+                source_session_id TEXT,
+                source_channel TEXT,
+                source_refs_json TEXT NOT NULL DEFAULT '[]',
+                proposed_title TEXT NOT NULL,
+                summary TEXT NOT NULL,
+                content_draft TEXT NOT NULL,
+                category TEXT NOT NULL,
+                tags_json TEXT NOT NULL DEFAULT '[]',
+                classification TEXT NOT NULL,
+                privacy_status TEXT NOT NULL,
+                privacy_flags_json TEXT NOT NULL DEFAULT '[]',
+                dedupe_status TEXT NOT NULL,
+                dedupe_candidates_json TEXT NOT NULL DEFAULT '[]',
+                status TEXT NOT NULL,
+                recommended_action TEXT NOT NULL,
+                decision_reason TEXT NOT NULL DEFAULT '',
+                reviewer TEXT NOT NULL DEFAULT '',
+                reviewed_at TEXT,
+                trust_initial REAL NOT NULL DEFAULT 0.4,
+                freshness_initial REAL NOT NULL DEFAULT 1.0,
+                convergence_status_initial TEXT NOT NULL DEFAULT 'unknown',
+                audit_log_json TEXT NOT NULL DEFAULT '[]'
+            )
+        """)
+        self._ensure_table_columns(
+            "knowledge_candidates",
+            {
+                "created_at": "TEXT NOT NULL DEFAULT ''",
+                "updated_at": "TEXT NOT NULL DEFAULT ''",
+                "source_type": "TEXT NOT NULL DEFAULT 'manual'",
+                "source_agent": "TEXT NOT NULL DEFAULT ''",
+                "source_session_id": "TEXT",
+                "source_channel": "TEXT",
+                "source_refs_json": "TEXT NOT NULL DEFAULT '[]'",
+                "proposed_title": "TEXT NOT NULL DEFAULT ''",
+                "summary": "TEXT NOT NULL DEFAULT ''",
+                "content_draft": "TEXT NOT NULL DEFAULT ''",
+                "category": "TEXT NOT NULL DEFAULT 'general'",
+                "tags_json": "TEXT NOT NULL DEFAULT '[]'",
+                "classification": "TEXT NOT NULL DEFAULT 'shared_knowledge'",
+                "privacy_status": "TEXT NOT NULL DEFAULT 'unknown'",
+                "privacy_flags_json": "TEXT NOT NULL DEFAULT '[]'",
+                "dedupe_status": "TEXT NOT NULL DEFAULT 'unknown'",
+                "dedupe_candidates_json": "TEXT NOT NULL DEFAULT '[]'",
+                "status": "TEXT NOT NULL DEFAULT 'pending'",
+                "recommended_action": "TEXT NOT NULL DEFAULT 'review'",
+                "decision_reason": "TEXT NOT NULL DEFAULT ''",
+                "reviewer": "TEXT NOT NULL DEFAULT ''",
+                "reviewed_at": "TEXT",
+                "trust_initial": "REAL NOT NULL DEFAULT 0.4",
+                "freshness_initial": "REAL NOT NULL DEFAULT 1.0",
+                "convergence_status_initial": "TEXT NOT NULL DEFAULT 'unknown'",
+                "audit_log_json": "TEXT NOT NULL DEFAULT '[]'",
+            },
+        )
+        c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_candidates_status ON knowledge_candidates(status)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_candidates_created_at ON knowledge_candidates(created_at)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_candidates_source_session_id ON knowledge_candidates(source_session_id)")
+        c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_candidates_proposed_title ON knowledge_candidates(proposed_title)")
+
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS knowledge_review_items (
+                review_id TEXT PRIMARY KEY,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                source_report TEXT NOT NULL,
+                issue_type TEXT NOT NULL,
+                knowledge_ids_json TEXT NOT NULL DEFAULT '[]',
+                titles_json TEXT NOT NULL DEFAULT '[]',
+                safe_reason TEXT NOT NULL,
+                evidence_refs_json TEXT NOT NULL DEFAULT '[]',
+                severity TEXT NOT NULL,
+                recommended_action TEXT NOT NULL,
+                status TEXT NOT NULL,
+                reviewer TEXT NOT NULL DEFAULT '',
+                reviewed_at TEXT,
+                decision_reason TEXT NOT NULL DEFAULT '',
+                audit_log_json TEXT NOT NULL DEFAULT '[]'
+            )
+        """)
+        self._ensure_table_columns(
+            "knowledge_review_items",
+            {
+                "created_at": "TEXT NOT NULL DEFAULT ''",
+                "updated_at": "TEXT NOT NULL DEFAULT ''",
+                "source_report": "TEXT NOT NULL DEFAULT ''",
+                "issue_type": "TEXT NOT NULL DEFAULT ''",
+                "knowledge_ids_json": "TEXT NOT NULL DEFAULT '[]'",
+                "titles_json": "TEXT NOT NULL DEFAULT '[]'",
+                "safe_reason": "TEXT NOT NULL DEFAULT ''",
+                "evidence_refs_json": "TEXT NOT NULL DEFAULT '[]'",
+                "severity": "TEXT NOT NULL DEFAULT 'medium'",
+                "recommended_action": "TEXT NOT NULL DEFAULT 'review'",
+                "status": "TEXT NOT NULL DEFAULT 'open'",
+                "reviewer": "TEXT NOT NULL DEFAULT ''",
+                "reviewed_at": "TEXT",
+                "decision_reason": "TEXT NOT NULL DEFAULT ''",
+                "audit_log_json": "TEXT NOT NULL DEFAULT '[]'",
+            },
+        )
 
         # 向量虛擬表（只有 sqlite-vec 可用時才建）
         if self._vec_available:

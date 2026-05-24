@@ -1125,6 +1125,34 @@ def _positive_int(value: str) -> int:
     return parsed
 
 
+def _non_negative_int(value: str) -> int:
+    """Argparse type requiring a non-negative integer."""
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("must be a non-negative integer") from exc
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must be a non-negative integer")
+    return parsed
+
+
+def _reject_raw_or_compiled_output_path(path: str | None, project_dir: Path, label: str) -> None:
+    """Keep report-only exports out of knowledge source/compiled directories."""
+    if not path:
+        return
+    output_path = Path(path).resolve()
+    forbidden_roots = {
+        "raw": (project_dir / "raw").resolve(),
+        "compiled": (project_dir / "compiled").resolve(),
+    }
+    for name, root in forbidden_roots.items():
+        if output_path == root or output_path.is_relative_to(root):
+            raise ValueError(
+                "Dream review reports cannot be written inside raw/ or compiled/ "
+                f"({label} was inside {name}/); use reports/ or another review-output directory"
+            )
+
+
 def _parse_map_line_range(value: str) -> tuple[int, int]:
     """Parse an inclusive START-END line range for `guardrails map read`."""
     if not value or "-" not in value:
@@ -1290,6 +1318,156 @@ def cmd_b7(args):
         return
 
     print("error: b7 requires action: report", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def cmd_librarian(args):
+    """Knowledge Librarian report-only commands."""
+    action = args.librarian_action
+    if action == "monthly":
+        from guardrails_lite.librarian_monthly import (
+            build_monthly_deep_cleanup_report,
+            write_monthly_deep_cleanup_markdown,
+            write_monthly_deep_cleanup_report,
+        )
+
+        project_dir = find_project_dir()
+        db_path = Path(args.db_path) if args.db_path else project_dir / "guardrails.db"
+        raw_dir = Path(args.raw_dir) if args.raw_dir else db_path.parent / "raw"
+        compiled_dir = Path(args.compiled_dir) if args.compiled_dir else db_path.parent / "compiled"
+        try:
+            report = build_monthly_deep_cleanup_report(
+                db_path=db_path,
+                raw_dir=raw_dir,
+                compiled_dir=compiled_dir,
+                month=args.month,
+                top_n=args.top_n,
+            )
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            raise SystemExit(2)
+        write_monthly_deep_cleanup_report(args.output, report)
+        if args.markdown:
+            write_monthly_deep_cleanup_markdown(args.markdown, report)
+        print(
+            f"✅ Librarian monthly report exported: {args.output} "
+            f"({report['counts']['review_items']} items; report_only=true, destructive_merge=false)"
+        )
+        return
+
+    print("error: librarian requires action: monthly", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def cmd_dream(args):
+    """Dream candidate queue commands."""
+    from guardrails_lite.dream_queue import create_candidate
+    from guardrails_lite.guardrails_db import GuardrailsDB
+
+    action = args.dream_action
+    if action == "submit":
+        content_path = Path(args.content_file)
+        content = content_path.read_text(encoding="utf-8")
+        tags = [tag.strip() for tag in (args.tags or "").split(",") if tag.strip()]
+        project_dir = find_project_dir()
+        db_path = project_dir / "guardrails.db"
+        with GuardrailsDB(str(db_path)) as db:
+            candidate_id = create_candidate(
+                db.conn,
+                {
+                    "source_type": args.source_type,
+                    "source_agent": args.source_agent,
+                    "source_session_id": args.source_session_id or None,
+                    "source_channel": args.source_channel or "cli",
+                    "source_refs": [{"kind": "file", "path": str(content_path)}],
+                    "proposed_title": args.title,
+                    "summary": args.summary,
+                    "content_draft": content,
+                    "category": args.category,
+                    "tags": tags,
+                },
+            )
+        print(
+            json.dumps(
+                {
+                    "success": True,
+                    "candidate_id": candidate_id,
+                    "formal_knowledge_written": False,
+                },
+                ensure_ascii=False,
+            )
+        )
+        return
+
+    if action == "review-report":
+        from guardrails_lite.dream_report import (
+            build_dream_review_report,
+            write_dream_review_report_json,
+            write_dream_review_report_markdown,
+        )
+
+        project_dir = find_project_dir()
+        db_path = Path(args.db_path) if args.db_path else project_dir / "guardrails.db"
+        try:
+            _reject_raw_or_compiled_output_path(args.output, project_dir, "--output")
+            _reject_raw_or_compiled_output_path(args.markdown, project_dir, "--markdown")
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            raise SystemExit(2)
+        report = build_dream_review_report(db_path, date=args.date, limit=args.limit)
+        write_dream_review_report_json(args.output, report)
+        if args.markdown:
+            write_dream_review_report_markdown(args.markdown, report)
+        print(
+            f"✅ Dream review report exported: {args.output} "
+            f"({report['counts']['candidates']} candidates; report_only=true, auto_promote=false)"
+        )
+        return
+
+    if action == "decide":
+        from guardrails_lite.dream_queue import decide_candidate
+
+        project_dir = find_project_dir()
+        db_path = Path(args.db_path) if args.db_path else project_dir / "guardrails.db"
+        try:
+            with GuardrailsDB(str(db_path)) as db:
+                result = decide_candidate(
+                    db.conn,
+                    args.candidate_id,
+                    decision=args.decision,
+                    reason=args.reason,
+                    reviewer=args.reviewer,
+                )
+        except (ValueError, KeyError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            raise SystemExit(2)
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return
+
+    if action == "promote":
+        from guardrails_lite.dream_promote import promote_candidate
+
+        project_dir = find_project_dir()
+        db_path = Path(args.db_path) if args.db_path else project_dir / "guardrails.db"
+        project_dir = db_path.parent if args.db_path else project_dir
+        try:
+            with GuardrailsDB(str(db_path)) as db:
+                result = promote_candidate(
+                    db,
+                    args.candidate_id,
+                    project_dir=project_dir,
+                    reviewer=args.reviewer,
+                    no_sync=args.no_sync,
+                    run_compile=not args.skip_compile,
+                    run_map=not args.skip_map,
+                )
+        except (ValueError, KeyError, RuntimeError) as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            raise SystemExit(2)
+        print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return
+
+    print("error: dream requires action: submit, review-report, decide, or promote", file=sys.stderr)
     raise SystemExit(2)
 
 # ── CLI 入口 ─────────────────────────────────────────────
@@ -1514,6 +1692,69 @@ def main():
     bp.add_argument("--raw-dir", help="raw/ 目錄路徑（預設 DB 同層 raw/）")
     bp.add_argument("--compiled-dir", help="compiled/ 目錄路徑（預設 DB 同層 compiled/）")
 
+    # librarian — report-only formal knowledge hygiene reports
+    p = sub.add_parser("librarian", help="Knowledge Librarian report-only hygiene reports")
+    librarian_sub = p.add_subparsers(dest="librarian_action", help="Librarian 子命令")
+    lp = librarian_sub.add_parser("monthly", help="匯出 monthly deep cleanup report-only JSON/Markdown")
+    lp.add_argument("--output", "-o", required=True, help="JSON 輸出路徑")
+    lp.add_argument("--markdown", help="Markdown 輸出路徑")
+    lp.add_argument("--month", help="月份（YYYY-MM）")
+    lp.add_argument("--top-n", type=_non_negative_int, default=3, help="Top cleanup priorities 數量")
+    lp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/guardrails.db）")
+    lp.add_argument("--raw-dir", help="raw/ 目錄路徑（預設 DB 同層 raw/）")
+    lp.add_argument("--compiled-dir", help="compiled/ 目錄路徑（預設 DB 同層 compiled/）")
+
+    # dream — review-gated candidate queue
+    p = sub.add_parser("dream", help="Dream candidate queue")
+    dream_sub = p.add_subparsers(dest="dream_action", help="Dream 子命令")
+    dp = dream_sub.add_parser("submit", help="提交候選知識到 dream queue（不寫 formal knowledge/raw）")
+    dp.add_argument("--title", required=True, help="候選標題")
+    dp.add_argument("--summary", required=True, help="候選摘要")
+    dp.add_argument("--content-file", required=True, help="候選草稿 Markdown 檔案")
+    dp.add_argument(
+        "--category",
+        required=True,
+        choices=["error", "technique", "decision", "workflow", "observation", "general"],
+        help="分類",
+    )
+    dp.add_argument("--tags", required=True, help="標籤，逗號分隔")
+    dp.add_argument("--source-agent", required=True, help="來源 agent")
+    dp.add_argument(
+        "--source-type",
+        required=True,
+        choices=["cron", "feishu", "manual", "mcp", "session", "subagent"],
+        help="來源類型",
+    )
+    dp.add_argument("--source-session-id", default="", help="來源 session id")
+    dp.add_argument("--source-channel", default="cli", help="來源 channel")
+
+    rp = dream_sub.add_parser("review-report", help="匯出 Dream review report-only JSON/Markdown")
+    rp.add_argument("--date", help="依 created_at 日期前綴篩選（YYYY-MM-DD）")
+    rp.add_argument("--output", "-o", required=True, help="JSON 輸出路徑")
+    rp.add_argument("--markdown", help="Markdown 輸出路徑")
+    rp.add_argument("--limit", type=_non_negative_int, default=50, help="最多輸出幾個候選（0=全部）")
+    rp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/guardrails.db）")
+
+    dp = dream_sub.add_parser("decide", help="審核 Dream candidate（只更新 queue，不寫 formal knowledge/raw，不 sync）")
+    dp.add_argument("candidate_id", help="候選 ID")
+    dp.add_argument(
+        "--decision",
+        required=True,
+        choices=["approved", "merge_suggested", "discarded", "blocked", "ask_arthur"],
+        help="審核決策",
+    )
+    dp.add_argument("--reason", required=True, help="審核理由（不可空白）")
+    dp.add_argument("--reviewer", required=True, help="審核者（不可空白）")
+    dp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/guardrails.db）")
+
+    pp = dream_sub.add_parser("promote", help="將已核准 Dream candidate 安全提升為本地 formal knowledge（不 sync）")
+    pp.add_argument("candidate_id", help="候選 ID")
+    pp.add_argument("--reviewer", required=True, help="審核者（不可空白）")
+    pp.add_argument("--no-sync", action="store_true", help="必填保險旗標；promote 永不執行 sync")
+    pp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/guardrails.db）")
+    pp.add_argument("--skip-compile", action="store_true", help="跳過本地 compile")
+    pp.add_argument("--skip-map", action="store_true", help="跳過 Document Map 建立")
+
     args = parser.parse_args()
 
     commands = {
@@ -1537,6 +1778,8 @@ def main():
         "dedup": cmd_dedup,
         "search-qa": cmd_search_qa,
         "b7": cmd_b7,
+        "librarian": cmd_librarian,
+        "dream": cmd_dream,
     }
 
     if args.command in commands:
