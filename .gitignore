@@ -68,4 +68,5 @@ raw/
 
 # Local agent/session artifacts
 .agent-runtime/
+.hermes/
 .ruff_cache/
