@@ -228,6 +228,7 @@ your-project/
 | `vault compile` | Compile `raw/` into SQLite + `compiled/` artifacts |
 | `vault search "query"` | Search the vault |
 | `vault search "query" --graph-expand 2` | Search with graph expansion |
+| `vault export obsidian --vault /path/to/ObsidianVault --dry-run` | Export read-only Markdown notes for Obsidian browsing |
 | `vault list` | List knowledge entries |
 | `vault stats` | Show vault statistics |
 | `vault lint` | Run quality checks |
