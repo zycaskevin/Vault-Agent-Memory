@@ -8,7 +8,6 @@ Vault-for-LLM — SQLite + sqlite-vec 資料庫抽象層。
 - 支援降級：沒裝 sqlite-vec 時退回純關鍵字
 """
 
-import json
 import hashlib
 import sqlite3
 import sys
@@ -35,6 +34,7 @@ class VaultDB:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn: Optional[sqlite3.Connection] = None
         self._vec_available = _VEC_AVAILABLE
+        self._fts_available = False
 
     # ── 連線 ──────────────────────────────────────────────
 
@@ -104,6 +104,7 @@ class VaultDB:
         c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_layer ON knowledge(layer)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_category ON knowledge(category)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_trust ON knowledge(trust)")
+        self._init_fts_table()
 
         # ── Schema v3 migration：為現有資料庫加新欄位 ──
         existing_cols = {r[1] for r in c.execute("PRAGMA table_info(knowledge)").fetchall()}
@@ -330,6 +331,107 @@ class VaultDB:
                 (claim_uid, row["id"]),
             )
 
+    def _init_fts_table(self) -> None:
+        """Create and backfill the optional FTS5 keyword index."""
+        self._fts_available = False
+        try:
+            self.conn.execute(
+                """CREATE VIRTUAL TABLE IF NOT EXISTS knowledge_fts USING fts5(
+                    title,
+                    content_raw,
+                    content_aaak,
+                    tags,
+                    category,
+                    tokenize='unicode61'
+                )"""
+            )
+            self._fts_available = True
+            self._rebuild_fts_index_if_empty()
+        except sqlite3.OperationalError:
+            self._fts_available = False
+
+    def _rebuild_fts_index_if_empty(self) -> None:
+        """Backfill FTS rows for existing databases without rebuilding every connect."""
+        if not self._fts_available:
+            return
+        row = self.conn.execute("SELECT count(*) AS count FROM knowledge_fts").fetchone()
+        if row and int(row["count"]) > 0:
+            return
+        self.conn.execute(
+            """INSERT INTO knowledge_fts(rowid, title, content_raw, content_aaak, tags, category)
+               SELECT id, title, content_raw, content_aaak, tags, category FROM knowledge"""
+        )
+
+    def _sync_fts_row(self, knowledge_id: int) -> None:
+        """Synchronize one knowledge row into the optional FTS5 index."""
+        if not self._fts_available:
+            return
+        row = self.conn.execute(
+            "SELECT id, title, content_raw, content_aaak, tags, category FROM knowledge WHERE id=?",
+            (knowledge_id,),
+        ).fetchone()
+        if not row:
+            return
+        self.conn.execute("DELETE FROM knowledge_fts WHERE rowid=?", (knowledge_id,))
+        self.conn.execute(
+            """INSERT INTO knowledge_fts(rowid, title, content_raw, content_aaak, tags, category)
+               VALUES(?,?,?,?,?,?)""",
+            (
+                row["id"],
+                row["title"],
+                row["content_raw"],
+                row["content_aaak"],
+                row["tags"],
+                row["category"],
+            ),
+        )
+
+    def _delete_fts_row(self, knowledge_id: int) -> None:
+        """Remove one knowledge row from the optional FTS5 index."""
+        if self._fts_available:
+            self.conn.execute("DELETE FROM knowledge_fts WHERE rowid=?", (knowledge_id,))
+
+    @staticmethod
+    def _quote_fts_token(token: str) -> str:
+        return '"' + token.replace('"', '""') + '"'
+
+    def search_fts_keyword(
+        self,
+        terms: list[str],
+        limit: int = 10,
+        min_trust: float = 0.0,
+        layer: Optional[str] = None,
+        category: Optional[str] = None,
+    ) -> list[dict]:
+        """Keyword search using optional FTS5 + BM25. Raises if unavailable/bad query."""
+        if not self._fts_available:
+            raise RuntimeError("SQLite FTS5 is unavailable")
+        match_query = " OR ".join(self._quote_fts_token(term) for term in terms if term)
+        if not match_query:
+            return []
+
+        filters = ["k.trust >= ?"]
+        params: list = [match_query, min_trust]
+        if layer:
+            filters.append("k.layer=?")
+            params.append(layer)
+        if category:
+            filters.append("k.category=?")
+            params.append(category)
+        where = " AND ".join(filters)
+        params.append(limit)
+
+        rows = self.conn.execute(
+            f"""SELECT k.*, bm25(knowledge_fts) AS _bm25
+                FROM knowledge_fts
+                JOIN knowledge k ON k.id = knowledge_fts.rowid
+               WHERE knowledge_fts MATCH ? AND {where}
+               ORDER BY _bm25 ASC, k.trust DESC
+               LIMIT ?""",
+            params,
+        ).fetchall()
+        return [dict(row) for row in rows]
+
     def _init_vec_table(self):
         """建立 sqlite-vec 向量虛擬表。"""
         # 取得嵌入維度（預設 384）
@@ -407,8 +509,10 @@ class VaultDB:
              summary, now if summary else '',
              now, now),
         )
+        knowledge_id = int(cursor.lastrowid)
+        self._sync_fts_row(knowledge_id)
         self.conn.commit()
-        return cursor.lastrowid
+        return knowledge_id
 
     def update_knowledge(self, id: int, **fields) -> bool:
         """更新知識欄位。"""
@@ -424,6 +528,7 @@ class VaultDB:
         sets = ", ".join(f"{k}=?" for k in fields)
         vals = list(fields.values()) + [id]
         self.conn.execute(f"UPDATE knowledge SET {sets} WHERE id=?", vals)
+        self._sync_fts_row(id)
         self.conn.commit()
         return True
 
@@ -434,6 +539,7 @@ class VaultDB:
         return dict(row) if row else None
 
     def delete_knowledge(self, id: int) -> bool:
+        self._delete_fts_row(id)
         self.conn.execute("DELETE FROM knowledge WHERE id=?", (id,))
         if self._vec_available:
             self.conn.execute(
