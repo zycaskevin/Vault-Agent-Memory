@@ -15,8 +15,6 @@ from .db import VaultDB
 from .embed import (
     create_embedding_provider,
     EmbeddingProvider,
-    MODELS,
-    DEFAULT_MODEL_KEY,
 )
 
 
@@ -74,6 +72,24 @@ class VaultSearch:
                 "knowledge_vec",
                 "sqlite-vec",
                 "vec0",
+            )
+        )
+
+    @staticmethod
+    def _is_fts_fallback_error(exc: Exception) -> bool:
+        """Return True when FTS5 keyword search should fall back to LIKE."""
+        if isinstance(exc, RuntimeError):
+            return "fts5" in str(exc).lower()
+        if not isinstance(exc, sqlite3.OperationalError):
+            return False
+        msg = str(exc).lower()
+        return any(
+            marker in msg
+            for marker in (
+                "fts5",
+                "knowledge_fts",
+                "malformed match",
+                "fts5: syntax error",
             )
         )
 
@@ -412,12 +428,46 @@ class VaultSearch:
         layer: Optional[str] = None,
         category: Optional[str] = None,
     ) -> list[dict]:
-        """純關鍵字搜尋，自動拆詞 + LIKE 匹配。"""
-        # 拆詞：中文按字元，英文按空格
+        """Keyword search with optional FTS5/BM25 and LIKE fallback."""
         terms = self._tokenize(query)
         if not terms:
             return []
 
+        try:
+            results = self.db.search_fts_keyword(
+                terms,
+                limit=limit,
+                min_trust=min_trust,
+                layer=layer,
+                category=category,
+            )
+        except Exception as exc:
+            if not self._is_fts_fallback_error(exc):
+                raise
+            results = []
+
+        if results:
+            for d in results:
+                text = f"{d.get('title', '')} {d.get('content_raw', '')} {d.get('tags', '')}".lower()
+                matched = sum(1 for t in terms if t.lower() in text)
+                bm25_score = float(d.pop("_bm25", 0.0) or 0.0)
+                d["_score"] = matched / len(terms)
+                d["_bm25"] = bm25_score
+                d["_mode"] = "keyword_fts"
+            return results
+
+        return self._search_keyword_like(query, terms, limit, min_trust, layer, category)
+
+    def _search_keyword_like(
+        self,
+        query: str,
+        terms: list[str],
+        limit: int = 10,
+        min_trust: float = 0.0,
+        layer: Optional[str] = None,
+        category: Optional[str] = None,
+    ) -> list[dict]:
+        """LIKE keyword fallback used when FTS5 is unavailable or yields no hits."""
         # 建構 WHERE 條件
         conditions = []
         params: list = [min_trust]

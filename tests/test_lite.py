@@ -55,6 +55,75 @@ def test_db_crud():
     print("✅ test_db_crud")
 
 
+def test_keyword_search_uses_fts5_and_syncs_crud():
+    """FTS5/BM25 path should be used when available and stay synced with CRUD."""
+    db_path = tempfile.mktemp(suffix=".db")
+    db = VaultDB(db_path)
+    db.connect()
+
+    try:
+        first_id = db.add_knowledge(
+            "BM25 Ranking Guide",
+            "BM25 ranking should beat naive table scans for keyword retrieval.",
+            category="search",
+            tags="fts5,bm25,ranking",
+            trust=0.9,
+        )
+        db.add_knowledge(
+            "Naive LIKE Scan",
+            "A full table scan is the fallback path for older SQLite builds.",
+            category="search",
+            tags="fallback,like",
+            trust=0.8,
+        )
+
+        search = VaultSearch(db, embed_provider=None)
+        results = search.search("BM25 ranking", mode="keyword", use_rerank=False)
+
+        assert results
+        assert results[0]["id"] == first_id
+        assert results[0]["_mode"] == "keyword_fts"
+        assert "_bm25" in results[0]
+
+        db.update_knowledge(first_id, title="Updated Token Guide", content_raw="fresh_token searchable after update")
+        updated = search.search("fresh_token", mode="keyword", use_rerank=False)
+        assert [row["id"] for row in updated] == [first_id]
+
+        db.delete_knowledge(first_id)
+        deleted = search.search("fresh_token", mode="keyword", use_rerank=False)
+        assert deleted == []
+    finally:
+        db.close()
+        os.unlink(db_path)
+
+
+def test_keyword_search_falls_back_when_fts5_is_unavailable():
+    """FTS5 is optional: disabling it should keep keyword search working via LIKE."""
+    db_path = tempfile.mktemp(suffix=".db")
+    db = VaultDB(db_path)
+    db.connect()
+
+    try:
+        db.add_knowledge(
+            "文件地圖閱讀指南",
+            "文件地圖幫助代理先查看章節，再使用讀取範圍取得證據。",
+            category="technique",
+            tags="文件地圖,讀取範圍,證據",
+            trust=0.9,
+        )
+        db._fts_available = False
+
+        search = VaultSearch(db, embed_provider=None)
+        results = search.search("讀取範圍", mode="keyword", use_rerank=False)
+
+        assert results
+        assert results[0]["title"] == "文件地圖閱讀指南"
+        assert results[0]["_mode"] == "keyword"
+    finally:
+        db.close()
+        os.unlink(db_path)
+
+
 def test_keyword_search():
     """測試關鍵字搜尋"""
     db_path = tempfile.mktemp(suffix=".db")
@@ -211,7 +280,7 @@ def test_vector_dimension_mismatch_falls_back_to_keyword():
     vector_results = search.search("installed from wheel", mode="vector")
     assert len(vector_results) > 0
     assert vector_results[0]["title"] == "PyPI smoke test"
-    assert vector_results[0]["_mode"] == "keyword"
+    assert vector_results[0]["_mode"] in {"keyword", "keyword_fts"}
 
     hybrid_results = search.search("installed from wheel", mode="hybrid")
     assert len(hybrid_results) > 0
