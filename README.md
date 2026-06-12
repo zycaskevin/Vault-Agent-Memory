@@ -55,6 +55,7 @@ Version 0.5.0 upgrades Vault-for-LLM from “local keyword-search memory” into
 - **Search QA baseline** — run fixed query sets and compare retrieval quality/latency before and after search changes.
 - **FTS5/BM25 keyword search** — faster keyword retrieval when SQLite FTS5 is available, with safe fallback to the legacy `LIKE` path for compatibility and CJK misses.
 - **Guarded semantic workflow** — optional semantic vectors, provider validation, persistent embedding cache, and operator commands for rebuild/warm/smoke/startup/daemon.
+- **Explicit DB schema status/migration** — inspect and run idempotent SQLite migrations with [`vault db status/migrate`](docs/db_migrations.md).
 - **Release gates** — README command smoke, wheel smoke, version parity, secret scan, full-history privacy scan, and public-boundary checks.
 
 Semantic search is **optional by design**: the base install still works with keyword search only. If you configure a real embedding provider, use [`vault semantic ...`](docs/semantic_search.md) to rebuild vectors, warm caches, and run smoke checks. Deterministic hash embeddings require `--allow-hash` and are for CI/local tests only.
