@@ -1285,6 +1285,21 @@ def _json_print(payload: dict, *, pretty: bool = False) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=indent, sort_keys=True))
 
 
+def cmd_db(args):
+    """SQLite schema migration/status workflows."""
+    from vault.db import VaultDB
+
+    action = args.db_action
+    if action not in {"status", "migrate"}:
+        print("error: db requires action: status or migrate", file=sys.stderr)
+        raise SystemExit(2)
+
+    db_path = Path(args.db_path) if args.db_path else find_project_dir() / "vault.db"
+    with VaultDB(db_path) as db:
+        payload = db.schema_status() if action == "status" else db.migrate()
+    _json_print(payload, pretty=args.pretty)
+
+
 def _semantic_stats_payload(stats, provider) -> dict:
     return {
         "provider_id": provider.provider_id,
@@ -1697,6 +1712,17 @@ def main():
     p.add_argument("config_action", choices=["set", "get", "list"])
     p.add_argument("config_args", nargs="*")
 
+    # db — explicit SQLite schema status/migration workflow
+    p = sub.add_parser("db", help="SQLite schema status/migration")
+    db_sub = p.add_subparsers(dest="db_action", help="DB 子命令")
+    for action_name, help_text in (
+        ("status", "顯示 schema 狀態"),
+        ("migrate", "執行 idempotent schema migration"),
+    ):
+        dp = db_sub.add_parser(action_name, help=help_text)
+        dp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/vault.db）")
+        dp.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+
     # map — Document Map read-only navigation + backfill
     p = sub.add_parser("map", help="Document Map 操作")
     map_sub = p.add_subparsers(dest="map_action", help="Document Map 子命令")
@@ -1912,6 +1938,7 @@ def main():
         "import": cmd_import,
         "export": cmd_export,
         "config": cmd_config,
+        "db": cmd_db,
         "map": cmd_map,
         "graph": cmd_graph,
         "skill": cmd_skill,

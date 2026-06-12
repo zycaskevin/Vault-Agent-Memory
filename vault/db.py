@@ -28,6 +28,13 @@ class VaultDB:
     """Vault-for-LLM 資料庫層。"""
 
     SCHEMA_VERSION = 5
+    MIGRATIONS = {
+        1: "initial_core_tables",
+        2: "graph_and_skill_tables",
+        3: "convergence_freshness_columns",
+        4: "knowledge_summary_columns",
+        5: "document_map_semantic_tables",
+    }
 
     def __init__(self, db_path: str | Path = "vault.db"):
         self.db_path = Path(db_path)
@@ -78,6 +85,7 @@ class VaultDB:
                 value TEXT NOT NULL
             )
         """)
+        self._ensure_schema_migrations_table()
 
         # 知識主表
         c.execute("""
@@ -101,10 +109,25 @@ class VaultDB:
                 freshness          REAL  NOT NULL DEFAULT 1.0
             )
         """)
+        self._ensure_table_columns(
+            "knowledge",
+            {
+                "title": "TEXT NOT NULL DEFAULT ''",
+                "layer": "TEXT NOT NULL DEFAULT 'L3'",
+                "category": "TEXT NOT NULL DEFAULT 'general'",
+                "tags": "TEXT NOT NULL DEFAULT ''",
+                "trust": "REAL NOT NULL DEFAULT 0.5",
+                "content_raw": "TEXT NOT NULL DEFAULT ''",
+                "content_aaak": "TEXT NOT NULL DEFAULT ''",
+                "content_hash": "TEXT NOT NULL DEFAULT ''",
+                "source": "TEXT NOT NULL DEFAULT ''",
+                "created_at": "TEXT NOT NULL DEFAULT ''",
+                "updated_at": "TEXT NOT NULL DEFAULT ''",
+            },
+        )
         c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_layer ON knowledge(layer)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_category ON knowledge(category)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_knowledge_trust ON knowledge(trust)")
-        self._init_fts_table()
 
         # ── Schema v3 migration：為現有資料庫加新欄位 ──
         existing_cols = {r[1] for r in c.execute("PRAGMA table_info(knowledge)").fetchall()}
@@ -127,6 +150,7 @@ class VaultDB:
         for col_name, col_def in new_cols_v4.items():
             if col_name not in existing_cols:
                 c.execute(f"ALTER TABLE knowledge ADD COLUMN {col_name} {col_def}")
+        self._init_fts_table()
         # ── Document Map tables ─────────────────────────────
         # Markdown section nodes for future A2 parser.
         c.execute("""
@@ -345,7 +369,110 @@ class VaultDB:
             "INSERT OR REPLACE INTO config(key, value) VALUES(?, ?)",
             ("schema_version", str(self.SCHEMA_VERSION)),
         )
+        c.execute(f"PRAGMA user_version={self.SCHEMA_VERSION}")
+        self._record_migrations_through(self.SCHEMA_VERSION)
         c.commit()
+
+    def _ensure_schema_migrations_table(self) -> None:
+        """Create explicit schema migration metadata table."""
+        self.conn.execute("""
+            CREATE TABLE IF NOT EXISTS schema_migrations (
+                version    INTEGER PRIMARY KEY,
+                name       TEXT NOT NULL,
+                applied_at TEXT NOT NULL
+            )
+        """)
+
+    def _record_migrations_through(self, target_version: int) -> None:
+        """Record known migrations up to target_version without duplicating rows."""
+        now = datetime.now(timezone.utc).isoformat()
+        for version in range(1, target_version + 1):
+            name = self.MIGRATIONS.get(version, f"schema_v{version}")
+            self.conn.execute(
+                """INSERT OR IGNORE INTO schema_migrations(version, name, applied_at)
+                   VALUES(?, ?, ?)""",
+                (version, name, now),
+            )
+
+    def applied_migrations(self) -> list[dict]:
+        """Return applied schema migration metadata rows."""
+        self._ensure_schema_migrations_table()
+        rows = self.conn.execute(
+            "SELECT version, name, applied_at FROM schema_migrations ORDER BY version"
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def _table_names(self) -> set[str]:
+        rows = self.conn.execute(
+            """SELECT name FROM sqlite_master
+               WHERE type IN ('table', 'virtual table') AND name NOT LIKE 'sqlite_%'"""
+        ).fetchall()
+        return {row["name"] for row in rows}
+
+    def _config_schema_version(self) -> int:
+        try:
+            value = self._get_config("schema_version", "0")
+            return int(value or 0)
+        except (TypeError, ValueError, sqlite3.OperationalError):
+            return 0
+
+    def schema_status(self) -> dict:
+        """Return a JSON-safe schema status summary for operators and tests."""
+        self._ensure_schema_migrations_table()
+        config_version = self._config_schema_version()
+        user_version = int(self.conn.execute("PRAGMA user_version").fetchone()[0] or 0)
+        migration_versions = [int(row["version"]) for row in self.applied_migrations()]
+        current_version = max([config_version, user_version, *migration_versions, 0])
+        tables = self._table_names()
+        required_tables = {
+            "config",
+            "knowledge",
+            "schema_migrations",
+            "knowledge_nodes",
+            "knowledge_claims",
+            "semantic_vectors",
+            "embedding_cache",
+            "content_log",
+            "skills",
+            "lint_cache",
+            "edges",
+            "entities",
+            "entity_knowledge",
+        }
+        missing = sorted(required_tables - tables)
+        return {
+            "current_version": current_version,
+            "target_version": self.SCHEMA_VERSION,
+            "config_schema_version": config_version,
+            "pragma_user_version": user_version,
+            "needs_migration": current_version < self.SCHEMA_VERSION or bool(missing),
+            "applied_migrations": self.applied_migrations(),
+            "db_path": str(self.db_path),
+            "table_count": len(tables),
+            "tables_present": sorted(tables & required_tables),
+            "tables_missing": missing,
+        }
+
+    def migrate(self, target_version: int | None = None) -> dict:
+        """Run idempotent schema migrations and return a JSON-safe summary."""
+        target = self.SCHEMA_VERSION if target_version is None else int(target_version)
+        if target != self.SCHEMA_VERSION:
+            raise ValueError(f"unsupported target schema version: {target}")
+        before = self.schema_status()
+        before_versions = {row["version"] for row in before["applied_migrations"]}
+        self._init_tables()
+        after = self.schema_status()
+        after_versions = {row["version"] for row in after["applied_migrations"]}
+        return {
+            "ok": not after["needs_migration"],
+            "db_path": str(self.db_path),
+            "from_version": before["current_version"],
+            "to_version": after["current_version"],
+            "target_version": self.SCHEMA_VERSION,
+            "applied_versions": sorted(after_versions - before_versions),
+            "before": before,
+            "after": after,
+        }
 
     def _table_columns(self, table: str) -> set[str]:
         """Return existing column names for a SQLite table."""
