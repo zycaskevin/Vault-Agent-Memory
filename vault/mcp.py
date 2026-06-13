@@ -1141,6 +1141,7 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
                     "privacy": privacy,
                     "message": "vault_add blocked secret-like content; use vault_memory_propose after removing secrets.",
                 }, ensure_ascii=False)}
+
             db = _get_db()
             try:
                 kid = db.add_knowledge(

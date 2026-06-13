@@ -1265,6 +1265,7 @@ def cmd_search_qa(args):
             )
         )
         if needs_provider:
+        if args.mode in {"semantic", "hybrid", "vector"}:
             semantic_args = argparse.Namespace(
                 db_path=str(db_path),
                 allow_hash=getattr(args, "allow_hash", False),
