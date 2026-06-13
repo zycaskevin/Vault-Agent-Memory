@@ -2,7 +2,7 @@
 
 **English | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)**
 
-> Local-first, production-grade memory for LLM agents.
+> Local-first, production-minded memory workflows for LLM agents.
 >
 > Vault-for-LLM turns Markdown project knowledge into a portable SQLite memory vault that agents can search on demand. It is built for the boring parts that make agent memory usable in real projects: retrieval QA, bounded document reads, semantic search, schema migrations, and verified backup/restore.
 
@@ -35,6 +35,8 @@ Vault-for-LLM is not just another vector store. It is evolving into an **agent m
 
 In other words: regular RAG focuses on retrieval; Vault-for-LLM focuses on whether memory can be **used correctly by agents**.
 
+For a broader positioning against Mem0, Letta/MemGPT, Zep, and LangGraph memory, see the [memory system comparison](docs/memory_system_comparison.md). The short version: Vault-for-LLM optimizes for local, inspectable, candidate-first project memory with retrieval QA and bounded citations; hosted or runtime-native memory systems may be better when you need managed personalization, a full stateful-agent runtime, or enterprise temporal graph infrastructure.
+
 ---
 
 ## Core principles
@@ -48,15 +50,17 @@ In other words: regular RAG focuses on retrieval; Vault-for-LLM focuses on wheth
 
 ---
 
-## What's new in 0.5.0
+## Current source status: PR27 / 0.5.0
 
-Version 0.5.0 upgrades Vault-for-LLM from “local keyword-search memory” into a production-hardened local memory workflow:
+The current source tree includes the PR27 memory workflow. In plain language, Vault now behaves less like a loose notebook and more like a small library with a front desk:
 
-- **Search QA baseline** — run fixed query sets and compare retrieval quality/latency before and after search changes.
-- **FTS5/BM25 keyword search** — faster keyword retrieval when SQLite FTS5 is available, with safe fallback to the legacy `LIKE` path for compatibility and CJK misses.
-- **Guarded semantic workflow** — optional semantic vectors, provider validation, persistent embedding cache, and operator commands for rebuild/warm/smoke/startup/daemon.
+- **Candidate-first memory** — autonomous agents should drop new memories at the front desk first (`vault remember` / `vault_memory_propose`). Privacy, duplicate, metadata, and quality gates inspect the note before it can be promoted.
+- **Safer recall** — keyword search has a weak-match score floor, so a query that should find nothing is less likely to return a random loosely related note. Operators can tune it with `--min-score`.
+- **Search QA with hard negatives** — fixed query sets can now include `expected_no_results: true`, so the test can catch both “forgot the right note” and “hallucinated the wrong note.”
+- **Report-first Dream curation** — `vault dream` writes reports and plans first; `apply_safe` only applies narrow metadata fixes, with backup/rollback support.
+- **Guarded semantic workflow** — optional semantic vectors, provider validation, persistent embedding cache, and deterministic hash-provider smoke tests for CI/local plumbing.
 - **Explicit DB schema status/migration** — inspect and run idempotent SQLite migrations with [`vault db status/migrate`](docs/db_migrations.md), and create/verify/restore local SQLite backups with [`vault db backup/verify-backup/restore`](docs/db_backup_restore.md).
-- **Release gates** — README command smoke, wheel smoke, version parity, secret scan, full-history privacy scan, and public-boundary checks.
+- **Release gates** — README command smoke, wheel smoke, version parity, secret scan, full-history privacy scan, artifact audit, and public-boundary checks.
 
 Semantic search is **optional by design**: the base install still works with keyword search only. If you configure a real embedding provider, use [`vault semantic ...`](docs/semantic_search.md) to rebuild vectors, warm caches, and run smoke checks. Deterministic hash embeddings require `--allow-hash` and are for CI/local tests only.
 
@@ -102,6 +106,8 @@ The `benchmarks/search_qa/` examples are repository fixtures in a source checkou
 
 The stable path is still the core loop: `vault init` → `vault add`/`vault remember` → `vault compile`/`vault promote` → `vault search` → `vault-mcp`. For autonomous agents, prefer `vault_memory_propose` over direct `vault_add`.
 
+Think of direct `vault_add` as letting someone walk straight into the archive and put a note on the shelf. It is still available for trusted scripts, but the safer daily path is the candidate desk: propose first, inspect gates, then promote.
+
 ---
 
 ## Architecture
@@ -116,6 +122,20 @@ Markdown raw/  →  vault compile  →  SQLite database  →  vault search / MCP
 ```
 
 This keeps the agent prompt small while still making deeper memory available when relevant.
+
+### Agent memory lifecycle
+
+```text
+Conversation / task
+  → propose memory candidate
+  → privacy + duplicate + metadata + quality gates
+  → promote reviewed memory
+  → raw Markdown + SQLite active knowledge
+  → search / map / read_range recall
+  → dream report for cleanup and safe metadata fixes
+```
+
+In story form: the agent writes a note, the front desk checks whether it is safe and useful, the librarian shelves it only after review, and later the agent asks the catalog for just the right shelf and paragraph.
 
 ---
 
@@ -190,7 +210,7 @@ You can also add Markdown files directly under `raw/` and run `vault compile`.
 
 ### Candidate-first agent memory
 
-For autonomous agents or unreviewed memories, prefer the safer candidate workflow:
+For autonomous agents or unreviewed memories, prefer the safer candidate workflow. This is the recommended path after PR27:
 
 ```bash
 vault remember "Memory title" \
@@ -203,6 +223,29 @@ vault promote mem_xxxxxxxxxxxx --confirm
 
 MCP-compatible agents should use `vault_memory_propose` and `vault_memory_promote`; see [MCP memory workflow](docs/mcp_memory_workflow.md).
 
+The gates are intentionally simple and deterministic:
+
+| Gate | Plain-language job |
+|---|---|
+| Privacy | “Does this look like a secret or private data?” |
+| Duplicate | “Do we already have this memory or a near copy?” |
+| Metadata | “Does it at least have a title/content/reason?” |
+| Quality | “Is this specific enough to be useful and findable later?” |
+
+### Search QA: checking whether memory recall is healthy
+
+Search QA is a small exam for your vault. Some questions should find a known note; some hard-negative questions should find nothing. This helps catch both kinds of mistakes: forgetting the right memory and confidently returning the wrong one.
+
+```bash
+vault search-qa run \
+  --qa-file benchmarks/search_qa/basic.en.json \
+  --mode keyword \
+  --min-score 0.34 \
+  --output /tmp/searchqa.json
+```
+
+Fixtures can use `expected_no_results: true` for “do not return anything” checks. See the [Search QA benchmarking guide](docs/search_qa_benchmarking.md).
+
 ### Dream curation reports
 
 Run a report-first memory curation pass:
@@ -211,7 +254,7 @@ Run a report-first memory curation pass:
 vault dream --mode report --limit 50 --write-report
 ```
 
-Reports are written under `reports/dream/`. See [dream workflow](docs/dream_workflow.md).
+Reports are written under `reports/dream/`. `apply_safe` can apply only narrow metadata fixes, and it writes a plan plus backup path so you can roll back if the cleanup was not what you wanted. See [dream workflow](docs/dream_workflow.md).
 
 
 Example entry:
@@ -246,6 +289,8 @@ vault semantic cache-stats --pretty
 
 `vault search --mode semantic` reads stored `semantic_vectors` directly. `--mode hybrid` fuses keyword results with the stored semantic index when available, and falls back safely when it is not.
 
+Search QA can also run semantic/hybrid snapshots, but the QA command must use the same provider/model/dimension and vector kind used to rebuild `semantic_vectors`. For deterministic local smoke tests, rebuild with `--allow-hash --hash-dim N` and pass the same flags to `vault search-qa run`; hash vectors validate plumbing only and are not a semantic-quality benchmark.
+
 For the full lifecycle — `warm`, `cache-prune`, `startup`, `daemon`, and the `--allow-hash` test-only provider — see [`docs/semantic_search.md`](docs/semantic_search.md).
 
 ---
@@ -277,7 +322,7 @@ your-project/
 | `vault add "Title" --file note.md` | Add an entry from a Markdown file |
 | `vault import long-doc.md` | Import and chunk a long document |
 | `vault compile` | Compile `raw/` into SQLite + `compiled/` artifacts |
-| `vault search "query"` | Search the vault |
+| `vault search "query"` | Search the vault; use `--min-score` to tune weak-match suppression |
 | `vault search "query" --graph-expand 2` | Search with graph expansion |
 | `vault export obsidian --vault /path/to/ObsidianVault --dry-run` | Export read-only Markdown notes for Obsidian browsing |
 | `vault list` | List knowledge entries |
@@ -292,7 +337,7 @@ your-project/
 | `vault cross-validate` | Experimental cross-model validation |
 | `vault freshness` | Experimental freshness/review scheduling |
 | `vault dedup` | Detect or merge duplicate entries |
-| `vault search-qa run` / `vault search-qa compare` | Run Search QA metrics snapshots and before/after comparisons ([guide](docs/search_qa_benchmarking.md)) |
+| `vault search-qa run` / `vault search-qa compare` | Run Search QA snapshots, hard-negative checks, and before/after comparisons ([guide](docs/search_qa_benchmarking.md)) |
 | `vault db status` / `vault db migrate` | Inspect or update local SQLite schema ([guide](docs/db_migrations.md)) |
 | `vault db backup` / `vault db verify-backup` / `vault db restore` | Create, verify, and safely restore local SQLite backups ([guide](docs/db_backup_restore.md)) |
 | `vault semantic rebuild` | Rebuild semantic vector rows after configuring a real embedding provider |
@@ -347,12 +392,12 @@ Example MCP server config:
 
 Current MCP tools include:
 
-- `vault_search`
-- `vault_add`
-- `vault_stats`
-- `vault_map_show`
-- `vault_read_range`
-- `vault_remote_map_show` / `vault_remote_read_range` when optional Supabase sync is configured
+- Retrieval: `vault_search`, `vault_stats`
+- Candidate-first memory: `vault_memory_propose`, `vault_memory_promote`
+- Curation: `vault_dream_run`
+- Bounded reading: `vault_map_show`, `vault_read_range`
+- Compatibility direct write: `vault_add` (prefer candidate-first tools for autonomous agents)
+- Optional remote reads: `vault_remote_map_show` / `vault_remote_read_range` when optional Supabase sync is configured
 
 For agent loops, prefer `vault_search` → `vault_map_show` → `vault_read_range`. `vault_search` returns compact MCP payloads by default; pass `compact: false` only when a caller explicitly needs the fuller preview output. Final answers should cite `vault_read_range` output rather than search previews.
 
