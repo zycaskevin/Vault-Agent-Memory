@@ -35,6 +35,8 @@ Vault-for-LLM 不只是另一個向量資料庫。它正在往 **Agent 記憶品
 
 換句話說：一般 RAG 重點是「把資料找出來」；Vault-for-LLM 更關心的是「這些記憶能不能被 Agent 正確使用」。
 
+如果想看它和 Mem0、Letta/MemGPT、Zep、LangGraph memory 的定位差異，請看 [memory system comparison](docs/memory_system_comparison.md)。白話版：Vault-for-LLM 偏向本地、可審查、候選制的專案記憶，重視 retrieval QA 與定界引用；如果你需要託管式個人化記憶、完整 stateful-agent runtime，或企業級 temporal graph memory，其他系統可能更合適。
+
 ---
 
 ## 核心原則

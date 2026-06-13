@@ -31,6 +31,13 @@ def test_memory_lifecycle_promote_search_and_search_qa(tmp_path: Path):
 
         results = VaultSearch(db).search("candidate first active recall", mode="keyword", limit=5, use_rerank=False)
         assert any(result["title"] == "Agent Memory Promotion Guide" for result in results)
+        weak_results = VaultSearch(db).search(
+            "mars banana nonexistent recall",
+            mode="keyword",
+            limit=5,
+            use_rerank=False,
+        )
+        assert weak_results == []
 
     qa_file.write_text(
         '{"version":1,"cases":[{"id":"promoted_memory","query":"candidate first active recall","expected_titles":["Agent Memory Promotion Guide"]}]}',

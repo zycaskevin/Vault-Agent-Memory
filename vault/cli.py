@@ -210,6 +210,7 @@ def cmd_search(args):
             use_rerank=not args.no_rerank,
             semantic_vector_kind=args.semantic_vector_kind,
             allow_hash=args.allow_hash,
+            min_score=args.min_score,
         )
     except SemanticProviderError as exc:
         print(f"error: {exc}", file=sys.stderr)
@@ -1783,6 +1784,8 @@ def main():
     p.add_argument("--keyword-only", "-k", action="store_true")
     p.add_argument("--limit", "-n", type=int, default=10)
     p.add_argument("--min-trust", type=float, default=0.0)
+    p.add_argument("--min-score", type=float, default=None,
+                   help="minimum keyword match score before returning weak/no-result matches")
     p.add_argument("--layer", choices=["L0", "L1", "L2", "L3"])
     p.add_argument("--category")
     p.add_argument("--semantic-vector-kind", choices=["claim", "node"], default="claim",

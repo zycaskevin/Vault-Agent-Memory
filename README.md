@@ -35,6 +35,8 @@ Vault-for-LLM is not just another vector store. It is evolving into an **agent m
 
 In other words: regular RAG focuses on retrieval; Vault-for-LLM focuses on whether memory can be **used correctly by agents**.
 
+For a broader positioning against Mem0, Letta/MemGPT, Zep, and LangGraph memory, see the [memory system comparison](docs/memory_system_comparison.md). The short version: Vault-for-LLM optimizes for local, inspectable, candidate-first project memory with retrieval QA and bounded citations; hosted or runtime-native memory systems may be better when you need managed personalization, a full stateful-agent runtime, or enterprise temporal graph infrastructure.
+
 ---
 
 ## Core principles

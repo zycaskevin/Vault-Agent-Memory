@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from vault.db import VaultDB
+from vault.memory import create_candidate, duplicate_gate, promote_candidate, propose_memory, quality_gate
 from vault.memory import create_candidate, duplicate_gate, promote_candidate, quality_gate
 from vault.privacy import scan_privacy
 
@@ -21,6 +22,14 @@ def test_privacy_gate_blocks_tokens_with_redacted_span():
     assert {"password", "github_token"}.issubset(types)
     assert all("supersecret123" not in f["span"] for f in result["findings"])
     assert all(token not in f["span"] for f in result["findings"])
+
+
+def test_privacy_gate_blocks_natural_language_secret_phrasing():
+    raw_key = "abcdefghijklmnop"
+    result = scan_privacy(f"Do not store secret key is {raw_key} in memory.")
+    assert result["status"] == "fail"
+    assert any(f["type"] == "api_key" for f in result["findings"])
+    assert raw_key not in {f["span"] for f in result["findings"]}
 
 
 def test_duplicate_gate_warns_on_same_title(tmp_path):
@@ -81,6 +90,39 @@ def test_candidate_creation_does_not_alter_active_knowledge(tmp_path):
         assert row["title"] == "Candidate only"
         assert json.loads(row["gate_payload_json"])["privacy"]["status"] == "pass"
         assert json.loads(row["gate_payload_json"])["quality"]["status"] in {"pass", "warn"}
+
+
+def test_promote_if_safe_requires_all_gates_to_pass(tmp_path):
+    with VaultDB(tmp_path / "vault.db") as db:
+        payload = propose_memory(
+            db,
+            mode="promote_if_safe",
+            title="No Tags",
+            content="This memory has useful context because it explains a fix but intentionally lacks tags.",
+            reason="Regression for strict promote_if_safe gate",
+            source="test",
+        )
+        assert payload["status"] == "candidate_created"
+        assert payload["gates"]["quality"] == "warn"
+        assert payload["auto_promotion"]["status"] == "skipped"
+        assert db.conn.execute("SELECT COUNT(*) AS n FROM knowledge").fetchone()["n"] == 0
+
+
+def test_promote_if_safe_promotes_only_when_all_gates_pass(tmp_path):
+    with VaultDB(tmp_path / "vault.db") as db:
+        payload = propose_memory(
+            db,
+            mode="promote_if_safe",
+            title="Tagged safe memory",
+            content="Tagged safe memory is caused by a repeated workflow need; the fix is to store reviewed context.",
+            reason="Regression for strict promote_if_safe success path",
+            tags="workflow,memory",
+            category="workflow",
+            source="test",
+            project_dir=tmp_path,
+        )
+        assert payload["status"] == "promoted"
+        assert payload["knowledge_id"]
 
 
 def test_privacy_fail_candidate_is_rejected_and_redacted(tmp_path):
