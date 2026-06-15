@@ -1273,7 +1273,7 @@ def cmd_search_qa(args):
             )
             embed_provider = _create_semantic_provider(
                 semantic_args,
-                cached=args.mode in {"semantic", "hybrid"},
+                cached=args.mode in {"auto", "semantic", "hybrid"},
             )
         snapshot = evaluate_search_qa(
             db_path=db_path,
