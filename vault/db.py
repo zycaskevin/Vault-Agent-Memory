@@ -881,6 +881,11 @@ class VaultDB:
         if not self._vec_available:
             raise RuntimeError("向量搜尋功能未啟用")
 
+        # 安全上限
+        MAX_LIMIT = 500
+        if limit > MAX_LIMIT:
+            limit = MAX_LIMIT
+
         import struct
         emb_bytes = struct.pack(f"{len(query_embedding)}f", *query_embedding)
 
@@ -894,11 +899,19 @@ class VaultDB:
         if not vec_rows:
             return []
 
-        # Step 2: 取得知識詳細資料（帶權限過濾）
-        results = []
-        # 建構 WHERE 條件
-        where_conditions = ["id=?", "trust >= ?"]
-        params: list = [0, min_trust]  # id 會在每個迭代中替換
+        # Step 2: 單次 IN 查詢取得所有符合權限的知識資料
+        knowledge_ids = [row["knowledge_id"] for row in vec_rows]
+        id_to_dist: dict[int, float] = {}
+        for row in vec_rows:
+            kid = int(row["knowledge_id"])
+            dist = row["distance"]
+            if isinstance(dist, bytes):
+                dist = struct.unpack("f", dist)[0]
+            id_to_dist[kid] = float(dist)
+
+        where_conditions = ["id IN ({})".format(",".join("?" * len(knowledge_ids))), "trust >= ?"]
+        params: list = list(knowledge_ids)
+        params.append(min_trust)
 
         if layer is not None:
             where_conditions.append("layer = ?")
@@ -909,22 +922,19 @@ class VaultDB:
 
         where_clause = " AND ".join(where_conditions)
         sql = f"SELECT * FROM knowledge WHERE {where_clause}"
+        k_rows = self.conn.execute(sql, params).fetchall()
 
-        for row in vec_rows:
-            kid = row["knowledge_id"]
-            dist = row["distance"]
-            # dist 可能是 bytes 或 float
-            if isinstance(dist, bytes):
-                dist = struct.unpack("f", dist)[0]
-            dist = float(dist)
-
-            params[0] = kid  # 替換成當前 knowledge_id
-            k_row = self.conn.execute(sql, params).fetchone()
-            if k_row:
+        # 組合結果，保持向量排序順序
+        results = []
+        for k_row in k_rows:
+            kid = int(k_row["id"])
+            if kid in id_to_dist:
                 d = dict(k_row)
-                d["_distance"] = dist
+                d["_distance"] = id_to_dist[kid]
                 results.append(d)
 
+        # 按距離排序（保證順序正確）
+        results.sort(key=lambda x: x["_distance"])
         return results
 
     # ── 關鍵字搜尋 ──────────────────────────────────────────

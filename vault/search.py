@@ -2299,6 +2299,11 @@ class VaultSearch:
         簡單分詞：英文按單詞，中文按詞語。
         保持原始文本的詞語順序，過濾掉太短的詞。
         """
+        # 安全閥：輸入過長時截斷，避免極端情況下的性能問題
+        MAX_INPUT_LEN = 2000
+        if len(query) > MAX_INPUT_LEN:
+            query = query[:MAX_INPUT_LEN]
+
         # 按順序提取所有 token（英文單詞 + 中文連續片段）
         # 使用 finditer 保持原始出現順序
         tokens = []
@@ -2341,5 +2346,10 @@ class VaultSearch:
             if t_lower not in seen:
                 seen.add(t_lower)
                 unique.append(t)
+
+        # 安全閥：最多返回 100 個 token
+        MAX_TOKENS = 100
+        if len(unique) > MAX_TOKENS:
+            unique = unique[:MAX_TOKENS]
 
         return unique if unique else [query]
