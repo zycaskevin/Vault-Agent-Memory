@@ -441,6 +441,9 @@ def search_semantic_index(
     vector_kind: str = "claim",
     limit: int = 10,
     *,
+    min_trust: float = 0.0,
+    layer: str | None = None,
+    category: str | None = None,
     require_semantic: bool = False,
     allow_hash: bool = True,
 ) -> list[dict[str, Any]]:
@@ -461,6 +464,26 @@ def search_semantic_index(
 
     import heapq
 
+    # 建構 SQL 過濾條件（SQL 層權限過濾，避免側信道洩露）
+    where_conditions = [
+        "sv.provider_id=?",
+        "sv.dimension=?",
+        "sv.vector_kind=?",
+    ]
+    params: list[Any] = [provider.provider_id, provider.dim, vector_kind]
+
+    if min_trust > 0.0:
+        where_conditions.append("k.trust >= ?")
+        params.append(min_trust)
+    if layer is not None:
+        where_conditions.append("k.layer = ?")
+        params.append(layer)
+    if category is not None:
+        where_conditions.append("k.category = ?")
+        params.append(category)
+
+    where_clause = " AND ".join(where_conditions)
+
     # 使用最小堆維護 Top-K 結果，避免全量排序
     top_results: list[tuple[float, int, dict[str, Any]]] = []
     count = 0
@@ -469,17 +492,17 @@ def search_semantic_index(
 
     while True:
         rows = db.conn.execute(
-            """SELECT sv.*, k.title, k.category, k.layer, k.trust,
+            f"""SELECT sv.*, k.title, k.category, k.layer, k.trust,
                       n.heading, n.path
                  FROM semantic_vectors sv
                  JOIN knowledge k ON k.id = sv.knowledge_id
                  LEFT JOIN knowledge_nodes n
                    ON n.knowledge_id = sv.knowledge_id
                   AND n.node_uid = sv.item_uid
-                WHERE sv.provider_id=? AND sv.dimension=? AND sv.vector_kind=?
+                WHERE {where_clause}
                 ORDER BY sv.id
                 LIMIT ? OFFSET ?""",
-            (provider.provider_id, provider.dim, vector_kind, batch_size, offset),
+            params + [batch_size, offset],
         ).fetchall()
 
         if not rows:

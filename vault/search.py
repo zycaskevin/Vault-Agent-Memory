@@ -577,9 +577,15 @@ class VaultSearch:
         if self._vector_weight < 0:
             raise ValueError(f"vector_weight 必須 >= 0，當前值: {self._vector_weight}")
 
-        # 數量參數：必須 >= 0
+        # 數量參數：必須 >= 0 且有上限
+        MAX_QUERY_EXPANSIONS = 20
         if self._query_expansion_count < 0:
             raise ValueError(f"query_expansion_count 必須 >= 0，當前值: {self._query_expansion_count}")
+        if self._query_expansion_count > MAX_QUERY_EXPANSIONS:
+            raise ValueError(
+                f"query_expansion_count 不能超過 {MAX_QUERY_EXPANSIONS}，"
+                f"當前值: {self._query_expansion_count}"
+            )
 
         # 比例參數：必須在 0-1 範圍
         decay_params = [
@@ -1859,8 +1865,8 @@ class VaultSearch:
 
         try:
             query_vec = embed.encode(query)[0]
-        except Exception as e:
-            print(f"[vault-mcp] ⚠️ 嵌入失敗，降級到關鍵字: {e}")
+        except Exception:
+            print("[vault-mcp] ⚠️ 嵌入功能暫時不可用，已降級到關鍵字搜尋")
             return self.search_keyword(query, limit, min_trust, layer, category, min_score=min_score)
 
         try:
@@ -1870,7 +1876,7 @@ class VaultSearch:
             )
         except sqlite3.OperationalError as e:
             if self._is_vector_db_fallback_error(e):
-                print(f"[vault-mcp] ⚠️ 向量搜尋失敗，降級到關鍵字: {e}")
+                print("[vault-mcp] ⚠️ 向量搜尋暫時不可用，已降級到關鍵字搜尋")
                 return self.search_keyword(query, limit, min_trust, layer, category, min_score=min_score)
             raise
 
@@ -1963,6 +1969,9 @@ class VaultSearch:
                 provider=provider,
                 vector_kind=vector_kind,
                 limit=limit * 4,
+                min_trust=min_trust,
+                layer=layer,
+                category=category,
                 require_semantic=require_semantic,
                 allow_hash=allow_hash,
             )
@@ -2257,12 +2266,17 @@ class VaultSearch:
         expanded = list(results)
 
         # 對每個搜尋結果，找圖譜鄰居
+        # 提前終止：已達到 limit 時不再處理後續結果
         for r in results:
+            if len(expanded) >= limit:
+                break
             neighbors = self.db.get_neighbors(
                 r["id"], max_depth=expand_depth,
                 min_trust=min_trust, layer=layer, category=category
             )
             for n in neighbors:
+                if len(expanded) >= limit:
+                    break
                 if n["id"] not in seen_ids:
                     k = self.db.get_knowledge(n["id"])
                     if k:

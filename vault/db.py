@@ -632,7 +632,12 @@ class VaultDB:
         """Keyword search using optional FTS5 + BM25. Raises if unavailable/bad query."""
         if not self._fts_available:
             raise RuntimeError("全文搜尋功能未啟用")
-        match_query = " OR ".join(self._quote_fts_token(term) for term in terms if term)
+        # 安全上限：FTS5 查詢術語數量限制，避免過多 OR 術語導致性能問題
+        MAX_FTS_TERMS = 50
+        filtered_terms = [term for term in terms if term]
+        if len(filtered_terms) > MAX_FTS_TERMS:
+            filtered_terms = filtered_terms[:MAX_FTS_TERMS]
+        match_query = " OR ".join(self._quote_fts_token(term) for term in filtered_terms)
         if not match_query:
             return []
 
@@ -1065,6 +1070,7 @@ class VaultDB:
         category: 分類過濾
         """
         MAX_DEPTH = 10
+        MAX_NEIGHBORS = 200  # 最大返回鄰居數量，防止密集圖導致 DoS
         if max_depth > MAX_DEPTH:
             max_depth = MAX_DEPTH
         if max_depth < 0:
@@ -1077,12 +1083,16 @@ class VaultDB:
         for depth in range(1, max_depth + 1):
             next_frontier = set()
             for nid in frontier:
+                if len(results) >= MAX_NEIGHBORS:
+                    break
                 rows = self.conn.execute(
                     "SELECT source_id, target_id, relation, weight FROM edges "
                     "WHERE (source_id=? OR target_id=?) AND weight >= ?",
                     (nid, nid, min_weight),
                 ).fetchall()
                 for row in rows:
+                    if len(results) >= MAX_NEIGHBORS:
+                        break
                     neighbor = row["target_id"] if row["source_id"] == nid else row["source_id"]
                     if neighbor not in visited:
                         visited.add(neighbor)
@@ -1093,6 +1103,8 @@ class VaultDB:
                             "relation": row["relation"],
                             "weight": row["weight"],
                         })
+            if len(results) >= MAX_NEIGHBORS:
+                break
             frontier = next_frontier
             if not frontier:
                 break
