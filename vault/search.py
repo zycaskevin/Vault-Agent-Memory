@@ -1074,11 +1074,14 @@ class VaultSearch:
         use_llm_rewrite: 是否使用 LLM 查詢改寫（預設 False）
         """
         # 驗證 mode 參數
-        valid_modes = {"auto", "keyword", "vector", "semantic", "hybrid"}
+        valid_modes = {"auto", "basic", "keyword", "vector", "semantic", "hybrid"}
         if mode not in valid_modes:
             raise ValueError(
                 f"無效的搜尋模式: {mode!r}. 有效模式: {sorted(valid_modes)}"
             )
+        # 向後相容：basic 是 auto 的別名
+        if mode == "basic":
+            mode = "auto"
         # LLM 查詢改寫：在查詢擴展之前進行
         if use_llm_rewrite and self._enable_llm_query_rewrite and self.has_llm:
             query = self._rewrite_query_with_llm(query)
