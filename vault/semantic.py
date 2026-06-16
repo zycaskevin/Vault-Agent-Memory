@@ -444,41 +444,72 @@ def search_semantic_index(
     require_semantic: bool = False,
     allow_hash: bool = True,
 ) -> list[dict[str, Any]]:
-    """Search stored deterministic semantic vectors and preserve citation metadata."""
+    """Search stored deterministic semantic vectors and preserve citation metadata.
+
+    使用分批次 + Top-K 堆疊優化，避免一次性加載全部向量導致內存峰值過高。
+    """
     provider = validate_embedding_provider(
         provider or DeterministicHashEmbeddingProvider(),
         require_semantic=require_semantic,
         allow_hash=allow_hash,
     )
     query_vec = provider.encode(query)[0]
-    rows = db.conn.execute(
-        """SELECT sv.*, k.title, k.category, k.layer, k.trust,
-                  n.heading, n.path
-             FROM semantic_vectors sv
-             JOIN knowledge k ON k.id = sv.knowledge_id
-             LEFT JOIN knowledge_nodes n
-               ON n.knowledge_id = sv.knowledge_id
-              AND n.node_uid = sv.item_uid
-            WHERE sv.provider_id=? AND sv.dimension=? AND sv.vector_kind=?""",
-        (provider.provider_id, provider.dim, vector_kind),
-    ).fetchall()
 
-    results: list[dict[str, Any]] = []
-    for row in rows:
-        vector = json.loads(row["vector"])
-        score = _dot(query_vec, vector)
-        item = dict(row)
-        item["_score"] = round(score, 8)
-        item["_mode"] = "semantic_hash"
-        if item.get("line_start") and item.get("line_end"):
-            item["citation"] = (
-                f"#{item['knowledge_id']} {item['title']} "
-                f"L{item['line_start']}-L{item['line_end']}"
-            )
-        results.append(item)
+    # 安全上限：單次查詢最多處理 10000 條向量，防止 DoS
+    MAX_SCAN_ROWS = 10000
+    effective_limit = min(limit, MAX_SCAN_ROWS)
 
-    results.sort(key=lambda item: item["_score"], reverse=True)
-    return results[:limit]
+    import heapq
+
+    # 使用最小堆維護 Top-K 結果，避免全量排序
+    top_results: list[tuple[float, int, dict[str, Any]]] = []
+    count = 0
+    offset = 0
+    batch_size = 500
+
+    while True:
+        rows = db.conn.execute(
+            """SELECT sv.*, k.title, k.category, k.layer, k.trust,
+                      n.heading, n.path
+                 FROM semantic_vectors sv
+                 JOIN knowledge k ON k.id = sv.knowledge_id
+                 LEFT JOIN knowledge_nodes n
+                   ON n.knowledge_id = sv.knowledge_id
+                  AND n.node_uid = sv.item_uid
+                WHERE sv.provider_id=? AND sv.dimension=? AND sv.vector_kind=?
+                ORDER BY sv.id
+                LIMIT ? OFFSET ?""",
+            (provider.provider_id, provider.dim, vector_kind, batch_size, offset),
+        ).fetchall()
+
+        if not rows:
+            break
+
+        for row in rows:
+            vector = json.loads(row["vector"])
+            score = _dot(query_vec, vector)
+            item = dict(row)
+            item["_score"] = round(score, 8)
+            item["_mode"] = "semantic_hash"
+            if item.get("line_start") and item.get("line_end"):
+                item["citation"] = (
+                    f"#{item['knowledge_id']} {item['title']} "
+                    f"L{item['line_start']}-L{item['line_end']}"
+                )
+
+            if len(top_results) < effective_limit:
+                heapq.heappush(top_results, (score, count, item))
+            elif score > top_results[0][0]:
+                heapq.heapreplace(top_results, (score, count, item))
+            count += 1
+
+        if count >= MAX_SCAN_ROWS:
+            break
+        offset += batch_size
+
+    # 按分數降序排列
+    results = [item for _, _, item in sorted(top_results, key=lambda x: x[0], reverse=True)]
+    return results
 
 
 def semantic_index_counts(db: VaultDB) -> dict[str, int]:
