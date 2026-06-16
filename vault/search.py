@@ -619,6 +619,14 @@ class VaultSearch:
                 f"當前值: {self._llm_query_rewrite_strategy}"
             )
 
+        # 驗證 cross_encoder_model 格式（防範路徑遍歷風險）
+        import re
+        if not re.match(r'^[a-zA-Z0-9_\-/]+$', self._cross_encoder_model):
+            raise ValueError(
+                f"cross_encoder_model 格式無效，僅允許字母、數字、下劃線、連字符和斜線，"
+                f"當前值: {self._cross_encoder_model}"
+            )
+
     @property
     def has_embeddings(self) -> bool:
         """檢查是否有向量搜尋能力（含開關檢查）。"""
@@ -1000,18 +1008,74 @@ class VaultSearch:
             query = query[:MAX_INPUT_LENGTH]
 
         # ── 安全防線 2：注入模式初步偵測 ──
-        injection_patterns = [
-            "ignore previous", "ignore all", "忘記之前", "忘記所有",
-            "system prompt", "系統提示", "你現在是", "從現在開始",
-            "執行以下", "follow these", "disregard", "忽略",
-            "output your", "輸出你的", "reveal your", "透露你的",
-        ]
-        query_lower = query.lower()
-        has_injection_pattern = any(
-            pat.lower() in query_lower for pat in injection_patterns
-        )
-        if has_injection_pattern:
-            # 偵測到疑似注入，直接返回原查詢
+        # 多維度檢測，涵蓋常見的提示詞注入繞道手法
+        injection_categories = {
+            # 忽略/覆蓋之前的指令
+            "override": [
+                "ignore previous", "ignore all", "ignore above",
+                "忘記之前", "忘記所有", "忘記上面",
+                "disregard", "ignore the", "忽略先前", "忽略之前",
+                "no longer follow", "不再遵循", "忘記指令",
+            ],
+            # 聲稱自己是系統/管理員
+            "impersonation": [
+                "system prompt", "系統提示", "system instruction",
+                "admin mode", "管理員模式", "developer mode",
+                "你現在是", "從現在開始", "假設你是", "請你扮演",
+                "you are now", "act as", "roleplay", "角色扮演",
+            ],
+            # 要求執行特定指令
+            "command": [
+                "執行以下", "follow these", "do as i say",
+                "聽我說", "按我說的做", "執行指令",
+                "output your", "輸出你的", "reveal your", "透露你的",
+                "print your", "列印你的", "show your", "顯示你的",
+            ],
+            # 編碼/混淆特徵（base64、unicode 等）
+            "obfuscation": [
+                "base64", "decode", "解碼", "解密", "decrypt",
+                "unicode", "escape", "unescape",
+            ],
+            # 邊界操縦（試圖突破 XML/標籤邊界）
+            "boundary": [
+                "</user_query>", "</user>", "user_query>",
+                "]]>", "<![CDATA[", "cdata",
+            ],
+        }
+
+        # 標準化查詢：統一大小寫、去除多餘空白、常見繞道字符
+        def _normalize_for_detection(text: str) -> str:
+            import re
+            # 轉小寫
+            text = text.lower()
+            # 移除常見的干擾字符（零寬字符、特殊符號等）
+            text = re.sub(r'[\u200b-\u200f\u2060\ufeff]', '', text)
+            # 將多種空白字符合併為單一空格
+            text = re.sub(r'\s+', ' ', text)
+            return text.strip()
+
+        normalized_query = _normalize_for_detection(query)
+
+        # 逐類檢測，任何一類命中則視為疑似注入
+        is_injection = False
+        for category, patterns in injection_categories.items():
+            if any(pat in normalized_query for pat in patterns):
+                is_injection = True
+                break
+
+        # 額外檢查：查詢中包含過多的指令性動詞（更複雜的注入模式）
+        if not is_injection:
+            command_verbs = [
+                "必須", "應該", "請", "你要", "你需要",
+                "must", "should", "please", "you need to",
+            ]
+            # 如果包含多個指令動詞且長度較長，提高警惕
+            verb_count = sum(1 for v in command_verbs if v in normalized_query)
+            if verb_count >= 3 and len(query) > 200:
+                is_injection = True
+
+        if is_injection:
+            # 偵測到疑似注入，直接返回原查詢，不使用 LLM 改寫
             return query
 
         try:
@@ -1804,16 +1868,22 @@ class VaultSearch:
         if not terms:
             return []
 
+        # 轉義 LIKE 特殊字符，防止通配符注入
+        def _escape_like_pattern(term: str) -> str:
+            return term.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+
         # 建構 WHERE 條件
         conditions = []
         params: list = [min_trust]
 
         for term in terms:
             conditions.append(
-                "(title LIKE ? OR content_raw LIKE ? OR content_aaak LIKE ? "
-                "OR tags LIKE ? OR category LIKE ?)"
+                "(title LIKE ? ESCAPE '\\' OR content_raw LIKE ? ESCAPE '\\' "
+                "OR content_aaak LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\' "
+                "OR category LIKE ? ESCAPE '\\')"
             )
-            pattern = f"%{term}%"
+            escaped = _escape_like_pattern(term)
+            pattern = f"%{escaped}%"
             params.extend([pattern] * 5)
 
         where = f"trust >= ? AND ({' OR '.join(conditions)})" if len(terms) > 1 else f"trust >= ? AND {conditions[0]}"

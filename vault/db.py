@@ -680,7 +680,7 @@ class VaultDB:
         except Exception as e:
             # 維度變了需要重建
             if "already exists" in str(e).lower() or "different" in str(e).lower():
-                print(f"[vault-mcp] ⚠️ 向量表維度不匹配，重建中（舊向量會遺失）: {e}", file=sys.stderr)
+                print("[vault-mcp] ⚠️ 向量表初始化異常，正在重建", file=sys.stderr)
                 self.conn.execute("DROP TABLE IF EXISTS knowledge_vec")
                 self.conn.execute(
                     f"CREATE VIRTUAL TABLE knowledge_vec USING vec0("
@@ -886,6 +886,13 @@ class VaultDB:
         if not self._vec_available:
             raise RuntimeError("向量搜尋功能未啟用")
 
+        # 驗證向量維度
+        expected_dim = int(self._get_config("embedding_dim", "384"))
+        if len(query_embedding) != expected_dim:
+            raise ValueError(
+                f"向量維度不匹配：預期 {expected_dim} 維，實際 {len(query_embedding)} 維"
+            )
+
         # 安全上限
         MAX_LIMIT = 500
         if limit > MAX_LIMIT:
@@ -895,10 +902,14 @@ class VaultDB:
         emb_bytes = struct.pack(f"{len(query_embedding)}f", *query_embedding)
 
         # Step 1: 從 vec 表取得相似的 knowledge_id + distance
+        # 放大查詢量（limit * 5），緩解權限過濾帶來的側信道洩露
+        # 同時設置合理上限，避免查詢過多向量影響性能
+        VEC_SEARCH_MULTIPLIER = 5
+        vec_limit = min(limit * VEC_SEARCH_MULTIPLIER, MAX_LIMIT)
         vec_rows = self.conn.execute(
             "SELECT knowledge_id, distance FROM knowledge_vec "
             "WHERE embedding MATCH ? ORDER BY distance ASC LIMIT ?",
-            (emb_bytes, limit),
+            (emb_bytes, vec_limit),
         ).fetchall()
 
         if not vec_rows:
@@ -1070,7 +1081,8 @@ class VaultDB:
         category: 分類過濾
         """
         MAX_DEPTH = 10
-        MAX_NEIGHBORS = 200  # 最大返回鄰居數量，防止密集圖導致 DoS
+        MAX_NEIGHBORS = 200  # 最大返回鄰居數量
+        MAX_VISITED = 500    # 最大遍歷節點數，防止密集圖 DoS
         if max_depth > MAX_DEPTH:
             max_depth = MAX_DEPTH
         if max_depth < 0:
@@ -1078,12 +1090,13 @@ class VaultDB:
 
         visited = {node_id}
         frontier = {node_id}
-        results = []
+        # 存儲所有發現的鄰居及其屬性（id -> {distance, relation, weight}）
+        all_neighbors: dict[int, dict] = {}
 
         for depth in range(1, max_depth + 1):
             next_frontier = set()
             for nid in frontier:
-                if len(results) >= MAX_NEIGHBORS:
+                if len(visited) >= MAX_VISITED:
                     break
                 rows = self.conn.execute(
                     "SELECT source_id, target_id, relation, weight FROM edges "
@@ -1091,36 +1104,35 @@ class VaultDB:
                     (nid, nid, min_weight),
                 ).fetchall()
                 for row in rows:
-                    if len(results) >= MAX_NEIGHBORS:
+                    if len(visited) >= MAX_VISITED:
                         break
                     neighbor = row["target_id"] if row["source_id"] == nid else row["source_id"]
                     if neighbor not in visited:
                         visited.add(neighbor)
                         next_frontier.add(neighbor)
-                        results.append({
+                        all_neighbors[neighbor] = {
                             "id": neighbor,
                             "distance": depth,
                             "relation": row["relation"],
                             "weight": row["weight"],
-                        })
-            if len(results) >= MAX_NEIGHBORS:
+                        }
+
+            if len(visited) >= MAX_VISITED:
                 break
             frontier = next_frontier
             if not frontier:
                 break
 
-        # 權限過濾：如果有設定 min_trust、layer 或 category，從 knowledge 表過濾
+        # 權限過濾
         if min_trust > 0.0 or layer is not None or category is not None:
-            if not results:
-                return results
+            if not all_neighbors:
+                return []
 
-            # 收集所有鄰居 ID
-            neighbor_ids = [r["id"] for r in results]
+            neighbor_ids = list(all_neighbors.keys())
             placeholders = ",".join("?" * len(neighbor_ids))
 
-            # 建構 WHERE 條件
             where_conditions = [f"id IN ({placeholders})", "trust >= ?"]
-            params: list = list(neighbor_ids) + [min_trust]
+            params: list = neighbor_ids + [min_trust]
 
             if layer is not None:
                 where_conditions.append("layer = ?")
@@ -1130,14 +1142,15 @@ class VaultDB:
                 params.append(category)
 
             where_clause = " AND ".join(where_conditions)
-            sql = f"SELECT id FROM knowledge WHERE {where_clause}"
+            sql = f"SELECT id FROM knowledge WHERE {where_clause} LIMIT ?"
+            params.append(MAX_NEIGHBORS)
 
-            # 查詢符合條件的節點 ID
             valid_rows = self.conn.execute(sql, params).fetchall()
             valid_ids = {row["id"] for row in valid_rows}
 
-            # 只保留符合條件的結果
-            results = [r for r in results if r["id"] in valid_ids]
+            results = [all_neighbors[nid] for nid in valid_ids if nid in all_neighbors]
+        else:
+            results = list(all_neighbors.values())[:MAX_NEIGHBORS]
 
         return results
 
