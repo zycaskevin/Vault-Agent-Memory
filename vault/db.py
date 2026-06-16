@@ -666,7 +666,14 @@ class VaultDB:
     def _init_vec_table(self):
         """建立 sqlite-vec 向量虛擬表。"""
         # 取得嵌入維度（預設 384）
-        dim = self._get_config("embedding_dim", "384")
+        dim_str = self._get_config("embedding_dim", "384")
+        # 安全驗證：確保維度是正整數且在合理範圍內，防止 SQL 注入
+        try:
+            dim = int(dim_str)
+            if dim < 64 or dim > 4096:
+                raise ValueError(f"embedding_dim out of range: {dim}")
+        except (ValueError, TypeError):
+            dim = 384  # 安全預設值
         # 不 DROP！如果表已存在就不重建，保留向量資料
         # 只有表不存在時才建
         try:
@@ -886,8 +893,15 @@ class VaultDB:
         if not self._vec_available:
             raise RuntimeError("向量搜尋功能未啟用")
 
+        # None 或空向量直接返回空結果
+        if query_embedding is None or not isinstance(query_embedding, (list, tuple)) or len(query_embedding) == 0:
+            return []
+
         # 驗證向量維度
-        expected_dim = int(self._get_config("embedding_dim", "384"))
+        try:
+            expected_dim = int(self._get_config("embedding_dim", "384"))
+        except (ValueError, TypeError):
+            expected_dim = 384
         if len(query_embedding) != expected_dim:
             raise ValueError(
                 f"向量維度不匹配：預期 {expected_dim} 維，實際 {len(query_embedding)} 維"
@@ -962,16 +976,27 @@ class VaultDB:
         min_trust: float = 0.0,
     ) -> list[dict]:
         """純關鍵字搜尋（LIKE匹配），降級方案。"""
+        # None 查詢直接返回空結果
+        if query is None:
+            return []
+
+        # 轉義 LIKE 特殊字符，防止通配符注入
+        def _escape_like_pattern(term: str) -> str:
+            return term.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+
+        escaped = _escape_like_pattern(query)
+        pattern = f"%{escaped}%"
+
         sql = """
             SELECT *, 0.0 AS _score
             FROM knowledge
             WHERE trust >= ?
-              AND (title LIKE ? OR content_raw LIKE ? OR content_aaak LIKE ?
-                   OR tags LIKE ? OR category LIKE ?)
+              AND (title LIKE ? ESCAPE '\\' OR content_raw LIKE ? ESCAPE '\\'
+                   OR content_aaak LIKE ? ESCAPE '\\' OR tags LIKE ? ESCAPE '\\'
+                   OR category LIKE ? ESCAPE '\\')
             ORDER BY trust DESC
             LIMIT ?
         """
-        pattern = f"%{query}%"
         rows = self.conn.execute(
             sql, (min_trust, pattern, pattern, pattern, pattern, pattern, limit)
         ).fetchall()
@@ -1303,20 +1328,26 @@ class VaultDB:
         limit: int = 20,
     ) -> list[dict]:
         """搜尋技能：關鍵字 + 可選過濾。"""
+        # 轉義 LIKE 特殊字符，防止通配符注入
+        def _escape_like_pattern(term: str) -> str:
+            return term.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+
         conditions = ["trust >= ?"]
         params: list = [min_trust]
 
         if query:
             conditions.append(
-                "(name LIKE ? OR description LIKE ? OR capabilities LIKE ? "
-                "OR content_raw LIKE ?)"
+                "(name LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\' "
+                "OR capabilities LIKE ? ESCAPE '\\' OR content_raw LIKE ? ESCAPE '\\')"
             )
-            pattern = f"%{query}%"
+            escaped = _escape_like_pattern(query)
+            pattern = f"%{escaped}%"
             params.extend([pattern, pattern, pattern, pattern])
 
         if capabilities:
-            conditions.append("capabilities LIKE ?")
-            params.append(f"%{capabilities}%")
+            conditions.append("capabilities LIKE ? ESCAPE '\\'")
+            escaped_cap = _escape_like_pattern(capabilities)
+            params.append(f"%{escaped_cap}%")
 
         if category:
             conditions.append("category=?")

@@ -1341,6 +1341,17 @@ class VaultSearch:
         if mode == "basic":
             mode = "auto"
 
+        # ── 安全防線：空查詢 / None 檢查 ──
+        if query is None or not isinstance(query, str) or not query.strip():
+            return []
+
+        # ── 安全防線：min_score 範圍驗證 ──
+        if min_score is not None:
+            if not isinstance(min_score, (int, float)):
+                min_score = None
+            elif min_score < 0:
+                min_score = 0.0
+
         # ── 安全防線：查詢長度限制 ──
         MAX_QUERY_LENGTH = 1000
         if len(query) > MAX_QUERY_LENGTH:
