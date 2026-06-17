@@ -1412,6 +1412,7 @@ class VaultSearch:
         use_llm_rewrite: bool = False,
         normalize_scores: bool = False,
         include_snippet: bool = False,
+        highlight_snippet: bool = False,
     ) -> list[dict]:
         """
         搜尋知識庫。
@@ -1442,6 +1443,8 @@ class VaultSearch:
                           開啟後，不同模式的分數具有可比性，min_score 可使用統一閾值。
         include_snippet: 是否生成搜尋結果片段（預設 False）
                          開啟後每個結果會包含 _snippet 欄位，顯示與查詢最相關的上下文。
+        highlight_snippet: 是否在片段中高亮匹配的關鍵詞（預設 False）
+                           使用 <em> 標籤包裹匹配詞，需與 include_snippet 同時開啟。
         """
         # 驗證 mode 參數
         valid_modes = {"auto", "basic", "keyword", "vector", "semantic", "hybrid"}
@@ -1475,6 +1478,7 @@ class VaultSearch:
                 use_llm_rewrite=use_llm_rewrite,
                 normalize_scores=normalize_scores,
                 include_snippet=include_snippet,
+                highlight_snippet=highlight_snippet,
             )
             cached = self._get_from_cache(cache_key)
             if cached is not None:
@@ -1677,7 +1681,9 @@ class VaultSearch:
                 # 優先使用 content_aaak，其次使用 content_raw
                 content = r.get("content_aaak", "") or r.get("content_raw", "")
                 if content:
-                    r["_snippet"] = self._generate_snippet(content, query)
+                    r["_snippet"] = self._generate_snippet(
+                        content, query, highlight=highlight_snippet
+                    )
                 else:
                     r["_snippet"] = ""
 
@@ -1971,7 +1977,13 @@ class VaultSearch:
         return ""
 
     @staticmethod
-    def _generate_snippet(text: str, query: str, max_length: int = 150) -> str:
+    def _generate_snippet(
+        text: str,
+        query: str,
+        max_length: int = 150,
+        highlight: bool = False,
+        highlight_tag: str = "em",
+    ) -> str:
         """
         根據查詢詞生成文本片段，優先顯示包含查詢詞的上下文。
 
@@ -1979,6 +1991,8 @@ class VaultSearch:
             text: 原始文本
             query: 查詢詞（支持多詞）
             max_length: 片段最大長度
+            highlight: 是否高亮匹配的關鍵詞
+            highlight_tag: 高亮使用的 HTML 標籤名
 
         Returns:
             包含查詢詞上下文的片段，未找到則返回文本開頭
@@ -1986,8 +2000,8 @@ class VaultSearch:
         if not text or not query:
             return text[:max_length].strip() if text else ""
 
-        # 提取查詢詞（取前 5 個最長的詞進行匹配）
         import re
+        # 提取查詢詞（取前 5 個最長的詞進行匹配）
         query_terms = [t.strip().lower() for t in re.split(r'\s+', query) if t.strip()]
         if not query_terms:
             return text[:max_length].strip()
@@ -2026,23 +2040,33 @@ class VaultSearch:
 
         if best_pos == -1:
             # 沒有找到匹配，返回開頭
-            return text[:max_length].strip()
+            snippet = text[:max_length].strip()
+        else:
+            # 以最佳位置為中心，提取上下文
+            half_len = max_length // 2
+            start = max(0, best_pos - half_len)
+            end = min(len(text), start + max_length)
+            # 調整 start 確保長度足夠
+            if end - start < max_length:
+                start = max(0, end - max_length)
 
-        # 以最佳位置為中心，提取上下文
-        half_len = max_length // 2
-        start = max(0, best_pos - half_len)
-        end = min(len(text), start + max_length)
-        # 調整 start 確保長度足夠
-        if end - start < max_length:
-            start = max(0, end - max_length)
+            snippet = text[start:end]
 
-        snippet = text[start:end]
+            # 添加省略號標記
+            if start > 0:
+                snippet = "..." + snippet
+            if end < len(text):
+                snippet = snippet + "..."
 
-        # 添加省略號標記
-        if start > 0:
-            snippet = "..." + snippet
-        if end < len(text):
-            snippet = snippet + "..."
+        # 關鍵詞高亮
+        if highlight and best_pos >= 0:
+            for term in query_terms_sorted:
+                if len(term) < 2:
+                    continue
+                # 使用正則表達式進行大小寫不敏感的替換
+                # 只替換實際出現在片段中的詞
+                pattern = re.compile(re.escape(term), re.IGNORECASE)
+                snippet = pattern.sub(f'<{highlight_tag}>\\g<0></{highlight_tag}>', snippet)
 
         return snippet.strip()
 
