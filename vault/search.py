@@ -559,6 +559,8 @@ class VaultSearch:
         # LLM 查詢改寫設定
         self._enable_llm_query_rewrite = enable_llm_query_rewrite
         self._llm_query_rewrite_strategy = llm_query_rewrite_strategy
+        # 安全模式：捕獲異常並返回空結果，避免洩露內部錯誤信息
+        self._safe_mode = False
         # 快取設定
         self._enable_cache = False  # 預設關閉，需要時手動開啟
         self._cache_size = 128
@@ -1456,6 +1458,50 @@ class VaultSearch:
                 指定後僅返回列表中的欄位，減少數據傳輸量。
                 內部欄位（_score, _snippet 等）需顯式包含。
         """
+        # 安全模式：捕獲異常返回空結果，避免洩露內部錯誤信息
+        if self._safe_mode:
+            try:
+                return self._do_search(
+                    query, mode, limit, offset, min_trust, layer, category,
+                    graph_expand, use_rerank, compact, semantic_vector_kind,
+                    allow_hash, min_score, use_query_expansion, use_llm_rewrite,
+                    normalize_scores, include_snippet, highlight_snippet, fields,
+                )
+            except (ValueError, TypeError):
+                raise  # 參數驗證錯誤仍然拋出
+            except Exception:
+                return []
+
+        return self._do_search(
+            query, mode, limit, offset, min_trust, layer, category,
+            graph_expand, use_rerank, compact, semantic_vector_kind,
+            allow_hash, min_score, use_query_expansion, use_llm_rewrite,
+            normalize_scores, include_snippet, highlight_snippet, fields,
+        )
+
+    def _do_search(
+        self,
+        query: str,
+        mode: str = "auto",
+        limit: int = 10,
+        offset: int = 0,
+        min_trust: float = 0.0,
+        layer: Optional[str] = None,
+        category: Optional[str] = None,
+        graph_expand: int = 0,
+        use_rerank: bool = True,
+        compact: bool = False,
+        semantic_vector_kind: str = "claim",
+        allow_hash: bool = False,
+        min_score: float | None = None,
+        use_query_expansion: bool = True,
+        use_llm_rewrite: bool = False,
+        normalize_scores: bool = False,
+        include_snippet: bool = False,
+        highlight_snippet: bool = False,
+        fields: Optional[list[str]] = None,
+    ) -> list[dict]:
+        """內部搜尋實現。"""
         # 驗證 mode 參數
         valid_modes = {"auto", "basic", "keyword", "vector", "semantic", "hybrid"}
         if mode not in valid_modes:
