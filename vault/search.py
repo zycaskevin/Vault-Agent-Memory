@@ -1305,6 +1305,7 @@ class VaultSearch:
         min_score: float | None = None,
         use_query_expansion: bool = True,
         use_llm_rewrite: bool = False,
+        normalize_scores: bool = False,
     ) -> list[dict]:
         """
         搜尋知識庫。
@@ -1328,8 +1329,11 @@ class VaultSearch:
                    注意：不同模式的分數含義不同——
                    - keyword 模式：匹配詞比例（0-1）
                    - vector 模式：轉換後的餘弦相似度（0-1）
-                   - hybrid 模式：RRF 融合分數
+                   - hybrid 模式：RRF 融合分數（範圍較大）
                    設置時請考慮不同模式的分數分佈差異。
+                   若開啟 normalize_scores，則所有模式分數統一為 0-1 範圍。
+        normalize_scores: 是否將結果分數標準化到 0-1 範圍（預設 False）
+                          開啟後，不同模式的分數具有可比性，min_score 可使用統一閾值。
         """
         # 驗證 mode 參數
         valid_modes = {"auto", "basic", "keyword", "vector", "semantic", "hybrid"}
@@ -1518,6 +1522,23 @@ class VaultSearch:
         # Document Map enrichment（best span / node / citation）
         if results:
             self._enrich_with_document_map(results, query)
+
+        # 分數標準化（0-1 範圍）
+        if normalize_scores and results:
+            scores = [r.get("_score", 0.0) for r in results]
+            max_score = max(scores)
+            min_score_val = min(scores)
+            score_range = max_score - min_score_val
+            if score_range > 0:
+                for r in results:
+                    original = r.get("_score", 0.0)
+                    r["_original_score"] = original
+                    r["_score"] = round((original - min_score_val) / score_range, 4)
+            else:
+                # 所有分數相同，全部設為 1.0
+                for r in results:
+                    r["_original_score"] = r.get("_score", 0.0)
+                    r["_score"] = 1.0
 
         if compact:
             return [self._compact_result(r) for r in results]
