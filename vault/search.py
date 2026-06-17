@@ -1222,12 +1222,13 @@ class VaultSearch:
         }
 
     def _get_cache_key(self, query: str, **kwargs) -> str:
-        """生成快取鍵值。"""
-        # 將影響結果的參數都納入鍵值
+        """生成快取鍵值。使用單元分隔符避免鍵值衝突。"""
+        # 使用 ASCII 單元分隔符（\x1F）分隔，避免與查詢內容衝突
+        SEP = "\x1F"
         key_parts = [query]
         for k in sorted(kwargs.keys()):
             key_parts.append(f"{k}={kwargs[k]}")
-        return "|".join(key_parts)
+        return SEP.join(key_parts)
 
     def _get_from_cache(self, cache_key: str) -> Optional[list[dict]]:
         """從快取取得結果，過期則返回 None。"""
@@ -1514,9 +1515,16 @@ class VaultSearch:
             offset = MAX_OFFSET
 
         # 為分頁預留偏移量：搜尋階段多取 offset 筆，最後再切片
+        # 安全限制：搜尋窗口上限，防止深分頁導致性能問題
+        MAX_SEARCH_WINDOW = 2000
         _page_limit = limit
         if offset > 0:
-            limit = min(limit + offset, MAX_LIMIT + MAX_OFFSET)
+            search_limit = limit + offset
+            if search_limit > MAX_SEARCH_WINDOW:
+                # 超出搜尋窗口，調整實際可返回的數量
+                search_limit = MAX_SEARCH_WINDOW
+                _page_limit = max(0, MAX_SEARCH_WINDOW - offset)
+            limit = min(search_limit, MAX_LIMIT + MAX_OFFSET)
 
         # ── 安全防線：圖譜擴展深度上限 ──
         if graph_expand > MAX_GRAPH_EXPAND_DEPTH:
@@ -1999,6 +2007,7 @@ class VaultSearch:
         max_length: int = 150,
         highlight: bool = False,
         highlight_tag: str = "em",
+        escape_html: bool = True,
     ) -> str:
         """
         根據查詢詞生成文本片段，優先顯示包含查詢詞的上下文。
@@ -2008,18 +2017,33 @@ class VaultSearch:
             query: 查詢詞（支持多詞）
             max_length: 片段最大長度
             highlight: 是否高亮匹配的關鍵詞
-            highlight_tag: 高亮使用的 HTML 標籤名
+            highlight_tag: 高亮使用的 HTML 標籤名（僅限字母數字）
+            escape_html: 是否對文本內容進行 HTML 實體轉義（預設 True，防止 XSS）
 
         Returns:
             包含查詢詞上下文的片段，未找到則返回文本開頭
         """
+        import html
+        import re
+
         if not text or not query:
+            if text and escape_html:
+                return html.escape(text[:max_length]).strip()
             return text[:max_length].strip() if text else ""
 
-        import re
+        # 安全驗證：highlight_tag 白名單機制，防止標籤注入
+        # 只允許安全的內聯文本標籤
+        ALLOWED_TAGS = {"em", "strong", "mark", "span", "b", "i", "u", "s", "code", "kbd", "var"}
+        if not isinstance(highlight_tag, str) or highlight_tag.lower() not in ALLOWED_TAGS:
+            highlight_tag = "em"
+        else:
+            highlight_tag = highlight_tag.lower()
+
         # 提取查詢詞（取前 5 個最長的詞進行匹配）
         query_terms = [t.strip().lower() for t in re.split(r'\s+', query) if t.strip()]
         if not query_terms:
+            if escape_html:
+                return html.escape(text[:max_length]).strip()
             return text[:max_length].strip()
 
         # 按詞長度排序，優先匹配長詞
@@ -2074,9 +2098,18 @@ class VaultSearch:
             if end < len(text):
                 snippet = snippet + "..."
 
+        # HTML 實體轉義（防止 XSS）
+        if escape_html:
+            snippet = html.escape(snippet)
+            # 查詢詞也需要轉義，因為轉義後的文本中查詢詞可能被改變（如 < 變成 &lt;）
+            # 我們需要用轉義後的查詢詞來匹配
+            escaped_terms = [html.escape(t) for t in query_terms_sorted]
+        else:
+            escaped_terms = query_terms_sorted
+
         # 關鍵詞高亮
         if highlight and best_pos >= 0:
-            for term in query_terms_sorted:
+            for term in escaped_terms:
                 if len(term) < 2:
                     continue
                 # 使用正則表達式進行大小寫不敏感的替換
