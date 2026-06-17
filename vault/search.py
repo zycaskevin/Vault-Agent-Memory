@@ -1415,6 +1415,7 @@ class VaultSearch:
         normalize_scores: bool = False,
         include_snippet: bool = False,
         highlight_snippet: bool = False,
+        fields: Optional[list[str]] = None,
     ) -> list[dict]:
         """
         搜尋知識庫。
@@ -1449,6 +1450,11 @@ class VaultSearch:
                            使用 <em> 標籤包裹匹配詞，需與 include_snippet 同時開啟。
         offset: 分頁偏移量（預設 0），跳過前 offset 條結果。
                 與 limit 配合使用實現分頁，offset 最大為 9999。
+        fields: 指定返回的欄位列表（預設 None 返回全部欄位）。
+                常用欄位：id, title, category, layer, trust, _score, _snippet,
+                         content_raw, content_aaak, tags, source, summary。
+                指定後僅返回列表中的欄位，減少數據傳輸量。
+                內部欄位（_score, _snippet 等）需顯式包含。
         """
         # 驗證 mode 參數
         valid_modes = {"auto", "basic", "keyword", "vector", "semantic", "hybrid"}
@@ -1484,6 +1490,7 @@ class VaultSearch:
                 normalize_scores=normalize_scores,
                 include_snippet=include_snippet,
                 highlight_snippet=highlight_snippet,
+                fields=",".join(sorted(fields)) if fields else "",
             )
             cached = self._get_from_cache(cache_key)
             if cached is not None:
@@ -1717,6 +1724,12 @@ class VaultSearch:
 
         if compact:
             return [self._compact_result(r) for r in results]
+
+        # 欄位過濾（僅在非 compact 模式下生效）
+        if fields and results:
+            field_set = set(fields)
+            results = [{k: v for k, v in r.items() if k in field_set} for r in results]
+
         return results
 
     # ── Document Map enrichment ─────────────────────────────
