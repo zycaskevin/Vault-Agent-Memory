@@ -565,7 +565,9 @@ class VaultSearch:
         self._enable_cache = False  # 預設關閉，需要時手動開啟
         self._cache_size = 128
         self._cache_ttl = 60  # 快取有效期（秒）
-        # 快取存儲：{cache_key: (timestamp, results)}
+        self._max_cache_memory_mb = 32  # 快取最大內存使用量（MB）
+        self._current_cache_memory = 0  # 當前快取內存使用量（字節）
+        # 快取存儲：{cache_key: (timestamp, results, size_bytes)}
         self._cache = {}
         # 快取命中統計
         self._cache_hits = 0
@@ -1184,6 +1186,7 @@ class VaultSearch:
         enabled: Optional[bool] = None,
         max_size: Optional[int] = None,
         ttl_seconds: Optional[int] = None,
+        max_memory_mb: Optional[float] = None,
     ) -> None:
         """
         配置搜尋結果快取。
@@ -1192,6 +1195,7 @@ class VaultSearch:
             enabled: 是否啟用快取（None 表示不改變）
             max_size: 最大快取條目數（None 表示不改變）
             ttl_seconds: 快取有效期（秒，None 表示不改變）
+            max_memory_mb: 最大快取內存使用量（MB，None 表示不改變）
         """
         if enabled is not None:
             self._enable_cache = enabled
@@ -1202,10 +1206,15 @@ class VaultSearch:
                 self._evict_oldest(len(self._cache) - self._cache_size)
         if ttl_seconds is not None:
             self._cache_ttl = max(ttl_seconds, 1)
+        if max_memory_mb is not None:
+            self._max_cache_memory_mb = max(max_memory_mb, 0.1)
+            # 如果超出內存限制，驅逐舊條目直到符合限制
+            self._evict_to_memory_limit()
 
     def clear_cache(self) -> None:
         """清空所有快取。"""
         self._cache.clear()
+        self._current_cache_memory = 0
         self._cache_hits = 0
         self._cache_misses = 0
 
@@ -1218,6 +1227,8 @@ class VaultSearch:
             "size": len(self._cache),
             "max_size": self._cache_size,
             "ttl_seconds": self._cache_ttl,
+            "memory_usage_mb": round(self._current_cache_memory / (1024 * 1024), 2),
+            "max_memory_mb": self._max_cache_memory_mb,
             "hits": self._cache_hits,
             "misses": self._cache_misses,
             "hit_rate_percent": round(hit_rate, 1),
@@ -1244,10 +1255,11 @@ class VaultSearch:
             self._cache_misses += 1
             return None
 
-        timestamp, results = entry
+        timestamp, results, size_bytes = entry
         # 檢查是否過期
         if time.time() - timestamp > self._cache_ttl:
             del self._cache[cache_key]
+            self._current_cache_memory -= size_bytes
             self._cache_misses += 1
             return None
 
@@ -1255,25 +1267,69 @@ class VaultSearch:
         # 返回深拷貝，避免外部修改影響快取
         return [dict(r) for r in results]
 
+    def _estimate_result_size(self, results: list[dict]) -> int:
+        """估算快取結果的內存大小（字節）。"""
+        import sys
+        total = 0
+        for r in results:
+            total += sys.getsizeof(r)
+            for k, v in r.items():
+                total += sys.getsizeof(k) + sys.getsizeof(v)
+        return total
+
     def _set_to_cache(self, cache_key: str, results: list[dict]) -> None:
         """將結果存入快取。"""
         if not self._enable_cache:
             return
 
         import time
-        # 如果快取已滿，驅逐最舊的條目
+        # 估算大小
+        size_bytes = self._estimate_result_size(results)
+        max_bytes = int(self._max_cache_memory_mb * 1024 * 1024)
+
+        # 如果單條結果就超過內存限制，直接跳過
+        if size_bytes > max_bytes:
+            return
+
+        # 如果已存在，先扣除舊大小
+        if cache_key in self._cache:
+            old_size = self._cache[cache_key][2]
+            self._current_cache_memory -= old_size
+
+        # 快取條目數檢查
         if len(self._cache) >= self._cache_size and cache_key not in self._cache:
             self._evict_oldest(1)
 
+        # 內存限制檢查
+        self._evict_to_memory_limit()
+
         # 存儲深拷貝
-        self._cache[cache_key] = (time.time(), [dict(r) for r in results])
+        self._cache[cache_key] = (time.time(), [dict(r) for r in results], size_bytes)
+        self._current_cache_memory += size_bytes
+
+    def _evict_to_memory_limit(self) -> None:
+        """驅逐舊快取條目直到內存使用量低於限制。"""
+        max_bytes = int(self._max_cache_memory_mb * 1024 * 1024)
+        if self._current_cache_memory <= max_bytes:
+            return
+
+        # 按時間排序，從最舊的開始驅逐
+        items = sorted(self._cache.items(), key=lambda x: x[1][0])
+        for key, (_, _, size_bytes) in items:
+            if self._current_cache_memory <= max_bytes:
+                break
+            del self._cache[key]
+            self._current_cache_memory -= size_bytes
 
     def _evict_oldest(self, count: int) -> None:
         """驅逐最舊的快取條目。"""
         # 按時間排序，刪除最舊的
         items = sorted(self._cache.items(), key=lambda x: x[1][0])
         for i in range(min(count, len(items))):
-            del self._cache[items[i][0]]
+            key = items[i][0]
+            _, _, size_bytes = self._cache[key]
+            self._current_cache_memory -= size_bytes
+            del self._cache[key]
 
     def info(self) -> dict:
         """
@@ -1562,15 +1618,16 @@ class VaultSearch:
             limit = 1
 
         # ── 安全防線：offset 邊界驗證 ──
-        MAX_OFFSET = 9999
+        # 降低 MAX_OFFSET 從 9999 → 2000，配合 MAX_SEARCH_WINDOW 防止深分頁 DoS
+        MAX_OFFSET = 2000
         if not isinstance(offset, int) or offset < 0:
             offset = 0
         if offset > MAX_OFFSET:
             offset = MAX_OFFSET
 
         # 為分頁預留偏移量：搜尋階段多取 offset 筆，最後再切片
-        # 安全限制：搜尋窗口上限，防止深分頁導致性能問題
-        MAX_SEARCH_WINDOW = 2000
+        # 安全限制：搜尋窗口上限 = MAX_OFFSET + MAX_LIMIT，防止深分頁導致性能問題
+        MAX_SEARCH_WINDOW = MAX_OFFSET + MAX_LIMIT
         _page_limit = limit
         if offset > 0:
             search_limit = limit + offset
@@ -2167,14 +2224,15 @@ class VaultSearch:
         else:
             escaped_terms = query_terms_sorted
 
-        # 關鍵詞高亮
+        # 關鍵詞高亮：合併為單次正則替換，避免多次遍歷（ReDoS 優化）
         if highlight and best_pos >= 0:
-            for term in escaped_terms:
-                if len(term) < 2:
-                    continue
-                # 使用正則表達式進行大小寫不敏感的替換
-                # 只替換實際出現在片段中的詞
-                pattern = re.compile(re.escape(term), re.IGNORECASE)
+            # 過濾有效詞並構建合併正則
+            valid_terms = [t for t in escaped_terms if len(t) >= 2]
+            if valid_terms:
+                # 按詞長降序排列，確保長詞優先匹配（避免短詞吞併長詞的部分）
+                valid_terms.sort(key=len, reverse=True)
+                combined_pattern = '|'.join(re.escape(t) for t in valid_terms)
+                pattern = re.compile(combined_pattern, re.IGNORECASE)
                 snippet = pattern.sub(f'<{highlight_tag}>\\g<0></{highlight_tag}>', snippet)
 
         return snippet.strip()
@@ -2845,8 +2903,7 @@ class VaultSearch:
                 seen.add(t_lower)
                 unique.append(t)
 
-        # 安全閥：最多返回 100 個 token
-        MAX_TOKENS = 100
+        # 最終截斷：復用同一個 MAX_TOKENS 常量
         if len(unique) > MAX_TOKENS:
             unique = unique[:MAX_TOKENS]
 

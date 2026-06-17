@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.6.20] — 2026-06-17
+
+### Fixed
+- **P3 深分頁性能風險**：降低 `MAX_OFFSET` 從 9999 → 2000，`MAX_SEARCH_WINDOW` 改為動態計算（`MAX_OFFSET + MAX_LIMIT`），防止大 offset 導致的中間結果處理量過大，有效防禦深分頁 DoS。
+- **P3 快取內存無限制**：新增快取內存使用量追蹤與限制機制，預設上限 32MB。超出限制時自動驅逐最舊條目，單條結果超限則跳過快取。新增 `set_cache_config(max_memory_mb=...)` 參數和 `get_cache_stats()` 中的 `memory_usage_mb`/`max_memory_mb` 欄位。
+- **P3 片段高亮 ReDoS 風險**：將 `_generate_snippet` 中的多次 `re.sub` 循環替換改為單次合併正則替換，避免多次遍歷文本，降低正則性能風險。
+- **P4 `_tokenize` 重複常量**：移除 `_tokenize` 方法中重複定義的 `MAX_TOKENS = 100`，復用方法開頭的同一常量。
+
+### Changed
+- 快取條目格式從 `(timestamp, results)` 變更為 `(timestamp, results, size_bytes)`，內部變更不影響外部 API。
+- `_evict_oldest()` 方法新增內存計數更新。
+- 新增 `_estimate_result_size()` 和 `_evict_to_memory_limit()` 輔助方法。
+
+### Modules Affected
+- `vault/search.py`：`VaultSearch._do_search()`、快取相關方法、`_generate_snippet()`、`_tokenize()`
+
+### Impact
+- 向後相容：所有變更均為內部實現優化，外部 API 完全不變。
+- `MAX_OFFSET` 從 9999 降至 2000，依賴大 offset 分頁的調用需調整（建議使用關鍵詞過濾替代深分頁）。
+- 升級後舊快取會自動失效（條目格式變更），屬預期行為。
+
+---
+
 ## [0.6.19] — 2026-06-17
 
 ### Fixed
