@@ -1306,6 +1306,7 @@ class VaultSearch:
         use_query_expansion: bool = True,
         use_llm_rewrite: bool = False,
         normalize_scores: bool = False,
+        include_snippet: bool = False,
     ) -> list[dict]:
         """
         搜尋知識庫。
@@ -1334,6 +1335,8 @@ class VaultSearch:
                    若開啟 normalize_scores，則所有模式分數統一為 0-1 範圍。
         normalize_scores: 是否將結果分數標準化到 0-1 範圍（預設 False）
                           開啟後，不同模式的分數具有可比性，min_score 可使用統一閾值。
+        include_snippet: 是否生成搜尋結果片段（預設 False）
+                         開啟後每個結果會包含 _snippet 欄位，顯示與查詢最相關的上下文。
         """
         # 驗證 mode 參數
         valid_modes = {"auto", "basic", "keyword", "vector", "semantic", "hybrid"}
@@ -1539,6 +1542,16 @@ class VaultSearch:
                 for r in results:
                     r["_original_score"] = r.get("_score", 0.0)
                     r["_score"] = 1.0
+
+        # 生成搜尋結果片段
+        if include_snippet and results and query:
+            for r in results:
+                # 優先使用 content_aaak，其次使用 content_raw
+                content = r.get("content_aaak", "") or r.get("content_raw", "")
+                if content:
+                    r["_snippet"] = self._generate_snippet(content, query)
+                else:
+                    r["_snippet"] = ""
 
         if compact:
             return [self._compact_result(r) for r in results]
@@ -1824,6 +1837,82 @@ class VaultSearch:
 
         # 沒有 CLAIMS 段， fallback
         return ""
+
+    @staticmethod
+    def _generate_snippet(text: str, query: str, max_length: int = 150) -> str:
+        """
+        根據查詢詞生成文本片段，優先顯示包含查詢詞的上下文。
+
+        Args:
+            text: 原始文本
+            query: 查詢詞（支持多詞）
+            max_length: 片段最大長度
+
+        Returns:
+            包含查詢詞上下文的片段，未找到則返回文本開頭
+        """
+        if not text or not query:
+            return text[:max_length].strip() if text else ""
+
+        # 提取查詢詞（取前 5 個最長的詞進行匹配）
+        import re
+        query_terms = [t.strip().lower() for t in re.split(r'\s+', query) if t.strip()]
+        if not query_terms:
+            return text[:max_length].strip()
+
+        # 按詞長度排序，優先匹配長詞
+        query_terms_sorted = sorted(query_terms, key=len, reverse=True)[:5]
+
+        text_lower = text.lower()
+        best_pos = -1
+        best_score = 0
+
+        # 找到最佳匹配位置（匹配詞越多、詞越長，分數越高）
+        for term in query_terms_sorted:
+            if not term or len(term) < 2:
+                continue
+            pos = 0
+            while True:
+                idx = text_lower.find(term, pos)
+                if idx == -1:
+                    break
+                # 計算該位置的分數：匹配詞長度 + 附近其他匹配詞數量
+                score = len(term)
+                # 檢查附近是否有其他匹配詞（窗口 100 字符）
+                window_start = max(0, idx - 50)
+                window_end = min(len(text_lower), idx + len(term) + 50)
+                window = text_lower[window_start:window_end]
+                for other_term in query_terms_sorted:
+                    if other_term != term and len(other_term) >= 2 and other_term in window:
+                        score += len(other_term) * 0.5
+
+                if score > best_score:
+                    best_score = score
+                    best_pos = idx
+
+                pos = idx + 1
+
+        if best_pos == -1:
+            # 沒有找到匹配，返回開頭
+            return text[:max_length].strip()
+
+        # 以最佳位置為中心，提取上下文
+        half_len = max_length // 2
+        start = max(0, best_pos - half_len)
+        end = min(len(text), start + max_length)
+        # 調整 start 確保長度足夠
+        if end - start < max_length:
+            start = max(0, end - max_length)
+
+        snippet = text[start:end]
+
+        # 添加省略號標記
+        if start > 0:
+            snippet = "..." + snippet
+        if end < len(text):
+            snippet = snippet + "..."
+
+        return snippet.strip()
 
     # ── 關鍵字搜尋 ──────────────────────────────────────────
 
