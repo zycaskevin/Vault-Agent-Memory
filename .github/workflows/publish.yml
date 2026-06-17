@@ -64,8 +64,12 @@ jobs:
     name: Publish to PyPI
     needs: [build]
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/vault-for-llm/
     permissions:
       contents: read
+      id-token: write
 
     steps:
       - name: Download distributions
@@ -76,5 +80,3 @@ jobs:
 
       - name: Publish distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          password: ${{ secrets.PYPI_API_TOKEN }}

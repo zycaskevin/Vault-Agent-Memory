@@ -412,7 +412,13 @@ def cmd_doctor(args):
     except ImportError:
         try:
             import optimum
-            checks.append(("optimum[onnxruntime]", f"⚠️ optimum {optimum.__version__} 已裝，缺 onnxruntime", False))
+            # optimum v2.x may not have __version__ (use importlib.metadata fallback)
+            try:
+                opt_ver = optimum.__version__
+            except AttributeError:
+                import importlib.metadata as _meta
+                opt_ver = _meta.version("optimum")
+            checks.append(("optimum[onnxruntime]", f"⚠️ optimum {opt_ver} 已裝，缺 onnxruntime", False))
         except ImportError:
             checks.append(("optimum[onnxruntime]", "❌ 未安裝 (pip install optimum[onnxruntime])", False))
 
