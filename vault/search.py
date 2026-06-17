@@ -1661,7 +1661,10 @@ class VaultSearch:
             elif mode == "vector":
                 if self.has_embeddings:
                     results = self.search_vector(q_text, limit * 2, min_trust, layer, category)
-                    results = results[:limit]
+                    if not results:
+                        results = self.search_keyword(q_text, limit, min_trust, layer, category, min_score=min_score)
+                    else:
+                        results = results[:limit]
                 else:
                     results = self.search_keyword(q_text, limit, min_trust, layer, category, min_score=min_score)
             elif mode == "semantic":
@@ -2375,6 +2378,9 @@ class VaultSearch:
         min_score: 最小相似度分數（0-1），僅返回相似度 >= min_score 的結果。
                   向量模式的分數為餘弦相似度轉換為 0-1 範圍，
                   與 keyword 模式的匹配率分數含義不同，使用時請注意。
+                  
+        注意：當向量搜尋不可用時返回空列表（不降級到關鍵字），
+        調用者需自行處理降級邏輯。
         """
         # 空查詢防護
         if not query or not isinstance(query, str) or not query.strip():
@@ -2383,14 +2389,20 @@ class VaultSearch:
             limit = MAX_LIMIT
         embed = self._get_embed()
         if embed is None or not self.db._vec_available:
-            # 降級到關鍵字
-            return self.search_keyword(query, limit, min_trust, layer, category, min_score=min_score)
+            return []
 
         try:
             query_vec = embed.encode(query)[0]
         except Exception:
-            print("[vault-mcp] ⚠️ 嵌入功能暫時不可用，已降級到關鍵字搜尋")
-            return self.search_keyword(query, limit, min_trust, layer, category, min_score=min_score)
+            return []
+
+        # 驗證向量維度與資料庫配置是否匹配
+        try:
+            expected_dim = int(self.db._get_config("embedding_dim", "384"))
+        except (ValueError, TypeError):
+            expected_dim = 384
+        if len(query_vec) != expected_dim:
+            return []
 
         try:
             results = self.db.search_vector(
@@ -2399,9 +2411,11 @@ class VaultSearch:
             )
         except sqlite3.OperationalError as e:
             if self._is_vector_db_fallback_error(e):
-                print("[vault-mcp] ⚠️ 向量搜尋暫時不可用，已降級到關鍵字搜尋")
-                return self.search_keyword(query, limit, min_trust, layer, category, min_score=min_score)
+                return []
             raise
+        except ValueError:
+            # 維度不匹配等引數錯誤
+            return []
 
         # 後過濾（雙重保險）
         if layer:
@@ -2620,7 +2634,7 @@ class VaultSearch:
                 layer=layer,
                 category=category,
             )
-            hybrid_mode = "hybrid"
+            hybrid_mode = "hybrid" if second_results else "keyword"
         else:
             second_results = []
             hybrid_mode = "keyword"
