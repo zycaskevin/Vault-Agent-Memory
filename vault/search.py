@@ -1399,6 +1399,7 @@ class VaultSearch:
         query: str,
         mode: str = "auto",
         limit: int = 10,
+        offset: int = 0,
         min_trust: float = 0.0,
         layer: Optional[str] = None,
         category: Optional[str] = None,
@@ -1445,6 +1446,8 @@ class VaultSearch:
                          開啟後每個結果會包含 _snippet 欄位，顯示與查詢最相關的上下文。
         highlight_snippet: 是否在片段中高亮匹配的關鍵詞（預設 False）
                            使用 <em> 標籤包裹匹配詞，需與 include_snippet 同時開啟。
+        offset: 分頁偏移量（預設 0），跳過前 offset 條結果。
+                與 limit 配合使用實現分頁，offset 最大為 9999。
         """
         # 驗證 mode 參數
         valid_modes = {"auto", "basic", "keyword", "vector", "semantic", "hybrid"}
@@ -1467,6 +1470,7 @@ class VaultSearch:
                 query=query,
                 mode=mode,
                 limit=limit,
+                offset=offset,
                 min_trust=min_trust,
                 layer=layer,
                 category=category,
@@ -1501,6 +1505,18 @@ class VaultSearch:
             limit = MAX_LIMIT
         if limit <= 0:
             limit = 1
+
+        # ── 安全防線：offset 邊界驗證 ──
+        MAX_OFFSET = 9999
+        if not isinstance(offset, int) or offset < 0:
+            offset = 0
+        if offset > MAX_OFFSET:
+            offset = MAX_OFFSET
+
+        # 為分頁預留偏移量：搜尋階段多取 offset 筆，最後再切片
+        _page_limit = limit
+        if offset > 0:
+            limit = min(limit + offset, MAX_LIMIT + MAX_OFFSET)
 
         # ── 安全防線：圖譜擴展深度上限 ──
         if graph_expand > MAX_GRAPH_EXPAND_DEPTH:
@@ -1686,6 +1702,10 @@ class VaultSearch:
                     )
                 else:
                     r["_snippet"] = ""
+
+        # ── 分頁切片 ──
+        if offset > 0 and results:
+            results = results[offset:offset + _page_limit]
 
         # ── 存入快取 ──
         if cache_key is not None:
