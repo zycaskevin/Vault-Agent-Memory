@@ -104,6 +104,8 @@ def check_thresholds(snapshot: dict[str, Any], args: argparse.Namespace) -> int:
         "top1_hits",
         "topk_hits",
         "mean_reciprocal_rank",
+        "source_hit_cases",
+        "source_hit_rate",
         "no_result_precision",
         "citation_policy_violations",
         "result_mode_violations",

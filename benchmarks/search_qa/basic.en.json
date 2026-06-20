@@ -8,6 +8,9 @@
       "query": "tool-gated reading map navigation read_range evidence",
       "expected_title_substrings": [
         "Tool-gated Reading"
+      ],
+      "expected_sources": [
+        "benchmarks/en/tool-gated-reading.md"
       ]
     },
     {
@@ -15,6 +18,9 @@
       "query": "citation policy boundary final answer support",
       "expected_titles": [
         "Citation Policy Boundary"
+      ],
+      "expected_sources": [
+        "benchmarks/en/citation-policy-boundary.md"
       ]
     },
     {

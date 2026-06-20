@@ -32,23 +32,31 @@ mkdir -p "$DEMO_DIR"
 cd "$DEMO_DIR"
 
 vault init
-vault add "Tool-gated Reading Guide" --content "# Tool-gated Reading Guide
+vault add "Tool-gated Reading Guide" \
+  --source "benchmarks/en/tool-gated-reading.md" \
+  --content "# Tool-gated Reading Guide
 Intro
 ## Tool-gated Reading
 Tool-gated reading keeps agents from reading whole documents.
 It requires map navigation before read_range evidence."
 
-vault add "Citation Policy Boundary" --content "# Citation Policy Boundary
+vault add "Citation Policy Boundary" \
+  --source "benchmarks/en/citation-policy-boundary.md" \
+  --content "# Citation Policy Boundary
 Search citations are navigation hints only, not final answer support.
 Final citations require read_range output."
 
-vault add "文件地圖閱讀指南" --content "# 文件地圖閱讀指南
+vault add "文件地圖閱讀指南" \
+  --source "benchmarks/zh-Hant/document-map-reading.md" \
+  --content "# 文件地圖閱讀指南
 簡介
 ## 文件地圖與讀取範圍
 文件地圖幫助代理先查看章節，再使用讀取範圍取得證據。
 此流程避免一次讀完整份文件。"
 
-vault add "引用政策邊界" --content "# 引用政策邊界
+vault add "引用政策邊界" \
+  --source "benchmarks/zh-Hant/citation-policy-boundary.md" \
+  --content "# 引用政策邊界
 搜尋引用只是導航提示，不是最終引用。
 最終引用需要來自讀取範圍的輸出。"
 
@@ -144,6 +152,7 @@ and expected claim-level evidence:
   "id": "semantic-cache-key",
   "query": "which cache key was fixed?",
   "expected_ids": [12],
+  "expected_sources": ["benchmarks/en/cache-key.md"],
   "require_mode_prefix": "semantic",
   "expected_claim_substrings": ["cache key", "provider id"],
   "expected_best_span": ["L7-L9"],
@@ -155,6 +164,11 @@ Use `allowed_result_modes` when several modes are acceptable, for example
 `["semantic", "semantic_hash", "hybrid_semantic"]`. These fields help catch
 cases where an explicit semantic/vector QA run silently fell back to keyword
 results or returned the right document but the wrong claim/span.
+
+Use `expected_sources` or `expected_source_substrings` when the target database
+can contain duplicate titles. When a case includes source expectations,
+Search QA only counts a title/ID match as a hit if the result source also
+matches.
 
 Example comparison output:
 
@@ -186,6 +200,7 @@ Search QA snapshots include these aggregate metrics:
 - `mean_reciprocal_rank` — average reciprocal rank of the first expected result, with `0.0` for misses.
 - `map_guidance_rate` — fraction of cases whose results include `vault_map_show` guidance.
 - `read_range_guidance_rate` — fraction of cases whose results include `vault_read_range` guidance.
+- `source_hit_cases` / `source_hit_rate` — cases where a result source matches `expected_sources` or all `expected_source_substrings`.
 - `citation_policy_violations` — count of search results that are incorrectly labeled as final citations, or that expose search-result citations without `read_range` guidance.
 - `result_mode_violations` — count of results that violate fixture-level `allowed_result_modes` or `require_mode_prefix` constraints.
 - `claim_hit_cases` / `claim_hit_rate` — cases where `best_claim` contains all `expected_claim_substrings`.
