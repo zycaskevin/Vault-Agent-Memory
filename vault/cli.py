@@ -123,6 +123,9 @@ def cmd_add(args):
         allow_private=getattr(args, "allow_private", False),
         label="vault add",
     )
+    source = getattr(args, "source", "cli")
+    if not isinstance(source, str) or not source:
+        source = "cli"
 
     with VaultDB(str(project_dir / "vault.db")) as db:
         kid = db.add_knowledge(
@@ -132,7 +135,7 @@ def cmd_add(args):
             category=args.category or "general",
             tags=args.tags or "",
             trust=args.trust or 0.5,
-            source="cli",
+            source=source,
         )
         print(f"✅ 新增知識 ID={kid}")
 
@@ -1818,6 +1821,7 @@ def main():
     p.add_argument("--category", default="general")
     p.add_argument("--tags", default="")
     p.add_argument("--trust", type=float, default=0.5)
+    p.add_argument("--source", default="cli", help="來源標籤或檔案路徑")
     p.add_argument("--allow-private", action="store_true", help="允許含秘密模式的內容直接寫入本機 vault")
 
     # remember/promote — safe memory curator workflow

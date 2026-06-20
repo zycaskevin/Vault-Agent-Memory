@@ -62,6 +62,7 @@ class TestSummarizeResult:
             "layer": "L2",
             "trust": 0.8,
             "tags": "python,test",
+            "source": "benchmarks/en/test-doc.md",
             "citation": "Test L1-5",
             "_score": 0.95,
             "_mode": "semantic",
@@ -76,6 +77,7 @@ class TestSummarizeResult:
         assert summary["layer"] == "L2"
         assert summary["trust"] == 0.8
         assert summary["tags"] == "python,test"
+        assert summary["source"] == "benchmarks/en/test-doc.md"
         assert summary["citation"] == "Test L1-5"
         assert summary["score"] == 0.95  # renamed from _score
         assert summary["mode"] == "semantic"  # renamed from _mode
@@ -220,6 +222,35 @@ class TestFineGrainedHits:
         assert _node_hit_rank(case, results) == 2
 
 
+class TestSourceAwareHits:
+    def test_source_hit_rank_accepts_exact_source(self):
+        from vault.search_qa import _source_hit_rank
+
+        case = {"expected_sources": ["benchmarks/en/right.md"]}
+        results = [
+            {"title": "Shared Runbook", "source": "benchmarks/en/wrong.md"},
+            {"title": "Shared Runbook", "source": "benchmarks/en/right.md"},
+        ]
+
+        assert _source_hit_rank(case, results) == 2
+
+    def test_source_hit_rank_accepts_source_substrings(self):
+        from vault.search_qa import _source_hit_rank
+
+        case = {"expected_source_substrings": ["runbooks", "tool-gated"]}
+        results = [
+            {"source": "benchmarks/en/citation-policy.md"},
+            {"source": "benchmarks/runbooks/tool-gated-reading.md"},
+        ]
+
+        assert _source_hit_rank(case, results) == 2
+
+    def test_source_hit_rank_without_source_expectation_is_unscoped(self):
+        from vault.search_qa import _source_hit_rank
+
+        assert _source_hit_rank({}, [{"source": "benchmarks/en/right.md"}]) is None
+
+
 class TestMatchesExpected:
     def test_matches_expected_by_id(self):
         """Test matching by id field."""
@@ -255,6 +286,31 @@ class TestMatchesExpected:
         case = {"expected_titles": ["Python Guide"]}
         result = {"id": 99, "title": "Python Guide"}
         assert _matches_expected(case, result) is True
+
+    def test_matches_expected_requires_source_when_present(self):
+        from vault.search_qa import _matches_expected
+
+        case = {
+            "expected_titles": ["Shared Runbook"],
+            "expected_sources": ["benchmarks/en/right.md"],
+        }
+
+        assert _matches_expected(
+            case,
+            {"title": "Shared Runbook", "source": "benchmarks/en/wrong.md"},
+        ) is False
+        assert _matches_expected(
+            case,
+            {"title": "Shared Runbook", "source": "benchmarks/en/right.md"},
+        ) is True
+
+    def test_matches_expected_can_use_source_only_cases(self):
+        from vault.search_qa import _matches_expected
+
+        case = {"expected_source_substrings": ["benchmarks", "right"]}
+
+        assert _matches_expected(case, {"source": "benchmarks/en/right.md"}) is True
+        assert _matches_expected(case, {"source": "benchmarks/en/wrong.md"}) is False
 
 
 class TestCitationPolicyViolations:

@@ -29,6 +29,8 @@ METRIC_KEYS: tuple[str, ...] = (
     "mean_reciprocal_rank",
     "map_guidance_rate",
     "read_range_guidance_rate",
+    "source_hit_cases",
+    "source_hit_rate",
     "citation_policy_violations",
     "mean_latency_ms",
     "p95_latency_ms",
@@ -175,6 +177,8 @@ def format_search_qa_snapshot(snapshot: dict[str, Any]) -> str:
         f"- mean_reciprocal_rank: {aggregate.get('mean_reciprocal_rank', 0.0)}\n"
         f"- map_guidance_rate: {aggregate.get('map_guidance_rate', 0.0)}\n"
         f"- read_range_guidance_rate: {aggregate.get('read_range_guidance_rate', 0.0)}\n"
+        f"- source_hit_cases: {aggregate.get('source_hit_cases', 0)}\n"
+        f"- source_hit_rate: {aggregate.get('source_hit_rate', 0.0)}\n"
         f"- citation_policy_violations: {aggregate.get('citation_policy_violations', 0)}\n"
         f"- mean_latency_ms: {aggregate.get('mean_latency_ms', 0.0)}\n"
         f"- p95_latency_ms: {aggregate.get('p95_latency_ms', 0.0)}\n"
@@ -222,6 +226,7 @@ def _evaluate_case(
     claim_hit_rank = _claim_hit_rank(case, results)
     span_hit_rank = _span_hit_rank(case, results)
     node_hit_rank = _node_hit_rank(case, results)
+    source_hit_rank = _source_hit_rank(case, results)
     has_map_guidance = any(_has_map_guidance(result) for result in results)
     has_read_range_guidance = any(_has_read_range_guidance(result) for result in results)
     violations = _citation_policy_violations(results)
@@ -233,6 +238,8 @@ def _evaluate_case(
         "expected_ids": _as_list(case.get("expected_ids")),
         "expected_titles": _as_list(case.get("expected_titles")),
         "expected_title_substrings": _as_list(case.get("expected_title_substrings")),
+        "expected_sources": _as_list(case.get("expected_sources")),
+        "expected_source_substrings": _as_list(case.get("expected_source_substrings")),
         "expected_no_results": expected_no_results,
         "result_count": len(results),
         "no_result_hit": expected_no_results and len(results) == 0,
@@ -247,6 +254,8 @@ def _evaluate_case(
         "span_hit_rank": span_hit_rank,
         "node_hit": node_hit_rank is not None,
         "node_hit_rank": node_hit_rank,
+        "source_hit": source_hit_rank is not None,
+        "source_hit_rank": source_hit_rank,
         "has_map_guidance": has_map_guidance,
         "has_read_range_guidance": has_read_range_guidance,
         "citation_policy_violations": violations,
@@ -265,6 +274,7 @@ def _summarize_result(result: dict[str, Any]) -> dict[str, Any]:
         "layer",
         "trust",
         "tags",
+        "source",
         "best_claim",
         "best_span",
         "node_uid",
@@ -311,9 +321,11 @@ def _aggregate_cases(cases: list[dict[str, Any]]) -> dict[str, int | float]:
             "claim_hit_cases": 0,
             "span_hit_cases": 0,
             "node_hit_cases": 0,
+            "source_hit_cases": 0,
             "claim_hit_rate": 0.0,
             "span_hit_rate": 0.0,
             "node_hit_rate": 0.0,
+            "source_hit_rate": 0.0,
             "mean_latency_ms": 0.0,
             "p95_latency_ms": 0.0,
             "min_latency_ms": 0.0,
@@ -353,6 +365,7 @@ def _aggregate_cases(cases: list[dict[str, Any]]) -> dict[str, int | float]:
         "claim_hit_cases": sum(1 for case in cases if case.get("claim_hit")),
         "span_hit_cases": sum(1 for case in cases if case.get("span_hit")),
         "node_hit_cases": sum(1 for case in cases if case.get("node_hit")),
+        "source_hit_cases": sum(1 for case in cases if case.get("source_hit")),
         "claim_hit_rate": _conditional_rate(
             cases,
             expected_key="expected_claim_substrings",
@@ -368,6 +381,7 @@ def _aggregate_cases(cases: list[dict[str, Any]]) -> dict[str, int | float]:
             expected_key="expected_node_uid",
             hit_key="node_hit",
         ),
+        "source_hit_rate": _source_hit_rate(cases),
         "mean_latency_ms": round(sum(latencies) / total, 6),
         "p95_latency_ms": round(sorted_latencies[p95_index], 6),
         "min_latency_ms": round(min(latencies), 6),
@@ -386,18 +400,22 @@ def _matches_expected(case: dict[str, Any], result: dict[str, Any]) -> bool:
     result_id = result.get("id")
     title = str(result.get("title") or "")
     title_lower = title.lower()
+    has_source_expectation = _has_source_expectation(case)
 
     expected_ids = {_normalize_id(value) for value in _as_list(case.get("expected_ids"))}
     if expected_ids and _normalize_id(result_id) in expected_ids:
-        return True
+        return not has_source_expectation or _matches_source(case, result)
 
     expected_titles = {str(value) for value in _as_list(case.get("expected_titles"))}
     if expected_titles and title in expected_titles:
-        return True
+        return not has_source_expectation or _matches_source(case, result)
 
     substrings = [str(value).lower() for value in _as_list(case.get("expected_title_substrings"))]
     if substrings and all(substring in title_lower for substring in substrings):
-        return True
+        return not has_source_expectation or _matches_source(case, result)
+
+    if has_source_expectation and not (expected_ids or expected_titles or substrings):
+        return _matches_source(case, result)
 
     return False
 
@@ -407,6 +425,48 @@ def _conditional_rate(cases: list[dict[str, Any]], *, expected_key: str, hit_key
     if not scoped:
         return 0.0
     return sum(1 for case in scoped if case.get(hit_key)) / len(scoped)
+
+
+def _source_hit_rate(cases: list[dict[str, Any]]) -> float:
+    scoped = [case for case in cases if _has_source_expectation(case)]
+    if not scoped:
+        return 0.0
+    return sum(1 for case in scoped if case.get("source_hit")) / len(scoped)
+
+
+def _source_hit_rank(case: dict[str, Any], results: list[dict[str, Any]]) -> int | None:
+    if not _has_source_expectation(case):
+        return None
+    for rank, result in enumerate(results, start=1):
+        if _matches_source(case, result):
+            return rank
+    return None
+
+
+def _has_source_expectation(case: dict[str, Any]) -> bool:
+    return bool(
+        _as_list(case.get("expected_sources"))
+        or _as_list(case.get("expected_source_substrings"))
+    )
+
+
+def _matches_source(case: dict[str, Any], result: dict[str, Any]) -> bool:
+    source = str(result.get("source") or "")
+    if not source:
+        return False
+
+    expected_sources = {str(value) for value in _as_list(case.get("expected_sources"))}
+    if expected_sources and source in expected_sources:
+        return True
+
+    substrings = [
+        str(value).lower()
+        for value in _as_list(case.get("expected_source_substrings"))
+    ]
+    if substrings and all(substring in source.lower() for substring in substrings):
+        return True
+
+    return False
 
 
 def _claim_hit_rank(case: dict[str, Any], results: list[dict[str, Any]]) -> int | None:

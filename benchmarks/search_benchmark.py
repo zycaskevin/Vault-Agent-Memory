@@ -111,6 +111,7 @@ SAMPLE_DOCUMENTS = [
         ),
         "category": "technique",
         "tags": ["search", "map", "read_range", "citation"],
+        "source": "benchmarks/en/tool-gated-reading.md",
     },
     {
         "title": "Citation Policy Boundary",
@@ -120,6 +121,7 @@ SAMPLE_DOCUMENTS = [
         ),
         "category": "decision",
         "tags": ["citation", "policy", "read_range"],
+        "source": "benchmarks/en/citation-policy-boundary.md",
     },
     {
         "title": "Semantic Vector Lifecycle Runbook",
@@ -502,6 +504,7 @@ def print_search_qa_summary(snapshot: dict, *, label: str) -> None:
     print(f"- top1_hits: {aggregate['top1_hits']}")
     print(f"- topk_hits: {aggregate['topk_hits']}")
     print(f"- mean_reciprocal_rank: {aggregate['mean_reciprocal_rank']:.3f}")
+    print(f"- source_hit_rate: {aggregate.get('source_hit_rate', 0.0):.3f}")
     print(f"- mean_latency_ms: {aggregate['mean_latency_ms']:.3f}")
     print(f"- p95_latency_ms: {aggregate['p95_latency_ms']:.3f}")
 
@@ -562,6 +565,7 @@ def main():
                 category=doc["category"],
                 tags=",".join(doc["tags"]),
                 trust=0.8 + (i % 5) * 0.04,  # 不同的信任分數
+                source=doc.get("source", ""),
             )
         print(f"已載入 {len(SAMPLE_DOCUMENTS)} 個文件")
 

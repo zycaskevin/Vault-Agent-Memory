@@ -110,6 +110,7 @@ def _build_fixture_db(tmp_path: Path) -> Path:
             category="technique",
             tags="search,map,read_range",
             trust=0.9,
+            source="benchmarks/en/tool-gated-reading.md",
         )
         build_document_map_for_entry(db.conn, alpha_id)
         db.add_knowledge(
@@ -118,6 +119,7 @@ def _build_fixture_db(tmp_path: Path) -> Path:
             category="decision",
             tags="citation,policy",
             trust=0.8,
+            source="benchmarks/en/citation-policy-boundary.md",
         )
         gamma_id = db.add_knowledge(
             "文件地圖閱讀指南",
@@ -126,6 +128,7 @@ def _build_fixture_db(tmp_path: Path) -> Path:
             category="technique",
             tags="文件地圖,讀取範圍,證據",
             trust=0.87,
+            source="benchmarks/zh-Hant/document-map-reading.md",
         )
         build_document_map_for_entry(db.conn, gamma_id)
         db.add_knowledge(
@@ -134,6 +137,7 @@ def _build_fixture_db(tmp_path: Path) -> Path:
             category="decision",
             tags="引用,政策",
             trust=0.86,
+            source="benchmarks/zh-Hant/citation-policy-boundary.md",
         )
     finally:
         db.close()
@@ -205,6 +209,10 @@ def test_public_search_qa_repository_fixtures_load_from_repo_root_and_cover_engl
         any("\u4e00" <= char <= "\u9fff" for char in case["query"])
         for case in zh["cases"]
     )
+    assert all(
+        case.get("expected_sources") or case.get("expected_no_results")
+        for case in en["cases"] + zh["cases"]
+    )
 
 
 def test_public_search_qa_repository_fixtures_run_against_local_demo_db(tmp_path):
@@ -227,6 +235,10 @@ def test_public_search_qa_repository_fixtures_run_against_local_demo_db(tmp_path
 
     _assert_baseline_metrics(en_snapshot["aggregate"])
     _assert_baseline_metrics(zh_snapshot["aggregate"])
+    assert en_snapshot["aggregate"]["source_hit_cases"] == 2
+    assert en_snapshot["aggregate"]["source_hit_rate"] == 1.0
+    assert zh_snapshot["aggregate"]["source_hit_cases"] == 2
+    assert zh_snapshot["aggregate"]["source_hit_rate"] == 1.0
 
     zh_doc_case = next(
         case for case in zh_snapshot["cases"] if case["id"] == "zh_document_map_read_range"
@@ -241,6 +253,59 @@ def test_public_search_qa_repository_fixtures_run_against_local_demo_db(tmp_path
         case["citation_policy_violations"] == []
         for case in en_snapshot["cases"] + zh_snapshot["cases"]
     )
+
+
+def test_search_qa_source_expectations_disambiguate_duplicate_titles(tmp_path):
+    db_path = tmp_path / "vault.db"
+    db = VaultDB(db_path).connect()
+    try:
+        db.add_knowledge(
+            "Shared Runbook",
+            "shared runbook source aware target wrong copy",
+            source="benchmarks/en/wrong.md",
+        )
+        db.add_knowledge(
+            "Shared Runbook",
+            "shared runbook source aware target right copy",
+            source="benchmarks/en/right.md",
+        )
+    finally:
+        db.close()
+
+    qa_file = tmp_path / "source_aware.json"
+    qa_file.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "cases": [
+                    {
+                        "id": "duplicate_title_right_source",
+                        "query": "shared runbook source aware target",
+                        "expected_titles": ["Shared Runbook"],
+                        "expected_sources": ["benchmarks/en/right.md"],
+                    }
+                ],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    snapshot = evaluate_search_qa(
+        db_path=db_path,
+        qa_file=qa_file,
+        mode="keyword",
+        limit=5,
+        generated_at="2026-01-02T03:04:05+00:00",
+    )
+
+    case = snapshot["cases"][0]
+    assert case["source_hit"] is True
+    assert case["source_hit_rank"] is not None
+    assert case["topk_hit"] is True
+    assert case["results"][case["hit_rank"] - 1]["source"] == "benchmarks/en/right.md"
+    assert snapshot["aggregate"]["source_hit_cases"] == 1
+    assert snapshot["aggregate"]["source_hit_rate"] == 1.0
 
 
 def test_expected_title_substrings_require_all_terms():

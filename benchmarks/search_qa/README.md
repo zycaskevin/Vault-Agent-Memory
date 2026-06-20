@@ -23,22 +23,25 @@ Each file uses the schema accepted by `vault.search_qa.load_search_qa_set`:
       "id": "stable_case_id",
       "query": "retrieval query",
       "expected_titles": ["Exact expected title"],
-  "expected_title_substrings": ["optional", "all required substrings"],
-  "expected_ids": ["optional stable knowledge IDs"],
-  "expected_claim_substrings": ["optional", "all required best_claim substrings"],
-  "expected_best_span": ["optional Lx-Ly span"],
-  "expected_node_uid": ["optional document-map node uid"],
-  "allowed_result_modes": ["optional exact result modes"],
-  "require_mode_prefix": "optional mode prefix",
-  "expected_no_results": false
+      "expected_title_substrings": ["optional", "all required substrings"],
+      "expected_ids": ["optional stable knowledge IDs"],
+      "expected_sources": ["optional exact source path"],
+      "expected_source_substrings": ["optional", "all required source substrings"],
+      "expected_claim_substrings": ["optional", "all required best_claim substrings"],
+      "expected_best_span": ["optional Lx-Ly span"],
+      "expected_node_uid": ["optional document-map node uid"],
+      "allowed_result_modes": ["optional exact result modes"],
+      "require_mode_prefix": "optional mode prefix",
+      "expected_no_results": false
     }
   ]
 }
 ```
 
 Use `expected_titles` or `expected_title_substrings` for portable fixtures. Use `expected_ids` only when the target database has stable IDs.
+Use `expected_sources` or `expected_source_substrings` when duplicate titles are possible; if a case includes source expectations, title/ID hits must also match the source.
 Use `expected_no_results: true` for hard-negative cases where the correct behavior is to return no matches; Search QA will count false positives separately.
 
 ## Scope and limits
 
-Search QA tracks retrieval regression metrics such as top-1 hits, hit@k, mean reciprocal rank, Document Map guidance, `read_range` guidance, citation-policy violations, claim/span/node hits, and result-mode violations. It is best used before changing keyword ranking, FTS/BM25, semantic/vector retrieval, or rank fusion.
+Search QA tracks retrieval regression metrics such as top-1 hits, hit@k, mean reciprocal rank, source hits, Document Map guidance, `read_range` guidance, citation-policy violations, claim/span/node hits, and result-mode violations. It is best used before changing keyword ranking, FTS/BM25, semantic/vector retrieval, or rank fusion.

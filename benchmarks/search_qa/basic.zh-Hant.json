@@ -8,6 +8,9 @@
       "query": "文件地圖 讀取範圍 證據",
       "expected_titles": [
         "文件地圖閱讀指南"
+      ],
+      "expected_sources": [
+        "benchmarks/zh-Hant/document-map-reading.md"
       ]
     },
     {
@@ -15,6 +18,9 @@
       "query": "搜尋引用 導航提示 最終引用",
       "expected_titles": [
         "引用政策邊界"
+      ],
+      "expected_sources": [
+        "benchmarks/zh-Hant/citation-policy-boundary.md"
       ]
     },
     {
