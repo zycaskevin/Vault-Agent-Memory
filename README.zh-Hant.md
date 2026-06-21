@@ -83,6 +83,18 @@ Hermes Agent、Codex、OpenCode、Claude Code、OpenClaw 和其他 MCP-capable a
 各 runtime 的 adapter 應該保持很薄；真正穩定的契約是共同的
 `projectDir`、`vault` CLI、`vault-mcp`，以及候選制記憶流程。
 
+Agent 安裝時也應該詢問要不要開可選功能，而不是全部預設裝上：
+
+| 功能 | 預設 | 安裝指令 | 什麼時候問 |
+|---|---|---|---|
+| `core` | 是 | `python -m pip install vault-for-llm` | 永遠需要：本地 Markdown、SQLite、keyword search。 |
+| `mcp` | MCP-capable agent 建議開 | `python -m pip install "vault-for-llm[mcp]"` | runtime 可以接 local stdio MCP tools。 |
+| `semantic` | 否 | `python -m pip install "vault-for-llm[semantic]"` | 使用者想要 embedding-backed semantic/hybrid search。 |
+| `supabase` | 否 | `python -m pip install "vault-for-llm[supabase]"` | 使用者想要 optional remote sync/read path。 |
+| `dev` | 否 | `python -m pip install -e ".[dev]"` | source checkout、benchmark、PR 或 release validation。 |
+
+不要偷偷開 semantic 或 Supabase extras；它們會增加較重的依賴、模型/provider 設定，或遠端憑證。
+
 ### 選擇 Vault project scope
 
 Vault-for-LLM 綁定的是 `project-dir`，不是某一個 Agent runtime：
@@ -102,6 +114,8 @@ Vault-for-LLM 綁定的是 `project-dir`，不是某一個 Agent runtime：
 | Temporary vault | Demo、測試、benchmark | `/tmp/vault-benchmark-*` |
 
 共用 vault 時，建議讓 Agent 使用 `vault_memory_propose`，不要直接寫入正式記憶，避免多 Agent 一起把 active memory 弄亂。
+
+如果 Agent 跑在不同主機上，本機 `project-dir` 就不能直接共用。這時候可選的 Supabase sync 可以作為遠端共享讀取/同步層：每台主機保留自己的本地 SQLite vault，再把已核准的知識、Document Map、摘要、hash 和 metadata 同步到同一個 Supabase project。這樣 Hermes 在一台機器、Codex 在另一台、n8n 在伺服器上，也能讀到共同的 project-memory view；但 Supabase 仍然不是本地核心功能的必要依賴。
 
 ---
 
@@ -453,6 +467,8 @@ MCP server 設定範例：
 Vault-for-LLM 的核心用法是本地-only。Supabase 支援是給需要團隊同步或遠端讀取的人使用。
 
 本地 SQLite database 仍是 source of truth；Supabase 是可選的同步/遠端讀取目標。遠端表名預設使用 Vault 品牌命名；接入既有私有 schema 時，可用 `VAULT_SUPABASE_*_TABLE` 環境變數覆蓋。
+
+這對「不同主機上的 Agent 要共享記憶」特別有用。例如 Hermes Agent 在工作站、Codex 在筆電、OpenClaw 在另一台機器、n8n 在伺服器上，都可以各自保留 local Vault，同時把已確認的記憶同步到同一個 Supabase project，形成跨主機可讀的共同記憶視圖。
 
 知識與技能同步採最小披露預設：metadata、summary、hash、Document Map rows 與 claims 會同步，但不包含完整 `content_raw`。只有明確加上 `--include-content` 時才會同步全文；若 privacy scan 判定為 fail，仍不會上傳全文。
 

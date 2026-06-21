@@ -91,6 +91,20 @@ choose projectDir -> install vault -> configure CLI or stdio MCP -> verify searc
 Runtime-specific adapters should stay thin. The durable contract is the shared
 `projectDir`, `vault` CLI, `vault-mcp`, and candidate-first memory policy.
 
+Agent installers should also ask about optional capabilities instead of enabling
+everything by default:
+
+| Feature | Default | Install command | Ask when |
+|---|---|---|---|
+| `core` | yes | `python -m pip install vault-for-llm` | Always: local Markdown, SQLite, keyword search. |
+| `mcp` | yes for MCP-capable agents | `python -m pip install "vault-for-llm[mcp]"` | The runtime can connect local stdio MCP tools. |
+| `semantic` | no | `python -m pip install "vault-for-llm[semantic]"` | The user wants embedding-backed semantic/hybrid search. |
+| `supabase` | no | `python -m pip install "vault-for-llm[supabase]"` | The user wants optional remote sync/read paths. |
+| `dev` | no | `python -m pip install -e ".[dev]"` | Source checkout, benchmarks, PR work, or release validation. |
+
+Do not silently enable semantic or Supabase extras: they add heavier
+dependencies, model/provider setup, or remote credentials.
+
 ### Choose the Vault project scope
 
 Vault-for-LLM is bound to the `project-dir`, not to a specific agent runtime:
@@ -112,6 +126,14 @@ different directories, they use isolated databases.
 
 For shared vaults, prefer `vault_memory_propose` over direct writes so multiple
 agents do not pollute active memory before review.
+
+For agents running on different machines, the local `project-dir` cannot be
+shared directly. In that case, optional Supabase sync can act as a remote
+shared read/sync layer: each host keeps its own local SQLite vault, then syncs
+approved knowledge, Document Map rows, summaries, hashes, and metadata to the
+same Supabase project. This lets Hermes on one host, Codex on another host, and
+n8n on a server read from a common project-memory view without making Supabase a
+required dependency for local use.
 
 ---
 
@@ -259,6 +281,15 @@ cd Vault-for-LLM
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
+```
+
+### Optional Supabase dependency
+
+Supabase sync is optional. Install its dependency only when you want a remote
+sync/read path:
+
+```bash
+pip install "vault-for-llm[supabase]"
 ```
 
 ---
@@ -481,6 +512,11 @@ For agent loops, prefer `vault_search` → `vault_map_show` → `vault_read_rang
 Core Vault-for-LLM usage is local-only. Supabase support is for teams or remote read paths that want a synced copy of local SQLite data.
 
 The local SQLite database remains the source of truth. Supabase is an optional sync/read target. Remote table names use Vault-branded defaults and can be overridden with `VAULT_SUPABASE_*_TABLE` environment variables when integrating an existing private schema.
+
+This is useful when multiple hosts need to share project memory. For example,
+Hermes Agent on a workstation, Codex on a laptop, OpenClaw on another machine,
+and n8n on a server can all use local Vaults while syncing approved memory to
+one Supabase project for cross-host recall.
 
 Knowledge and skill sync use a minimal-disclosure default: metadata, summaries, hashes, Document Map rows, and claims sync without full `content_raw`. Use `--include-content` only when you intentionally want full local content copied to Supabase; fail-severity privacy findings are still withheld.
 
