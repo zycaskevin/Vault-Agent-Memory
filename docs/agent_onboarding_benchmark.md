@@ -44,18 +44,34 @@ Prepare three inputs:
 2. A Search QA file with the onboarding questions.
 3. A `vault.db` that contains the governed project memory.
 
+For a repository-doc benchmark that is safe to commit, build the Vault database
+from the current source checkout and keep the generated database/report in
+`/tmp`:
+
+```bash
+python scripts/build_agent_onboarding_vault.py \
+  --output-dir /tmp/vault-agent-onboarding \
+  --force
+```
+
+Then run the exported-session comparison:
+
 Example:
 
 ```bash
 python scripts/agent_onboarding_benchmark.py \
   --provider codex \
   --session-file /path/to/codex-session.md \
-  --qa-file benchmarks/search_qa/project-onboarding.json \
-  --db-path /path/to/vault.db \
+  --qa-file benchmarks/agent_onboarding/project_onboarding.repo.json \
+  --db-path /tmp/vault-agent-onboarding/repo-docs-vault.db \
+  --candidate-file benchmarks/agent_onboarding/session_candidates.example.json \
   --output /tmp/codex-vs-vault-onboarding.json
 ```
 
 You can pass `--session-file` more than once. The runner will merge the exported text into transcript chunks.
+
+Real session exports and benchmark reports may contain private work context.
+Keep them outside the repository unless they have been explicitly scrubbed.
 
 ## QA Case Shape
 
@@ -130,3 +146,15 @@ This is not a benchmark of hidden Hermes or Codex memory internals. It is a prac
 
 - what is present in exported agent sessions, and
 - what a governed Vault project memory can retrieve, source-check, and read with bounded evidence.
+
+## Reproducible Repo-Doc Fixture
+
+The source-checkout fixture lives under `benchmarks/agent_onboarding/`:
+
+- `project_onboarding.repo.json` contains the onboarding questions.
+- `session_candidates.example.json` contains public-safe candidate-memory examples.
+- `benchmarks/agent_onboarding/README.md` has the short command sequence.
+
+The matching database is generated rather than committed. This avoids shipping
+runtime artifacts while still making the benchmark repeatable against the
+current README/docs source of truth.

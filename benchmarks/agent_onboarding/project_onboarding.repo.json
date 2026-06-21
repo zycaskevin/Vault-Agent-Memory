@@ -1,0 +1,62 @@
+{
+  "version": 1,
+  "description": "Repository-doc onboarding questions for comparing exported agent sessions with governed Vault memory.",
+  "cases": [
+    {
+      "id": "local_first_source_of_truth",
+      "query": "local SQLite source of truth no cloud required core usage",
+      "expected_sources": ["README.md"],
+      "expected_title_substrings": ["README"],
+      "expected_session_substrings": ["SQLite", "source of truth"]
+    },
+    {
+      "id": "candidate_first_mcp_flow",
+      "query": "MCP autonomous agent candidate first propose promote vault_memory_propose vault_memory_promote",
+      "expected_sources": ["docs/mcp_memory_workflow.md"],
+      "expected_title_substrings": ["MCP Memory"],
+      "expected_session_substrings": ["vault_memory_propose", "vault_memory_promote"]
+    },
+    {
+      "id": "bounded_citation_loop",
+      "query": "search preview navigation hints bounded read_range final citations vault_read_range",
+      "expected_sources": ["docs/document_map_citation_policy.md"],
+      "expected_title_substrings": ["Citation"],
+      "expected_session_substrings": ["vault_read_range", "bounded"]
+    },
+    {
+      "id": "backup_restore_contract",
+      "query": "SQLite backup verify restore integrity_check refuses non Vault database pre restore backup",
+      "expected_sources": ["docs/db_backup_restore.md"],
+      "expected_title_substrings": ["Backup"],
+      "expected_session_substrings": ["verify-backup", "restore"]
+    },
+    {
+      "id": "search_qa_scope_limit",
+      "query": "Search QA local retrieval regression not end to end agent benchmark fixed query sets",
+      "expected_sources": ["docs/search_qa_benchmarking.md"],
+      "expected_title_substrings": ["Search QA"],
+      "expected_session_substrings": ["Search QA", "benchmark"]
+    },
+    {
+      "id": "semantic_sqlite_vec_fallback",
+      "query": "sqlite-vec semantic rebuild fallback JSON scan filtered query cannot apply filters before candidate ranking",
+      "expected_sources": ["docs/semantic_search.md"],
+      "expected_title_substrings": ["Semantic"],
+      "expected_session_substrings": ["sqlite-vec", "fallback"]
+    },
+    {
+      "id": "repo_governance_dirty_worktree",
+      "query": "dirty git worktree do not overwrite user changes branch latest main after merge",
+      "expected_sources": ["docs/repo_governance.md"],
+      "expected_title_substrings": ["Governance"],
+      "expected_session_substrings": ["dirty", "main"]
+    },
+    {
+      "id": "agent_onboarding_benchmark_inputs",
+      "query": "exported Hermes Codex session Search QA file db path candidate file onboarding benchmark",
+      "expected_sources": ["docs/agent_onboarding_benchmark.md"],
+      "expected_title_substrings": ["Onboarding"],
+      "expected_session_substrings": ["session", "qa-file", "db-path"]
+    }
+  ]
+}
