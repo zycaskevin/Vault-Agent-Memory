@@ -35,6 +35,28 @@ propose candidate -> human/operator review -> promote only when approved
 This keeps Vault useful across different agents without letting every runtime
 write directly into active memory.
 
+## Choose Database Scope At Install Time
+
+Vault-for-LLM is bound to a project directory, not to Hermes, OpenClaw, Codex, or
+any other runtime:
+
+```text
+one project directory = one vault.db
+```
+
+During agent setup, decide whether the agent should join an existing project
+vault or use its own isolated vault.
+
+| Scope | Meaning | Recommended for |
+|---|---|---|
+| Shared project vault | Multiple agents point to the same `projectDir` and share one `vault.db`. | Trusted agents working on the same confirmed project knowledge. |
+| Agent-private vault | This agent gets its own `projectDir`. | Experiments, noisy agents, or agents that should not affect official memory. |
+| Domain/customer vault | Each customer/domain gets a separate `projectDir`. | Sensitive data boundaries and client separation. |
+| Temporary vault | A throwaway `projectDir`. | Demos, tests, and benchmarks. |
+
+For shared vaults, keep direct writes restricted. Agents should use
+`vault_memory_propose` and wait for human/operator review before promotion.
+
 ## Generic MCP Config
 
 ```json
@@ -58,6 +80,19 @@ Install from a source checkout:
 
 ```bash
 bash integrations/openclaw/install.sh
+```
+
+The installer asks which Vault memory scope to use. Non-interactive examples:
+
+```bash
+# OpenClaw gets its own isolated vault.
+bash integrations/openclaw/install.sh --scope private --non-interactive
+
+# OpenClaw joins a shared vault also used by Hermes/Codex/n8n.
+bash integrations/openclaw/install.sh \
+  --scope shared \
+  --project-dir ~/Vaults/my-project \
+  --non-interactive
 ```
 
 Then merge the printed config into `~/.openclaw/openclaw.json` and restart:

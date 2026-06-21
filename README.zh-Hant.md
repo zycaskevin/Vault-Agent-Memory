@@ -66,6 +66,26 @@ Vault-for-LLM 不是綁死在某一個 Agent runtime 上。它的共通介面很
 
 更多設定範例請看 [Agent Integrations](docs/agent_integrations.md)，裡面包含 OpenClaw adapter、n8n、Codex、Claude Code 與 generic MCP 的接法。
 
+### 選擇 Vault project scope
+
+Vault-for-LLM 綁定的是 `project-dir`，不是某一個 Agent runtime：
+
+```text
+一個 project directory = 一個 vault.db
+```
+
+如果 Hermes、OpenClaw、Codex、Claude Code、n8n 都指向同一個
+`--project-dir`，它們就共用同一份 governed project memory。指向不同資料夾時，就會使用彼此隔離的資料庫。
+
+| Scope | 適合情境 | project-dir 範例 |
+|---|---|---|
+| Shared project vault | 多個可信 Agent 協作同一份已確認的專案知識 | `~/Vaults/my-project` |
+| Agent-private vault | 某個 Agent 做實驗、比較吵、或不完全可信 | `~/.openclaw/workspace/vault-project` |
+| Domain/customer vault | 不同客戶或業務資料需要隔離 | `~/Vaults/clinic-customer-service` |
+| Temporary vault | Demo、測試、benchmark | `/tmp/vault-benchmark-*` |
+
+共用 vault 時，建議讓 Agent 使用 `vault_memory_propose`，不要直接寫入正式記憶，避免多 Agent 一起把 active memory 弄亂。
+
 ---
 
 ## 目前原始碼狀態：v0.6.22

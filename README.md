@@ -68,6 +68,28 @@ local Markdown + SQLite, exposed through CLI and optional stdio MCP.
 
 See [Agent Integrations](docs/agent_integrations.md) for setup patterns, OpenClaw adapter details, and runtime-specific notes.
 
+### Choose the Vault project scope
+
+Vault-for-LLM is bound to the `project-dir`, not to a specific agent runtime:
+
+```text
+one project directory = one vault.db
+```
+
+If Hermes, OpenClaw, Codex, Claude Code, and n8n all point to the same
+`--project-dir`, they share the same governed project memory. If they point to
+different directories, they use isolated databases.
+
+| Scope | Use when | Example project-dir |
+|---|---|---|
+| Shared project vault | Multiple trusted agents collaborate on the same confirmed project knowledge | `~/Vaults/my-project` |
+| Agent-private vault | One agent is experimenting, noisy, or untrusted | `~/.openclaw/workspace/vault-project` |
+| Domain/customer vault | Data boundaries must stay separate | `~/Vaults/clinic-customer-service` |
+| Temporary vault | Demos, tests, and benchmarks | `/tmp/vault-benchmark-*` |
+
+For shared vaults, prefer `vault_memory_propose` over direct writes so multiple
+agents do not pollute active memory before review.
+
 ---
 
 ## Current source status: v0.6.22
