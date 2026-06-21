@@ -1,0 +1,28 @@
+{
+  "candidates": [
+    {
+      "title": "Installed-wheel parity smoke",
+      "content": "When package metadata or entry points change, run an installed-wheel smoke check in addition to source-tree tests.",
+      "reason": "Example candidate extracted from an agent handoff.",
+      "tags": "release,wheel,smoke",
+      "category": "release",
+      "source_ref": "agent-session-example#release"
+    },
+    {
+      "title": "Vague handoff note",
+      "content": "remember to check the thing later",
+      "reason": "",
+      "tags": "",
+      "category": "general",
+      "source_ref": "agent-session-example#vague"
+    },
+    {
+      "title": "Duplicate MCP safety note",
+      "content": "MCP schema changes require rerunning map and memory tests because tool payload regressions can break agent integrations.",
+      "reason": "Example duplicate-review candidate.",
+      "tags": "mcp,tests",
+      "category": "runbook",
+      "source_ref": "agent-session-example#mcp"
+    }
+  ]
+}

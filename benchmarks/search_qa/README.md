@@ -8,6 +8,10 @@ These are source-checkout fixtures. They live under the repository's top-level `
 - `basic.zh-Hant.json` — Traditional Chinese / CJK cases covering the same retrieval-focused behaviors.
 - `semantic_hybrid.en.json` — Semantic/hybrid cases that check mode, claim, filtered-recall, cache-key, and no-result behavior against a matching semantic index.
 
+Agent onboarding fixtures live in `benchmarks/agent_onboarding/` because they
+compare exported agent sessions against Vault-backed Search QA rather than only
+running standalone retrieval snapshots.
+
 These fixtures are intentionally small. They are meant to verify that `vault search-qa run` can load repository benchmark files and produce deterministic local snapshots against a matching demo or project database. They do **not** measure end-to-end agent task success, answer correctness, or tool-use planning.
 
 ## JSON shape
