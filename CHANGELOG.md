@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.6.43] - 2026-06-22
+
+### Fixed
+
+- Improved the interactive `vault setup-agent` first-run flow so a core+MCP install no longer asks to install optional Python dependencies when no optional dependency feature was selected.
+- Added regression coverage for the core+MCP interactive path.
+
 ## [0.6.42] - 2026-06-22
 
 ### Changed

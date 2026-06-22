@@ -276,7 +276,7 @@ def test_cli_version_flag(capsys):
         assert exc.code == 0
 
     captured = capsys.readouterr()
-    assert "vault-for-llm 0.6.42" in captured.out
+    assert "vault-for-llm 0.6.43" in captured.out
 
 
 def test_setup_agent_headroom_is_optional_next_step(tmp_path):
@@ -444,7 +444,7 @@ def test_run_agent_setup_writes_stable_venv_template(tmp_path):
     assert readme.exists()
     body = script.read_text(encoding="utf-8")
     assert "python3 -m venv \"$VENV\"" in body
-    assert "vault-for-llm[mcp,supabase]==0.6.42" in body
+    assert "vault-for-llm[mcp,supabase]==0.6.43" in body
     assert "headroom-ai" in body
     assert "--agent-project-dir" in body
     assert str(project) in body
@@ -532,6 +532,41 @@ def test_interactive_setup_asks_optional_feature_questions(tmp_path, monkeypatch
     assert config.remote_reader_targets == "n8n"
     assert config.agent_roster == "profile-agent:profile,remote-agent:remote"
     assert config.validation_pack_targets == "all"
+
+
+def test_interactive_setup_does_not_ask_optional_deps_for_core_mcp_only(tmp_path, monkeypatch):
+    import vault.agent_setup as agent_setup
+
+    answers = iter(
+        [
+            "codex",
+            "private",
+            str(tmp_path / "agent-project"),
+            "en",
+            "yes",  # MCP
+            "no",  # semantic
+            "no",  # Supabase
+            "no",  # Headroom
+            "no",  # memory agents
+            "no",  # dev
+            "",  # Obsidian
+            "no",  # agent roster
+        ]
+    )
+    prompts: list[str] = []
+
+    def fake_input(prompt: str) -> str:
+        prompts.append(prompt)
+        return next(answers)
+
+    monkeypatch.setattr("builtins.input", fake_input)
+    monkeypatch.setattr(agent_setup, "python_environment_warnings", lambda: [])
+
+    config = agent_setup.interactive_setup({})
+
+    assert config.features == ["core", "mcp"]
+    assert config.install_optional_deps is False
+    assert not any("optional Python dependencies" in prompt for prompt in prompts)
 
 
 def test_run_agent_setup_can_skip_supabase_setup_guide(tmp_path):

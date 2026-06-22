@@ -2157,7 +2157,10 @@ def _ask_interactive_features() -> list[str]:
 
 def _features_need_dependency_install(features: list[str]) -> bool:
     selected = set(normalize_features(features))
-    return bool((selected & PYPI_EXTRA_FEATURES) or "headroom" in selected)
+    # The recommended first install already uses vault-for-llm[mcp]. Do not ask
+    # users to install "optional" dependencies again when MCP is the only extra.
+    extras_that_need_confirmation = PYPI_EXTRA_FEATURES - {"mcp"}
+    return bool((selected & extras_that_need_confirmation) or "headroom" in selected)
 
 
 def _ask_yes_no(prompt: str, default: bool) -> bool:
