@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [0.6.28] - 2026-06-22
+
+### Added
+
+- Added `vault setup-agent --language en|zh-Hant|zh-CN` so generated installer output and Supabase setup guides can match the user's language.
+- Added interactive setup language selection for manual CLI installs; non-interactive agent installs can pass `--language` and otherwise keep the default.
+- Added `vault setup-agent --supabase-setup none|simple|advanced` to generate a guided Supabase connection checklist without forcing RLS complexity into the default path.
+- Added `docs/supabase_setup.md` with simple sync steps, minimal Supabase schema, and advanced RLS/multi-agent guidance.
+
+### Changed
+
+- Supabase next steps now explain when to skip Supabase and when it is useful for cross-host/team/shared-memory sync.
+
 ## [0.6.27] - 2026-06-22
 
 ### Fixed

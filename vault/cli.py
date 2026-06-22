@@ -1943,6 +1943,7 @@ def cmd_setup_agent(args):
             scope=scope,
             agent=args.agent,
             features=normalize_features(args.features),
+            language=args.language,
             tool_profile=args.tool_profile,
             install_optional_deps=bool(args.install_optional_deps),
             install_embedding_model=args.install_embedding_model,
@@ -1961,10 +1962,12 @@ def cmd_setup_agent(args):
             "scope": args.scope,
             "project_dir": args.agent_project_dir,
             "features": args.features,
+            "language": args.language,
             "tool_profile": args.tool_profile,
             "install_optional_deps": args.install_optional_deps,
             "install_embedding_model": args.install_embedding_model,
             "obsidian_vault": args.obsidian_vault,
+            "supabase_setup_mode": args.supabase_setup,
             "supabase_sync_targets": args.supabase_sync,
             "sync_interval_minutes": args.sync_interval_minutes,
             "supabase_sync_interval_minutes": args.supabase_sync_interval_minutes,
@@ -1986,6 +1989,7 @@ def cmd_setup_agent(args):
     print(f"  project_dir: {payload['project_dir']}")
     print(f"  db_path: {payload['db_path']}")
     print(f"  features: {', '.join(payload['features'])}")
+    print(f"  language: {payload['language']}")
     if payload.get("obsidian"):
         obsidian = payload["obsidian"]
         dry = obsidian.get("dry_run") or {}
@@ -2004,6 +2008,14 @@ def cmd_setup_agent(args):
     if payload.get("sync_templates"):
         print("  sync_templates:")
         for name, path in payload["sync_templates"].items():
+            print(f"    {name}: {path}")
+    if payload.get("supabase_setup"):
+        print("  supabase_setup:")
+        for name, path in payload["supabase_setup"].items():
+            print(f"    {name}: {path}")
+    if payload.get("supabase_sync_templates"):
+        print("  supabase_sync_templates:")
+        for name, path in payload["supabase_sync_templates"].items():
             print(f"    {name}: {path}")
     print("Next steps:")
     for step in payload["next_steps"]:
@@ -2126,6 +2138,8 @@ def main(argv: list[str] | None = None):
                         help="要初始化/使用的 Vault project directory")
         ap.add_argument("--features", default=None,
                         help="可選功能 CSV，例如 core,mcp,obsidian_import,semantic,supabase,headroom")
+        ap.add_argument("--language", choices=["en", "zh-Hant", "zh-CN"], default=None,
+                        help="互動式安裝與產生文件的語言；非互動模式預設 en")
         ap.add_argument("--tool-profile", choices=["core", "review", "remote", "maintenance", "full"],
                         default="core", help="建議的 MCP tool profile")
         ap.add_argument("--install-optional-deps", action="store_true",
@@ -2141,6 +2155,8 @@ def main(argv: list[str] | None = None):
                         help="同步模板排程間隔分鐘數")
         ap.add_argument("--supabase-sync", choices=["none", "cron", "launchagent", "n8n", "all"],
                         default="none", help="產生每日 Supabase sync 模板")
+        ap.add_argument("--supabase-setup", choices=["none", "simple", "advanced"],
+                        default=None, help="產生 Supabase 連線導覽文件；非互動模式預設 simple")
         ap.add_argument("--supabase-sync-interval-minutes", type=int, default=1440,
                         help="Supabase sync LaunchAgent/n8n 排程間隔分鐘數（預設每日）")
         ap.add_argument("--template-dir", help="同步模板輸出目錄；預設 project/agent-install")

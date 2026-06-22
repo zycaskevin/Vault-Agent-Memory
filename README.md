@@ -116,8 +116,8 @@ everything by default:
 
 | Feature | Default | Install command | Ask when |
 |---|---|---|---|
-| `core` | yes | `python -m pip install vault-for-llm==0.6.27` | Always: local Markdown, SQLite, keyword search. |
-| `mcp` | yes for MCP-capable agents | `python -m pip install "vault-for-llm[mcp]==0.6.27"` | The runtime can connect local stdio MCP tools. |
+| `core` | yes | `python -m pip install vault-for-llm==0.6.28` | Always: local Markdown, SQLite, keyword search. |
+| `mcp` | yes for MCP-capable agents | `python -m pip install "vault-for-llm[mcp]==0.6.28"` | The runtime can connect local stdio MCP tools. |
 | `obsidian_import` | no | built into core CLI | The user already has an Obsidian vault and wants agents to search those notes through Vault. |
 | `semantic` | no | `python -m pip install "vault-for-llm[semantic]"` | The user wants embedding-backed semantic/hybrid search. |
 | `supabase` | no | `python -m pip install "vault-for-llm[supabase]"` | The user wants optional remote sync/read paths. |
@@ -137,8 +137,10 @@ vault setup-agent \
   --scope shared \
   --agent-project-dir ~/Vaults/my-project \
   --features core,mcp,semantic,supabase,headroom \
+  --language en \
   --install-optional-deps \
   --install-embedding-model mix \
+  --supabase-setup simple \
   --supabase-sync cron \
   --json
 ```
@@ -195,7 +197,7 @@ required dependency for local use.
 
 ## Current Source Status
 
-The current source tree is `0.6.27`. Core local search is stable, while
+The current source tree is `0.6.28`. Core local search is stable, while
 advanced semantic, rerank, sync, and benchmarking workflows remain optional.
 See [CHANGELOG.md](CHANGELOG.md) for release details.
 
@@ -284,12 +286,12 @@ In story form: the agent writes a note, the front desk checks whether it is safe
 
 ### Install from PyPI
 
-Vault-for-LLM `0.6.27` is published on PyPI.
+Vault-for-LLM `0.6.28` is published on PyPI.
 
 For agent-driven installation, paste this into Hermes Agent, Codex, OpenCode, Claude Code, OpenClaw, or another agent that can run local commands:
 
 ```text
-Install Vault-for-LLM for this project. Use PyPI package vault-for-llm[mcp]==0.6.27.
+Install Vault-for-LLM for this project. Use PyPI package vault-for-llm[mcp]==0.6.28.
 Ask whether the vault database should be shared, private, domain-specific, or temporary.
 Ask separately about MCP, semantic search, Supabase sync, Headroom context compression,
 and dev/benchmark dependencies. If optional features are selected, ask whether to
@@ -304,7 +306,7 @@ Manual install:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.6.27"
+pip install "vault-for-llm[mcp]==0.6.28"
 
 vault setup-agent
 ```
@@ -513,7 +515,7 @@ vault setup-agent \
   --obsidian-sync all
 ```
 
-The wizard asks for database scope, project directory, MCP, semantic search, Supabase sync, Headroom context compression, developer/benchmark dependencies, whether to install selected optional dependencies now, an existing Obsidian vault path, whether to run the first import, and whether to generate cron, LaunchAgent, or n8n sync templates. Semantic, Supabase, Headroom, and dev dependencies default to off. If semantic is selected and dependency installation is confirmed, the wizard can also download and configure a local ONNX embedding model. `headroom` is an advanced optional feature for context compression; it is not required for Vault memory governance and should stay off unless the user has long logs, large tool output, or token pressure.
+The wizard asks for database scope, project directory, setup language, MCP, semantic search, Supabase sync, Headroom context compression, developer/benchmark dependencies, whether to install selected optional dependencies now, an existing Obsidian vault path, whether to run the first import, and whether to generate cron, LaunchAgent, or n8n sync templates. Semantic, Supabase, Headroom, and dev dependencies default to off. If semantic is selected and dependency installation is confirmed, the wizard can also download and configure a local ONNX embedding model. `headroom` is an advanced optional feature for context compression; it is not required for Vault memory governance and should stay off unless the user has long logs, large tool output, or token pressure.
 
 ### Obsidian export
 
@@ -617,6 +619,8 @@ one Supabase project for cross-host recall.
 
 Knowledge and skill sync use a minimal-disclosure default: metadata, summaries, hashes, Document Map rows, and claims sync without full `content_raw`. Use `--include-content` only when you intentionally want full local content copied to Supabase; fail-severity privacy findings are still withheld.
 
+Start with simple sync. RLS, multi-agent allow-lists, and Coze read-only access are advanced setup topics; see [`docs/supabase_setup.md`](docs/supabase_setup.md) when you need them.
+
 ```bash
 # optional integration dependency
 pip install supabase
@@ -631,7 +635,9 @@ vault setup-agent \
   --scope shared \
   --agent-project-dir /path/to/project \
   --features core,mcp,supabase \
+  --language en \
   --install-optional-deps \
+  --supabase-setup simple \
   --supabase-sync cron \
   --json
 ```

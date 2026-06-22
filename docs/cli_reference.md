@@ -39,10 +39,10 @@ changed notes without duplicating unchanged ones.
 
 | Command | Purpose |
 |---|---|
-| `vault setup-agent` | Ask for scope, optional features, Obsidian import, sync templates, and smoke-test next steps |
+| `vault setup-agent` | Ask for scope, setup language, optional features, Obsidian import, sync templates, and smoke-test next steps |
 | `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,obsidian_import` | Agent-friendly scripted install |
-| `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,semantic,supabase,headroom --install-optional-deps --install-embedding-model mix --json` | Install selected optional dependencies and configure a local semantic model |
-| `vault setup-agent --non-interactive --agent nancy --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,supabase --install-optional-deps --supabase-sync cron --json` | Generate daily Supabase sync templates |
+| `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,semantic,supabase,headroom --language en --install-optional-deps --install-embedding-model mix --supabase-setup simple --json` | Install selected optional dependencies and configure a local semantic model |
+| `vault setup-agent --non-interactive --agent nancy --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,supabase --language zh-Hant --install-optional-deps --supabase-setup simple --supabase-sync cron --json` | Generate guided Supabase setup plus daily sync templates |
 | `vault setup-agent --obsidian-vault ~/Documents/ObsidianVault --import-obsidian --obsidian-sync all` | Run first Obsidian import and write cron, LaunchAgent, and n8n templates |
 
 `vault install-agent` is an alias for `vault setup-agent`.
@@ -51,6 +51,10 @@ agents must pass `--install-optional-deps`; semantic model download is opt-in
 with `--install-embedding-model zh|en|mix`.
 Supabase sync templates are opt-in with `--supabase-sync cron|launchagent|n8n|all`
 and use `python -m scripts.sync_to_supabase --db <project>/vault.db`.
+Manual interactive setup asks for `en`, `zh-Hant`, or `zh-CN`; non-interactive
+agent installs can pass `--language`. Supabase setup guide generation is opt-in
+with `--supabase-setup none|simple|advanced`; keep `simple` as the default path
+unless the user asks for RLS or multi-agent permissions.
 
 ## Search And Navigation
 

@@ -60,19 +60,27 @@ def test_run_agent_setup_writes_supabase_sync_templates(tmp_path):
             scope="shared",
             agent="nancy",
             features=["core", "mcp", "supabase"],
+            language="zh-Hant",
+            supabase_setup_mode="advanced",
             supabase_sync_targets="all",
             template_dir=tmp_path / "templates",
         )
     )
 
+    assert result["language"] == "zh-Hant"
+    assert result["supabase_setup"]["mode"] == "advanced"
     assert {"cron", "launchagent", "n8n", "readme"}.issubset(result["supabase_sync_templates"])
 
+    guide = (tmp_path / "templates" / "README-supabase-setup.md").read_text(encoding="utf-8")
     cron = (tmp_path / "templates" / "supabase-sync.cron").read_text(encoding="utf-8")
     plist = (tmp_path / "templates" / "com.zycaskevin.vault-for-llm.supabase-sync.plist").read_text(
         encoding="utf-8"
     )
     workflow = json.loads((tmp_path / "templates" / "n8n-supabase-sync.workflow.json").read_text(encoding="utf-8"))
 
+    assert "Supabase 是可選功能" in guide
+    assert "進階 Multi-Agent / RLS" in guide
+    assert "service role key" in guide
     assert "scripts.sync_to_supabase" in cron
     assert "--db" in cron
     assert str(project / "vault.db") in cron
@@ -102,6 +110,8 @@ def test_setup_agent_cli_non_interactive(tmp_path, capsys):
             str(project),
             "--features",
             "core,mcp,obsidian_import",
+            "--language",
+            "zh-Hant",
             "--obsidian-vault",
             str(obsidian),
             "--import-obsidian",
@@ -114,6 +124,7 @@ def test_setup_agent_cli_non_interactive(tmp_path, capsys):
     captured = capsys.readouterr()
     payload = json.loads(captured.out)
     assert payload["agent"] == "hermes"
+    assert payload["language"] == "zh-Hant"
     assert payload["obsidian"]["import"]["added"] == 1
     assert "cron" in payload["sync_templates"]
     assert (project / "raw" / "obsidian" / "Note.md").exists()
@@ -156,7 +167,9 @@ def test_setup_agent_help_exposes_supabase_sync_options(capsys):
 
     captured = capsys.readouterr()
     assert "--supabase-sync" in captured.out
+    assert "--supabase-setup" in captured.out
     assert "--supabase-sync-interval-minutes" in captured.out
+    assert "--language" in captured.out
 
 
 def test_setup_agent_headroom_is_optional_next_step(tmp_path):
@@ -283,6 +296,7 @@ def test_interactive_setup_asks_optional_feature_questions(tmp_path, monkeypatch
             "nancy",
             "private",
             str(tmp_path / "agent-project"),
+            "zh-Hant",  # setup language
             "yes",  # MCP
             "yes",  # semantic
             "yes",  # Supabase
@@ -291,6 +305,7 @@ def test_interactive_setup_asks_optional_feature_questions(tmp_path, monkeypatch
             "yes",  # install optional deps
             "no",  # install local embedding model
             "",  # Obsidian
+            "simple",  # Supabase setup guide
             "none",  # Supabase sync templates
         ]
     )
@@ -303,13 +318,32 @@ def test_interactive_setup_asks_optional_feature_questions(tmp_path, monkeypatch
     monkeypatch.setattr("builtins.input", fake_input)
     config = interactive_setup({})
 
+    assert config.language == "zh-Hant"
     assert config.features == ["core", "mcp", "semantic", "supabase", "headroom"]
     assert config.install_optional_deps is True
     assert config.install_embedding_model is None
     assert any("stdio MCP" in prompt for prompt in prompts)
+    assert any("安裝語言" in prompt for prompt in prompts)
     assert any("semantic search" in prompt for prompt in prompts)
     assert any("Supabase sync" in prompt for prompt in prompts)
     assert any("Headroom context compression" in prompt for prompt in prompts)
     assert any("optional Python dependencies" in prompt for prompt in prompts)
     assert any("local ONNX embedding model" in prompt for prompt in prompts)
     assert any("Daily Supabase sync templates" in prompt for prompt in prompts)
+
+
+def test_run_agent_setup_can_skip_supabase_setup_guide(tmp_path):
+    from vault.agent_setup import AgentSetupConfig, run_agent_setup
+
+    result = run_agent_setup(
+        AgentSetupConfig(
+            project_dir=tmp_path / "agent-project",
+            scope="shared",
+            agent="coco",
+            features=["core", "supabase"],
+            supabase_setup_mode="none",
+        )
+    )
+
+    assert result["supabase_setup"] == {}
+    assert not (tmp_path / "agent-project" / "agent-install" / "README-supabase-setup.md").exists()

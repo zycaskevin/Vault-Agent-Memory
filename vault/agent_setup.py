@@ -22,9 +22,12 @@ from vault.import_obsidian import sync_obsidian_vault
 DEFAULT_FEATURES = ["core", "mcp"]
 VALID_FEATURES = {"core", "mcp", "obsidian_import", "semantic", "supabase", "headroom", "dev"}
 VALID_SYNC_TARGETS = {"none", "cron", "launchagent", "n8n", "all"}
+VALID_SUPABASE_SETUP_MODES = {"none", "simple", "advanced"}
+VALID_SETUP_LANGUAGES = {"en", "zh-Hant", "zh-CN"}
 PYPI_EXTRA_FEATURES = {"mcp", "semantic", "supabase", "dev"}
 VALID_EMBEDDING_MODELS = {"zh", "en", "mix"}
 DEFAULT_SUPABASE_SYNC_INTERVAL_MINUTES = 24 * 60
+SUPABASE_SETUP_DOC_URL = "https://github.com/zycaskevin/Vault-for-LLM/blob/main/docs/supabase_setup.md"
 
 
 def default_project_dir(scope: str, *, agent: str = "generic") -> Path:
@@ -303,6 +306,283 @@ def write_supabase_sync_templates(
     return written
 
 
+def render_supabase_setup_guide(
+    *,
+    mode: str,
+    project_dir: str | Path,
+    agent: str,
+    language: str = "en",
+) -> str:
+    safe_mode = _normalize_supabase_setup_mode(mode)
+    safe_language = _normalize_setup_language(language)
+    project_path = Path(project_dir).expanduser()
+    if safe_language == "zh-Hant":
+        lines = _render_supabase_setup_guide_zh_hant(
+            mode=safe_mode,
+            project_path=project_path,
+            agent=agent,
+        )
+    elif safe_language == "zh-CN":
+        lines = _render_supabase_setup_guide_zh_cn(
+            mode=safe_mode,
+            project_path=project_path,
+            agent=agent,
+        )
+    else:
+        lines = _render_supabase_setup_guide_en(
+            mode=safe_mode,
+            project_path=project_path,
+            agent=agent,
+        )
+    return "\n".join(lines)
+
+
+def _render_supabase_setup_guide_en(*, mode: str, project_path: Path, agent: str) -> list[str]:
+    lines = [
+        "# Vault-for-LLM Supabase Setup",
+        "",
+        "Supabase is optional. Keep using local `vault.db` when one machine is enough.",
+        "",
+        "Use Supabase when:",
+        "",
+        "- agents run on different machines",
+        "- Coze, n8n, or a hosted workflow needs remote memory reads",
+        "- a team wants a synced copy of reviewed project memory",
+        "",
+        "Skip Supabase when:",
+        "",
+        "- all agents run on one trusted machine",
+        "- local SQLite search is enough",
+        "- you are storing private raw conversations that should stay local",
+        "",
+        "## Simple Sync Setup",
+        "",
+        "1. Create or open a Supabase account and create one project for this memory workspace.",
+        "2. In Supabase, open Project Settings -> API.",
+        "3. Copy the Project URL into `SUPABASE_URL`.",
+        "4. Copy the `service_role` key into `SUPABASE_SERVICE_ROLE_KEY` only on the trusted machine that runs sync jobs.",
+        f"5. Put those values in `{project_path / '.env'}` or another reviewed environment source.",
+        f"6. Create the Vault tables using the schema from `{SUPABASE_SETUP_DOC_URL}`.",
+        "7. Run the first sync:",
+        "",
+        f"```bash\npython -m scripts.sync_to_supabase --db {project_path / 'vault.db'} --document-map --health\n```",
+        "",
+        "8. Verify that the sync finished without HTTP 400 errors and that row counts changed in Supabase.",
+        "",
+        "Default sync does not upload full `content_raw`. Add `--include-content` only when you intentionally want full local content copied to Supabase.",
+        "",
+        "Privacy gate failures are intentional. Clean the source notes and recompile instead of bypassing the gate.",
+        "",
+        "## Agent Rules",
+        "",
+        f"- Agent name: `{agent}`",
+        "- Local `vault.db` remains the source of truth.",
+        "- Scheduled sync may use `SUPABASE_SERVICE_ROLE_KEY`.",
+        "- Normal agents, Coze, and n8n should not receive the service role key.",
+        "- For hosted readers, prefer a read-only API, RPC, Edge Function, or RLS-backed token.",
+    ]
+    if mode == "advanced":
+        lines.extend(
+            [
+                "",
+                "## Advanced Multi-Agent / RLS Notes",
+                "",
+                "Use RLS for shared Supabase reads and writes, not for each agent's private raw memory.",
+                "",
+                "Suggested columns for a shared-memory table or view:",
+                "",
+                "- `owner_agent`: `nancy`, `niangzi`, `mori`, `aiko`, `codex`, `coco`, ...",
+                "- `scope`: `private`, `project`, `shared`, `public`",
+                "- `sensitivity`: `low`, `medium`, `high`, `restricted`",
+                "- `allowed_agents`: text array or JSON array of agent IDs",
+                "- `status`: `candidate`, `reviewed`, `active`, `archived`",
+                "- `expires_at`: optional TTL for short-lived care/status summaries",
+                "",
+                "Recommended policy shape:",
+                "",
+                "- private raw memory stays local or owner-only",
+                "- project knowledge is readable by trusted project agents",
+                "- medium-sensitivity summaries require `allowed_agents` membership",
+                "- normal agents can propose candidates but cannot directly write active shared memory",
+                "- service role is reserved for reviewed sync jobs or backend functions",
+                "",
+                "Do not put raw private conversations and shareable summaries in the same unrestricted row. Use separate tables, views, or RPC responses that return only safe fields.",
+            ]
+        )
+    lines.append("")
+    return lines
+
+
+def _render_supabase_setup_guide_zh_hant(*, mode: str, project_path: Path, agent: str) -> list[str]:
+    lines = [
+        "# Vault-for-LLM Supabase 設定",
+        "",
+        "Supabase 是可選功能。只有一台電腦使用時，繼續使用本地 `vault.db` 就好。",
+        "",
+        "適合使用 Supabase 的情境：",
+        "",
+        "- Agent 跑在不同電腦上",
+        "- Coze、n8n 或 hosted workflow 需要遠端讀取記憶",
+        "- 團隊需要同步已審核的專案記憶",
+        "",
+        "適合跳過 Supabase 的情境：",
+        "",
+        "- 所有 Agent 都在同一台可信任電腦上",
+        "- 本地 SQLite 搜尋已經夠用",
+        "- 你正在保存不該上雲端的私人原始對話",
+        "",
+        "## 簡單同步設定",
+        "",
+        "1. 建立或登入 Supabase 帳號，為這個記憶工作區建立一個 project。",
+        "2. 在 Supabase 打開 Project Settings -> API。",
+        "3. 把 Project URL 複製到 `SUPABASE_URL`。",
+        "4. 只在負責同步的可信任主機上，把 `service_role` key 放進 `SUPABASE_SERVICE_ROLE_KEY`。",
+        f"5. 把這些值放在 `{project_path / '.env'}`，或另一個你審核過的環境設定來源。",
+        f"6. 使用 `{SUPABASE_SETUP_DOC_URL}` 裡的 schema 建立 Vault tables。",
+        "7. 跑第一次同步：",
+        "",
+        f"```bash\npython -m scripts.sync_to_supabase --db {project_path / 'vault.db'} --document-map --health\n```",
+        "",
+        "8. 確認同步沒有 HTTP 400 錯誤，並在 Supabase 看到 row count 有變化。",
+        "",
+        "預設同步不會上傳完整 `content_raw`。只有你明確想把全文複製到 Supabase 時，才加 `--include-content`。",
+        "",
+        "privacy gate 擋住是刻意設計。請清理來源筆記後重新 compile，不要硬繞過。",
+        "",
+        "## Agent 規則",
+        "",
+        f"- Agent 名稱：`{agent}`",
+        "- 本地 `vault.db` 仍然是 source of truth。",
+        "- 排程同步可以使用 `SUPABASE_SERVICE_ROLE_KEY`。",
+        "- 一般 Agent、Coze、n8n 不應該拿到 service role key。",
+        "- hosted reader 建議透過 read-only API、RPC、Edge Function，或 RLS-backed token。",
+    ]
+    if mode == "advanced":
+        lines.extend(
+            [
+                "",
+                "## 進階 Multi-Agent / RLS 備註",
+                "",
+                "RLS 適合管理 Supabase 上共享資料的讀寫權限，不適合取代每個 Agent 的私有原始記憶。",
+                "",
+                "shared-memory table 或 view 可考慮這些欄位：",
+                "",
+                "- `owner_agent`：`nancy`、`niangzi`、`mori`、`aiko`、`codex`、`coco` 等",
+                "- `scope`：`private`、`project`、`shared`、`public`",
+                "- `sensitivity`：`low`、`medium`、`high`、`restricted`",
+                "- `allowed_agents`：可讀 Agent 的 text array 或 JSON array",
+                "- `status`：`candidate`、`reviewed`、`active`、`archived`",
+                "- `expires_at`：短期照護摘要或狀態摘要的可選 TTL",
+                "",
+                "建議權限形狀：",
+                "",
+                "- 私人原始記憶留在本地，或 owner-only",
+                "- 專案知識可給可信任的專案 Agent 讀取",
+                "- medium sensitivity 摘要需要檢查 `allowed_agents`",
+                "- 一般 Agent 只能 propose candidate，不直接寫 active shared memory",
+                "- service role 只給審核過的同步工作或後端函式",
+                "",
+                "不要把私人原始對話和可共享摘要放在同一個無限制 row。請用不同 tables、views 或 RPC，只回傳安全欄位。",
+            ]
+        )
+    lines.append("")
+    return lines
+
+
+def _render_supabase_setup_guide_zh_cn(*, mode: str, project_path: Path, agent: str) -> list[str]:
+    text = _render_supabase_setup_guide_zh_hant(
+        mode=mode,
+        project_path=project_path,
+        agent=agent,
+    )
+    replacements = {
+        "設定": "设置",
+        "電腦": "电脑",
+        "遠端": "远端",
+        "記憶": "记忆",
+        "團隊": "团队",
+        "同步": "同步",
+        "審核": "审核",
+        "專案": "项目",
+        "適合": "适合",
+        "情境": "场景",
+        "登入": "登录",
+        "建立": "创建",
+        "複製": "复制",
+        "負責": "负责",
+        "主機": "主机",
+        "裡": "里",
+        "確認": "确认",
+        "預設": "默认",
+        "會": "会",
+        "完整": "完整",
+        "明確": "明确",
+        "時": "时",
+        "擋住": "挡住",
+        "設計": "设计",
+        "來源": "来源",
+        "筆記": "笔记",
+        "規則": "规则",
+        "名稱": "名称",
+        "仍然": "仍然",
+        "應該": "应该",
+        "透過": "通过",
+        "進階": "进阶",
+        "備註": "备注",
+        "權限": "权限",
+        "原始": "原始",
+        "欄位": "字段",
+        "狀態": "状态",
+        "短期": "短期",
+        "照護": "照护",
+        "摘要": "摘要",
+        "建議": "建议",
+        "可信任": "可信任",
+        "讀取": "读取",
+        "檢查": "检查",
+        "只給": "只给",
+        "後端": "后端",
+        "函式": "函数",
+        "對話": "对话",
+        "無限制": "无限制",
+        "不同": "不同",
+        "回傳": "返回",
+        "安全欄位": "安全字段",
+    }
+    simplified: list[str] = []
+    for line in text:
+        for old, new in replacements.items():
+            line = line.replace(old, new)
+        simplified.append(line)
+    return simplified
+
+
+def write_supabase_setup_guide(
+    *,
+    output_dir: str | Path,
+    project_dir: str | Path,
+    agent: str,
+    mode: str = "simple",
+    language: str = "en",
+) -> dict[str, str]:
+    safe_mode = _normalize_supabase_setup_mode(mode)
+    if safe_mode == "none":
+        return {}
+    out = Path(output_dir).expanduser().resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / "README-supabase-setup.md"
+    path.write_text(
+        render_supabase_setup_guide(
+            mode=safe_mode,
+            project_dir=project_dir,
+            agent=agent,
+            language=language,
+        ),
+        encoding="utf-8",
+    )
+    return {"mode": safe_mode, "guide": str(path)}
+
+
 def write_sync_templates(
     *,
     output_dir: str | Path,
@@ -373,12 +653,45 @@ def _normalize_sync_targets(targets: str | list[str]) -> set[str]:
     return selected
 
 
+def _normalize_supabase_setup_mode(mode: str | None) -> str:
+    value = str(mode or "simple").strip().lower()
+    if value not in VALID_SUPABASE_SETUP_MODES:
+        allowed = ", ".join(sorted(VALID_SUPABASE_SETUP_MODES))
+        raise ValueError(f"unknown Supabase setup mode '{mode}' (expected one of: {allowed})")
+    return value
+
+
+def _normalize_setup_language(language: str | None) -> str:
+    value = str(language or "en").strip()
+    aliases = {
+        "zh": "zh-Hant",
+        "zh-tw": "zh-Hant",
+        "zh_hant": "zh-Hant",
+        "zh-hant": "zh-Hant",
+        "tc": "zh-Hant",
+        "traditional": "zh-Hant",
+        "zh-cn": "zh-CN",
+        "zh_hans": "zh-CN",
+        "zh-hans": "zh-CN",
+        "sc": "zh-CN",
+        "simplified": "zh-CN",
+        "en-us": "en",
+        "english": "en",
+    }
+    value = aliases.get(value.lower(), value)
+    if value not in VALID_SETUP_LANGUAGES:
+        allowed = ", ".join(sorted(VALID_SETUP_LANGUAGES))
+        raise ValueError(f"unknown setup language '{language}' (expected one of: {allowed})")
+    return value
+
+
 @dataclass
 class AgentSetupConfig:
     project_dir: Path
     scope: str = "private"
     agent: str = "generic"
     features: list[str] = field(default_factory=lambda: list(DEFAULT_FEATURES))
+    language: str = "en"
     tool_profile: str = "core"
     install_optional_deps: bool = False
     install_embedding_model: str | None = None
@@ -389,6 +702,7 @@ class AgentSetupConfig:
     sync_interval_minutes: int = 15
     supabase_sync_targets: str | list[str] = "none"
     supabase_sync_interval_minutes: int = DEFAULT_SUPABASE_SYNC_INTERVAL_MINUTES
+    supabase_setup_mode: str = "simple"
     template_dir: Path | None = None
     allow_private: bool = False
 
@@ -396,6 +710,7 @@ class AgentSetupConfig:
 def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
     project_path = ensure_project(config.project_dir)
     features = normalize_features(config.features)
+    language = _normalize_setup_language(config.language)
     optional_dependency_install = None
     if config.install_optional_deps:
         optional_dependency_install = install_optional_dependencies(features)
@@ -419,6 +734,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         "scope": config.scope,
         "agent": config.agent,
         "features": features,
+        "language": language,
         "tool_profile": config.tool_profile,
         "optional_dependency_install": optional_dependency_install,
         "embedding_model_install": embedding_model_install,
@@ -427,6 +743,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         "created_at": datetime.now(timezone.utc).isoformat(),
         "obsidian": None,
         "sync_templates": {},
+        "supabase_setup": {},
         "supabase_sync_templates": {},
         "next_steps": [
             f"vault search \"test query\" --project-dir {shlex.quote(str(project_path))} --limit 5",
@@ -467,6 +784,20 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
                 obsidian_vault=config.obsidian_vault,
                 targets=sorted(targets),
                 interval_minutes=config.sync_interval_minutes,
+            )
+
+    if "supabase" in features:
+        template_dir = config.template_dir or (project_path / "agent-install")
+        result["supabase_setup"] = write_supabase_setup_guide(
+            output_dir=template_dir,
+            project_dir=project_path,
+            agent=config.agent,
+            mode=config.supabase_setup_mode,
+            language=language,
+        )
+        if result["supabase_setup"]:
+            result["next_steps"].append(
+                f"Review Supabase setup guide: {result['supabase_setup']['guide']}"
             )
 
     supabase_targets = _normalize_sync_targets(config.supabase_sync_targets)
@@ -598,6 +929,9 @@ def optional_feature_next_steps(
     if "supabase" in features:
         if not installed_deps:
             steps.append('python -m pip install "vault-for-llm[supabase]"')
+        steps.append(
+            "Use Supabase only for cross-host/team/shared-memory sync; skip it when local vault.db is enough."
+        )
         steps.append("configure SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY before running sync scripts")
     if "headroom" in features:
         if not installed_deps:
@@ -620,6 +954,9 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
     project_dir = argv_config.get("project_dir")
     if not project_dir:
         project_dir = _ask("Vault project directory", str(default_project_dir(scope, agent=agent)))
+    language = argv_config.get("language")
+    if language is None:
+        language = _ask("Setup language / 安裝語言 (en/zh-Hant/zh-CN)", "en")
 
     features_raw = argv_config.get("features")
     if features_raw:
@@ -649,6 +986,9 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
             sync_targets = _ask("Automatic sync templates (none/cron/launchagent/n8n/all)", "none")
 
     supabase_sync_targets = argv_config.get("supabase_sync_targets", "none")
+    supabase_setup_mode = argv_config.get("supabase_setup_mode")
+    if "supabase" in features and supabase_setup_mode is None:
+        supabase_setup_mode = _ask("Supabase setup guide (simple/advanced/none)", "simple")
     if "supabase" in features and not argv_config.get("supabase_sync_targets"):
         supabase_sync_targets = _ask("Daily Supabase sync templates (none/cron/launchagent/n8n/all)", "none")
 
@@ -657,6 +997,7 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
         scope=scope,
         agent=agent,
         features=features,
+        language=_normalize_setup_language(str(language)),
         tool_profile=str(argv_config.get("tool_profile") or "core"),
         install_optional_deps=install_optional_deps,
         install_embedding_model=install_embedding_choice,
@@ -669,6 +1010,7 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
             argv_config.get("supabase_sync_interval_minutes")
             or DEFAULT_SUPABASE_SYNC_INTERVAL_MINUTES
         ),
+        supabase_setup_mode=str(supabase_setup_mode or "simple"),
         template_dir=Path(argv_config["template_dir"]) if argv_config.get("template_dir") else None,
         allow_private=bool(argv_config.get("allow_private", False)),
     )
