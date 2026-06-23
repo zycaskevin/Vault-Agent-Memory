@@ -35,7 +35,12 @@ def test_automation_plan_writes_default_policy(tmp_path):
     policy = load_policy(project)
     assert policy["auto_archive_expired"] is True
     assert policy["protect_used_expired"] is True
+    assert policy["dream_write_candidates"] is True
     assert any(item["id"] == "ttl_archive_apply" for item in payload["planned_actions"])
+    dream_candidate_action = next(
+        item for item in payload["planned_actions"] if item["id"] == "dream_candidate_suggestions"
+    )
+    assert dream_candidate_action["enabled"] is True
 
 
 def test_automation_run_balanced_apply_archives_expired_memory(tmp_path):
@@ -128,6 +133,101 @@ def test_automation_run_conservative_apply_stays_dry_run(tmp_path):
     assert payload["warning"] == "apply requested, but policy auto_archive_expired is false"
     with VaultDB(project / "vault.db") as db:
         assert db.get_knowledge(expired_id)["status"] == "active"
+
+
+def test_automation_run_balanced_writes_dream_candidates_by_policy(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        db.add_knowledge(
+            "Weak metadata for automation",
+            "Automation should pre-fill a Dream review candidate without promoting active memory.",
+            category="general",
+            tags="",
+            trust=0.3,
+        )
+        before = db.conn.execute("SELECT COUNT(*) AS n FROM knowledge").fetchone()["n"]
+
+    payload = automation_run(project, mode="balanced", apply=True, limit=10, write_reports=False)
+
+    assert payload["policy"]["dream_write_candidates"] is True
+    assert payload["dream"]["summary"]["candidate_suggestions"] >= 1
+    assert payload["dream"]["summary"]["candidates_written"] >= 1
+    assert payload["dry_run_diff"]["promote_candidates"] is False
+    assert {
+        "kind": "dream_candidate_suggestions",
+        "count": payload["dream"]["summary"]["candidate_suggestions"],
+    } in payload["human_review"]["items"]
+    with VaultDB(project / "vault.db") as db:
+        assert db.conn.execute("SELECT COUNT(*) AS n FROM knowledge").fetchone()["n"] == before
+        candidates = db.list_memory_candidates()
+    assert len(candidates) == payload["dream"]["summary"]["candidates_written"]
+    assert {item["source"] for item in candidates} == {"dream"}
+    assert {item["memory_type"] for item in candidates} == {"dream_suggestion"}
+
+
+def test_automation_run_balanced_skips_existing_dream_candidates(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        db.add_knowledge(
+            "Recurring Dream suggestion",
+            "Repeated automation runs should not create duplicate Dream review candidates.",
+            category="general",
+            tags="",
+            trust=0.3,
+        )
+
+    first = automation_run(project, mode="balanced", apply=True, limit=10, write_reports=True)
+    second = automation_run(project, mode="balanced", apply=True, limit=10, write_reports=True)
+    latest = automation_report(project, latest=True, detail=False)
+
+    assert first["dream"]["summary"]["candidates_written"] >= 1
+    assert second["dream"]["summary"]["candidates_written"] == 0
+    assert second["dream"]["summary"]["candidates_skipped_existing"] >= first["dream"]["summary"]["candidates_written"]
+    assert latest["report"]["dream_candidates_written"] == 0
+    assert latest["report"]["dream_candidates_skipped_existing"] == second["dream"]["summary"]["candidates_skipped_existing"]
+    with VaultDB(project / "vault.db") as db:
+        assert len(db.list_memory_candidates()) == first["dream"]["summary"]["candidates_written"]
+
+
+def test_automation_run_conservative_does_not_write_dream_candidates(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        db.add_knowledge(
+            "Weak conservative automation",
+            "Conservative automation should report Dream suggestions without writing candidates.",
+            category="general",
+            tags="",
+            trust=0.3,
+        )
+
+    payload = automation_run(project, mode="conservative", apply=False, limit=10, write_reports=False)
+
+    assert payload["policy"]["dream_write_candidates"] is False
+    assert payload["dream"]["summary"]["candidate_suggestions"] >= 1
+    assert payload["dream"]["summary"]["candidates_written"] == 0
+    with VaultDB(project / "vault.db") as db:
+        assert db.list_memory_candidates() == []
+
+
+def test_automation_run_without_apply_does_not_write_dream_candidates(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        db.add_knowledge(
+            "Report-only balanced automation",
+            "Balanced automation without apply should report Dream suggestions without writing candidates.",
+            category="general",
+            tags="",
+            trust=0.3,
+        )
+
+    payload = automation_run(project, mode="balanced", apply=False, limit=10, write_reports=False)
+
+    assert payload["policy"]["dream_write_candidates"] is True
+    assert payload["policy"]["dream_write_candidates_requires_apply"] is True
+    assert payload["dream"]["summary"]["candidate_suggestions"] >= 1
+    assert payload["dream"]["summary"]["candidates_written"] == 0
+    with VaultDB(project / "vault.db") as db:
+        assert db.list_memory_candidates() == []
 
 
 def test_automation_apply_does_not_touch_private_or_high_sensitivity_memory(tmp_path):

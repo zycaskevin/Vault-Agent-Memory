@@ -164,6 +164,7 @@ def build_dream_report(payload: dict) -> str:
         f"- orphans: {summary['orphans']}",
         f"- candidate_suggestions: {summary.get('candidate_suggestions', 0)}",
         f"- candidates_written: {summary.get('candidates_written', 0)}",
+        f"- candidates_skipped_existing: {summary.get('candidates_skipped_existing', 0)}",
         f"- actions_applied: {summary['actions_applied']}",
         "",
         "## Recommended actions",
@@ -318,6 +319,25 @@ def _write_candidate_suggestions(db: VaultDB, suggestions: list[dict]) -> list[d
 
     results: list[dict] = []
     for suggestion in suggestions:
+        existing = db.conn.execute(
+            """SELECT id, status FROM memory_candidates
+               WHERE source = 'dream'
+                 AND source_ref = ?
+                 AND memory_type = 'dream_suggestion'
+                 AND status IN ('candidate', 'approved')
+               ORDER BY created_at DESC
+               LIMIT 1""",
+            (suggestion.get("source_ref", ""),),
+        ).fetchone()
+        if existing:
+            results.append({
+                "title": suggestion["title"],
+                "kind": suggestion["kind"],
+                "status": "skipped_existing",
+                "candidate_id": existing["id"],
+                "existing_status": existing["status"],
+            })
+            continue
         meta = dict(suggestion)
         meta.pop("kind", None)
         result = create_candidate(db, **meta)
@@ -443,6 +463,7 @@ def run_dream(
                 "orphans": 0,
                 "candidate_suggestions": 0,
                 "candidates_written": 0,
+                "candidates_skipped_existing": 0,
                 "actions_applied": 0,
             },
             "findings": findings,
@@ -501,7 +522,8 @@ def run_dream(
         "metadata": len(findings.get("metadata", [])),
         "orphans": len(findings.get("orphans", [])),
         "candidate_suggestions": len(candidate_suggestions),
-        "candidates_written": len(candidate_results),
+        "candidates_written": len([item for item in candidate_results if item.get("status") != "skipped_existing"]),
+        "candidates_skipped_existing": len([item for item in candidate_results if item.get("status") == "skipped_existing"]),
         "actions_applied": actions_applied,
     }
     payload = {

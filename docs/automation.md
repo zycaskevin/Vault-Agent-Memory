@@ -91,6 +91,7 @@ protected_sensitivities:
   - high
   - restricted
 auto_apply_safe_metadata: false
+dream_write_candidates: true
 write_reports: true
 dream_checks:
   - freshness
@@ -109,6 +110,13 @@ review_thresholds:
 Phase 1 intentionally keeps `auto_apply_safe_metadata` off. Dream reports can
 suggest metadata cleanup, but scheduled automation should not rewrite memory
 content, promote private memories, change sharing permissions, or delete rows.
+
+`dream_write_candidates` lets automation pre-fill the review queue with Dream
+suggestions only when `vault automation run --apply` is used. This is enabled
+in `balanced` and `autonomous` starter policies, disabled in `conservative`,
+and still never promotes candidates into active knowledge. Repeated apply runs
+skip an existing Dream candidate with the same `source_ref`, so scheduled jobs
+do not keep adding duplicate review items.
 
 `protect_used_expired` keeps automation from archiving memories that are expired
 but still have retrieval or citation usage. Those rows appear in
@@ -132,6 +140,8 @@ important review fields are:
   delete, no candidate promotion, and no permission changes.
 - `action_ledger`: per-memory entries with `knowledge_id`, operation, before
   status, after status, risk, and reason.
+- `dream.summary`: counts Dream findings, candidate suggestions,
+  `candidates_written`, and `candidates_skipped_existing`.
 - `usage_review`: operator-facing buckets such as archiveable expired rows,
   expired-but-used rows, protected expired rows, and top-used memories.
 - `human_review`: whether a person should inspect the run before stronger

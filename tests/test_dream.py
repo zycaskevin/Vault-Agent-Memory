@@ -21,6 +21,7 @@ def test_dream_report_missing_db_does_not_create_database(tmp_path):
         "orphans": 0,
         "candidate_suggestions": 0,
         "candidates_written": 0,
+        "candidates_skipped_existing": 0,
         "actions_applied": 0,
     }
     assert "warning" in payload
@@ -110,6 +111,41 @@ def test_dream_write_candidates_creates_review_queue_only(tmp_path):
     assert candidates[0]["source"] == "dream"
     assert candidates[0]["memory_type"] == "dream_suggestion"
     assert candidates[0]["status"] == "candidate"
+
+
+def test_dream_write_candidates_skips_existing_suggestions(tmp_path):
+    with VaultDB(tmp_path / "vault.db") as db:
+        db.add_knowledge(
+            title="Repeat Dream candidate",
+            content_raw="Dream should not create duplicate review candidates across scheduled runs.",
+            source="test",
+            category="general",
+            tags="",
+            trust=0.3,
+        )
+
+    first = run_dream(
+        tmp_path,
+        mode="report",
+        checks=["metadata"],
+        limit=5,
+        write_candidates=True,
+    )
+    second = run_dream(
+        tmp_path,
+        mode="report",
+        checks=["metadata"],
+        limit=5,
+        write_candidates=True,
+    )
+
+    assert first["summary"]["candidates_written"] == 1
+    assert first["summary"]["candidates_skipped_existing"] == 0
+    assert second["summary"]["candidates_written"] == 0
+    assert second["summary"]["candidates_skipped_existing"] == 1
+    assert second["candidate_results"][0]["status"] == "skipped_existing"
+    with VaultDB(tmp_path / "vault.db") as db:
+        assert len(db.list_memory_candidates()) == 1
 
 
 def test_dream_apply_safe_updates_low_risk_metadata_and_backs_up(tmp_path):

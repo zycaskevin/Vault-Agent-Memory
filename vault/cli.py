@@ -1915,6 +1915,10 @@ def cmd_automation(args):
         print(f"  mode: {payload.get('mode')}")
         print(f"  apply: {payload.get('apply')}")
         print(f"  report: {payload.get('report_path', '')}")
+        print(
+            f"  candidates: before={payload.get('candidate_count_before', payload.get('candidate_count', 0))} "
+            f"after={payload.get('candidate_count_after', payload.get('candidate_count', 0))}"
+        )
         archive = payload.get("archive_expired", {})
         print(
             f"  archive expired: eligible={archive.get('eligible_count', 0)} "
@@ -1944,6 +1948,14 @@ def cmd_automation(args):
                 print(f"    ... {len(ledger) - 5} more")
         dream = payload.get("dream", {})
         print(f"  dream report: {dream.get('report_path', '')}")
+        dream_summary = dream.get("summary") or {}
+        if dream_summary:
+            print(
+                "  dream candidates: "
+                f"suggested={dream_summary.get('candidate_suggestions', 0)} "
+                f"written={dream_summary.get('candidates_written', 0)} "
+                f"skipped_existing={dream_summary.get('candidates_skipped_existing', 0)}"
+            )
         if payload.get("human_review", {}).get("required"):
             print("  review: required")
         return
@@ -1968,6 +1980,11 @@ def cmd_automation(args):
                 f"permission_changes={diff.get('permission_changes')}"
             )
             print(f"  ledger entries: {item.get('ledger_count', 0)}")
+            print(
+                f"  dream candidates: suggested={item.get('dream_candidate_suggestions', 0)} "
+                f"written={item.get('dream_candidates_written', 0)} "
+                f"skipped_existing={item.get('dream_candidates_skipped_existing', 0)}"
+            )
             detail = payload.get("detail") or {}
             ledger = detail.get("action_ledger") or []
             if ledger:
