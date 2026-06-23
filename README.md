@@ -64,7 +64,7 @@ app, or an automatic conversation memory product.
 For most users, the easiest path is to ask an agent to install it:
 
 ```text
-Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.6.50.
+Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.6.51.
 Ask whether the vault should be shared, private, domain-specific, or temporary.
 Ask for a stable project directory and generate a stable venv script for
 long-lived agent jobs. Ask separately about MCP, semantic search, Supabase,
@@ -77,7 +77,7 @@ The agent should use the guided installer:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.6.50"
+pip install "vault-for-llm[mcp]==0.6.51"
 
 vault setup-agent
 ```
@@ -94,6 +94,7 @@ vault setup-agent \
   --write-stable-venv-script \
   --supabase-setup simple \
   --remote-reader shell \
+  --automation-schedule cron \
   --json
 ```
 
@@ -103,7 +104,7 @@ MCP commands do not depend on a disposable `/tmp` virtualenv.
 ### Manual Quickstart
 
 ```bash
-pip install "vault-for-llm[mcp]==0.6.50"
+pip install "vault-for-llm[mcp]==0.6.51"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -185,6 +186,10 @@ vault automation run
 vault automation run --apply
 ```
 
+Agent installers can generate cron, LaunchAgent, or n8n templates with
+`vault setup-agent --automation-schedule cron|launchagent|n8n|all`. Scheduled
+automation is report-first unless the user explicitly opts into `--automation-apply`.
+
 Automation details: [docs/automation.md](docs/automation.md).
 
 ## Memory Maintenance Agents
@@ -220,7 +225,7 @@ Use it when agents on different machines or hosted platforms need to read a
 shared, filtered copy of reviewed project memory.
 
 ```bash
-pip install "vault-for-llm[supabase]==0.6.50"
+pip install "vault-for-llm[supabase]==0.6.51"
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 

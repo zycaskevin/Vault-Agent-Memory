@@ -51,6 +51,7 @@ changed notes without duplicating unchanged ones.
 | `vault setup-agent --non-interactive --agent profile-agent --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,supabase --language zh-Hant --install-optional-deps --supabase-setup simple --supabase-sync cron --remote-reader all --json` | Generate guided Supabase setup, daily sync templates, and shell/n8n/Coze remote reader templates |
 | `vault setup-agent --non-interactive --agent profile-agent --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,supabase,memory_agents --agent-roster profile-agent:profile,work-agent:work,remote-agent:remote,n8n:automation --validation-pack all --json` | Generate a multi-agent access matrix plus live Supabase/n8n/Coze validation checklists |
 | `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,supabase --write-stable-venv-script --json` | Generate `agent-install/setup-stable-venv.sh` for reboot-safe scheduled jobs and MCP commands |
+| `vault setup-agent --non-interactive --agent automation-agent --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,memory_agents --automation-schedule all --automation-mode balanced --json` | Generate cron, LaunchAgent, and n8n templates for report-first memory automation |
 | `vault setup-agent --obsidian-vault ~/Documents/ObsidianVault --import-obsidian --obsidian-sync all` | Run first Obsidian import and write cron, LaunchAgent, and n8n templates |
 
 `vault install-agent` is an alias for `vault setup-agent`.
@@ -70,6 +71,9 @@ Multi-agent roster templates are opt-in with `--agent-roster`; each entry uses
 `agent_id:role[:scope[:max_sensitivity]]`, for example
 `profile-agent:profile,work-agent:work,remote-agent:remote,n8n:automation`. Live external validation
 files are opt-in with `--validation-pack remote|n8n|coze|all`.
+Memory automation schedule files are opt-in with
+`--automation-schedule cron|launchagent|n8n|all`; generated jobs are report-first
+unless `--automation-apply` is explicitly set.
 Manual interactive setup asks for `en`, `zh-Hant`, or `zh-CN`; non-interactive
 agent installs can pass `--language`. Supabase setup guide generation is opt-in
 with `--supabase-setup none|simple|advanced`; keep `simple` as the default path

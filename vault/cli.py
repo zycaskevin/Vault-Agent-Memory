@@ -2345,6 +2345,10 @@ def cmd_setup_agent(args):
             remote_reader_query=args.remote_reader_query,
             agent_roster=args.agent_roster,
             validation_pack_targets=args.validation_pack,
+            automation_schedule_targets=args.automation_schedule,
+            automation_interval_minutes=args.automation_interval_minutes,
+            automation_mode=args.automation_mode,
+            automation_apply=bool(args.automation_apply),
             template_dir=Path(args.template_dir).expanduser() if args.template_dir else None,
             allow_private=bool(args.allow_private),
             stable_venv_path=(
@@ -2369,6 +2373,7 @@ def cmd_setup_agent(args):
             "agent_roster": args.agent_roster,
             "sync_interval_minutes": args.sync_interval_minutes,
             "supabase_sync_interval_minutes": args.supabase_sync_interval_minutes,
+            "automation_interval_minutes": args.automation_interval_minutes,
             "template_dir": args.template_dir,
             "allow_private": args.allow_private,
             "stable_venv_path": args.stable_venv,
@@ -2384,6 +2389,12 @@ def cmd_setup_agent(args):
             setup_values["remote_reader_targets"] = args.remote_reader
         if args.validation_pack != "none":
             setup_values["validation_pack_targets"] = args.validation_pack
+        if args.automation_schedule != "none":
+            setup_values["automation_schedule_targets"] = args.automation_schedule
+        if args.automation_mode != "balanced":
+            setup_values["automation_mode"] = args.automation_mode
+        if args.automation_apply:
+            setup_values["automation_apply"] = True
         config = interactive_setup(setup_values)
 
     payload = run_agent_setup(config)
@@ -2436,6 +2447,10 @@ def cmd_setup_agent(args):
     if payload.get("live_validation_pack"):
         print("  live_validation_pack:")
         for name, path in payload["live_validation_pack"].items():
+            print(f"    {name}: {path}")
+    if payload.get("automation_schedule_templates"):
+        print("  automation_schedule_templates:")
+        for name, path in payload["automation_schedule_templates"].items():
             print(f"    {name}: {path}")
     if payload.get("memory_agents"):
         print("  memory_agents:")
@@ -2634,6 +2649,14 @@ def main(argv: list[str] | None = None):
                         help="產生多 Agent roster/access matrix，例如 profile-agent:profile,work-agent:work,remote-agent:remote")
         ap.add_argument("--validation-pack", choices=["none", "remote", "n8n", "coze", "all"],
                         default="none", help="產生 Supabase/n8n/Coze live validation pack")
+        ap.add_argument("--automation-schedule", choices=["none", "cron", "launchagent", "n8n", "all"],
+                        default="none", help="產生 memory automation cron/LaunchAgent/n8n 排程模板")
+        ap.add_argument("--automation-interval-minutes", type=int, default=1440,
+                        help="memory automation LaunchAgent/n8n 排程間隔分鐘數；cron 預設每日")
+        ap.add_argument("--automation-mode", choices=["conservative", "balanced", "autonomous"],
+                        default="balanced", help="memory automation policy mode")
+        ap.add_argument("--automation-apply", action="store_true",
+                        help="讓排程模板加入 --apply；只執行 policy 允許的可逆操作")
         ap.add_argument("--stable-venv",
                         help="產生穩定 Python virtualenv bootstrap 腳本，建議 ~/.hermes/venvs/vault-for-llm")
         ap.add_argument("--write-stable-venv-script", action="store_true",

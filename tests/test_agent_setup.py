@@ -144,6 +144,72 @@ def test_run_agent_setup_writes_remote_reader_templates(tmp_path):
     assert any("remote reader smoke" in step for step in result["next_steps"])
 
 
+def test_run_agent_setup_writes_memory_automation_schedule_templates(tmp_path):
+    from vault.agent_setup import AgentSetupConfig, run_agent_setup
+
+    project = tmp_path / "agent-project"
+    result = run_agent_setup(
+        AgentSetupConfig(
+            project_dir=project,
+            scope="shared",
+            agent="automation-agent",
+            features=["core", "mcp", "memory_agents"],
+            automation_schedule_targets="all",
+            automation_interval_minutes=1440,
+            automation_mode="balanced",
+            template_dir=tmp_path / "templates",
+        )
+    )
+
+    templates = result["automation_schedule_templates"]
+    assert {"cron", "launchagent", "n8n", "readme"}.issubset(templates)
+
+    cron = (tmp_path / "templates" / "memory-automation.cron").read_text(encoding="utf-8")
+    plist = (tmp_path / "templates" / "com.zycaskevin.vault-for-llm.memory-automation.plist").read_text(
+        encoding="utf-8"
+    )
+    workflow = json.loads((tmp_path / "templates" / "n8n-memory-automation.workflow.json").read_text(encoding="utf-8"))
+    readme = (tmp_path / "templates" / "README-memory-automation.md").read_text(encoding="utf-8")
+
+    assert "0 3 * * * vault automation run" in cron
+    assert "--project-dir" in cron
+    assert str(project) in cron
+    assert "--apply" not in cron
+    assert "memory-automation.log" in cron
+    assert "memory-automation" in plist
+    assert "memory-automation.err.log" in plist
+    assert workflow["name"] == "Vault-for-LLM Memory Automation"
+    assert workflow["nodes"][1]["name"] == "Vault Memory Automation"
+    assert "vault automation run" in workflow["nodes"][1]["parameters"]["command"]
+    assert "vault automation plan" in readme
+    assert "apply reversible archival: `false`" in readme
+    assert any("memory automation schedule" in step for step in result["next_steps"])
+
+
+def test_run_agent_setup_memory_automation_apply_is_explicit(tmp_path):
+    from vault.agent_setup import AgentSetupConfig, run_agent_setup
+
+    project = tmp_path / "agent-project"
+    result = run_agent_setup(
+        AgentSetupConfig(
+            project_dir=project,
+            scope="private",
+            agent="codex",
+            features=["core", "mcp"],
+            automation_schedule_targets="cron",
+            automation_interval_minutes=30,
+            automation_mode="conservative",
+            automation_apply=True,
+            template_dir=tmp_path / "templates",
+        )
+    )
+
+    cron = Path(result["automation_schedule_templates"]["cron"]).read_text(encoding="utf-8")
+    assert "*/30 * * * * vault automation run" in cron
+    assert "--mode conservative" in cron
+    assert "--apply" in cron
+
+
 def test_run_agent_setup_writes_agent_roster_and_validation_pack(tmp_path):
     from vault.agent_setup import AgentSetupConfig, run_agent_setup
 
@@ -271,6 +337,9 @@ def test_setup_agent_help_exposes_supabase_sync_options(capsys):
     assert "--agent-roster" in captured.out
     assert "--validation-pack" in captured.out
     assert "--language" in captured.out
+    assert "--automation-schedule" in captured.out
+    assert "--automation-mode" in captured.out
+    assert "--automation-apply" in captured.out
 
 
 def test_cli_version_flag(capsys):
@@ -282,7 +351,7 @@ def test_cli_version_flag(capsys):
         assert exc.code == 0
 
     captured = capsys.readouterr()
-    assert "vault-for-llm 0.6.50" in captured.out
+    assert "vault-for-llm 0.6.51" in captured.out
 
 
 def test_setup_agent_headroom_is_optional_next_step(tmp_path):
@@ -450,7 +519,7 @@ def test_run_agent_setup_writes_stable_venv_template(tmp_path):
     assert readme.exists()
     body = script.read_text(encoding="utf-8")
     assert "python3 -m venv \"$VENV\"" in body
-    assert "vault-for-llm[mcp,supabase]==0.6.50" in body
+    assert "vault-for-llm[mcp,supabase]==0.6.51" in body
     assert "headroom-ai" in body
     assert "--agent-project-dir" in body
     assert str(project) in body
@@ -508,6 +577,9 @@ def test_interactive_setup_asks_optional_feature_questions(tmp_path, monkeypatch
             "yes",  # agent roster
             "profile-agent:profile,remote-agent:remote",  # roster entries
             "all",  # live validation pack
+            "cron",  # memory automation schedule
+            "balanced",  # memory automation mode
+            "no",  # no scheduled apply
         ]
     )
     prompts: list[str] = []
@@ -535,9 +607,15 @@ def test_interactive_setup_asks_optional_feature_questions(tmp_path, monkeypatch
     assert any("Remote reader templates" in prompt for prompt in prompts)
     assert any("multi-agent roster" in prompt for prompt in prompts)
     assert any("Live validation pack" in prompt for prompt in prompts)
+    assert any("Memory automation schedule" in prompt for prompt in prompts)
+    assert any("Memory automation mode" in prompt for prompt in prompts)
+    assert any("reversible archival" in prompt for prompt in prompts)
     assert config.remote_reader_targets == "n8n"
     assert config.agent_roster == "profile-agent:profile,remote-agent:remote"
     assert config.validation_pack_targets == "all"
+    assert config.automation_schedule_targets == "cron"
+    assert config.automation_mode == "balanced"
+    assert config.automation_apply is False
 
 
 def test_interactive_setup_does_not_ask_optional_deps_for_core_mcp_only(tmp_path, monkeypatch):
@@ -557,6 +635,7 @@ def test_interactive_setup_does_not_ask_optional_deps_for_core_mcp_only(tmp_path
             "no",  # dev
             "",  # Obsidian
             "no",  # agent roster
+            "none",  # memory automation schedule
         ]
     )
     prompts: list[str] = []
