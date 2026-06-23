@@ -38,6 +38,41 @@ vault config set embedding.provider ollama
 vault config set embedding.model nomic-embed-text
 ```
 
+Remote API provider paths:
+
+```bash
+export OPENAI_API_KEY=...
+vault config set embedding.provider openai
+vault config set embedding.model text-embedding-3-small
+```
+
+```bash
+export COHERE_API_KEY=...
+vault config set embedding.provider cohere
+vault config set embedding.model embed-v4.0
+```
+
+```bash
+export VOYAGE_API_KEY=...
+vault config set embedding.provider voyage
+vault config set embedding.model voyage-3.5
+```
+
+API keys are read from environment variables at runtime. Do not store them in
+`vault.db`, Markdown notes, or agent instruction files. If you use a custom
+model with a different vector size, set the matching dimension environment
+variable before rebuilding:
+
+- `OPENAI_EMBEDDING_DIM`
+- `COHERE_EMBEDDING_DIM`
+- `VOYAGE_EMBEDDING_DIM`
+
+Provider-specific optional settings:
+
+- `OPENAI_BASE_URL`, `OPENAI_EMBEDDING_MODEL`
+- `COHERE_BASE_URL`, `COHERE_EMBEDDING_MODEL`, `COHERE_EMBED_INPUT_TYPE`
+- `VOYAGE_BASE_URL`, `VOYAGE_EMBEDDING_MODEL`, `VOYAGE_EMBED_INPUT_TYPE`
+
 ## Rebuild semantic vectors
 
 ```bash

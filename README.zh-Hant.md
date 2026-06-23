@@ -54,7 +54,7 @@ Vault-for-LLM 可能不是第一個該拿起來的工具。
 最推薦的方式，是直接把這段交給能執行本機指令的 Agent：
 
 ```text
-幫這個專案安裝 Vault-for-LLM。使用 vault-for-llm[mcp]==0.6.47。
+幫這個專案安裝 Vault-for-LLM。使用 vault-for-llm[mcp]==0.6.48。
 先問我要 shared、private、domain-specific 還是 temporary vault。
 詢問穩定的 project directory，並為長期任務產生 stable venv script。
 逐項詢問 MCP、semantic search、Supabase、Obsidian import、Headroom 壓縮、
@@ -67,7 +67,7 @@ Agent 會使用安裝精靈：
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.6.47"
+pip install "vault-for-llm[mcp]==0.6.48"
 
 vault setup-agent
 ```
@@ -93,7 +93,7 @@ vault setup-agent \
 ### 手動快速開始
 
 ```bash
-pip install "vault-for-llm[mcp]==0.6.47"
+pip install "vault-for-llm[mcp]==0.6.48"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -190,7 +190,7 @@ SQLite 仍然是 source of truth。Supabase 是可選的共享層。
 當不同主機、n8n、Coze 或 hosted agent 需要讀取共享記憶時，可以同步安全摘要：
 
 ```bash
-pip install "vault-for-llm[supabase]==0.6.47"
+pip install "vault-for-llm[supabase]==0.6.48"
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 
@@ -243,7 +243,7 @@ vault search-qa run \
 | MCP tools | usable，建議用 tool profile 控制 token |
 | Obsidian import/export | usable |
 | Supabase sync 和 remote read templates | advanced optional |
-| semantic search、rerank、benchmark adapters | evolving |
+| semantic search、API/local embedding providers、rerank、benchmark adapters | evolving |
 | Profile / Dream / Forgetting agents | guidance-first，不會自動刪記憶 |
 
 Vault-for-LLM 還沒到 1.0。核心本地路徑故意保持簡單；進階整合很有用，但應該由使用者明確開啟。

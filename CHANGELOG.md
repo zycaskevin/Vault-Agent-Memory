@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.6.48] - 2026-06-23
+
+### Added
+
+- Added optional OpenAI, Cohere, and Voyage embedding providers for semantic and hybrid search without requiring local ONNX model downloads.
+- Added API-provider parsing, retry telemetry, normalization, and fail-closed API-key checks without adding SDK dependencies to the base package.
+- Documented local-first and remote embedding configuration paths in the semantic search guide.
+
 ## [0.6.47] - 2026-06-23
 
 ### Added
