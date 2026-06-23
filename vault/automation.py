@@ -31,6 +31,7 @@ DEFAULT_POLICIES: dict[str, dict[str, Any]] = {
         "protected_scopes": ["private"],
         "protected_sensitivities": ["high", "restricted"],
         "auto_apply_safe_metadata": False,
+        "dream_write_candidates": False,
         "write_reports": True,
         "dream_checks": ["freshness", "dedup", "convergence", "metadata", "orphans"],
         "review_thresholds": {
@@ -48,6 +49,7 @@ DEFAULT_POLICIES: dict[str, dict[str, Any]] = {
         "protected_scopes": ["private"],
         "protected_sensitivities": ["high", "restricted"],
         "auto_apply_safe_metadata": False,
+        "dream_write_candidates": True,
         "write_reports": True,
         "dream_checks": ["freshness", "dedup", "convergence", "metadata", "orphans"],
         "review_thresholds": {
@@ -65,6 +67,7 @@ DEFAULT_POLICIES: dict[str, dict[str, Any]] = {
         "protected_scopes": ["private"],
         "protected_sensitivities": ["high", "restricted"],
         "auto_apply_safe_metadata": False,
+        "dream_write_candidates": True,
         "write_reports": True,
         "dream_checks": ["freshness", "dedup", "convergence", "metadata", "orphans"],
         "review_thresholds": {
@@ -185,6 +188,7 @@ def automation_run(
     with VaultDB(db_path) as db:
         before_usage = db.usage_stats(limit=limit)
         candidates = db.list_memory_candidates(status="candidate", limit=1000)
+        candidate_count_before = len(candidates)
         archive_allowed = bool(policy.get("auto_archive_expired", False))
         archive_apply = bool(apply and archive_allowed)
         archive_result = db.archive_expired_knowledge(
@@ -204,10 +208,12 @@ def automation_run(
         checks=policy.get("dream_checks") or None,
         limit=limit,
         write_report=report_enabled,
+        write_candidates=bool(apply and policy.get("dream_write_candidates", False)),
         backup=False,
     )
     with VaultDB(db_path) as db:
         after_usage = db.usage_stats(limit=limit)
+        candidate_count_after = len(db.list_memory_candidates(status="candidate", limit=1000))
 
     payload = {
         "action": "run",
@@ -222,16 +228,20 @@ def automation_run(
             "protected_scopes": _policy_list(policy, "protected_scopes"),
             "protected_sensitivities": _policy_list(policy, "protected_sensitivities"),
             "auto_apply_safe_metadata": bool(policy.get("auto_apply_safe_metadata", False)),
+            "dream_write_candidates": bool(policy.get("dream_write_candidates", False)),
+            "dream_write_candidates_requires_apply": True,
         },
         "usage_before": before_usage,
         "usage_after": after_usage,
         "usage_review": usage_review_before,
-        "candidate_count": len(candidates),
+        "candidate_count": candidate_count_after,
+        "candidate_count_before": candidate_count_before,
+        "candidate_count_after": candidate_count_after,
         "archive_expired": archive_result,
         "action_ledger": archive_ledger,
         "dry_run_diff": dry_run_diff,
         "dream": dream,
-        "human_review": _review_summary(policy, after_usage, len(candidates), dream, usage_review_before),
+        "human_review": _review_summary(policy, after_usage, candidate_count_after, dream, usage_review_before),
         "next_action": "Review human_review and report_path; adjust automation_policy.yaml before stronger autonomy.",
     }
     if apply and not archive_allowed:
@@ -374,6 +384,14 @@ def _planned_actions(
             "reason": "Find stale, duplicate, weak, and orphaned knowledge without mutation.",
         },
         {
+            "id": "dream_candidate_suggestions",
+            "risk": "low",
+            "autonomy": "policy-gated-candidate-write",
+            "enabled": bool(policy.get("dream_write_candidates", False)),
+            "command": "vault dream --mode report --write-candidates --write-report --pretty",
+            "reason": "Pre-fill the review queue with Dream suggestions. This creates candidates only and never promotes active knowledge.",
+        },
+        {
             "id": "candidate_review_digest",
             "risk": "low",
             "autonomy": "digest-only",
@@ -505,6 +523,9 @@ def _review_summary(
     weak_metadata = int(dream_summary.get("metadata", 0) or 0)
     if weak_metadata >= int(thresholds.get("weak_metadata", 1)):
         items.append({"kind": "weak_metadata", "count": weak_metadata})
+    candidate_suggestions = int(dream_summary.get("candidate_suggestions", 0) or 0)
+    if candidate_suggestions:
+        items.append({"kind": "dream_candidate_suggestions", "count": candidate_suggestions})
     return {
         "required": bool(items),
         "items": items,
@@ -541,6 +562,9 @@ def _report_summary(project: Path, path: Path, data: dict[str, Any]) -> dict[str
         "human_review": data.get("human_review", {}),
         "report_path": data.get("report_path", ""),
         "dream_report_path": (data.get("dream") or {}).get("report_path", ""),
+        "dream_candidate_suggestions": int(((data.get("dream") or {}).get("summary") or {}).get("candidate_suggestions") or 0),
+        "dream_candidates_written": int(((data.get("dream") or {}).get("summary") or {}).get("candidates_written") or 0),
+        "dream_candidates_skipped_existing": int(((data.get("dream") or {}).get("summary") or {}).get("candidates_skipped_existing") or 0),
         "archived_count": int(archive.get("archived_count") or 0),
         "eligible_count": int(archive.get("eligible_count") or 0),
         "skipped_used_count": int(archive.get("skipped_used_count") or 0),

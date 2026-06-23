@@ -98,6 +98,7 @@ Return shape:
     "orphans": 0,
     "candidate_suggestions": 4,
     "candidates_written": 0,
+    "candidates_skipped_existing": 0,
     "actions_applied": 0
   },
   "next_action": "Review report, then rerun with apply_safe if desired"
