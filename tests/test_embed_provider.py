@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import urllib.error
 
+import pytest
+
 
 class _FakeResponse:
     def __init__(self, payload: dict):
@@ -128,3 +130,173 @@ def test_embedding_provider_metrics_reset():
         "http_failures": 0,
         "last_latency_ms": 0.0,
     }
+
+
+def test_openai_embedding_provider_parses_indexed_response(monkeypatch):
+    from vault.embed import OpenAIEmbeddingProvider
+
+    calls = []
+
+    def fake_urlopen(req, timeout):
+        calls.append(
+            {
+                "url": req.full_url,
+                "timeout": timeout,
+                "auth": req.get_header("Authorization"),
+                "payload": json.loads(req.data.decode()),
+            }
+        )
+        return _FakeResponse(
+            {
+                "data": [
+                    {"index": 1, "embedding": [0.0, 3.0, 4.0]},
+                    {"index": 0, "embedding": [3.0, 4.0, 0.0]},
+                ]
+            }
+        )
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    provider = OpenAIEmbeddingProvider(
+        model="text-embedding-3-small",
+        credential="placeholder",
+        base_url="https://example.test/v1",
+        dim=3,
+        max_retries=0,
+    )
+
+    vectors = provider.encode(["alpha", "beta"])
+
+    assert vectors == [[0.6, 0.8, 0.0], [0.0, 0.6, 0.8]]
+    assert provider.dim == 3
+    assert provider.provider_id == "openai:https://example.test/v1:text-embedding-3-small:d3"
+    assert calls[0]["url"] == "https://example.test/v1/embeddings"
+    assert calls[0]["auth"] == "Bearer placeholder"
+    assert calls[0]["payload"] == {
+        "model": "text-embedding-3-small",
+        "input": ["alpha", "beta"],
+        "encoding_format": "float",
+    }
+
+
+def test_cohere_embedding_provider_parses_float_embeddings(monkeypatch):
+    from vault.embed import CohereEmbeddingProvider
+
+    calls = []
+
+    def fake_urlopen(req, timeout):
+        calls.append(
+            {
+                "url": req.full_url,
+                "auth": req.get_header("Authorization"),
+                "payload": json.loads(req.data.decode()),
+            }
+        )
+        return _FakeResponse({"embeddings": {"float": [[5.0, 0.0], [0.0, 12.0]]}})
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    provider = CohereEmbeddingProvider(
+        model="embed-v4.0",
+        credential="placeholder",
+        base_url="https://cohere.test/v2",
+        input_type="search_query",
+        dim=2,
+        max_retries=0,
+    )
+
+    vectors = provider.encode(["alpha", "beta"])
+
+    assert vectors == [[1.0, 0.0], [0.0, 1.0]]
+    assert provider.provider_id == "cohere:https://cohere.test/v2:embed-v4.0:search_query:d2"
+    assert calls[0]["url"] == "https://cohere.test/v2/embed"
+    assert calls[0]["auth"] == "Bearer placeholder"
+    assert calls[0]["payload"] == {
+        "model": "embed-v4.0",
+        "texts": ["alpha", "beta"],
+        "input_type": "search_query",
+        "embedding_types": ["float"],
+        "output_dimension": 2,
+    }
+
+
+def test_voyage_embedding_provider_parses_indexed_response(monkeypatch):
+    from vault.embed import VoyageEmbeddingProvider
+
+    calls = []
+
+    def fake_urlopen(req, timeout):
+        calls.append(
+            {
+                "url": req.full_url,
+                "auth": req.get_header("Authorization"),
+                "payload": json.loads(req.data.decode()),
+            }
+        )
+        return _FakeResponse(
+            {
+                "data": [
+                    {"index": 1, "embedding": [0.0, 8.0, 6.0]},
+                    {"index": 0, "embedding": [6.0, 8.0, 0.0]},
+                ]
+            }
+        )
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    provider = VoyageEmbeddingProvider(
+        model="voyage-3.5",
+        credential="placeholder",
+        base_url="https://voyage.test/v1",
+        input_type="query",
+        dim=3,
+        max_retries=0,
+    )
+
+    vectors = provider.encode(["alpha", "beta"])
+
+    assert vectors == [[0.6, 0.8, 0.0], [0.0, 0.8, 0.6]]
+    assert provider.provider_id == "voyage:https://voyage.test/v1:voyage-3.5:query:d3"
+    assert calls[0]["url"] == "https://voyage.test/v1/embeddings"
+    assert calls[0]["auth"] == "Bearer placeholder"
+    assert calls[0]["payload"] == {
+        "model": "voyage-3.5",
+        "input": ["alpha", "beta"],
+        "input_type": "query",
+        "output_dtype": "float",
+        "output_dimension": 3,
+    }
+
+
+@pytest.mark.parametrize(
+    ("provider_name", "env_name", "expected_model"),
+    [
+        ("openai", "OPENAI_API_KEY", "text-embedding-3-small"),
+        ("cohere", "COHERE_API_KEY", "embed-v4.0"),
+        ("voyage", "VOYAGE_API_KEY", "voyage-3.5"),
+    ],
+)
+def test_create_embedding_provider_api_defaults(monkeypatch, provider_name, env_name, expected_model):
+    from vault.embed import create_embedding_provider
+
+    monkeypatch.setenv(env_name, "test-key")
+    provider = create_embedding_provider(provider=provider_name, model_key="mix")
+
+    assert provider.model == expected_model
+    assert provider.is_semantic is True
+    assert provider.provider_id.startswith(f"{provider_name}:")
+
+
+@pytest.mark.parametrize(
+    ("provider_cls", "provider_name", "env_name"),
+    [
+        ("OpenAIEmbeddingProvider", "openai", "OPENAI_API_KEY"),
+        ("CohereEmbeddingProvider", "cohere", "COHERE_API_KEY"),
+        ("VoyageEmbeddingProvider", "voyage", "VOYAGE_API_KEY"),
+    ],
+)
+def test_api_embedding_provider_missing_key_fails_closed(monkeypatch, provider_cls, provider_name, env_name):
+    import vault.embed as embed
+
+    monkeypatch.delenv(env_name, raising=False)
+    provider = getattr(embed, provider_cls)(credential="")
+
+    with pytest.raises(RuntimeError, match=f"{env_name} is required"):
+        provider.encode("alpha")

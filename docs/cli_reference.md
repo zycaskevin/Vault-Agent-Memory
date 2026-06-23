@@ -120,7 +120,7 @@ after applying `docs/supabase_read_policy.sql` in Supabase.
 | Command | Purpose |
 |---|---|
 | `vault install-embedding` | Install a local embedding model |
-| `vault config set embedding.provider ollama` | Configure an embedding provider |
+| `vault config set embedding.provider ollama` | Configure an embedding provider; also supports `openai`, `cohere`, and `voyage` when the matching API key environment variable is set |
 | `vault semantic rebuild` | Rebuild semantic vector rows after configuring a real embedding provider |
 | `vault semantic rebuild --changed-only --persist-cache` | Refresh only missing or stale semantic vector rows |
 | `vault semantic warm` | Precompute QA query embeddings without writing vector rows |

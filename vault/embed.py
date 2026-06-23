@@ -1,10 +1,11 @@
 """
 Vault-for-LLM — 嵌入生成模組。
 
-支援三種嵌入來源：
+支援多種嵌入來源：
 1. ONNX Runtime（本地模型，不需要 PyTorch 2GB+）
 2. Ollama（已有 Ollama 的人零額外安裝）
 3. sentence-transformers（降級方案，需要 PyTorch）
+4. OpenAI / Cohere / Voyage API（可選遠端 provider）
 
 預設 ONNX 模型：
 - 中文：BAAI/bge-small-zh-v1.5 (512d, ~90MB)
@@ -12,11 +13,13 @@ Vault-for-LLM — 嵌入生成模組。
 - 混合：sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 (384d, ~200MB)
 """
 
-import os
 import importlib.util
+import json
+import math
+import os
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from .log import log
 
@@ -60,13 +63,46 @@ def _load_auto_tokenizer(auto_tokenizer_cls, model_or_path: str):
         return auto_tokenizer_cls.from_pretrained(model_or_path)
 
 
+def _normalize_vector(vector: list[float]) -> list[float]:
+    norm = math.sqrt(sum(float(value) * float(value) for value in vector))
+    if norm <= 1e-12:
+        return [float(value) for value in vector]
+    return [float(value) / norm for value in vector]
+
+
+def _normalize_vectors(vectors: list[list[float]]) -> list[list[float]]:
+    return [_normalize_vector(vector) for vector in vectors]
+
+
+def _env_int(name: str, default: int) -> int:
+    value = os.environ.get(name, "").strip()
+    if not value:
+        return default
+    try:
+        parsed = int(value)
+    except ValueError as exc:
+        raise ValueError(f"{name} must be an integer") from exc
+    if parsed <= 0:
+        raise ValueError(f"{name} must be positive")
+    return parsed
+
+
+def _configured_api_model(model_key: str, *, default: str, env_var: str) -> str:
+    env_value = os.environ.get(env_var, "").strip()
+    if env_value:
+        return env_value
+    if model_key in MODELS or not str(model_key or "").strip():
+        return default
+    return str(model_key).strip()
+
+
 class EmbeddingProvider:
     """嵌入生成基底類別。"""
 
     provider_id = "embedding-provider"
     is_semantic = True
 
-    def __init__(self, dim: int = 384):
+    def __init__(self, dim: int | None = 384):
         self._dim = dim
         self._metrics = {
             "encode_calls": 0,
@@ -349,6 +385,269 @@ class OllamaEmbeddingProvider(EmbeddingProvider):
         return min(seconds, self.max_retry_after)
 
 
+class _HTTPEmbeddingProvider(EmbeddingProvider):
+    """Shared HTTP helper for API-based embedding providers."""
+
+    def __init__(
+        self,
+        *,
+        dim: int,
+        max_retries: int = 1,
+        retry_backoff: float = 0.25,
+        max_retry_after: float = 5.0,
+    ):
+        super().__init__(dim=dim)
+        self.max_retries = max(0, int(max_retries))
+        self.retry_backoff = max(0.0, float(retry_backoff))
+        self.max_retry_after = max(0.0, float(max_retry_after))
+
+    def _post_json(
+        self,
+        url: str,
+        payload: dict[str, Any],
+        headers: dict[str, str],
+        *,
+        timeout: int,
+    ) -> dict[str, Any]:
+        import urllib.request
+
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode(),
+            headers={**headers, "Content-Type": "application/json"},
+        )
+        with self._urlopen_with_retry(req, timeout=timeout) as resp:
+            return json.loads(resp.read())
+
+    def _urlopen_with_retry(self, req, timeout: int):
+        import urllib.error
+        import urllib.request
+
+        attempts = self.max_retries + 1
+        last_exc = None
+        for attempt in range(attempts):
+            self._metrics["http_requests"] += 1
+            try:
+                return urllib.request.urlopen(req, timeout=timeout)
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
+                last_exc = exc
+                if attempt >= self.max_retries:
+                    self._metrics["http_failures"] += 1
+                    raise
+                self._metrics["http_retries"] += 1
+                delay = self._retry_delay(exc, attempt)
+                if delay > 0:
+                    time.sleep(delay)
+        raise last_exc
+
+    def _retry_delay(self, exc: Exception, attempt: int) -> float:
+        retry_after = self._retry_after_seconds(exc)
+        if retry_after is not None:
+            self._metrics["http_retry_after_delays"] += 1
+            return retry_after
+        return self.retry_backoff * (2 ** attempt) if self.retry_backoff else 0.0
+
+    def _retry_after_seconds(self, exc: Exception) -> float | None:
+        import urllib.error
+
+        if not isinstance(exc, urllib.error.HTTPError):
+            return None
+        if exc.code not in {429, 503}:
+            return None
+        headers = getattr(exc, "headers", None)
+        value = headers.get("Retry-After") if headers is not None else None
+        if value is None:
+            return None
+        try:
+            seconds = float(str(value).strip())
+        except (TypeError, ValueError):
+            return None
+        if seconds <= 0:
+            return 0.0
+        return min(seconds, self.max_retry_after)
+
+
+class OpenAIEmbeddingProvider(_HTTPEmbeddingProvider):
+    """OpenAI-compatible embeddings API provider."""
+
+    is_semantic = True
+
+    def __init__(
+        self,
+        model: str = "text-embedding-3-small",
+        credential: str | None = None,
+        base_url: str | None = None,
+        dim: int | None = None,
+        max_retries: int = 1,
+        retry_backoff: float = 0.25,
+        max_retry_after: float = 5.0,
+    ):
+        self.model = model
+        self.credential = credential or os.environ.get("OPENAI_API_KEY", "")
+        self.base_url = (base_url or os.environ.get("OPENAI_BASE_URL") or "https://api.openai.com/v1").rstrip("/")
+        dimension = dim or _env_int("OPENAI_EMBEDDING_DIM", 1536)
+        super().__init__(
+            dim=dimension,
+            max_retries=max_retries,
+            retry_backoff=retry_backoff,
+            max_retry_after=max_retry_after,
+        )
+        self.provider_id = f"openai:{self.base_url}:{self.model}:d{self.dim}"
+
+    def encode(self, texts: str | list[str]) -> list[list[float]]:
+        started_at = time.perf_counter()
+        if not self.credential:
+            raise RuntimeError("OPENAI_API_KEY is required for provider='openai'")
+        if isinstance(texts, str):
+            texts = [texts]
+        data = self._post_json(
+            f"{self.base_url}/embeddings",
+            {
+                "model": self.model,
+                "input": texts,
+                "encoding_format": "float",
+            },
+            {"Authorization": f"Bearer {self.credential}"},
+            timeout=max(30, len(texts) * 10),
+        )
+        vectors = [
+            item["embedding"]
+            for item in sorted(data.get("data", []), key=lambda item: int(item.get("index", 0)))
+        ]
+        if len(vectors) != len(texts):
+            raise RuntimeError("OpenAI embeddings response length did not match request length")
+        result = _normalize_vectors(vectors)
+        if result:
+            self._dim = len(result[0])
+        self.provider_id = f"openai:{self.base_url}:{self.model}:d{self.dim}"
+        self._record_encode(len(texts), started_at)
+        return result
+
+
+class CohereEmbeddingProvider(_HTTPEmbeddingProvider):
+    """Cohere Embed v2 API provider."""
+
+    is_semantic = True
+
+    def __init__(
+        self,
+        model: str = "embed-v4.0",
+        credential: str | None = None,
+        base_url: str | None = None,
+        input_type: str | None = None,
+        dim: int | None = None,
+        max_retries: int = 1,
+        retry_backoff: float = 0.25,
+        max_retry_after: float = 5.0,
+    ):
+        self.model = model
+        self.credential = credential or os.environ.get("COHERE_API_KEY", "")
+        self.base_url = (base_url or os.environ.get("COHERE_BASE_URL") or "https://api.cohere.com/v2").rstrip("/")
+        self.input_type = input_type or os.environ.get("COHERE_EMBED_INPUT_TYPE", "search_document")
+        dimension = dim or _env_int("COHERE_EMBEDDING_DIM", 1536)
+        super().__init__(
+            dim=dimension,
+            max_retries=max_retries,
+            retry_backoff=retry_backoff,
+            max_retry_after=max_retry_after,
+        )
+        self.provider_id = f"cohere:{self.base_url}:{self.model}:{self.input_type}:d{self.dim}"
+
+    def encode(self, texts: str | list[str]) -> list[list[float]]:
+        started_at = time.perf_counter()
+        if not self.credential:
+            raise RuntimeError("COHERE_API_KEY is required for provider='cohere'")
+        if isinstance(texts, str):
+            texts = [texts]
+        payload = {
+            "model": self.model,
+            "texts": texts,
+            "input_type": self.input_type,
+            "embedding_types": ["float"],
+        }
+        if self.dim:
+            payload["output_dimension"] = self.dim
+        data = self._post_json(
+            f"{self.base_url}/embed",
+            payload,
+            {"Authorization": f"Bearer {self.credential}"},
+            timeout=max(30, len(texts) * 10),
+        )
+        embeddings = data.get("embeddings", {})
+        vectors = embeddings.get("float") if isinstance(embeddings, dict) else embeddings
+        if not isinstance(vectors, list) or len(vectors) != len(texts):
+            raise RuntimeError("Cohere embeddings response length did not match request length")
+        result = _normalize_vectors(vectors)
+        if result:
+            self._dim = len(result[0])
+        self.provider_id = f"cohere:{self.base_url}:{self.model}:{self.input_type}:d{self.dim}"
+        self._record_encode(len(texts), started_at)
+        return result
+
+
+class VoyageEmbeddingProvider(_HTTPEmbeddingProvider):
+    """Voyage AI embeddings API provider."""
+
+    is_semantic = True
+
+    def __init__(
+        self,
+        model: str = "voyage-3.5",
+        credential: str | None = None,
+        base_url: str | None = None,
+        input_type: str | None = None,
+        dim: int | None = None,
+        max_retries: int = 1,
+        retry_backoff: float = 0.25,
+        max_retry_after: float = 5.0,
+    ):
+        self.model = model
+        self.credential = credential or os.environ.get("VOYAGE_API_KEY", "")
+        self.base_url = (base_url or os.environ.get("VOYAGE_BASE_URL") or "https://api.voyageai.com/v1").rstrip("/")
+        self.input_type = input_type or os.environ.get("VOYAGE_EMBED_INPUT_TYPE", "document")
+        dimension = dim or _env_int("VOYAGE_EMBEDDING_DIM", 1024)
+        super().__init__(
+            dim=dimension,
+            max_retries=max_retries,
+            retry_backoff=retry_backoff,
+            max_retry_after=max_retry_after,
+        )
+        self.provider_id = f"voyage:{self.base_url}:{self.model}:{self.input_type}:d{self.dim}"
+
+    def encode(self, texts: str | list[str]) -> list[list[float]]:
+        started_at = time.perf_counter()
+        if not self.credential:
+            raise RuntimeError("VOYAGE_API_KEY is required for provider='voyage'")
+        if isinstance(texts, str):
+            texts = [texts]
+        payload: dict[str, Any] = {
+            "model": self.model,
+            "input": texts,
+            "input_type": self.input_type,
+            "output_dtype": "float",
+        }
+        if self.dim:
+            payload["output_dimension"] = self.dim
+        data = self._post_json(
+            f"{self.base_url}/embeddings",
+            payload,
+            {"Authorization": f"Bearer {self.credential}"},
+            timeout=max(30, len(texts) * 10),
+        )
+        vectors = [
+            item["embedding"]
+            for item in sorted(data.get("data", []), key=lambda item: int(item.get("index", 0)))
+        ]
+        if len(vectors) != len(texts):
+            raise RuntimeError("Voyage embeddings response length did not match request length")
+        result = _normalize_vectors(vectors)
+        if result:
+            self._dim = len(result[0])
+        self.provider_id = f"voyage:{self.base_url}:{self.model}:{self.input_type}:d{self.dim}"
+        self._record_encode(len(texts), started_at)
+        return result
+
+
 class SentenceTransformerProvider(EmbeddingProvider):
     """降級方案：用sentence-transformers（需要PyTorch）。"""
 
@@ -397,6 +696,9 @@ def create_embedding_provider(
     - "auto": 偵測環境自動選擇（ONNX > Ollama > sentence-transformers）
     - "onnx": ONNX Runtime
     - "ollama": Ollama API
+    - "openai": OpenAI embeddings API (OPENAI_API_KEY)
+    - "cohere": Cohere Embed v2 API (COHERE_API_KEY)
+    - "voyage": Voyage AI embeddings API (VOYAGE_API_KEY)
     - "sentence-transformers": PyTorch 降級方案
     - "hash": 確定性哈希嵌入（輕量，無外部依賴，用於測試）
     """
@@ -434,8 +736,35 @@ def create_embedding_provider(
     elif provider == "ollama":
         return OllamaEmbeddingProvider(model=ollama_model, base_url=ollama_url)
 
+    elif provider == "openai":
+        model = _configured_api_model(
+            model_key,
+            default="text-embedding-3-small",
+            env_var="OPENAI_EMBEDDING_MODEL",
+        )
+        return OpenAIEmbeddingProvider(model=model)
+
+    elif provider == "cohere":
+        model = _configured_api_model(
+            model_key,
+            default="embed-v4.0",
+            env_var="COHERE_EMBEDDING_MODEL",
+        )
+        return CohereEmbeddingProvider(model=model)
+
+    elif provider == "voyage":
+        model = _configured_api_model(
+            model_key,
+            default="voyage-3.5",
+            env_var="VOYAGE_EMBEDDING_MODEL",
+        )
+        return VoyageEmbeddingProvider(model=model)
+
     elif provider == "sentence-transformers":
         return SentenceTransformerProvider()
 
     else:
-        raise ValueError(f"未知 provider: {provider}，可選: auto, onnx, ollama, sentence-transformers, hash")
+        raise ValueError(
+            f"未知 provider: {provider}，可選: auto, onnx, ollama, openai, cohere, voyage, "
+            "sentence-transformers, hash"
+        )

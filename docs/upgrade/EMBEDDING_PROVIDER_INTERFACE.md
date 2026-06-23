@@ -15,6 +15,9 @@ Existing public providers now expose provider identity:
 
 - `ONNXEmbeddingProvider`: `onnx:<model-name>`
 - `OllamaEmbeddingProvider`: `ollama:<base-url>:<model>`
+- `OpenAIEmbeddingProvider`: `openai:<base-url>:<model>:d<dimension>`
+- `CohereEmbeddingProvider`: `cohere:<base-url>:<model>:<input-type>:d<dimension>`
+- `VoyageEmbeddingProvider`: `voyage:<base-url>:<model>:<input-type>:d<dimension>`
 - `SentenceTransformerProvider`: `sentence-transformers:<model-name>`
 - `DeterministicHashEmbeddingProvider`: `hash-deterministic-v1`, `is_semantic=False`
 

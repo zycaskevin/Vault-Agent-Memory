@@ -64,7 +64,7 @@ app, or an automatic conversation memory product.
 For most users, the easiest path is to ask an agent to install it:
 
 ```text
-Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.6.47.
+Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.6.48.
 Ask whether the vault should be shared, private, domain-specific, or temporary.
 Ask for a stable project directory and generate a stable venv script for
 long-lived agent jobs. Ask separately about MCP, semantic search, Supabase,
@@ -77,7 +77,7 @@ The agent should use the guided installer:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.6.47"
+pip install "vault-for-llm[mcp]==0.6.48"
 
 vault setup-agent
 ```
@@ -103,7 +103,7 @@ MCP commands do not depend on a disposable `/tmp` virtualenv.
 ### Manual Quickstart
 
 ```bash
-pip install "vault-for-llm[mcp]==0.6.47"
+pip install "vault-for-llm[mcp]==0.6.48"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -203,7 +203,7 @@ Use it when agents on different machines or hosted platforms need to read a
 shared, filtered copy of reviewed project memory.
 
 ```bash
-pip install "vault-for-llm[supabase]==0.6.47"
+pip install "vault-for-llm[supabase]==0.6.48"
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 
@@ -261,7 +261,7 @@ More detail: [docs/agent_onboarding_benchmark.md](docs/agent_onboarding_benchmar
 | MCP tools | usable, profile selection recommended |
 | Obsidian import/export | usable |
 | Supabase sync and remote read templates | advanced optional |
-| semantic search, rerank, benchmark adapters | evolving |
+| semantic search, API/local embedding providers, rerank, benchmark adapters | evolving |
 | Profile / Dream / Forgetting agents | guidance-first, not autonomous deletion |
 
 Vault-for-LLM is still pre-1.0. The core local path is intentionally conservative;
