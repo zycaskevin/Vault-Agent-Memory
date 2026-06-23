@@ -172,6 +172,68 @@ def test_automation_report_lists_recent_runs(tmp_path):
     assert payload["action"] == "report"
     assert payload["report_count"] == 1
     assert payload["reports"][0]["path"].startswith("reports/automation/")
+    assert payload["reports"][0]["ledger_count"] >= 0
+
+
+def test_automation_report_latest_detail_includes_ledger(tmp_path):
+    project = _init_project(tmp_path)
+    expired = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    with VaultDB(project / "vault.db") as db:
+        db.add_knowledge("Expired", "Short lived", expires_at=expired)
+
+    run = automation_run(project, mode="balanced", apply=True, write_reports=True)
+    payload = automation_report(project, latest=True, detail=True)
+
+    assert payload["action"] == "report"
+    assert payload["report_count"] == 1
+    assert payload["report"]["path"] == run["report_path"]
+    assert payload["report"]["archived_count"] == 1
+    assert payload["report"]["dry_run_diff"]["applied_count"] == 1
+    assert payload["report"]["ledger_count"] == 1
+    assert payload["detail"]["action_ledger"][0]["status"] == "applied"
+
+
+def test_automation_report_specific_path_must_stay_under_report_dir(tmp_path):
+    project = _init_project(tmp_path)
+    outside = project / "not-automation-report.json"
+    outside.write_text("{}", encoding="utf-8")
+
+    try:
+        automation_report(project, report_path=outside)
+    except ValueError as exc:
+        assert "reports/automation" in str(exc)
+    else:
+        raise AssertionError("expected automation_report to reject paths outside reports/automation")
+
+
+def test_automation_cli_report_latest_detail_prints_ledger(tmp_path, monkeypatch, capsys):
+    from vault.cli import cmd_automation
+
+    project = _init_project(tmp_path)
+    expired = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat()
+    with VaultDB(project / "vault.db") as db:
+        db.add_knowledge("Expired", "Short lived", expires_at=expired)
+    automation_run(project, mode="balanced", apply=True, write_reports=True)
+    monkeypatch.chdir(project)
+
+    cmd_automation(
+        Namespace(
+            automation_action="report",
+            mode=None,
+            limit=10,
+            latest=True,
+            detail=True,
+            report_path="",
+            json=False,
+            pretty=False,
+        )
+    )
+
+    out = capsys.readouterr().out
+    assert "Automation reports" in out
+    assert "ledger entries: 1" in out
+    assert "action ledger:" in out
+    assert "archive_expired applied" in out
 
 
 def test_automation_doctor_json_safe(tmp_path):
