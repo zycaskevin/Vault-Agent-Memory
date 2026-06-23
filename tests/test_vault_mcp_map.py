@@ -172,6 +172,7 @@ RAW_CONTENT = "\n".join(
         "other detail",
     ]
 )
+REMOTE_UUID = "a4c5294e-239c-4b1f-a0d8-afa82ef43031"
 
 AAAK_CONTENT = "\n".join(
     [
@@ -199,6 +200,23 @@ def _create_db_with_entry(tmp_path, *, build_map: bool = True):
     finally:
         db.close()
     return db_path, knowledge_id
+
+
+def _remote_fake_client_with_uuid():
+    fake = _remote_fake_client()
+    for rows in fake.tables.values():
+        for row in rows:
+            if row.get("knowledge_id") == 42:
+                row["knowledge_id"] = REMOTE_UUID
+            if row.get("id") == 42:
+                row["id"] = REMOTE_UUID
+    for rows in fake.rpcs.values():
+        for row in rows:
+            if row.get("knowledge_id") == 42:
+                row["knowledge_id"] = REMOTE_UUID
+            if row.get("id") == 42:
+                row["id"] = REMOTE_UUID
+    return fake
 
 
 def test_vault_map_show_returns_nodes_and_build_hint_when_empty(tmp_path):
@@ -488,6 +506,28 @@ def test_vault_remote_map_show_uses_synced_supabase_nodes():
     }
 
 
+def test_vault_remote_map_show_accepts_supabase_uuid_ids():
+    fake = _remote_fake_client_with_uuid()
+
+    payload = vault_mcp._vault_remote_map_show_payload(
+        REMOTE_UUID,
+        compact=True,
+        agent_id="remote-agent",
+        max_sensitivity="medium",
+        sb_client=fake,
+    )
+
+    assert payload["entry_id"] == REMOTE_UUID
+    assert payload["title"] == "Example"
+    assert payload["next_action"]["arguments"]["knowledge_id"] == REMOTE_UUID
+    assert ("vault_get_readable", {
+        "p_agent_id": "remote-agent",
+        "p_include_private": False,
+        "p_max_sensitivity": "medium",
+        "p_knowledge_id": REMOTE_UUID,
+    }) in fake.rpc_calls
+
+
 def test_vault_remote_map_show_denies_unreadable_entry():
     fake = _remote_fake_client()
     fake.rpcs["vault_get_readable"] = []
@@ -551,6 +591,33 @@ def test_vault_remote_search_uses_readable_rpc_without_raw_content():
     assert result["next_action"]["arguments"]["max_sensitivity"] == "medium"
 
 
+def test_vault_remote_search_preserves_supabase_uuid_next_action():
+    fake = _remote_fake_client()
+    fake.rpcs["vault_search_readable"] = [
+        {
+            "id": REMOTE_UUID,
+            "title": "Example",
+            "summary": "Safe remote summary",
+            "source": "raw/example.md",
+            "scope": "project",
+            "sensitivity": "medium",
+            "memory_type": "knowledge",
+        }
+    ]
+
+    payload = vault_mcp._vault_remote_search_payload(
+        "summary",
+        agent_id="remote-agent",
+        max_sensitivity="medium",
+        limit=5,
+        sb_client=fake,
+    )
+
+    result = payload["results"][0]
+    assert result["id"] == REMOTE_UUID
+    assert result["next_action"]["arguments"]["knowledge_id"] == REMOTE_UUID
+
+
 def test_vault_remote_search_tool_is_in_remote_profile():
     remote_tools = {tool["name"] for tool in vault_mcp.select_tools("remote")}
     assert "vault_remote_search" in remote_tools
@@ -584,6 +651,27 @@ def test_vault_remote_read_range_uses_content_raw_when_available():
         "p_include_private": False,
         "p_max_sensitivity": "medium",
         "p_knowledge_id": 42,
+    }) in fake.rpc_calls
+
+
+def test_vault_remote_read_range_accepts_supabase_uuid_ids():
+    fake = _remote_fake_client_with_uuid()
+    payload = vault_mcp._vault_remote_read_range_payload(
+        REMOTE_UUID,
+        node_uid="title-tool",
+        agent_id="remote-agent",
+        max_sensitivity="medium",
+        sb_client=fake,
+    )
+
+    assert payload["entry_id"] == REMOTE_UUID
+    assert payload["citation"] == f"#{REMOTE_UUID} Example L3-L4"
+    assert payload["next_action"]["citation"] == f"#{REMOTE_UUID} Example L3-L4"
+    assert ("vault_content_readable", {
+        "p_agent_id": "remote-agent",
+        "p_include_private": False,
+        "p_max_sensitivity": "medium",
+        "p_knowledge_id": REMOTE_UUID,
     }) in fake.rpc_calls
 
 

@@ -1364,6 +1364,9 @@ def cmd_remote(args):
         payload = _vault_remote_map_show_payload(
             args.knowledge_id,
             compact=bool(args.compact),
+            agent_id=args.agent_id or "",
+            include_private=bool(args.include_private),
+            max_sensitivity=args.max_sensitivity or "medium",
         )
     elif action == "read":
         line_start = 0
@@ -1380,6 +1383,9 @@ def cmd_remote(args):
             line_start=line_start,
             line_end=line_end,
             max_lines=args.max_lines,
+            agent_id=args.agent_id or "",
+            include_private=bool(args.include_private),
+            max_sensitivity=args.max_sensitivity or "medium",
         )
     elif action == "smoke":
         search_payload = _vault_remote_search_payload(
@@ -2997,15 +3003,21 @@ def main(argv: list[str] | None = None):
     add_remote_output_args(rp)
 
     rp = remote_sub.add_parser("map", help="讀取 Supabase 同步的 Document Map")
-    rp.add_argument("knowledge_id", type=int, help="知識 ID")
+    rp.add_argument("knowledge_id", help="遠端知識 ID；可為正整數或 Supabase UUID")
     rp.add_argument("--compact", action=argparse.BooleanOptionalAction, default=False, help="回傳精簡節點欄位")
+    rp.add_argument("--agent-id", default="", help="Agent 身份，用於 owner/allowed_agents 過濾")
+    rp.add_argument("--include-private", action="store_true", help="允許讀取此 agent 被授權的 private 記憶")
+    rp.add_argument("--max-sensitivity", choices=["low", "medium", "high", "restricted"], default="medium")
     add_remote_output_args(rp)
 
     rp = remote_sub.add_parser("read", help="讀取 Supabase 同步的 bounded range")
-    rp.add_argument("knowledge_id", type=int, help="知識 ID")
+    rp.add_argument("knowledge_id", help="遠端知識 ID；可為正整數或 Supabase UUID")
     rp.add_argument("--node-uid", default="", help="Document Map node_uid；可單獨指定")
     rp.add_argument("--lines", help="行號範圍，例如 1-40")
     rp.add_argument("--max-lines", type=_positive_int, default=80, help="最大讀取行數")
+    rp.add_argument("--agent-id", default="", help="Agent 身份，用於 owner/allowed_agents 過濾")
+    rp.add_argument("--include-private", action="store_true", help="允許讀取此 agent 被授權的 private 記憶")
+    rp.add_argument("--max-sensitivity", choices=["low", "medium", "high", "restricted"], default="medium")
     add_remote_output_args(rp)
 
     rp = remote_sub.add_parser("smoke", help="檢查 Supabase remote reader RPC 是否可用")

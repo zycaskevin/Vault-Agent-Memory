@@ -118,6 +118,16 @@ as $$
     )
 $$;
 
+drop function if exists public.vault_search_readable(text, text, boolean, text, integer);
+drop function if exists public.vault_get_readable(text, bigint, boolean, text);
+drop function if exists public.vault_nodes_readable(text, bigint, boolean, text);
+drop function if exists public.vault_claims_readable(text, bigint, boolean, text);
+drop function if exists public.vault_content_readable(text, bigint, boolean, text);
+drop function if exists public.vault_get_readable(text, text, boolean, text);
+drop function if exists public.vault_nodes_readable(text, text, boolean, text);
+drop function if exists public.vault_claims_readable(text, text, boolean, text);
+drop function if exists public.vault_content_readable(text, text, boolean, text);
+
 create or replace function public.vault_search_readable(
   p_agent_id text default '',
   p_query text default '',
@@ -126,7 +136,7 @@ create or replace function public.vault_search_readable(
   p_limit integer default 20
 )
 returns table (
-  id bigint,
+  id text,
   title text,
   layer smallint,
   category text,
@@ -148,7 +158,7 @@ security definer
 set search_path = public
 as $$
   select
-    k.id,
+    k.id::text,
     k.title,
     k.layer,
     k.category,
@@ -187,12 +197,12 @@ $$;
 
 create or replace function public.vault_get_readable(
   p_agent_id text default '',
-  p_knowledge_id bigint default 0,
+  p_knowledge_id text default '',
   p_include_private boolean default false,
   p_max_sensitivity text default 'medium'
 )
 returns table (
-  id bigint,
+  id text,
   title text,
   scope text,
   sensitivity text,
@@ -208,7 +218,7 @@ security definer
 set search_path = public
 as $$
   select
-    k.id,
+    k.id::text,
     k.title,
     coalesce(k.scope, 'project') as scope,
     coalesce(k.sensitivity, 'low') as sensitivity,
@@ -218,7 +228,7 @@ as $$
     k.expires_at,
     k.updated_at
   from public.vault_knowledge k
-  where k.id = p_knowledge_id
+  where k.id::text = p_knowledge_id
     and public.vault_is_readable(
       k.scope,
       k.sensitivity,
@@ -235,12 +245,12 @@ $$;
 
 create or replace function public.vault_nodes_readable(
   p_agent_id text default '',
-  p_knowledge_id bigint default 0,
+  p_knowledge_id text default '',
   p_include_private boolean default false,
   p_max_sensitivity text default 'medium'
 )
 returns table (
-  knowledge_id bigint,
+  knowledge_id text,
   node_uid text,
   parent_uid text,
   level integer,
@@ -261,7 +271,7 @@ security definer
 set search_path = public
 as $$
   select
-    n.knowledge_id,
+    n.knowledge_id::text,
     n.node_uid,
     n.parent_uid,
     n.level,
@@ -277,7 +287,7 @@ as $$
     n.knowledge_content_hash
   from public.vault_knowledge_nodes n
   join public.vault_knowledge k on k.id = n.knowledge_id
-  where n.knowledge_id = p_knowledge_id
+  where n.knowledge_id::text = p_knowledge_id
     and public.vault_is_readable(
       k.scope,
       k.sensitivity,
@@ -294,12 +304,12 @@ $$;
 
 create or replace function public.vault_claims_readable(
   p_agent_id text default '',
-  p_knowledge_id bigint default 0,
+  p_knowledge_id text default '',
   p_include_private boolean default false,
   p_max_sensitivity text default 'medium'
 )
 returns table (
-  knowledge_id bigint,
+  knowledge_id text,
   node_uid text,
   claim_uid text,
   claim text,
@@ -319,7 +329,7 @@ security definer
 set search_path = public
 as $$
   select
-    c.knowledge_id,
+    c.knowledge_id::text,
     c.node_uid,
     c.claim_uid,
     c.claim,
@@ -334,7 +344,7 @@ as $$
     c.knowledge_content_hash
   from public.vault_knowledge_claims c
   join public.vault_knowledge k on k.id = c.knowledge_id
-  where c.knowledge_id = p_knowledge_id
+  where c.knowledge_id::text = p_knowledge_id
     and public.vault_is_readable(
       k.scope,
       k.sensitivity,
@@ -351,7 +361,7 @@ $$;
 
 create or replace function public.vault_content_readable(
   p_agent_id text default '',
-  p_knowledge_id bigint default 0,
+  p_knowledge_id text default '',
   p_include_private boolean default false,
   p_max_sensitivity text default 'medium'
 )
@@ -370,7 +380,7 @@ as $$
     k.content_raw,
     k.content_hash
   from public.vault_knowledge k
-  where k.id = p_knowledge_id
+  where k.id::text = p_knowledge_id
     and public.vault_is_readable(
       k.scope,
       k.sensitivity,
@@ -393,15 +403,15 @@ revoke all on table public.vault_knowledge_nodes from anon, authenticated;
 revoke all on table public.vault_knowledge_claims from anon, authenticated;
 revoke all on function public.vault_is_readable(text, text, text, jsonb, text, timestamptz, text, boolean, text) from public;
 revoke all on function public.vault_search_readable(text, text, boolean, text, integer) from public;
-revoke all on function public.vault_get_readable(text, bigint, boolean, text) from public;
-revoke all on function public.vault_nodes_readable(text, bigint, boolean, text) from public;
-revoke all on function public.vault_claims_readable(text, bigint, boolean, text) from public;
-revoke all on function public.vault_content_readable(text, bigint, boolean, text) from public;
+revoke all on function public.vault_get_readable(text, text, boolean, text) from public;
+revoke all on function public.vault_nodes_readable(text, text, boolean, text) from public;
+revoke all on function public.vault_claims_readable(text, text, boolean, text) from public;
+revoke all on function public.vault_content_readable(text, text, boolean, text) from public;
 grant execute on function public.vault_search_readable(text, text, boolean, text, integer) to anon, authenticated;
-grant execute on function public.vault_get_readable(text, bigint, boolean, text) to anon, authenticated;
-grant execute on function public.vault_nodes_readable(text, bigint, boolean, text) to anon, authenticated;
-grant execute on function public.vault_claims_readable(text, bigint, boolean, text) to anon, authenticated;
-grant execute on function public.vault_content_readable(text, bigint, boolean, text) to anon, authenticated;
+grant execute on function public.vault_get_readable(text, text, boolean, text) to anon, authenticated;
+grant execute on function public.vault_nodes_readable(text, text, boolean, text) to anon, authenticated;
+grant execute on function public.vault_claims_readable(text, text, boolean, text) to anon, authenticated;
+grant execute on function public.vault_content_readable(text, text, boolean, text) to anon, authenticated;
 """
 
 

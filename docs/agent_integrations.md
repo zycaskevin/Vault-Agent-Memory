@@ -52,8 +52,8 @@ default small and local.
 
 | Feature | Default | Install when | Install command |
 |---|---|---|---|
-| `core` | yes | Always: Markdown, SQLite, keyword search, local CLI. | `python -m pip install vault-for-llm==0.6.60` |
-| `mcp` | yes for MCP-capable agents | The runtime can connect local stdio MCP tools. | `python -m pip install "vault-for-llm[mcp]==0.6.60"` |
+| `core` | yes | Always: Markdown, SQLite, keyword search, local CLI. | `python -m pip install vault-for-llm==0.6.61` |
+| `mcp` | yes for MCP-capable agents | The runtime can connect local stdio MCP tools. | `python -m pip install "vault-for-llm[mcp]==0.6.61"` |
 | `obsidian_import` | no | The user already has an Obsidian vault and wants those notes searchable through Vault. | built into core CLI |
 | `semantic` | no | The user wants embedding-backed semantic or hybrid search. | `python -m pip install "vault-for-llm[semantic]"` |
 | `supabase` | no | The user wants optional remote sync/read paths. | `python -m pip install "vault-for-llm[supabase]"` |
@@ -275,6 +275,10 @@ extra tools are needed. For cross-host Supabase readers, the `remote` profile
 adds `vault_remote_search`, `vault_remote_map_show`, and
 `vault_remote_read_range`; use them in that order so hosted agents search safe
 summaries before asking for bounded evidence.
+
+Remote IDs are opaque. Agents should pass the `id` returned by
+`vault_remote_search` directly into map/read; it may be a local integer ID or a
+Supabase UUID depending on the remote schema.
 
 For per-tool JSON examples and common integration mistakes, see
 [`docs/mcp_tool_reference.md`](mcp_tool_reference.md).

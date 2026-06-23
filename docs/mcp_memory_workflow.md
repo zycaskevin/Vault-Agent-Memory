@@ -64,6 +64,10 @@ vault_remote_search -> vault_remote_map_show -> vault_remote_read_range
 advanced Supabase setup template. It returns safe metadata and summaries only;
 it does not return `content_raw`.
 
+Use the returned `id` as an opaque value. Some Supabase deployments return a
+local integer ID, while others return a UUID. Pass that value directly to
+`vault_remote_map_show` and `vault_remote_read_range`.
+
 ## Why not direct `vault_add`?
 
 `vault_add` is still available for compatibility and controlled scripts, but it writes directly to active knowledge. It blocks obvious privacy failures and builds a Document Map when possible, but it still bypasses candidate review. For autonomous agents and unreviewed memories, use `vault_memory_propose` so the memory passes deterministic gates first.

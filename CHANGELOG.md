@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.6.61] - 2026-06-23
+
+### Fixed
+
+- Fixed Supabase remote reader workflows when `vault_remote_search` returns UUID IDs instead of local integer IDs.
+- Updated `vault remote map/read` and the matching MCP tools to accept positive integer IDs or Supabase UUIDs, while keeping malformed strings rejected.
+- `vault remote map/read` now accept the same `--agent-id`, `--include-private`, and `--max-sensitivity` policy arguments as `vault remote search`.
+
 ## [0.6.60] - 2026-06-23
 
 ### Added
