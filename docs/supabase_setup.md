@@ -76,6 +76,11 @@ should pass `--language` explicitly or use the default English output.
 
 ## Minimal Schema
 
+The minimal schema below uses integer IDs because it mirrors local SQLite sync.
+If your Supabase project already uses UUID primary keys, keep your schema and
+apply `docs/supabase_read_policy.sql`; the guarded reader RPCs compare IDs as
+text and support either integer IDs or UUIDs.
+
 ```sql
 create table if not exists vault_knowledge (
   id bigint generated always as identity primary key,

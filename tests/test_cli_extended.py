@@ -275,15 +275,38 @@ class TestRemoteCli:
         from vault import mcp
 
         monkeypatch.setattr(mcp, "_get_supabase_client", lambda: _RemoteClient())
+        remote_id = "a4c5294e-239c-4b1f-a0d8-afa82ef43031"
 
-        main(["remote", "map", "7", "--compact", "--json"])
+        main([
+            "remote",
+            "map",
+            remote_id,
+            "--compact",
+            "--agent-id",
+            "remote-agent",
+            "--max-sensitivity",
+            "medium",
+            "--json",
+        ])
         map_payload = json.loads(capsys.readouterr().out)
         assert map_payload["next_action"]["tool"] == "vault_remote_read_range"
         assert map_payload["nodes"][0]["node_uid"] == "remote-node"
+        assert map_payload["next_action"]["arguments"]["knowledge_id"] == remote_id
 
-        main(["remote", "read", "7", "--lines", "2-2", "--json"])
+        main([
+            "remote",
+            "read",
+            remote_id,
+            "--lines",
+            "2-2",
+            "--agent-id",
+            "remote-agent",
+            "--max-sensitivity",
+            "medium",
+            "--json",
+        ])
         read_payload = json.loads(capsys.readouterr().out)
-        assert read_payload["citation"] == "#7 Remote Entry L2-L2"
+        assert read_payload["citation"] == f"#{remote_id} Remote Entry L2-L2"
         assert read_payload["source"] == "remote_claims"
 
     def test_remote_smoke_json(self, monkeypatch, capsys):

@@ -232,7 +232,7 @@ summaries only.
 
 ```json
 {
-  "knowledge_id": 42,
+  "knowledge_id": "a4c5294e-239c-4b1f-a0d8-afa82ef43031",
   "compact": true,
   "agent_id": "remote-agent",
   "include_private": false,
@@ -240,15 +240,18 @@ summaries only.
 }
 ```
 
+Use the `id` returned by `vault_remote_search` directly. Depending on the
+Supabase schema, this may be a local integer ID or a UUID.
+
 This requires the guarded Supabase RPCs from
 [`docs/supabase_read_policy.sql`](supabase_read_policy.sql). Reapply that SQL
-after upgrading to v0.6.45 or newer.
+after upgrading to v0.6.61 or newer if your remote IDs are UUIDs.
 
 ### `vault_remote_read_range`
 
 ```json
 {
-  "knowledge_id": 42,
+  "knowledge_id": "a4c5294e-239c-4b1f-a0d8-afa82ef43031",
   "node_uid": "deployment-checklist",
   "agent_id": "remote-agent",
   "include_private": false,
@@ -257,7 +260,8 @@ after upgrading to v0.6.45 or newer.
 ```
 
 Remote read returns bounded content only after the same read policy allows the
-entry.
+entry. Use the same `knowledge_id` value from search/map; do not coerce UUIDs
+into integers.
 
 ## Maintenance Tools
 

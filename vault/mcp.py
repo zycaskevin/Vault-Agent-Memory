@@ -7,6 +7,7 @@ import json
 import sqlite3
 import sys
 import os
+import re
 from pathlib import Path
 
 try:
@@ -30,6 +31,10 @@ REMOTE_CLAIM_TABLE = "vault_knowledge_claims"
 REMOTE_KNOWLEDGE_TABLE = "vault_knowledge"
 MCP_SEARCH_MAX_LIMIT = 50
 MCP_SEARCH_MAX_OFFSET = 1000
+REMOTE_ID_ERROR = "knowledge_id must be a positive integer or UUID"
+REMOTE_UUID_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
 MCP_ALLOWED_SEARCH_FIELDS = {
     "id",
     "title",
@@ -181,7 +186,7 @@ def _line_hash(lines: list[str], line_start: int, line_end: int) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
 
-def _format_citation(knowledge_id: int, title: str, line_start: int, line_end: int) -> str:
+def _format_citation(knowledge_id: int | str, title: str, line_start: int, line_end: int) -> str:
     return f"#{knowledge_id} {title} L{line_start}-L{line_end}"
 
 
@@ -272,7 +277,7 @@ def vault_map_show(knowledge_id: int, compact: bool = False) -> dict:
 
 
 def vault_remote_map_show(
-    knowledge_id: int,
+    knowledge_id: int | str,
     compact: bool = False,
     agent_id: str = "",
     include_private: bool = False,
@@ -318,7 +323,7 @@ def _read_range_action(knowledge_id: int, node: dict) -> dict:
 
 
 def _remote_read_range_action(
-    knowledge_id: int,
+    knowledge_id: int | str,
     node: dict,
     *,
     agent_id: str = "",
@@ -382,9 +387,21 @@ def _remote_policy_args(
     return args
 
 
+def _normalize_remote_knowledge_id(knowledge_id: int | str) -> int | str | None:
+    if isinstance(knowledge_id, int):
+        return knowledge_id if knowledge_id > 0 else None
+    text = str(knowledge_id or "").strip()
+    if text.isdigit():
+        normalized = int(text)
+        return normalized if normalized > 0 else None
+    if REMOTE_UUID_RE.match(text):
+        return text.lower()
+    return None
+
+
 def _remote_readable_entry(
     sb_client,
-    knowledge_id: int,
+    knowledge_id: int | str,
     *,
     agent_id: str = "",
     include_private: bool = False,
@@ -396,7 +413,7 @@ def _remote_readable_entry(
             include_private=include_private,
             max_sensitivity=max_sensitivity,
         ),
-        "p_knowledge_id": int(knowledge_id),
+        "p_knowledge_id": knowledge_id,
     }
     rows = _supabase_rpc(sb_client, "vault_get_readable", params)
     return rows[0] if rows else None
@@ -543,7 +560,7 @@ def _remote_node_payload(row: dict) -> dict:
 
 
 def _vault_remote_map_show_payload(
-    knowledge_id: int,
+    knowledge_id: int | str,
     *,
     compact: bool = False,
     agent_id: str = "",
@@ -551,12 +568,10 @@ def _vault_remote_map_show_payload(
     max_sensitivity: str = "medium",
     sb_client=None,
 ) -> dict:
-    try:
-        knowledge_id = int(knowledge_id)
-    except (TypeError, ValueError):
-        return _remote_error("invalid_knowledge_id", "knowledge_id must be a positive integer")
-    if knowledge_id <= 0:
-        return _remote_error("invalid_knowledge_id", "knowledge_id must be a positive integer")
+    normalized_id = _normalize_remote_knowledge_id(knowledge_id)
+    if normalized_id is None:
+        return _remote_error("invalid_knowledge_id", REMOTE_ID_ERROR)
+    knowledge_id = normalized_id
 
     sb_client = sb_client or _get_supabase_client()
     if sb_client is None:
@@ -740,7 +755,7 @@ def vault_read_range(
 
 
 def vault_remote_read_range(
-    knowledge_id: int,
+    knowledge_id: int | str,
     node_uid: str = "",
     line_start: int = 0,
     line_end: int = 0,
@@ -762,7 +777,7 @@ def vault_remote_read_range(
 
 def _find_remote_content_row(
     sb_client,
-    knowledge_id: int,
+    knowledge_id: int | str,
     *,
     agent_id: str = "",
     include_private: bool = False,
@@ -774,7 +789,7 @@ def _find_remote_content_row(
             include_private=include_private,
             max_sensitivity=max_sensitivity,
         ),
-        "p_knowledge_id": int(knowledge_id),
+        "p_knowledge_id": knowledge_id,
     }
     rows = _supabase_rpc(sb_client, "vault_content_readable", params)
     return rows[0] if rows else None
@@ -795,7 +810,7 @@ def _content_hash_for_text(text: str) -> str:
 
 
 def _vault_remote_read_range_payload(
-    knowledge_id: int,
+    knowledge_id: int | str,
     node_uid: str = "",
     line_start: int = 0,
     line_end: int = 0,
@@ -806,12 +821,10 @@ def _vault_remote_read_range_payload(
     max_sensitivity: str = "medium",
     sb_client=None,
 ) -> dict:
-    try:
-        knowledge_id = int(knowledge_id)
-    except (TypeError, ValueError):
-        return _remote_error("invalid_knowledge_id", "knowledge_id must be a positive integer")
-    if knowledge_id <= 0:
-        return _remote_error("invalid_knowledge_id", "knowledge_id must be a positive integer")
+    normalized_id = _normalize_remote_knowledge_id(knowledge_id)
+    if normalized_id is None:
+        return _remote_error("invalid_knowledge_id", REMOTE_ID_ERROR)
+    knowledge_id = normalized_id
 
     try:
         max_lines = int(max_lines)
@@ -1596,8 +1609,8 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "knowledge_id": {
-                    "type": "integer",
-                    "description": "本地知識條目 ID（同步到 remote 的 knowledge_id）"
+                    "oneOf": [{"type": "integer"}, {"type": "string"}],
+                    "description": "Remote knowledge ID；可為本地同步的正整數 ID，或 Supabase UUID"
                 },
                 "compact": {
                     "type": "boolean",
@@ -1631,8 +1644,8 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "knowledge_id": {
-                    "type": "integer",
-                    "description": "本地知識條目 ID（同步到 remote 的 knowledge_id）"
+                    "oneOf": [{"type": "integer"}, {"type": "string"}],
+                    "description": "Remote knowledge ID；可為本地同步的正整數 ID，或 Supabase UUID"
                 },
                 "node_uid": {
                     "type": "string",
