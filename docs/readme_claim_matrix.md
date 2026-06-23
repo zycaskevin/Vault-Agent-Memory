@@ -1,72 +1,57 @@
 # README Claim Matrix
 
-Generated: 2026-05-17
-Scope: public `README.md` feature/capability claims after P0/A1-A4 cleanup. The localized README files should mirror these classifications.
+Generated: 2026-06-23
+Scope: public README feature/capability claims after the v0.6.51 product README cleanup. Localized README files should mirror the same maturity and non-goal language.
 
-## Maturity tiers
+## Maturity Tiers
 
 - **stable**: core local path that should work without cloud services, embeddings, Supabase, MCP, or model APIs.
-- **usable-alpha**: implemented and covered by targeted tests or CLI help, but APIs/payloads may still evolve.
-- **experimental**: available for early testing or optional integrations; do not present as production platform, hosted service, or mature marketplace.
+- **usable**: implemented and covered by targeted tests, but payloads and agent workflows may still evolve before 1.0.
+- **usable-alpha**: available and tested, but intentionally conservative or still maturing.
+- **advanced optional**: useful for specific deployments, but not part of the default local path.
 - **positioning**: product framing or non-goal language, not an independent runtime capability.
 
-## Evidence reviewed
+## Current Claim Matrix
 
-- Public-boundary cleanup output: internal progress/audit artifacts were removed from the public source tree, and public-safe examples now live under `examples/` rather than tracked `raw/` knowledge.
-- Raw/example content and product-specific fixtures were neutralized; remaining optional Supabase work was deferred to A3.
-- P0/A3 output: Supabase/dashboard assumptions were split; public defaults are Vault-branded and Supabase is optional sync/read target.
-- P0/A4 output: `vault skill` remains visible only as an experimental local skill registry, not a hosted or mature marketplace.
-- Code/docs inspected: `README.md`, `pyproject.toml`, `vault/cli.py`, `vault/db.py`, `vault/mcp.py`, `vault/embed.py`, `vault/graph.py`, `vault/search_qa.py`, repository fixtures under `benchmarks/search_qa/`, `docs/agent_memory_qa_roadmap.md`, `docs/document_map_citation_policy.md`, `docs/search_qa_benchmarking.md`.
-- Verification commands run for this matrix:
-  - `python -m vault.cli --help` plus `map`, `search-qa`, `skill`, and `vault.mcp --help`.
-  - `python -m pytest -q tests/test_lite.py tests/test_document_map.py tests/test_document_map_cli.py tests/test_search_map_integration.py tests/test_vault_mcp_map.py tests/test_search_quality_metrics.py tests/test_new_features.py tests/test_agent_behavior_policy.py tests/test_vault_health_metrics.py` -> **75 passed**.
-  - Quickstart module smoke in a temp directory with `PYTHONPATH=<repo-root> python -m vault.cli ...` -> init/add/compile/search succeeded.
-  - P2 Document Map citation-policy cleanup: `python -m pytest -q tests/test_vault_mcp_map.py tests/test_search_map_integration.py tests/test_agent_behavior_policy.py` -> **23 passed**; `git diff --check` passed.
-  - P3 Search QA repository fixtures add `benchmarks/search_qa/basic.en.json`, `benchmarks/search_qa/basic.zh-Hant.json`, `benchmarks/search_qa/README.md`, and `docs/search_qa_benchmarking.md`; `tests/test_search_quality_metrics.py` validates source-checkout fixture loading and local English/CJK smoke snapshots.
-  - Public-string grep over README/docs outside this matrix -> no stale private-runtime, internal dashboard, or marketplace wording in README/docs.
-  - PyPI JSON check for `vault-for-llm` -> version `0.4.0` exists and classifier is Alpha; current PyPI long description still contains pre-A4 hosted-registry wording, so republishing is a release action.
+| ID | README claim | Tier | Evidence / implementation | Verification status |
+|---|---|---|---|---|
+| C01 | Vault-for-LLM is local-first project memory for AI agents. | stable | Base storage is Markdown plus SQLite; `vault init/add/compile/search` works locally. | README command smoke passes. |
+| C02 | Vault does not replace models, wikis, Obsidian, or hosted memory systems. | positioning | README and docs frame Vault as the governed layer between human notes and agent access. | Product positioning only. |
+| C03 | Agent-driven install is the recommended path. | usable | `vault setup-agent` and `vault install-agent` generate project setup, optional feature guidance, stable venv scripts, sync templates, and smoke-test next steps. | `tests/test_agent_setup.py` and PyPI v0.6.51 smoke passed. |
+| C04 | Manual quickstart works from PyPI. | stable | `vault-for-llm[mcp]==0.6.51` installs and exposes `vault`. | Clean Python 3.11 PyPI install smoke passed. |
+| C05 | MCP lets agents search, read bounded ranges, propose memory, and inspect stats. | usable | `vault-mcp` exposes the core tool profile: `vault_search`, `vault_read_range`, `vault_memory_propose`, `vault_stats`. | MCP tests and README command smoke pass. |
+| C06 | L0-L3 are depth layers, not access-control boundaries by themselves. | stable docs / usable implementation | Schema supports `layer`; governance metadata handles `scope`, `sensitivity`, `owner_agent`, `allowed_agents`, `memory_type`, and expiry. | Access-policy and MCP/read tests pass. |
+| C07 | Usage counters can influence ranking only as a small boost. | usable-alpha | Search uses `access_count`, `citation_count`, and `last_accessed_at` as a saturated rerank signal. | Usage/rerank tests pass. |
+| C08 | Expired memory can be archived instead of deleted. | usable-alpha | `vault usage archive-expired` and automation use `status=archived`; normal search/list hide archived rows. | Usage/archive tests pass. |
+| C09 | Policy-based automation is report-first by default. | usable-alpha | `vault automation plan/run/report/doctor`; generated schedule templates omit `--apply` unless explicitly requested. | Automation tests, PyPI setup-agent smoke, and full pytest passed before release. |
+| C10 | Profile / Dream / Forgetting agents are guidance-first, not autonomous deletion. | usable-alpha docs | `setup-agent --features memory_agents` writes conservative guidance; automation policy remains user-owned. | Agent setup tests pass. |
+| C11 | Supabase is optional sharing infrastructure, not required for core use. | advanced optional | Optional `[supabase]` extra, sync script, guarded RPC/RLS templates, remote-reader templates. | Supabase template tests and remote-reader tests pass; core smoke runs without Supabase. |
+| C12 | Obsidian import/export is supported. | usable | CLI supports `vault import obsidian` and `vault export obsidian`; importer skips generated and hidden folders. | Obsidian import/export tests pass. |
+| C13 | Search QA measures retrieval evidence, not final answer quality. | usable | `vault search-qa run/compare` and benchmark fixtures measure source hits, MRR, no-result, and citation-policy boundaries. | Search QA regression gate passes. |
+| C14 | Semantic search and API/local embedding providers are optional and evolving. | evolving / advanced optional | `[semantic]` extra and provider config support local ONNX/Ollama/OpenAI/Cohere/Voyage paths. | Provider/unit tests and semantic smoke paths pass; not enabled by default. |
+| C15 | License is Apache-2.0. | stable metadata | `pyproject.toml` and `LICENSE` use Apache-2.0. | Release parity and package metadata checks pass. |
 
-## Claim matrix
+## Public Boundary Notes
 
-| ID | README claim | README lines | Tier | Proof / implementation | Command or test evidence | README edit before public release |
-|---|---|---:|---|---|---|---|
-| C01 | Vault-for-LLM is local-first memory for LLM agents and creates a portable SQLite knowledge vault. | 5-7 | stable | `pyproject.toml` package metadata names `vault-for-llm`; `vault/db.py` creates local SQLite tables; `vault/cli.py init` creates a local project vault. | Quickstart module smoke completed init/add/compile/search; targeted pytest suite passed. | None. |
-| C02 | Users add Markdown notes, compile them into searchable structured memory, and agents query through CLI or MCP. | 7, 17-20 | stable for CLI; usable-alpha for MCP | `vault/cli.py` implements `add`, `compile`, `search`; `vault/mcp.py` exposes public `vault_*` tool helpers. | CLI help lists `add`, `compile`, `search`; MCP help works; MCP map tests passed. | None; keep MCP alpha/optional wording. |
-| C03 | Vault is not a notes-app replacement; it makes notes usable by agents. | 22 | positioning | Supported by the architecture and CLI/MCP design, but this is product framing rather than a separate feature. | N/A beyond code/docs. | None. |
-| C04 | Vault is evolving into an agent memory QA layer rather than just another vector store. | 28-36 | positioning / roadmap | `docs/agent_memory_qa_roadmap.md` defines the public position and maturity model; Search QA, Document Map, freshness, dedup, convergence, and cross-validation exist as CLI surfaces. | CLI help lists quality commands; targeted quality tests passed. | None while wording stays “evolving into.” Do not rephrase as a complete managed QA platform. |
-| C05 | Local by default: SQLite is the source of truth; no cloud required for core usage. | 42, 46, 268-270 | stable | Base dependencies are local (`pyyaml`, `sqlite-vec`); Supabase is optional and only used by scripts/MCP remote helpers when configured. | Quickstart smoke used local SQLite only; A3 no-Supabase smoke passed per handoff. | None. |
-| C06 | Works without embeddings: keyword search works first; semantic search is optional. | 43, 56, 112-126 | stable for keyword; experimental for semantic | `VaultSearch.search_keyword` and `search` support keyword mode; `pyproject.toml` puts ONNX stack behind `[semantic]`; `vault/embed.py` implements ONNX/Ollama providers. | `tests/test_lite.py` covers keyword search and vector fallback; targeted pytest passed. | None. |
-| C07 | Agent-oriented memory layers L0/L1/L2/L3 are part of the architecture. | 44, 58, 87-92, 185-199 | stable | `vault init` creates `L0-identity`, `L1-core-facts`, `L2-context`, `L3-knowledge`; knowledge rows have a `layer` field. | CLI parser accepts `--layer` choices; quickstart/pytest passed. | None. |
-| C08 | Bounded retrieval / Document Map lets agents navigate sections and read source ranges. | 45, 60, 74, 217-219, 231, 257-266 | usable-alpha | `vault/docmap.py`, `vault/mcp.py`, and CLI `vault map build/show/read/query` implement section maps, claim maps, and bounded reads; `docs/document_map_citation_policy.md` documents search-as-navigation, map inspection, bounded read, and final-citation rules. | `vault map --help`; `tests/test_document_map.py`, `tests/test_document_map_cli.py`, `tests/test_search_map_integration.py`, `tests/test_vault_mcp_map.py` passed. | None; current “usable, still evolving” language is accurate. |
-| C09 | Optional Supabase sync is an optional sync/read target, not required infrastructure. | 46, 63, 266-278 | experimental | A3 changed public defaults to Vault-branded table names with `VAULT_SUPABASE_*_TABLE` overrides; scripts import gracefully without Supabase where possible. | A3 handoff records no-Supabase script smoke; README grep has no dashboard/private table defaults. | None. |
-| C10 | Alpha, CLI-first developer-facing tool with rough edges/evolving APIs. | 47, 70-81, 282-289 | positioning | `pyproject.toml` classifier is `Development Status :: 3 - Alpha`; roadmap maturity table separates stable/usable-alpha/experimental. | PyPI JSON classifier is Alpha; README contains explicit alpha wording. | None. |
-| C11 | Knowledge storage: Markdown `raw/` files compiled into local SQLite. | 55, 93, 156-163, 185-199, 210-211 | stable | `VaultCompiler.compile` reads Markdown files; `VaultDB` stores knowledge in SQLite. | `tests/test_lite.py::test_compile_and_search` covered compile/search; quickstart smoke compiled a raw entry. | None. |
-| C12 | Search supports keyword search. | 56, 160, 212 | stable | `VaultSearch.search_keyword`; CLI `search --keyword-only`. | Quickstart smoke found the added note with keyword search; targeted tests passed. | None. |
-| C13 | Search supports optional vector and hybrid search. | 56, 117-126, 212 | usable-alpha | `VaultSearch.search_vector` and `search_hybrid`; embeddings are optional providers. | `tests/test_lite.py` verifies fallback when vector dimension mismatches; CLI help lists `--mode auto|keyword|vector|hybrid`. | None, but keep “optional” wording. |
-| C14 | Optional ONNX Runtime, Ollama, OpenAI, Cohere, or Voyage embeddings are supported. | 57, 112-126 | experimental | `vault/embed.py` implements local, Ollama, and API embedding providers; semantic dependencies and API keys are optional. | CLI help lists `install-embedding`; provider tests mock API responses without network calls. | None. Do not imply embeddings are installed by default or that API keys are stored in Vault. |
-| C15 | Knowledge graph has inferred entities/edges and graph expansion. | 59, 213, 220-221 | usable-alpha | `vault/graph.py` infers entities/edges; CLI `graph build/show/export/link/unlink/clear/expand`; search has `--graph-expand`. | CLI help lists `graph`; targeted `test_new_features.py` passed. | None. |
-| C16 | MCP server exposes search/add/stats/map/read tools and optional remote read tools. | 61, 128-132, 235-266 | usable-alpha | `pyproject.toml` exposes `vault-mcp`; `vault/mcp.py` routes public `vault_*` tools and optional remote aliases; `vault_search` is compact by default for MCP and preserves explicit `compact: false` opt-out. | `python -m vault.mcp --help`; `tests/test_vault_mcp_map.py` passed. | None; keep optional MCP install section. |
-| C17 | Quality tools include lint, freshness, convergence, cross-validation, dedup, and Search QA snapshots. | 62, 68-81, 216-226 | mixed: Search QA usable-alpha; most others experimental | CLI parser exposes all listed commands; `vault/search_qa.py` implements deterministic snapshots and comparisons; public Search QA repository fixtures and benchmarking docs live under `benchmarks/search_qa/` and `docs/search_qa_benchmarking.md` in a source checkout, not in the PyPI wheel. | CLI help lists all commands; `tests/test_search_quality_metrics.py` validates deterministic run/compare behavior plus English and CJK source-checkout fixture smoke coverage; `tests/test_new_features.py` passed in the broader QA suite. | None because README table explicitly marks these alpha/experimental and the Search QA guide labels retrieval-only limits. |
-| C18 | Local skill registry via `vault skill` is experimental, local-only, and not a hosted marketplace. | 64, 79, 227 | experimental | A4 neutralized README/CLI wording; `vault/db.py` has local `skills` table; CLI defaults are `vault-cli` and local registry commands. | `vault skill --help`; README/docs grep found no marketplace wording outside the historical audit doc. | None in repo README. Release action: republish package metadata because current PyPI long description still has old hosted-registry wording. |
-| C19 | Stable path is `vault init` -> `vault add` -> `vault compile` -> `vault search` -> `vault-mcp`. | 81, 291-298 | stable for first four commands; usable-alpha for MCP | CLI implements core commands; MCP entry point exists. | Quickstart module smoke verified init/add/compile/search; MCP help works. | None; consider wording “then optionally `vault-mcp`” if future reviewers want stricter stable-only path. |
-| C20 | Installation from PyPI is available. | 100-110, 282-289 | stable release artifact | PyPI JSON for `vault-for-llm` returns version `0.4.0`; `pyproject.toml` declares console scripts and extras. | PyPI JSON check succeeded. | No README edit needed, but release checklist must publish a new build after A1-A4 so PyPI README/long description is not stale. |
-| C21 | Optional semantic extra installs ONNX dependencies; `vault install-embedding --model mix` exists. | 112-119 | experimental | `pyproject.toml` `[project.optional-dependencies].semantic`; `vault/cli.py install-embedding` parser. | CLI help lists `install-embedding`; no optional model download was run. | None. |
-| C22 | Optional MCP extra installs MCP dependencies; `vault-mcp --project-dir` exists. | 128-133, 235-251 | usable-alpha | `pyproject.toml` `[mcp]` extra and `vault-mcp` script; MCP parser has `--project-dir`. | `python -m vault.mcp --help` lists `--project-dir`; MCP tests passed. | None. |
-| C23 | Development install from source uses the public GitHub repo and editable dev extra. | 135-143, 302-309 | stable docs / release workflow | `pyproject.toml` defines `[dev]`; repo owner URL is intentional per A1 low-severity note if canonical. | A1 accepted `zycaskevin` as acceptable if canonical public owner. | None unless release should move to an organization URL. |
-| C24 | Users can add Markdown files directly under `raw/` and run `vault compile`. | 163-181 | stable | `VaultCompiler` scans raw Markdown; `vault init` creates `raw/`. | Quickstart smoke and `test_compile_and_search` passed. | None. |
-| C25 | CLI reference commands exist: init, doctor, add, import, compile, search, list, stats, lint, map, graph, converge, cross-validate, freshness, dedup, search-qa, skill. | 202-229 | mixed by feature tier | `vault/cli.py` parser registers all listed commands. | `python -m vault.cli --help` listed all commands. | None. |
-| C26 | Current MCP tools include `vault_search`, `vault_add`, `vault_stats`, `vault_map_show`, `vault_read_range`, plus optional remote map/read tools. | 257-264 | usable-alpha; remote tools experimental | `vault/mcp.py` public tool routing and remote helper functions; MCP search schema defaults to compact payloads while explicit `compact: false` returns fuller preview output. | `tests/test_vault_mcp_map.py` includes public tool listing/routing, compact-default search routing, explicit full-output opt-out, and remote read/map tests. | None. |
-| C27 | Current maturity section says advanced features and Supabase sync are evolving and APIs/schemas may change. | 282-289 | positioning | Matches roadmap maturity model and A3/A4 decisions. | PyPI classifier Alpha; README explicitly warns about evolving APIs. | None. |
-| C28 | License is MIT. | 315-317 | stable metadata | `pyproject.toml` license text is MIT. | Metadata inspection. | None. |
+- README examples use generic role IDs such as `profile-agent`, `work-agent`, `remote-agent`, and `automation-agent`.
+- No private transcript, runtime database, report artifact, local absolute user path, or secret should be committed.
+- Benchmark numbers in README are described as retrieval evidence only; they are not final answer/judge scores.
+- Supabase examples should never hand a service role key to normal hosted agents, Coze, n8n, or browser clients.
 
-## README edits / release actions identified
+## Verification Commands
 
-1. **No in-repo English README feature claim is unclassified** in this matrix.
-2. **No required README wording edit remains** for P0/B1 based on the reviewed English README: experimental features are labelled, Supabase is optional, and `vault skill` is local-only/experimental.
-3. **Release action, not a README edit:** PyPI currently serves an older long description containing pre-A4 hosted-registry wording. Before public release, publish a new package build (likely with a version bump, since PyPI does not allow replacing an existing release file) so the public package page matches the cleaned README.
-4. **Release verification action:** run a clean virtualenv install (`pip install vault-for-llm`) and verify the `vault` console script resolves to this package. In this worker environment, `vault` on `PATH` points to an unrelated broken console script, so local smoke verification used `python -m vault.cli` with `PYTHONPATH` instead.
-5. If the canonical public repository will move away from `zycaskevin/Vault-for-LLM`, update the clone URL in all README variants; otherwise A1 already classifies the current owner string as acceptable.
+Recent release and README cleanup verification used:
 
-## Coverage statement
+```bash
+python scripts/readme_command_smoke.py
+python scripts/public_pr_gate.py
+python scripts/check_release_parity.py --tag v0.6.51
+python -m pytest tests/test_agent_setup.py tests/test_automation.py tests/test_cli_project_dir.py tests/test_release_parity.py -q
+```
 
-All public `README.md` feature/capability claims reviewed for P0/B1 have one of: stable, usable-alpha, experimental, or positioning classification. Claims without direct runtime tests are explicitly classified as positioning or release/process metadata, so no unproven runtime capability remains unclassified.
+For release v0.6.51, a clean Python 3.11 PyPI install also verified:
+
+- `vault-for-llm[mcp]==0.6.51` installs from PyPI.
+- `vault --version` returns `vault-for-llm 0.6.51`.
+- `vault setup-agent --automation-schedule all` generates cron, LaunchAgent, n8n, and README templates.
+- `vault automation plan --write-policy`, `vault automation doctor`, and report-first `vault automation run` work against a fresh project vault.
