@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [0.6.52] - 2026-06-23
+
+### Added
+
+- Added `action_ledger` and `dry_run_diff` to `vault automation run` reports so agents and operators can review exactly which memories would change, which changed, and why.
+- Added default protected-memory skips for automation TTL archival: `scope: private` and `sensitivity: high|restricted` stay active and are reported as `skipped_policy`, even when `--apply` is used.
+- Added human-readable CLI output for automation diff and ledger summaries.
+
+### Changed
+
+- Updated automation documentation and the public claim matrix to describe report ledgers, dry-run diffs, and policy-protected lifecycle skips.
+
 ## [0.6.51] - 2026-06-23
 
 ### Added
