@@ -10,6 +10,10 @@ It is not trying to replace your model, your wiki, or hosted memory systems.
 It sits between them: a small governed memory layer that helps agents reuse
 project knowledge without losing source, scope, or reviewability.
 
+The default path is agent-driven: ask your coding agent to install Vault, choose
+where the database should live, and run a small search/read/propose smoke test.
+Manual commands are still here, but they are no longer the main story.
+
 ## Why It Exists
 
 Most agent failures are practical, not mysterious:
@@ -25,7 +29,7 @@ Vault-for-LLM is built for that practical gap. It gives agents a place to ask:
 > What has this project already learned, where did it come from, and am I
 > allowed to use it?
 
-## What It Is Good At
+## What You Get
 
 - **Local-first memory** - Markdown and SQLite by default. No cloud service is
   required for core use.
@@ -39,6 +43,8 @@ Vault-for-LLM is built for that practical gap. It gives agents a place to ask:
   compiled Vault knowledge back into Obsidian-readable Markdown.
 - **Optional remote sharing** - Supabase sync and read-only RPC templates let
   agents on different machines share reviewed memory.
+- **Report-first automation** - generated cron, LaunchAgent, and n8n templates
+  can run memory maintenance without silently deleting or promoting memory.
 - **Measurable recall** - Search QA and onboarding benchmarks measure whether
   agents can find the right source, not just sound confident.
 
@@ -61,7 +67,7 @@ app, or an automatic conversation memory product.
 
 ### Agent-Driven Install
 
-For most users, the easiest path is to ask an agent to install it:
+For most users, the right path is to ask an agent to install it:
 
 ```text
 Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.6.51.
