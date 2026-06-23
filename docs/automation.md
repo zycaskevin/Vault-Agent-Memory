@@ -59,6 +59,18 @@ List recent automation reports:
 vault automation report --pretty
 ```
 
+Show the latest report as a review handoff:
+
+```bash
+vault automation report --latest --detail --pretty
+```
+
+Read a specific report:
+
+```bash
+vault automation report --report-path reports/automation/2026-06-23-054055.json --detail --pretty
+```
+
 Check readiness for scheduled automation:
 
 ```bash
@@ -127,6 +139,8 @@ important review fields are:
 
 This gives agents a small, structured handoff: they can summarize the report,
 but the source of truth remains the machine-readable ledger.
+Use `vault automation report --latest --detail` when a new agent needs to
+continue after a scheduled maintenance run.
 
 ## Scheduled Use
 

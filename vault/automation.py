@@ -241,25 +241,44 @@ def automation_run(
     return payload
 
 
-def automation_report(project_dir: str | Path, *, limit: int = 5) -> dict[str, Any]:
+def automation_report(
+    project_dir: str | Path,
+    *,
+    limit: int = 5,
+    latest: bool = False,
+    detail: bool = False,
+    report_path: str | Path = "",
+) -> dict[str, Any]:
     project = Path(project_dir)
     report_dir = project / "reports" / "automation"
+    if report_path or latest or detail:
+        path = _resolve_report_path(project, report_dir, report_path=report_path, latest=latest or detail)
+        if path is None:
+            return {
+                "action": "report",
+                "generated_at": _now(),
+                "project_dir": str(project),
+                "report_count": 0,
+                "report": {},
+                "detail": {},
+                "status": "missing",
+            }
+        data = _read_report(path)
+        summary = _report_summary(project, path, data)
+        return {
+            "action": "report",
+            "generated_at": _now(),
+            "project_dir": str(project),
+            "report_count": 1,
+            "report": summary,
+            "detail": data if detail else {},
+            "status": "completed" if data else "unreadable",
+        }
+
     reports = sorted(report_dir.glob("*.json"), reverse=True)[: max(1, int(limit or 5))]
     items = []
     for path in reports:
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            data = {}
-        items.append(
-            {
-                "path": str(path.relative_to(project)),
-                "generated_at": data.get("generated_at", ""),
-                "mode": data.get("mode", ""),
-                "status": data.get("status", ""),
-                "human_review": data.get("human_review", {}),
-            }
-        )
+        items.append(_report_summary(project, path, _read_report(path)))
     return {
         "action": "report",
         "generated_at": _now(),
@@ -499,6 +518,70 @@ def _write_report(project: Path, payload: dict[str, Any]) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return str(path.relative_to(project))
+
+
+def _read_report(path: Path) -> dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _report_summary(project: Path, path: Path, data: dict[str, Any]) -> dict[str, Any]:
+    diff = data.get("dry_run_diff") or {}
+    ledger = data.get("action_ledger") or []
+    archive = data.get("archive_expired") or {}
+    return {
+        "path": str(path.relative_to(project)),
+        "generated_at": data.get("generated_at", ""),
+        "mode": data.get("mode", ""),
+        "status": data.get("status", ""),
+        "apply": bool(data.get("apply", False)),
+        "human_review": data.get("human_review", {}),
+        "report_path": data.get("report_path", ""),
+        "dream_report_path": (data.get("dream") or {}).get("report_path", ""),
+        "archived_count": int(archive.get("archived_count") or 0),
+        "eligible_count": int(archive.get("eligible_count") or 0),
+        "skipped_used_count": int(archive.get("skipped_used_count") or 0),
+        "skipped_policy_count": int(archive.get("skipped_protected_count") or 0),
+        "dry_run_diff": {
+            "would_archive_count": int(diff.get("would_archive_count") or 0),
+            "applied_count": int(diff.get("applied_count") or 0),
+            "skipped_usage_count": int(diff.get("skipped_usage_count") or 0),
+            "skipped_policy_count": int(diff.get("skipped_policy_count") or 0),
+            "hard_delete": bool(diff.get("hard_delete", False)),
+            "promote_candidates": bool(diff.get("promote_candidates", False)),
+            "permission_changes": bool(diff.get("permission_changes", False)),
+        },
+        "ledger_count": len(ledger) if isinstance(ledger, list) else 0,
+    }
+
+
+def _resolve_report_path(
+    project: Path,
+    report_dir: Path,
+    *,
+    report_path: str | Path = "",
+    latest: bool = False,
+) -> Path | None:
+    if report_path:
+        raw = Path(report_path)
+        candidate = raw if raw.is_absolute() else project / raw
+        try:
+            resolved = candidate.expanduser().resolve()
+            allowed = report_dir.expanduser().resolve()
+        except Exception as exc:
+            raise ValueError(f"unable to resolve automation report path: {exc}") from exc
+        if allowed != resolved and allowed not in resolved.parents:
+            raise ValueError("automation report path must stay under reports/automation")
+        if not resolved.exists():
+            raise FileNotFoundError(str(resolved))
+        return resolved
+    if latest:
+        reports = sorted(report_dir.glob("*.json"), reverse=True)
+        return reports[0] if reports else None
+    return None
 
 
 def _archive_action_ledger(archive_result: dict[str, Any], *, applied: bool) -> list[dict[str, Any]]:

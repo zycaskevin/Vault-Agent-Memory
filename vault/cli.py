@@ -1863,7 +1863,13 @@ def cmd_automation(args):
                 write_reports=not args.no_report,
             )
         elif action == "report":
-            payload = automation_report(project_dir, limit=args.limit)
+            payload = automation_report(
+                project_dir,
+                limit=args.limit,
+                latest=args.latest,
+                detail=args.detail,
+                report_path=args.report_path,
+            )
         else:
             payload = automation_doctor(project_dir, mode=args.mode)
     except Exception as exc:
@@ -1943,6 +1949,36 @@ def cmd_automation(args):
 
     if action == "report":
         print("📋 Automation reports\n")
+        if payload.get("report"):
+            item = payload.get("report", {})
+            review = "review" if item.get("human_review", {}).get("required") else "ok"
+            print(f"  {item.get('path')} mode={item.get('mode')} status={item.get('status')} {review}")
+            print(
+                f"  archive: eligible={item.get('eligible_count', 0)} "
+                f"archived={item.get('archived_count', 0)} "
+                f"skipped_used={item.get('skipped_used_count', 0)} "
+                f"skipped_policy={item.get('skipped_policy_count', 0)}"
+            )
+            diff = item.get("dry_run_diff") or {}
+            print(
+                f"  diff: would_archive={diff.get('would_archive_count', 0)} "
+                f"applied={diff.get('applied_count', 0)} "
+                f"hard_delete={diff.get('hard_delete')} "
+                f"permission_changes={diff.get('permission_changes')}"
+            )
+            print(f"  ledger entries: {item.get('ledger_count', 0)}")
+            detail = payload.get("detail") or {}
+            ledger = detail.get("action_ledger") or []
+            if ledger:
+                print("  action ledger:")
+                for entry in ledger[: args.limit]:
+                    print(
+                        f"    - #{entry.get('knowledge_id')} {entry.get('operation')} "
+                        f"{entry.get('status')} ({entry.get('reason')})"
+                    )
+                if len(ledger) > args.limit:
+                    print(f"    ... {len(ledger) - args.limit} more")
+            return
         for item in payload.get("reports", []):
             review = "review" if item.get("human_review", {}).get("required") else "ok"
             print(f"  {item.get('path')} mode={item.get('mode')} status={item.get('status')} {review}")
@@ -3043,6 +3079,9 @@ def main(argv: list[str] | None = None):
 
     sp = automation_sub.add_parser("report", help="List recent automation reports")
     add_automation_common(sp)
+    sp.add_argument("--latest", action="store_true", help="show the latest automation report summary")
+    sp.add_argument("--detail", action="store_true", help="include full report detail and ledger")
+    sp.add_argument("--report-path", default="", help="read a specific reports/automation/*.json file")
 
     sp = automation_sub.add_parser("doctor", help="Check automation readiness")
     add_automation_common(sp)
