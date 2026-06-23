@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [0.6.51] - 2026-06-23
+
+### Added
+
+- Added `vault setup-agent --automation-schedule cron|launchagent|n8n|all` so agent installers can generate report-first memory automation schedules.
+- Added `--automation-mode`, `--automation-interval-minutes`, and explicit opt-in `--automation-apply` controls for scheduled automation templates.
+- Added cron, macOS LaunchAgent, n8n workflow, and `README-memory-automation.md` templates for policy-based memory maintenance.
+
+### Fixed
+
+- Fixed explicit `--project-dir` handling so commands do not climb to a parent vault when the requested project directory is empty.
+- Added the practical MCP tool reference to the docs set and onboarding benchmark fixture.
+
 ## [0.6.50] - 2026-06-23
 
 ### Added

@@ -36,9 +36,11 @@ VALID_VALIDATION_PACK_TARGETS = {"none", "remote", "n8n", "coze", "all"}
 VALID_AGENT_ROLES = {"work", "profile", "care", "dream", "remote", "automation", "observer"}
 VALID_SUPABASE_SETUP_MODES = {"none", "simple", "advanced"}
 VALID_SETUP_LANGUAGES = {"en", "zh-Hant", "zh-CN"}
+VALID_AUTOMATION_MODES = {"conservative", "balanced", "autonomous"}
 PYPI_EXTRA_FEATURES = {"mcp", "semantic", "supabase", "dev"}
 VALID_EMBEDDING_MODELS = {"zh", "en", "mix"}
 DEFAULT_SUPABASE_SYNC_INTERVAL_MINUTES = 24 * 60
+DEFAULT_AUTOMATION_INTERVAL_MINUTES = 24 * 60
 SUPABASE_SETUP_DOC_URL = "https://github.com/zycaskevin/Vault-for-LLM/blob/main/docs/supabase_setup.md"
 
 
@@ -600,6 +602,40 @@ def render_n8n_workflow(*, command: list[str], interval_minutes: int = 15) -> st
     return json.dumps(workflow, ensure_ascii=False, indent=2) + "\n"
 
 
+def render_n8n_automation_workflow(*, command: list[str], interval_minutes: int = DEFAULT_AUTOMATION_INTERVAL_MINUTES) -> str:
+    workflow = {
+        "name": "Vault-for-LLM Memory Automation",
+        "nodes": [
+            {
+                "parameters": {
+                    "rule": {
+                        "interval": [{"field": "minutes", "minutesInterval": max(1, int(interval_minutes))}]
+                    }
+                },
+                "id": "schedule",
+                "name": "Every interval",
+                "type": "n8n-nodes-base.scheduleTrigger",
+                "typeVersion": 1.2,
+                "position": [0, 0],
+            },
+            {
+                "parameters": {"command": shell_join(command)},
+                "id": "vault-memory-automation",
+                "name": "Vault Memory Automation",
+                "type": "n8n-nodes-base.executeCommand",
+                "typeVersion": 1,
+                "position": [280, 0],
+            },
+        ],
+        "connections": {
+            "Every interval": {"main": [[{"node": "Vault Memory Automation", "type": "main", "index": 0}]]}
+        },
+        "active": False,
+        "settings": {"executionOrder": "v1"},
+    }
+    return json.dumps(workflow, ensure_ascii=False, indent=2) + "\n"
+
+
 def render_n8n_remote_reader_workflow(
     *,
     agent_id: str,
@@ -789,6 +825,127 @@ def write_supabase_sync_templates(
                 "",
                 "Review `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` before enabling any scheduled job.",
                 "The local SQLite database remains the source of truth.",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+    written["readme"] = str(readme)
+    return written
+
+
+def _normalize_automation_mode(mode: str | None) -> str:
+    value = str(mode or "balanced").strip().lower()
+    if value not in VALID_AUTOMATION_MODES:
+        allowed = ", ".join(sorted(VALID_AUTOMATION_MODES))
+        raise ValueError(f"unknown automation mode '{mode}' (expected one of: {allowed})")
+    return value
+
+
+def automation_run_command(
+    *,
+    project_dir: str | Path,
+    mode: str = "balanced",
+    apply: bool = False,
+    vault_executable: str = "vault",
+) -> list[str]:
+    command = [
+        vault_executable,
+        "automation",
+        "run",
+        "--project-dir",
+        str(Path(project_dir).expanduser()),
+        "--mode",
+        _normalize_automation_mode(mode),
+        "--pretty",
+    ]
+    if apply:
+        command.append("--apply")
+    return command
+
+
+def write_automation_schedule_templates(
+    *,
+    output_dir: str | Path,
+    project_dir: str | Path,
+    targets: str | list[str] = "all",
+    interval_minutes: int = DEFAULT_AUTOMATION_INTERVAL_MINUTES,
+    mode: str = "balanced",
+    apply: bool = False,
+    vault_executable: str = "vault",
+) -> dict[str, str]:
+    out = Path(output_dir).expanduser().resolve()
+    out.mkdir(parents=True, exist_ok=True)
+    selected = _normalize_sync_targets(targets)
+    normalized_mode = _normalize_automation_mode(mode)
+    command = automation_run_command(
+        project_dir=project_dir,
+        mode=normalized_mode,
+        apply=apply,
+        vault_executable=vault_executable,
+    )
+
+    written: dict[str, str] = {}
+    if "cron" in selected:
+        path = out / "memory-automation.cron"
+        interval = max(1, int(interval_minutes))
+        schedule = f"*/{interval} * * * *" if interval < 60 else "0 3 * * *"
+        path.write_text(
+            "\n".join(
+                [
+                    "# Vault-for-LLM memory automation",
+                    f"{schedule} {shell_join(command)} >> $HOME/.vault-for-llm/memory-automation.log 2>&1",
+                    "",
+                ]
+            ),
+            encoding="utf-8",
+        )
+        written["cron"] = str(path)
+    if "launchagent" in selected:
+        path = out / "com.zycaskevin.vault-for-llm.memory-automation.plist"
+        path.write_text(
+            render_launchagent_plist(
+                command=command,
+                label="com.zycaskevin.vault-for-llm.memory-automation",
+                interval_minutes=interval_minutes,
+                log_basename="memory-automation",
+            ),
+            encoding="utf-8",
+        )
+        written["launchagent"] = str(path)
+    if "n8n" in selected:
+        path = out / "n8n-memory-automation.workflow.json"
+        path.write_text(
+            render_n8n_automation_workflow(command=command, interval_minutes=interval_minutes),
+            encoding="utf-8",
+        )
+        written["n8n"] = str(path)
+
+    readme = out / "README-memory-automation.md"
+    readme.write_text(
+        "\n".join(
+            [
+                "# Vault-for-LLM Memory Automation Schedule",
+                "",
+                "Generated command:",
+                "",
+                f"```bash\n{shell_join(command)}\n```",
+                "",
+                "Recommended first step:",
+                "",
+                "```bash",
+                f"vault automation plan --project-dir {shlex.quote(str(Path(project_dir).expanduser()))} --mode {normalized_mode} --write-policy --pretty",
+                "```",
+                "",
+                "Safety defaults:",
+                "",
+                f"- mode: `{normalized_mode}`",
+                f"- apply reversible archival: `{str(bool(apply)).lower()}`",
+                "- automation never hard-deletes memory",
+                "- expired memories with usage are protected and sent to human review",
+                "",
+                "Review `automation_policy.yaml` before enabling a scheduled job.",
+                "Keep the Python virtualenv and project directory in stable paths, not `/tmp`.",
                 "",
             ]
         ),
@@ -1823,6 +1980,10 @@ class AgentSetupConfig:
     remote_reader_query: str = "deployment SOP"
     agent_roster: str | list[dict[str, Any]] | None = None
     validation_pack_targets: str | list[str] = "none"
+    automation_schedule_targets: str | list[str] = "none"
+    automation_interval_minutes: int = DEFAULT_AUTOMATION_INTERVAL_MINUTES
+    automation_mode: str = "balanced"
+    automation_apply: bool = False
     template_dir: Path | None = None
     allow_private: bool = False
     stable_venv_path: Path | None = None
@@ -1871,6 +2032,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         "agent_roster": {},
         "live_validation_pack": {},
         "memory_agents": {},
+        "automation_schedule_templates": {},
         "stable_venv": {},
         "next_steps": [
             f"vault search \"test query\" --project-dir {shlex.quote(str(project_path))} --limit 5",
@@ -2000,6 +2162,21 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         )
         if result["live_validation_pack"]:
             result["next_steps"].append(f"Run live validation checklist: {result['live_validation_pack']['readme']}")
+
+    automation_targets = _normalize_sync_targets(config.automation_schedule_targets)
+    if automation_targets:
+        template_dir = config.template_dir or (project_path / "agent-install")
+        result["automation_schedule_templates"] = write_automation_schedule_templates(
+            output_dir=template_dir,
+            project_dir=project_path,
+            targets=sorted(automation_targets),
+            interval_minutes=config.automation_interval_minutes,
+            mode=config.automation_mode,
+            apply=config.automation_apply,
+        )
+        result["next_steps"].append(
+            f"Review memory automation schedule: {result['automation_schedule_templates']['readme']}"
+        )
 
     return result
 
@@ -2336,6 +2513,16 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
     if "supabase" in features and not argv_config.get("validation_pack_targets"):
         validation_pack_targets = _ask("Live validation pack for remote/n8n/coze (none/remote/n8n/coze/all)", "none")
 
+    automation_schedule_targets = argv_config.get("automation_schedule_targets", "none")
+    if not argv_config.get("automation_schedule_targets"):
+        automation_schedule_targets = _ask("Memory automation schedule templates (none/cron/launchagent/n8n/all)", "none")
+    automation_mode = argv_config.get("automation_mode") or "balanced"
+    if automation_schedule_targets and automation_schedule_targets != "none" and not argv_config.get("automation_mode"):
+        automation_mode = _ask("Memory automation mode (conservative/balanced/autonomous)", "balanced")
+    automation_apply = bool(argv_config.get("automation_apply", False))
+    if automation_schedule_targets and automation_schedule_targets != "none" and "automation_apply" not in argv_config:
+        automation_apply = _ask_yes_no("Allow scheduled automation to apply reversible archival?", False)
+
     stable_venv_path = argv_config.get("stable_venv_path")
     if not stable_venv_path and argv_config.get("write_stable_venv_script"):
         stable_venv_path = str(default_stable_venv_path())
@@ -2366,6 +2553,13 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
         remote_reader_query=remote_reader_query,
         agent_roster=agent_roster or None,
         validation_pack_targets=validation_pack_targets,
+        automation_schedule_targets=automation_schedule_targets,
+        automation_interval_minutes=int(
+            argv_config.get("automation_interval_minutes")
+            or DEFAULT_AUTOMATION_INTERVAL_MINUTES
+        ),
+        automation_mode=_normalize_automation_mode(str(automation_mode)),
+        automation_apply=automation_apply,
         template_dir=Path(argv_config["template_dir"]) if argv_config.get("template_dir") else None,
         allow_private=bool(argv_config.get("allow_private", False)),
         stable_venv_path=Path(stable_venv_path).expanduser() if stable_venv_path else None,

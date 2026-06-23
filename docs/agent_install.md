@@ -16,7 +16,7 @@ For adjacent systems and design comparisons, see
 ## Fast Prompt For Agents
 
 ```text
-Install Vault-for-LLM for this project with vault-for-llm[mcp]==0.6.50.
+Install Vault-for-LLM for this project with vault-for-llm[mcp]==0.6.51.
 Ask me where the vault database should live, whether it should be private or
 shared, and whether you should use a stable Python virtualenv path instead of a
 temporary one. Enable MCP by default if this agent runtime supports MCP. Ask
@@ -69,7 +69,7 @@ also prefer a stable virtualenv path such as `~/.hermes/venvs/vault-for-llm/`.
 Use the PyPI release unless the user explicitly asks for source development:
 
 ```bash
-python -m pip install "vault-for-llm[mcp]==0.6.50"
+python -m pip install "vault-for-llm[mcp]==0.6.51"
 vault setup-agent
 ```
 
@@ -216,6 +216,24 @@ vault setup-agent \
 This writes `agent-install/README-memory-agents.md`. It does not install a
 model, schedule jobs, promote memories, or delete anything. Treat memory agents
 as report-only or candidate-only until the user approves a stronger policy.
+
+To generate scheduled report-first maintenance templates:
+
+```bash
+vault setup-agent \
+  --non-interactive \
+  --agent automation-agent \
+  --scope shared \
+  --agent-project-dir ~/Vaults/project-memory \
+  --features core,mcp,memory_agents \
+  --automation-schedule all \
+  --automation-mode balanced \
+  --json
+```
+
+This writes cron, macOS LaunchAgent, n8n, and README templates under
+`agent-install/`. Add `--automation-apply` only after the user reviews
+`automation_policy.yaml` and accepts reversible archive actions.
 
 ### Multi-Agent Roster
 

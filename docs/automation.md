@@ -98,7 +98,26 @@ move to a longer-lived layer.
 
 ## Scheduled Use
 
-For cron, LaunchAgent, n8n, or agent scheduler jobs, prefer:
+For cron, LaunchAgent, n8n, or agent scheduler jobs, generate reviewed
+templates during agent setup:
+
+```bash
+vault setup-agent \
+  --non-interactive \
+  --agent automation-agent \
+  --scope shared \
+  --agent-project-dir /path/to/project \
+  --features core,mcp,memory_agents \
+  --automation-schedule all \
+  --automation-mode balanced
+```
+
+This writes `agent-install/memory-automation.cron`,
+`agent-install/com.zycaskevin.vault-for-llm.memory-automation.plist`,
+`agent-install/n8n-memory-automation.workflow.json`, and
+`agent-install/README-memory-automation.md`.
+
+The scheduled command should stay explicit about the target vault:
 
 ```bash
 vault automation run --project-dir /path/to/project --pretty
