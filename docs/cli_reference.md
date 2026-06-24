@@ -125,7 +125,7 @@ For per-tool MCP examples, see `docs/mcp_tool_reference.md`.
 | `vault automation plan --write-policy` | Create a policy-based maintenance plan and starter `automation_policy.yaml` |
 | `vault automation run` / `vault automation run --apply` | Run report-first memory automation; reports include a dry-run diff and action ledger, and `--apply` only performs policy-allowed reversible actions |
 | `vault automation cycle --apply` | Run one safe feedback-to-curation loop: evaluate reviewed candidate outcomes, write `learning_policy.json`, then run policy-based automation so Dream can consume the latest hints |
-| `vault automation cycle --write-workspace --include-transcripts` | Write `reports/automation/cycle-latest.json` and `.md`: compact candidate review, metadata-only transcript paths, and learning-policy summary for the next agent |
+| `vault automation cycle --write-workspace --include-transcripts` | Write `reports/automation/cycle-latest.json` and `.md`: compact candidate review, metadata-only transcript paths, priority brief, suggested next tasks, and learning-policy summary for the next agent |
 | `vault automation inbox --limit 5 --write-handoff` | Show the shortest read-only review queue and write `reports/automation/inbox-latest.json` |
 | `vault automation inbox --include-transcripts --write-handoff` | Add metadata-only uncaptured transcript hints to the inbox handoff |
 | `vault automation report` / `vault automation eval --write-learning-policy` / `vault automation doctor` | Review automation reports, evaluate candidate-outcome feedback into bounded curation hints, and check scheduled-job readiness |

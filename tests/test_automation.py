@@ -582,15 +582,26 @@ def test_automation_cycle_writes_compact_workspace_with_transcript_hints(tmp_pat
     assert workspace["transcripts_to_capture"]["summary"]["read_contents"] is False
     assert workspace["transcripts_to_capture"]["items"][0]["capture_path"] == "sessions/codex-session.md"
     assert workspace["curation_policy"]["rules"]
+    assert workspace["priority_brief"]
+    assert workspace["priority_brief"][0]["priority"] == "P1"
+    assert "Review candidate memory queue" in workspace["priority_brief"][0]["title"]
+    assert workspace["suggested_next_tasks"]
+    assert workspace["suggested_next_tasks"][0]["requires_human_approval"] is True
+    assert "Candidate queue items:" in workspace["agent_start_prompt"]
     assert workspace["safety"]["auto_promote"] is False
     assert workspace["safety"]["transcript_discovery_reads_contents"] is False
     assert token not in json.dumps(workspace)
     markdown = (project / payload["workspace_markdown_path"]).read_text(encoding="utf-8")
     assert "# Vault Automation Cycle Workspace" in markdown
+    assert "## Priority Brief" in markdown
     assert "## Candidate Review" in markdown
     assert "## Transcripts To Capture" in markdown
     assert "## Curation Policy" in markdown
     assert "## Safety" in markdown
+    assert "## Suggested Next Tasks" in markdown
+    assert "## Agent Start Prompt" in markdown
+    assert "Review candidate memory queue" in markdown
+    assert "You are continuing a Vault-for-LLM memory automation cycle." in markdown
     assert "sessions/codex-session.md" in markdown
     assert token not in markdown
 
