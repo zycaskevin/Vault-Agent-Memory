@@ -885,6 +885,7 @@ def automation_handoff(
     project = Path(project_dir)
     report_dir = project / "reports" / "automation"
     selected = _resolve_handoff_read_path(project, report_dir, source=source, handoff_path=handoff_path)
+    fleet_health = _resolve_fleet_health_read_path(report_dir)
     if selected is None:
         return {
             "action": "handoff",
@@ -895,6 +896,11 @@ def automation_handoff(
             "handoff_path": "",
             "content_type": "",
             "content": "",
+            "fleet_health_path": _relative_to_project(project, fleet_health) if fleet_health else "",
+            "fleet_health_content_type": (
+                "markdown" if fleet_health and fleet_health.suffix.lower() == ".md" else "json" if fleet_health else ""
+            ),
+            "fleet_health_content": fleet_health.read_text(encoding="utf-8") if fleet_health else "",
             "summary": {},
             "safety": {
                 "read_only": True,
@@ -912,6 +918,13 @@ def automation_handoff(
                 parsed = loaded
         except Exception:
             parsed = {}
+    fleet_health_content = ""
+    fleet_health_content_type = ""
+    fleet_health_path = ""
+    if fleet_health and fleet_health.resolve() != selected.resolve():
+        fleet_health_content = fleet_health.read_text(encoding="utf-8")
+        fleet_health_content_type = "markdown" if fleet_health.suffix.lower() == ".md" else "json"
+        fleet_health_path = _relative_to_project(project, fleet_health)
     return {
         "action": "handoff",
         "generated_at": _now(),
@@ -921,6 +934,9 @@ def automation_handoff(
         "handoff_path": _relative_to_project(project, selected),
         "content_type": "markdown" if selected.suffix.lower() == ".md" else "json",
         "content": content,
+        "fleet_health_path": fleet_health_path,
+        "fleet_health_content_type": fleet_health_content_type,
+        "fleet_health_content": fleet_health_content,
         "summary": parsed.get("summary", {}) if parsed else {},
         "agent_start_prompt": parsed.get("agent_start_prompt", "") if parsed else "",
         "safety": {
@@ -4469,9 +4485,23 @@ def _resolve_handoff_read_path(
     names_by_source = {
         "cycle": ["cycle-latest.md", "cycle-latest.json"],
         "inbox": ["inbox-latest.json"],
-        "auto": ["cycle-latest.md", "cycle-latest.json", "inbox-latest.json"],
+        "auto": [
+            "cycle-latest.md",
+            "cycle-latest.json",
+            "inbox-latest.json",
+            "fleet-health-latest.md",
+            "fleet-health-latest.json",
+        ],
     }
     for name in names_by_source[source]:
+        candidate = report_dir / name
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _resolve_fleet_health_read_path(report_dir: Path) -> Path | None:
+    for name in ("fleet-health-latest.md", "fleet-health-latest.json"):
         candidate = report_dir / name
         if candidate.exists():
             return candidate

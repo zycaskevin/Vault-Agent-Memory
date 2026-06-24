@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [0.6.105] - 2026-06-25
+
+### Changed
+
+- `vault automation handoff` now includes the latest `fleet-health-latest.md` or `.json` as a startup health preface when present, while preserving the selected cycle/inbox handoff as the main `content`.
+- The CLI prints fleet health before the cycle handoff so multi-Agent installs see shared automation health before individual next-task instructions.
+- MCP `vault_automation_handoff` exposes `fleet_health_path`, `fleet_health_content_type`, and `fleet_health_content` without changing the existing `content` field contract.
+
+### Safety
+
+- Fleet-health handoff attachment remains read-only and uses only existing `reports/automation` artifacts; it does not read private memory, raw candidate content, raw transcript content, or raw feedback reasons.
+
 ## [0.6.104] - 2026-06-25
 
 ### Added

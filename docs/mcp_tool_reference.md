@@ -161,6 +161,13 @@ contents or mutate memory.
 }
 ```
 
+When a fleet-health panel exists, the payload keeps the selected cycle/inbox
+handoff in `content` and adds:
+
+- `fleet_health_path`
+- `fleet_health_content_type`
+- `fleet_health_content`
+
 Agent rule: call this at startup before reading full reports. If it returns
 `status=missing`, continue with normal search/read flow or run the CLI
 automation cycle only after user approval.

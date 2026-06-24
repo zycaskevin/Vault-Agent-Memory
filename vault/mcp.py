@@ -1898,7 +1898,7 @@ TOOLS = [
                 "source": {
                     "type": "string",
                     "enum": ["auto", "cycle", "inbox"],
-                    "description": "Which handoff to read. auto prefers cycle-latest.md.",
+                    "description": "Which handoff to read. auto prefers cycle-latest.md and attaches fleet-health when present.",
                     "default": "auto",
                 },
                 "handoff_path": {
