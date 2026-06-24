@@ -327,6 +327,7 @@ def test_run_agent_setup_can_write_scheduled_cycle_workspace(tmp_path):
     assert expected in readme
     assert "scheduled cycle workspace: `true`" in readme
     assert "cycle workspace path: `reports/automation/cycle-latest.json`" in readme
+    assert "cycle workspace Markdown: `reports/automation/cycle-latest.md`" in readme
 
 
 def test_run_agent_setup_writes_agent_roster_and_validation_pack(tmp_path):
@@ -512,7 +513,7 @@ def test_cli_version_flag(capsys):
         assert exc.code == 0
 
     captured = capsys.readouterr()
-    assert "vault-for-llm 0.6.72" in captured.out
+    assert "vault-for-llm 0.6.73" in captured.out
 
 
 def test_setup_agent_headroom_is_optional_next_step(tmp_path):
@@ -680,7 +681,7 @@ def test_run_agent_setup_writes_stable_venv_template(tmp_path):
     assert readme.exists()
     body = script.read_text(encoding="utf-8")
     assert "python3 -m venv \"$VENV\"" in body
-    assert "vault-for-llm[mcp,supabase]==0.6.72" in body
+    assert "vault-for-llm[mcp,supabase]==0.6.73" in body
     assert "headroom-ai" in body
     assert "--agent-project-dir" in body
     assert str(project) in body

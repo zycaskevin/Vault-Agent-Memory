@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.6.73] - 2026-06-24
+
+### Added
+
+- `vault automation cycle --write-workspace` now writes `reports/automation/cycle-latest.md` alongside `cycle-latest.json`.
+- The Markdown workspace handoff summarizes candidate review, metadata-only transcript paths, curation policy, safety flags, and next action without exposing raw candidate or transcript content.
+- Generated automation schedule README files now document the Markdown companion when `--automation-write-workspace` is enabled.
+
 ## [0.6.72] - 2026-06-24
 
 ### Added

@@ -570,10 +570,12 @@ def test_automation_cycle_writes_compact_workspace_with_transcript_hints(tmp_pat
     )
 
     assert payload["workspace_path"] == "reports/automation/cycle-latest.json"
+    assert payload["workspace_markdown_path"] == "reports/automation/cycle-latest.md"
     path = project / payload["workspace_path"]
     assert path.exists()
     workspace = json.loads(path.read_text(encoding="utf-8"))
     assert workspace["action"] == "cycle_workspace"
+    assert workspace["workspace_markdown_path"] == "reports/automation/cycle-latest.md"
     assert workspace["summary"]["learning_rules"] >= 1
     assert workspace["candidate_review"]["content_hidden"] is True
     assert workspace["transcripts_to_capture"]["summary"]["count"] == 1
@@ -583,6 +585,14 @@ def test_automation_cycle_writes_compact_workspace_with_transcript_hints(tmp_pat
     assert workspace["safety"]["auto_promote"] is False
     assert workspace["safety"]["transcript_discovery_reads_contents"] is False
     assert token not in json.dumps(workspace)
+    markdown = (project / payload["workspace_markdown_path"]).read_text(encoding="utf-8")
+    assert "# Vault Automation Cycle Workspace" in markdown
+    assert "## Candidate Review" in markdown
+    assert "## Transcripts To Capture" in markdown
+    assert "## Curation Policy" in markdown
+    assert "## Safety" in markdown
+    assert "sessions/codex-session.md" in markdown
+    assert token not in markdown
 
 
 def test_automation_cycle_blocks_without_vault_db(tmp_path):
@@ -722,6 +732,7 @@ def test_automation_cli_cycle_prints_learning_summary(tmp_path, monkeypatch, cap
     assert "learning policy: reports/automation/learning_policy.json" in out
     assert "dream learning: loaded" in out
     assert "workspace: reports/automation/cycle-latest.json" in out
+    assert "workspace markdown: reports/automation/cycle-latest.md" in out
     assert "does not auto-promote" in out
 
 

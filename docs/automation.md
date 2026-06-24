@@ -186,12 +186,17 @@ hard-deletes memory, or overrides privacy/access policy.
 
 Add `--write-workspace` when the next agent should start from one compact
 handoff instead of reading full reports. This writes
-`reports/automation/cycle-latest.json` with three small sections:
+`reports/automation/cycle-latest.json` and the readable companion
+`reports/automation/cycle-latest.md` with three small sections:
 
 - `candidate_review`: compact review queue with raw candidate content hidden.
 - `transcripts_to_capture`: optional metadata-only uncaptured transcript paths
   when `--include-transcripts` is used.
 - `curation_policy`: bounded learning-policy summary from reviewed feedback.
+
+The Markdown companion is for humans and agents that need a quick morning
+handoff. It is rendered from the same compact payload, keeps raw candidate
+content hidden, and lists transcript candidates as paths only.
 
 ## Policy
 
@@ -283,7 +288,8 @@ important review fields are:
   how many candidate suggestions received a matching rule. Automation report
   summaries expose the same status so scheduled agents can monitor it cheaply.
 - `cycle workspace`: `vault automation cycle --write-workspace` writes
-  `reports/automation/cycle-latest.json`, a compact daily workbench for agents:
+  `reports/automation/cycle-latest.json` plus
+  `reports/automation/cycle-latest.md`, a compact daily workbench for agents:
   candidate review queue, optional transcript paths, and learning-policy
   summary. It is read-only, content-hidden by default, and does not promote or
   mutate memory by itself.
@@ -330,9 +336,10 @@ feedback-learning phase.
 
 Add `--automation-write-workspace` when generated schedules should also pass
 `--write-workspace` to the scheduled cycle. This writes
-`reports/automation/cycle-latest.json` during the scheduled run. It is still a
-compact handoff only: candidate content stays hidden by default and the cycle
-does not promote candidates or hard-delete memory.
+`reports/automation/cycle-latest.json` and `reports/automation/cycle-latest.md`
+during the scheduled run. It is still a compact handoff only: candidate content
+stays hidden by default and the cycle does not promote candidates or hard-delete
+memory.
 
 Add `--automation-include-transcripts` when the scheduled handoff should also
 show uncaptured transcript exports for the next reviewer. This only passes
