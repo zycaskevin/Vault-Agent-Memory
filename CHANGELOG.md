@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [0.6.103] - 2026-06-25
+
+### Changed
+
+- Agent setup memory automation schedules now write the compact learning-health dashboard after each scheduled automation run.
+- Generated cron, LaunchAgent, and n8n memory automation templates now run `vault automation learning-health --write-health` after the inbox handoff, producing `reports/automation/learning-health-latest.json` and `.md`.
+
 ## [0.6.102] - 2026-06-25
 
 ### Added
