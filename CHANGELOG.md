@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.6.74] - 2026-06-24
+
+### Added
+
+- Added `priority_brief`, `suggested_next_tasks`, and `agent_start_prompt` to the `cycle-latest.json` workspace handoff.
+- Expanded `cycle-latest.md` into a daily agent handoff with Priority Brief, Suggested Next Tasks, and Agent Start Prompt sections.
+- The new handoff sections preserve the existing safety boundary: raw candidate content stays hidden, transcript paths remain metadata-only, and the prompt reminds agents not to auto-promote or hard-delete memory.
+
 ## [0.6.73] - 2026-06-24
 
 ### Added

@@ -196,7 +196,9 @@ handoff instead of reading full reports. This writes
 
 The Markdown companion is for humans and agents that need a quick morning
 handoff. It is rendered from the same compact payload, keeps raw candidate
-content hidden, and lists transcript candidates as paths only.
+content hidden, and lists transcript candidates as paths only. It also includes
+a priority brief, suggested next tasks, and a copyable start prompt for the next
+agent session.
 
 ## Policy
 
@@ -291,8 +293,10 @@ important review fields are:
   `reports/automation/cycle-latest.json` plus
   `reports/automation/cycle-latest.md`, a compact daily workbench for agents:
   candidate review queue, optional transcript paths, and learning-policy
-  summary. It is read-only, content-hidden by default, and does not promote or
-  mutate memory by itself.
+  summary. The JSON also includes `priority_brief`, `suggested_next_tasks`, and
+  `agent_start_prompt` so scheduled agents can take over from the smallest
+  useful context. It is read-only, content-hidden by default, and does not
+  promote or mutate memory by itself.
 - `consolidation_suggestion`: Dream can write this candidate type for duplicate
   groups. It asks for a reviewed merge/archive decision and never changes
   active knowledge by itself.

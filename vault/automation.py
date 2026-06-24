@@ -805,6 +805,8 @@ def _render_cycle_workspace_markdown(workspace: dict[str, Any]) -> str:
     curation = workspace.get("curation_policy") or {}
     rules = curation.get("rules") or []
     safety = workspace.get("safety") or {}
+    priority_brief = workspace.get("priority_brief") or []
+    suggested_tasks = workspace.get("suggested_next_tasks") or []
     lines: list[str] = [
         "# Vault Automation Cycle Workspace",
         "",
@@ -823,6 +825,32 @@ def _render_cycle_workspace_markdown(workspace: dict[str, Any]) -> str:
         f"- learning readiness: `{_md_text(summary.get('learning_readiness', ''))}`",
         f"- automation report: `{_md_text(summary.get('automation_report_path', ''))}`",
         f"- learning policy: `{_md_text(summary.get('learning_policy_path', ''))}`",
+        "",
+        "## Priority Brief",
+        "",
+    ]
+    if priority_brief:
+        lines += [
+            _md_row(["priority", "title", "count", "safe action"]),
+            _md_row(["---", "---", "---", "---"]),
+        ]
+        for item in priority_brief[:8]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                _md_row(
+                    [
+                        item.get("priority", ""),
+                        item.get("title", ""),
+                        item.get("count", ""),
+                        item.get("safe_action", ""),
+                    ]
+                )
+            )
+    else:
+        lines.append("No urgent automation handoff items.")
+
+    lines += [
         "",
         "## Candidate Review",
         "",
@@ -920,6 +948,37 @@ def _render_cycle_workspace_markdown(workspace: dict[str, Any]) -> str:
         f"- transcript discovery reads contents: `{str(bool(safety.get('transcript_discovery_reads_contents', False))).lower()}`",
         f"- writes active memory: `{str(bool(safety.get('writes_active_memory', False))).lower()}`",
         "",
+        "## Suggested Next Tasks",
+        "",
+    ]
+    if suggested_tasks:
+        lines += [
+            _md_row(["step", "task", "command", "approval"]),
+            _md_row(["---", "---", "---", "---"]),
+        ]
+        for item in suggested_tasks[:8]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                _md_row(
+                    [
+                        item.get("step", ""),
+                        item.get("task", ""),
+                        item.get("command", ""),
+                        "yes" if item.get("requires_human_approval") else "no",
+                    ]
+                )
+            )
+
+    lines += [
+        "",
+        "## Agent Start Prompt",
+        "",
+        "```text",
+        str(workspace.get("agent_start_prompt", "")).strip()
+        or "Read this workspace handoff first, then review candidates without promoting memory automatically.",
+        "```",
+        "",
         "## Next Action",
         "",
         _md_text(workspace.get("next_action", "")) or "Review candidate queue before changing active memory.",
@@ -964,7 +1023,7 @@ def _cycle_workspace(
         )
     inbox_summary = inbox.get("summary") or {}
     transcript_discovery = inbox.get("transcript_discovery") or {}
-    return {
+    workspace = {
         "action": "cycle_workspace",
         "generated_at": generated_at,
         "project_dir": str(project),
@@ -1013,6 +1072,144 @@ def _cycle_workspace(
         ),
         "workspace_path": "",
     }
+    workspace["priority_brief"] = _cycle_priority_brief(workspace)
+    workspace["suggested_next_tasks"] = _cycle_suggested_next_tasks(workspace)
+    workspace["agent_start_prompt"] = _cycle_agent_start_prompt(workspace)
+    return workspace
+
+
+def _cycle_priority_brief(workspace: dict[str, Any]) -> list[dict[str, Any]]:
+    summary = workspace.get("summary") or {}
+    curation = workspace.get("curation_policy") or {}
+    items: list[dict[str, Any]] = []
+    queue_count = int(summary.get("candidate_queue_items") or 0)
+    needs_review = int(summary.get("needs_review") or 0)
+    transcript_count = int(summary.get("uncaptured_transcripts") or 0)
+    learning_rules = int(summary.get("learning_rules") or 0)
+    if queue_count or needs_review:
+        items.append(
+            {
+                "priority": "P1",
+                "title": "Review candidate memory queue",
+                "count": max(queue_count, needs_review),
+                "reason": "Candidates need explicit promote/reject decisions before active memory changes.",
+                "safe_action": "Review candidate ids and gates; keep raw content hidden until needed.",
+            }
+        )
+    if transcript_count:
+        items.append(
+            {
+                "priority": "P2",
+                "title": "Capture selected transcript exports",
+                "count": transcript_count,
+                "reason": "Uncaptured transcript files may contain decisions or pitfalls not yet proposed as candidates.",
+                "safe_action": "Inspect paths first; capture only selected files after confirming scope.",
+            }
+        )
+    if learning_rules:
+        items.append(
+            {
+                "priority": "P2",
+                "title": "Inspect curation learning rules",
+                "count": learning_rules,
+                "reason": "Reviewed candidate outcomes produced bounded sorting hints for the next Dream/curation pass.",
+                "safe_action": "Use rules for ordering only; do not auto-promote or bypass privacy gates.",
+            }
+        )
+    if curation.get("path") or summary.get("automation_report_path"):
+        items.append(
+            {
+                "priority": "P3",
+                "title": "Skim automation report and policy files",
+                "count": 1,
+                "reason": "The detailed ledger remains the source of truth for automation changes.",
+                "safe_action": "Read bounded report sections before changing policy or archive behavior.",
+            }
+        )
+    if not items:
+        items.append(
+            {
+                "priority": "P3",
+                "title": "No urgent review queue",
+                "count": 0,
+                "reason": "The latest cycle did not surface review pressure.",
+                "safe_action": "Run a normal search or report review before making memory changes.",
+            }
+        )
+    return items
+
+
+def _cycle_suggested_next_tasks(workspace: dict[str, Any]) -> list[dict[str, Any]]:
+    summary = workspace.get("summary") or {}
+    tasks: list[dict[str, Any]] = []
+    step = 1
+    if int(summary.get("candidate_queue_items") or 0) or int(summary.get("needs_review") or 0):
+        tasks.append(
+            {
+                "step": step,
+                "task": "Open the compact candidate queue and decide promote/reject/block explicitly.",
+                "command": "vault automation inbox --limit 10",
+                "requires_human_approval": True,
+            }
+        )
+        step += 1
+    if int(summary.get("uncaptured_transcripts") or 0):
+        tasks.append(
+            {
+                "step": step,
+                "task": "Review uncaptured transcript paths before selecting files to capture.",
+                "command": "vault capture discover",
+                "requires_human_approval": True,
+            }
+        )
+        step += 1
+    if summary.get("learning_policy_path"):
+        tasks.append(
+            {
+                "step": step,
+                "task": "Inspect bounded learning-policy hints before changing automation behavior.",
+                "command": f"vault automation report --report-path {summary.get('learning_policy_path')}",
+                "requires_human_approval": False,
+            }
+        )
+        step += 1
+    if summary.get("automation_report_path"):
+        tasks.append(
+            {
+                "step": step,
+                "task": "Read the detailed automation ledger if any archive or candidate action looks surprising.",
+                "command": "vault automation report --latest --detail",
+                "requires_human_approval": False,
+            }
+        )
+    if not tasks:
+        tasks.append(
+            {
+                "step": 1,
+                "task": "No immediate queue pressure; run a normal bounded search before editing memory.",
+                "command": "vault search \"current project memory\" --limit 5",
+                "requires_human_approval": False,
+            }
+        )
+    return tasks
+
+
+def _cycle_agent_start_prompt(workspace: dict[str, Any]) -> str:
+    summary = workspace.get("summary") or {}
+    queue_count = int(summary.get("candidate_queue_items") or 0)
+    transcript_count = int(summary.get("uncaptured_transcripts") or 0)
+    learning_rules = int(summary.get("learning_rules") or 0)
+    return "\n".join(
+        [
+            "You are continuing a Vault-for-LLM memory automation cycle.",
+            f"Project: {workspace.get('project_dir', '')}",
+            "Start from this handoff, not the full raw reports.",
+            f"Candidate queue items: {queue_count}; uncaptured transcripts: {transcript_count}; learning rules: {learning_rules}.",
+            "Do not auto-promote candidates, hard-delete memory, or read transcript contents just because a path is listed.",
+            "Review priority_brief first, then use suggested_next_tasks one step at a time.",
+            "Ask for approval before promoting/rejecting sensitive candidates or capturing private transcripts.",
+        ]
+    )
 
 
 def _cycle_principle() -> str:
