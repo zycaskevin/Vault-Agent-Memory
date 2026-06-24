@@ -1988,6 +1988,11 @@ def cmd_automation(args):
                 limit=args.limit,
                 min_events=args.min_events,
                 write_reports=not args.no_report,
+                write_workspace=getattr(args, "write_workspace", False),
+                workspace_path=getattr(args, "workspace_path", ""),
+                inbox_limit=getattr(args, "inbox_limit", 5),
+                include_transcripts=getattr(args, "include_transcripts", False),
+                transcript_limit=getattr(args, "transcript_limit", 5),
             )
         elif action == "report":
             payload = automation_report(
@@ -2133,6 +2138,16 @@ def cmd_automation(args):
         )
         if summary.get("automation_report_path"):
             print(f"  report: {summary.get('automation_report_path')}")
+        if payload.get("workspace_path"):
+            workspace = payload.get("workspace") or {}
+            workspace_summary = workspace.get("summary") or {}
+            print(f"  workspace: {payload.get('workspace_path')}")
+            print(
+                "  workspace queue: "
+                f"candidates={workspace_summary.get('candidate_queue_items', 0)} "
+                f"needs_review={workspace_summary.get('needs_review', 0)} "
+                f"uncaptured_transcripts={workspace_summary.get('uncaptured_transcripts', 0)}"
+            )
         if payload.get("human_review", {}).get("required"):
             print("\n  Human review required for:")
             for item in payload["human_review"].get("items", []):
@@ -3440,6 +3455,11 @@ def main(argv: list[str] | None = None):
     sp.add_argument("--apply", action="store_true", help="apply policy-allowed reversible actions")
     sp.add_argument("--no-report", action="store_true", help="do not write reports/automation JSON or dream report")
     sp.add_argument("--min-events", type=int, default=5, help="minimum feedback events before a group is considered learnable")
+    sp.add_argument("--write-workspace", action="store_true", help="write reports/automation/cycle-latest.json as a compact cycle handoff")
+    sp.add_argument("--workspace-path", default="", help="custom reports/automation/*.json cycle workspace path")
+    sp.add_argument("--inbox-limit", type=int, default=5, help="maximum review queue items in the cycle workspace")
+    sp.add_argument("--include-transcripts", action="store_true", help="include metadata-only transcript discovery hints in the cycle workspace")
+    sp.add_argument("--transcript-limit", type=int, default=5, help="maximum transcript discovery hints in the cycle workspace")
 
     sp = automation_sub.add_parser("report", help="List recent automation reports")
     add_automation_common(sp)

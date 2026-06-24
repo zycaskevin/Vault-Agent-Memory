@@ -527,6 +527,64 @@ def test_automation_cycle_writes_learning_policy_and_runs_dream(tmp_path):
     assert any(item["memory_type"] == "dream_suggestion" for item in candidates)
 
 
+def test_automation_cycle_writes_compact_workspace_with_transcript_hints(tmp_path):
+    project = _init_project(tmp_path)
+    token = "sk-proj-1234567890abcdefghij1234567890"
+    sessions = project / "sessions"
+    sessions.mkdir()
+    (sessions / "codex-session.md").write_text(
+        f"Decision: cycle workspace must not expose {token} from transcript content.\n",
+        encoding="utf-8",
+    )
+    with VaultDB(project / "vault.db") as db:
+        for idx in range(3):
+            db.record_memory_feedback(
+                {
+                    "candidate_id": f"dream_workspace_{idx}",
+                    "source": "dream",
+                    "memory_type": "dream_suggestion",
+                    "category": "dream-review",
+                    "outcome": "promoted",
+                    "score": 1.0,
+                }
+            )
+        db.add_knowledge(
+            "Cycle workspace weak metadata",
+            "Automation cycle workspace should give reviewers one compact next-step view.",
+            category="general",
+            tags="",
+            trust=0.3,
+        )
+
+    payload = automation_cycle(
+        project,
+        mode="balanced",
+        apply=True,
+        limit=10,
+        min_events=3,
+        write_reports=True,
+        write_workspace=True,
+        include_transcripts=True,
+        transcript_limit=3,
+        inbox_limit=4,
+    )
+
+    assert payload["workspace_path"] == "reports/automation/cycle-latest.json"
+    path = project / payload["workspace_path"]
+    assert path.exists()
+    workspace = json.loads(path.read_text(encoding="utf-8"))
+    assert workspace["action"] == "cycle_workspace"
+    assert workspace["summary"]["learning_rules"] >= 1
+    assert workspace["candidate_review"]["content_hidden"] is True
+    assert workspace["transcripts_to_capture"]["summary"]["count"] == 1
+    assert workspace["transcripts_to_capture"]["summary"]["read_contents"] is False
+    assert workspace["transcripts_to_capture"]["items"][0]["capture_path"] == "sessions/codex-session.md"
+    assert workspace["curation_policy"]["rules"]
+    assert workspace["safety"]["auto_promote"] is False
+    assert workspace["safety"]["transcript_discovery_reads_contents"] is False
+    assert token not in json.dumps(workspace)
+
+
 def test_automation_cycle_blocks_without_vault_db(tmp_path):
     payload = automation_cycle(tmp_path, min_events=1)
 
@@ -649,6 +707,11 @@ def test_automation_cli_cycle_prints_learning_summary(tmp_path, monkeypatch, cap
             min_events=2,
             apply=True,
             no_report=False,
+            write_workspace=True,
+            workspace_path="",
+            inbox_limit=5,
+            include_transcripts=False,
+            transcript_limit=5,
             json=False,
             pretty=False,
         )
@@ -658,6 +721,7 @@ def test_automation_cli_cycle_prints_learning_summary(tmp_path, monkeypatch, cap
     assert "Automation cycle" in out
     assert "learning policy: reports/automation/learning_policy.json" in out
     assert "dream learning: loaded" in out
+    assert "workspace: reports/automation/cycle-latest.json" in out
     assert "does not auto-promote" in out
 
 
