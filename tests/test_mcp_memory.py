@@ -235,6 +235,29 @@ def test_mcp_automation_handoff_reads_existing_compact_handoff(tmp_path):
     assert payload["safety"]["uses_existing_handoff_only"] is True
 
 
+def test_mcp_automation_handoff_exposes_fleet_health_preface(tmp_path):
+    _set_project_dir(tmp_path)
+    report_dir = tmp_path / "reports" / "automation"
+    report_dir.mkdir(parents=True)
+    (report_dir / "fleet-health-latest.md").write_text(
+        "# Fleet Health\n\n- Shared health panel is ready.\n",
+        encoding="utf-8",
+    )
+    (report_dir / "cycle-latest.md").write_text(
+        "# Daily handoff\n\n- Continue the cycle task.\n",
+        encoding="utf-8",
+    )
+
+    payload = _payload(handle_tool_call("vault_automation_handoff", {}))
+
+    assert payload["action"] == "handoff"
+    assert payload["handoff_path"] == "reports/automation/cycle-latest.md"
+    assert payload["fleet_health_path"] == "reports/automation/fleet-health-latest.md"
+    assert "Shared health panel" in payload["fleet_health_content"]
+    assert "Continue the cycle task" in payload["content"]
+    assert "Shared health panel" not in payload["content"]
+
+
 def test_mcp_automation_handoff_missing_is_bounded(tmp_path):
     _set_project_dir(tmp_path)
 

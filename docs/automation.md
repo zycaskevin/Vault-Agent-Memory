@@ -320,7 +320,11 @@ vault automation handoff
 ```
 
 The command is read-only. It prefers `cycle-latest.md`, then falls back to
-`cycle-latest.json` or `inbox-latest.json`.
+`cycle-latest.json` or `inbox-latest.json`. When
+`fleet-health-latest.md` or `.json` exists, the CLI prints that shared
+multi-Agent health panel before the selected handoff. JSON/MCP consumers keep
+the selected handoff in `content` and receive the health panel separately as
+`fleet_health_content`, so existing cycle/inbox handoff readers remain stable.
 
 `--include-transcripts` is discovery-only: it lists likely session transcript
 paths without reading their contents. To close the ingestion loop, add
@@ -489,7 +493,8 @@ important review fields are:
   promote or mutate memory by itself.
 - `handoff`: `vault automation handoff` prints the latest compact handoff for
   the next agent. It is read-only and never generates, promotes, archives, or
-  reads transcript contents by itself.
+  reads transcript contents by itself. If a fleet-health panel exists, handoff
+  surfaces it as a startup preface before the individual cycle/inbox handoff.
 - `consolidation_suggestion`: Dream can write this candidate type for duplicate
   groups. It asks for a reviewed merge/archive decision and never changes
   active knowledge by itself.

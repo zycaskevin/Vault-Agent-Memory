@@ -2290,11 +2290,17 @@ def cmd_automation(args):
             print(f"  next action: {payload.get('next_action')}")
             return
         if payload.get("content_type") == "markdown":
+            fleet_content = (payload.get("fleet_health_content") or "").rstrip()
+            if fleet_content:
+                print(fleet_content)
+                print("\n---\n")
             print(payload.get("content", "").rstrip())
             return
         print("📄 Automation handoff\n")
         print(f"  path: {payload.get('handoff_path')}")
         print(f"  type: {payload.get('content_type')}")
+        if payload.get("fleet_health_path"):
+            print(f"  fleet health: {payload.get('fleet_health_path')}")
         print(payload.get("content", "").rstrip())
         return
 
@@ -4296,7 +4302,7 @@ def main(argv: list[str] | None = None):
     sp = automation_sub.add_parser("handoff", help="Print the latest compact automation handoff for the next agent")
     add_automation_common(sp)
     sp.add_argument("--source", choices=["auto", "cycle", "inbox"], default="auto",
-                    help="which handoff to read; auto prefers cycle-latest.md")
+                    help="which handoff to read; auto prefers cycle-latest.md and attaches fleet-health when present")
     sp.add_argument("--handoff-path", default="", help="custom reports/automation/*.md or *.json handoff path")
 
     sp = automation_sub.add_parser("eval", help="Evaluate automation feedback and candidate outcomes")

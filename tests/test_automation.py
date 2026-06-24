@@ -1431,6 +1431,48 @@ def test_automation_handoff_reads_latest_cycle_markdown(tmp_path):
     assert payload["safety"]["writes_active_memory"] is False
 
 
+def test_automation_handoff_attaches_fleet_health_without_replacing_cycle(tmp_path):
+    project = _init_project(tmp_path)
+    report_dir = project / "reports" / "automation"
+    report_dir.mkdir(parents=True)
+    (report_dir / "fleet-health-latest.md").write_text(
+        "# Vault Automation Fleet Health\n\n- Fleet status: ok.\n",
+        encoding="utf-8",
+    )
+    (report_dir / "cycle-latest.md").write_text(
+        "# Vault Automation Cycle Workspace\n\n## Agent Start Prompt\n\nStart from cycle.\n",
+        encoding="utf-8",
+    )
+
+    payload = automation_handoff(project)
+
+    assert payload["status"] == "completed"
+    assert payload["handoff_path"] == "reports/automation/cycle-latest.md"
+    assert payload["fleet_health_path"] == "reports/automation/fleet-health-latest.md"
+    assert "Fleet status: ok." in payload["fleet_health_content"]
+    assert "Start from cycle." in payload["content"]
+    assert "Fleet status: ok." not in payload["content"]
+    assert payload["safety"]["uses_existing_handoff_only"] is True
+
+
+def test_automation_handoff_can_fall_back_to_fleet_health(tmp_path):
+    project = _init_project(tmp_path)
+    report_dir = project / "reports" / "automation"
+    report_dir.mkdir(parents=True)
+    (report_dir / "fleet-health-latest.md").write_text(
+        "# Vault Automation Fleet Health\n\n- Fleet status: needs update.\n",
+        encoding="utf-8",
+    )
+
+    payload = automation_handoff(project)
+
+    assert payload["status"] == "completed"
+    assert payload["handoff_path"] == "reports/automation/fleet-health-latest.md"
+    assert payload["content_type"] == "markdown"
+    assert "needs update" in payload["content"]
+    assert payload["fleet_health_path"] == ""
+
+
 def test_automation_handoff_path_must_stay_under_reports(tmp_path):
     project = _init_project(tmp_path)
     outside = project / "outside.md"
@@ -1812,6 +1854,40 @@ def test_automation_cli_handoff_prints_markdown(tmp_path, monkeypatch, capsys):
     assert "# Vault Automation Cycle Workspace" in out
     assert "## Priority Brief" in out
     assert "Start from the short handoff." in out
+
+
+def test_automation_cli_handoff_prints_fleet_health_before_cycle(tmp_path, monkeypatch, capsys):
+    from vault.cli import cmd_automation
+
+    project = _init_project(tmp_path)
+    report_dir = project / "reports" / "automation"
+    report_dir.mkdir(parents=True)
+    (report_dir / "fleet-health-latest.md").write_text(
+        "# Vault Automation Fleet Health\n\nFleet comes first.\n",
+        encoding="utf-8",
+    )
+    (report_dir / "cycle-latest.md").write_text(
+        "# Vault Automation Cycle Workspace\n\nCycle comes second.\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(project)
+
+    cmd_automation(
+        Namespace(
+            automation_action="handoff",
+            mode=None,
+            limit=50,
+            source="auto",
+            handoff_path="",
+            json=False,
+            pretty=False,
+        )
+    )
+
+    out = capsys.readouterr().out
+    assert out.index("# Vault Automation Fleet Health") < out.index("# Vault Automation Cycle Workspace")
+    assert "Fleet comes first." in out
+    assert "Cycle comes second." in out
 
 
 def test_automation_inbox_prioritizes_privacy_blocked_candidates(tmp_path):

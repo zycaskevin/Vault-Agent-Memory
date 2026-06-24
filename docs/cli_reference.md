@@ -66,7 +66,7 @@ changed notes without duplicating unchanged ones.
 | `vault update-status --doctor --json` | Check whether the shared update notice exists, is fresh, includes every registered Agent, and shows runtime attention |
 | `vault agent register --agent codex --project ~/Vaults/my-project --scope shared` | Manually register an Agent/runtime in the local multi-agent registry |
 | `vault agent list` | List Agents registered on this machine |
-| `vault agent status --latest-version 0.6.104` | Show the same registry/update status without contacting the network |
+| `vault agent status --latest-version 0.6.105` | Show the same registry/update status without contacting the network |
 | `vault agent doctor --json` | Run the same shared update-distribution health check through the Agent registry namespace |
 | `vault agent install-runtime-template --runtime codex --target ./AGENTS.md` | Preview applying the generated Codex startup template into a runtime instruction file |
 | `vault agent install-runtime-template --runtime codex --target ./AGENTS.md --apply` | Apply the marked startup block and create a backup before changing an existing file |
@@ -176,7 +176,7 @@ For per-tool MCP examples, see `docs/mcp_tool_reference.md`.
 | `vault automation review-feedback --kind memory_importance --card-id 12 --decision accept --reason "Correct card" --write-learning-policy` | Record feedback for one review-summary card and refresh bounded learning hints |
 | `vault automation learning-health --write-health` | Write a compact dashboard-safe health panel for feedback learning to `reports/automation/learning-health-latest.json` and `.md` |
 | `vault automation fleet-health --write-health` | Write a shared multi-Agent automation health panel to `reports/automation/fleet-health-latest.json` and `.md` |
-| `vault automation handoff` | Print the latest compact automation handoff for the next agent; prefers `cycle-latest.md` |
+| `vault automation handoff` | Print the latest compact automation handoff for the next agent; surfaces `fleet-health-latest` first when present, then prefers `cycle-latest.md` |
 | `vault automation inbox --limit 5 --write-handoff` | Show the shortest read-only review queue and write `reports/automation/inbox-latest.json` |
 | `vault automation inbox --include-transcripts --write-handoff` | Add metadata-only uncaptured transcript hints to the inbox handoff |
 | `vault automation report` / `vault automation eval --write-learning-policy` / `vault automation doctor` | Review automation reports, evaluate candidate-outcome feedback into bounded curation hints, and check scheduled-job readiness |
