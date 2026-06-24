@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## [0.6.71] - 2026-06-24
+
+### Added
+
+- Added `vault automation cycle --write-workspace`, which writes `reports/automation/cycle-latest.json` as a compact next-agent workbench.
+- Cycle workspace output includes candidate review queue, optional metadata-only transcript paths via `--include-transcripts`, and bounded learning-policy summary.
+- Added CLI flags `--workspace-path`, `--inbox-limit`, `--include-transcripts`, and `--transcript-limit` for cycle workspace generation.
+
 ## [0.6.70] - 2026-06-24
 
 ### Added

@@ -174,6 +174,7 @@ Run one full feedback-to-curation cycle:
 
 ```bash
 vault automation cycle --apply --pretty
+vault automation cycle --write-workspace --include-transcripts --pretty
 ```
 
 `automation cycle` is the one-command version of the learning loop. It first
@@ -182,6 +183,15 @@ automation so Dream can consume the freshly written learning policy. The cycle
 is still bounded: it can write review candidates and reversible archive actions
 only when policy plus `--apply` allow them. It never promotes candidates,
 hard-deletes memory, or overrides privacy/access policy.
+
+Add `--write-workspace` when the next agent should start from one compact
+handoff instead of reading full reports. This writes
+`reports/automation/cycle-latest.json` with three small sections:
+
+- `candidate_review`: compact review queue with raw candidate content hidden.
+- `transcripts_to_capture`: optional metadata-only uncaptured transcript paths
+  when `--include-transcripts` is used.
+- `curation_policy`: bounded learning-policy summary from reviewed feedback.
 
 ## Policy
 
@@ -272,6 +282,11 @@ important review fields are:
 - `dream.learning_policy`: whether the Dream run loaded a learning policy and
   how many candidate suggestions received a matching rule. Automation report
   summaries expose the same status so scheduled agents can monitor it cheaply.
+- `cycle workspace`: `vault automation cycle --write-workspace` writes
+  `reports/automation/cycle-latest.json`, a compact daily workbench for agents:
+  candidate review queue, optional transcript paths, and learning-policy
+  summary. It is read-only, content-hidden by default, and does not promote or
+  mutate memory by itself.
 - `consolidation_suggestion`: Dream can write this candidate type for duplicate
   groups. It asks for a reviewed merge/archive decision and never changes
   active knowledge by itself.

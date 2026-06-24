@@ -273,6 +273,11 @@ def automation_cycle(
     limit: int = 50,
     min_events: int = 5,
     write_reports: bool | None = None,
+    write_workspace: bool = False,
+    workspace_path: str | Path = "",
+    inbox_limit: int = 5,
+    include_transcripts: bool = False,
+    transcript_limit: int = 5,
 ) -> dict[str, Any]:
     """Run one closed automation learning cycle.
 
@@ -336,7 +341,17 @@ def automation_cycle(
         + int((run.get("forgetting") or {}).get("candidates_written") or 0),
         "automation_report_path": run.get("report_path", ""),
     }
-    return {
+    workspace = _cycle_workspace(
+        project,
+        generated_at=generated_at,
+        summary=summary,
+        evaluation=evaluation,
+        run=run,
+        inbox_limit=inbox_limit,
+        include_transcripts=include_transcripts,
+        transcript_limit=transcript_limit,
+    )
+    payload = {
         "action": "cycle",
         "generated_at": generated_at,
         "project_dir": str(project),
@@ -346,10 +361,16 @@ def automation_cycle(
         "eval": evaluation,
         "run": run,
         "summary": summary,
+        "workspace": workspace,
+        "workspace_path": "",
         "human_review": run.get("human_review", {}),
         "principle": _cycle_principle(),
         "next_action": "Review candidate queue and automation report before approving stronger memory changes.",
     }
+    if write_workspace:
+        payload["workspace_path"] = _write_cycle_workspace(project, workspace, workspace_path=workspace_path)
+        payload["summary"]["cycle_workspace_path"] = payload["workspace_path"]
+    return payload
 
 
 def automation_report(
@@ -699,6 +720,115 @@ def _write_inbox_handoff(project: Path, payload: dict[str, Any], *, handoff_path
     data["inbox_handoff_path"] = str(path.relative_to(project))
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return str(path.relative_to(project))
+
+
+def _write_cycle_workspace(project: Path, workspace: dict[str, Any], *, workspace_path: str | Path = "") -> str:
+    report_dir = project / "reports" / "automation"
+    report_dir.mkdir(parents=True, exist_ok=True)
+    if workspace_path:
+        raw = Path(workspace_path)
+        candidate = raw if raw.is_absolute() else project / raw
+        try:
+            resolved = candidate.expanduser().resolve()
+            allowed = report_dir.expanduser().resolve()
+        except Exception as exc:
+            raise ValueError(f"unable to resolve automation cycle workspace path: {exc}") from exc
+        if allowed != resolved and allowed not in resolved.parents:
+            raise ValueError("automation cycle workspace path must stay under reports/automation")
+        path = resolved
+    else:
+        path = report_dir / "cycle-latest.json"
+    data = dict(workspace)
+    data["workspace_path"] = str(path.relative_to(project))
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return str(path.relative_to(project))
+
+
+def _cycle_workspace(
+    project: Path,
+    *,
+    generated_at: str,
+    summary: dict[str, Any],
+    evaluation: dict[str, Any],
+    run: dict[str, Any],
+    inbox_limit: int = 5,
+    include_transcripts: bool = False,
+    transcript_limit: int = 5,
+) -> dict[str, Any]:
+    inbox = automation_inbox(
+        project,
+        limit=max(1, min(int(inbox_limit or 5), 50)),
+        include_content=False,
+        include_transcripts=include_transcripts,
+        transcript_limit=transcript_limit,
+        write_handoff=False,
+    )
+    learning_policy = evaluation.get("learning_policy") or {}
+    rules = learning_policy.get("rules") or []
+    compact_rules = []
+    for rule in rules[:10]:
+        if not isinstance(rule, dict):
+            continue
+        compact_rules.append(
+            {
+                "source": rule.get("source", ""),
+                "memory_type": rule.get("memory_type", ""),
+                "action": rule.get("action", ""),
+                "priority_multiplier": rule.get("priority_multiplier", 1.0),
+                "evidence": rule.get("evidence", {}),
+            }
+        )
+    inbox_summary = inbox.get("summary") or {}
+    transcript_discovery = inbox.get("transcript_discovery") or {}
+    return {
+        "action": "cycle_workspace",
+        "generated_at": generated_at,
+        "project_dir": str(project),
+        "status": run.get("status", "completed"),
+        "summary": {
+            "candidate_queue_items": len(inbox.get("review_queue") or []),
+            "pending_candidates": int(inbox_summary.get("pending_candidates") or 0),
+            "needs_review": int(inbox_summary.get("needs_review") or 0),
+            "uncaptured_transcripts": int(inbox_summary.get("uncaptured_transcripts") or 0),
+            "learning_rules": int(summary.get("learning_rules") or 0),
+            "learning_readiness": summary.get("learning_readiness", ""),
+            "automation_report_path": summary.get("automation_report_path", ""),
+            "learning_policy_path": summary.get("learning_policy_path", ""),
+        },
+        "candidate_review": {
+            "summary": inbox_summary,
+            "queue": inbox.get("review_queue") or [],
+            "content_hidden": True,
+        },
+        "transcripts_to_capture": {
+            "summary": {
+                "count": int(transcript_discovery.get("count") or 0),
+                "read_contents": bool(transcript_discovery.get("read_contents", False)),
+                "include_transcripts": bool(include_transcripts),
+            },
+            "items": transcript_discovery.get("transcripts") or [],
+        },
+        "curation_policy": {
+            "path": evaluation.get("learning_policy_path", ""),
+            "readiness": evaluation.get("readiness", ""),
+            "event_count": int(evaluation.get("event_count") or 0),
+            "bounds": learning_policy.get("bounds") or {},
+            "rules": compact_rules,
+        },
+        "safety": {
+            "read_only": True,
+            "auto_promote": False,
+            "hard_delete": False,
+            "candidate_content_hidden": True,
+            "transcript_discovery_reads_contents": False,
+            "writes_active_memory": False,
+        },
+        "next_action": (
+            "Review candidate_review.queue, capture selected transcript paths with `vault capture session`, "
+            "then promote or reject candidates explicitly."
+        ),
+        "workspace_path": "",
+    }
 
 
 def _cycle_principle() -> str:
