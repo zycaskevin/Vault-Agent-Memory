@@ -369,7 +369,16 @@ def automation_cycle(
     }
     if write_workspace:
         payload["workspace_path"] = _write_cycle_workspace(project, workspace, workspace_path=workspace_path)
+        workspace["workspace_path"] = payload["workspace_path"]
+        payload["workspace_markdown_path"] = _write_cycle_workspace_markdown(
+            project,
+            workspace,
+            workspace_path=payload["workspace_path"],
+        )
+        workspace["workspace_markdown_path"] = payload["workspace_markdown_path"]
+        _write_cycle_workspace(project, workspace, workspace_path=payload["workspace_path"])
         payload["summary"]["cycle_workspace_path"] = payload["workspace_path"]
+        payload["summary"]["cycle_workspace_markdown_path"] = payload["workspace_markdown_path"]
     return payload
 
 
@@ -717,9 +726,9 @@ def _write_inbox_handoff(project: Path, payload: dict[str, Any], *, handoff_path
     else:
         path = report_dir / "inbox-latest.json"
     data = dict(payload)
-    data["inbox_handoff_path"] = str(path.relative_to(project))
+    data["inbox_handoff_path"] = _relative_to_project(project, path)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return str(path.relative_to(project))
+    return _relative_to_project(project, path)
 
 
 def _write_cycle_workspace(project: Path, workspace: dict[str, Any], *, workspace_path: str | Path = "") -> str:
@@ -739,9 +748,184 @@ def _write_cycle_workspace(project: Path, workspace: dict[str, Any], *, workspac
     else:
         path = report_dir / "cycle-latest.json"
     data = dict(workspace)
-    data["workspace_path"] = str(path.relative_to(project))
+    data["workspace_path"] = _relative_to_project(project, path)
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return str(path.relative_to(project))
+    return _relative_to_project(project, path)
+
+
+def _relative_to_project(project: Path, path: Path) -> str:
+    try:
+        return str(path.relative_to(project))
+    except ValueError:
+        return str(path.expanduser().resolve().relative_to(project.expanduser().resolve()))
+
+
+def _write_cycle_workspace_markdown(
+    project: Path,
+    workspace: dict[str, Any],
+    *,
+    workspace_path: str | Path = "",
+) -> str:
+    report_dir = project / "reports" / "automation"
+    report_dir.mkdir(parents=True, exist_ok=True)
+    if workspace_path:
+        raw = Path(workspace_path)
+        raw = raw.with_suffix(".md")
+        candidate = raw if raw.is_absolute() else project / raw
+        try:
+            resolved = candidate.expanduser().resolve()
+            allowed = report_dir.expanduser().resolve()
+        except Exception as exc:
+            raise ValueError(f"unable to resolve automation cycle workspace Markdown path: {exc}") from exc
+        if allowed != resolved and allowed not in resolved.parents:
+            raise ValueError("automation cycle workspace Markdown path must stay under reports/automation")
+        path = resolved
+    else:
+        path = report_dir / "cycle-latest.md"
+    path.write_text(_render_cycle_workspace_markdown(workspace), encoding="utf-8")
+    return _relative_to_project(project, path)
+
+
+def _md_text(value: Any) -> str:
+    text = str(value if value is not None else "").replace("\r", " ").replace("\n", " ").strip()
+    return text.replace("|", "\\|")
+
+
+def _md_row(values: list[Any]) -> str:
+    return "| " + " | ".join(_md_text(value) for value in values) + " |"
+
+
+def _render_cycle_workspace_markdown(workspace: dict[str, Any]) -> str:
+    summary = workspace.get("summary") or {}
+    candidate_review = workspace.get("candidate_review") or {}
+    queue = candidate_review.get("queue") or []
+    transcripts = workspace.get("transcripts_to_capture") or {}
+    transcript_summary = transcripts.get("summary") or {}
+    transcript_items = transcripts.get("items") or []
+    curation = workspace.get("curation_policy") or {}
+    rules = curation.get("rules") or []
+    safety = workspace.get("safety") or {}
+    lines: list[str] = [
+        "# Vault Automation Cycle Workspace",
+        "",
+        f"- generated_at: `{_md_text(workspace.get('generated_at', ''))}`",
+        f"- status: `{_md_text(workspace.get('status', ''))}`",
+        f"- project_dir: `{_md_text(workspace.get('project_dir', ''))}`",
+        f"- json: `{_md_text(workspace.get('workspace_path', 'reports/automation/cycle-latest.json'))}`",
+        "",
+        "## Summary",
+        "",
+        f"- candidate queue items: `{int(summary.get('candidate_queue_items') or 0)}`",
+        f"- pending candidates: `{int(summary.get('pending_candidates') or 0)}`",
+        f"- needs review: `{int(summary.get('needs_review') or 0)}`",
+        f"- uncaptured transcripts: `{int(summary.get('uncaptured_transcripts') or 0)}`",
+        f"- learning rules: `{int(summary.get('learning_rules') or 0)}`",
+        f"- learning readiness: `{_md_text(summary.get('learning_readiness', ''))}`",
+        f"- automation report: `{_md_text(summary.get('automation_report_path', ''))}`",
+        f"- learning policy: `{_md_text(summary.get('learning_policy_path', ''))}`",
+        "",
+        "## Candidate Review",
+        "",
+        f"- content hidden: `{str(bool(candidate_review.get('content_hidden', True))).lower()}`",
+    ]
+    if queue:
+        lines += [
+            "",
+            _md_row(["id", "title", "source", "type", "priority", "action"]),
+            _md_row(["---", "---", "---", "---", "---", "---"]),
+        ]
+        for item in queue[:10]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                _md_row(
+                    [
+                        item.get("candidate_id", item.get("id", "")),
+                        item.get("title", ""),
+                        item.get("source", ""),
+                        item.get("memory_type", item.get("type", "")),
+                        item.get("priority", ""),
+                        item.get("recommended_action", item.get("action", "")),
+                    ]
+                )
+            )
+    else:
+        lines += ["", "No pending candidate review items."]
+
+    lines += [
+        "",
+        "## Transcripts To Capture",
+        "",
+        f"- count: `{int(transcript_summary.get('count') or 0)}`",
+        f"- include transcripts: `{str(bool(transcript_summary.get('include_transcripts'))).lower()}`",
+        f"- read contents: `{str(bool(transcript_summary.get('read_contents'))).lower()}`",
+    ]
+    if transcript_items:
+        lines += [
+            "",
+            _md_row(["capture_path", "source_system", "format", "size_bytes"]),
+            _md_row(["---", "---", "---", "---"]),
+        ]
+        for item in transcript_items[:10]:
+            if not isinstance(item, dict):
+                continue
+            lines.append(
+                _md_row(
+                    [
+                        item.get("capture_path", item.get("path", "")),
+                        item.get("source_system", ""),
+                        item.get("format", ""),
+                        item.get("size_bytes", ""),
+                    ]
+                )
+            )
+
+    lines += [
+        "",
+        "## Curation Policy",
+        "",
+        f"- path: `{_md_text(curation.get('path', ''))}`",
+        f"- readiness: `{_md_text(curation.get('readiness', ''))}`",
+        f"- feedback events: `{int(curation.get('event_count') or 0)}`",
+        f"- rule count: `{len(rules)}`",
+    ]
+    if rules:
+        lines += [
+            "",
+            _md_row(["source", "type", "action", "priority_multiplier"]),
+            _md_row(["---", "---", "---", "---"]),
+        ]
+        for rule in rules[:10]:
+            if not isinstance(rule, dict):
+                continue
+            lines.append(
+                _md_row(
+                    [
+                        rule.get("source", ""),
+                        rule.get("memory_type", ""),
+                        rule.get("action", ""),
+                        rule.get("priority_multiplier", ""),
+                    ]
+                )
+            )
+
+    lines += [
+        "",
+        "## Safety",
+        "",
+        f"- read only: `{str(bool(safety.get('read_only', True))).lower()}`",
+        f"- auto promote: `{str(bool(safety.get('auto_promote', False))).lower()}`",
+        f"- hard delete: `{str(bool(safety.get('hard_delete', False))).lower()}`",
+        f"- candidate content hidden: `{str(bool(safety.get('candidate_content_hidden', True))).lower()}`",
+        f"- transcript discovery reads contents: `{str(bool(safety.get('transcript_discovery_reads_contents', False))).lower()}`",
+        f"- writes active memory: `{str(bool(safety.get('writes_active_memory', False))).lower()}`",
+        "",
+        "## Next Action",
+        "",
+        _md_text(workspace.get("next_action", "")) or "Review candidate queue before changing active memory.",
+        "",
+    ]
+    return "\n".join(lines)
 
 
 def _cycle_workspace(

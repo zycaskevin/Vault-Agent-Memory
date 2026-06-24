@@ -80,7 +80,8 @@ Memory automation schedule files are opt-in with
 `vault automation cycle` and stay report-first unless `--automation-apply` is
 explicitly set. Use `--automation-command run` for maintenance-only schedules.
 Add `--automation-write-workspace` when those scheduled cycle jobs should write
-`reports/automation/cycle-latest.json` as the next-agent workbench.
+`reports/automation/cycle-latest.json` and `reports/automation/cycle-latest.md`
+as the next-agent workbench.
 Add `--automation-include-transcripts` when those scheduled jobs should write
 metadata-only uncaptured transcript hints into the inbox handoff.
 Manual interactive setup asks for `en`, `zh-Hant`, or `zh-CN`; non-interactive
@@ -124,7 +125,7 @@ For per-tool MCP examples, see `docs/mcp_tool_reference.md`.
 | `vault automation plan --write-policy` | Create a policy-based maintenance plan and starter `automation_policy.yaml` |
 | `vault automation run` / `vault automation run --apply` | Run report-first memory automation; reports include a dry-run diff and action ledger, and `--apply` only performs policy-allowed reversible actions |
 | `vault automation cycle --apply` | Run one safe feedback-to-curation loop: evaluate reviewed candidate outcomes, write `learning_policy.json`, then run policy-based automation so Dream can consume the latest hints |
-| `vault automation cycle --write-workspace --include-transcripts` | Write `reports/automation/cycle-latest.json`: compact candidate review, metadata-only transcript paths, and learning-policy summary for the next agent |
+| `vault automation cycle --write-workspace --include-transcripts` | Write `reports/automation/cycle-latest.json` and `.md`: compact candidate review, metadata-only transcript paths, and learning-policy summary for the next agent |
 | `vault automation inbox --limit 5 --write-handoff` | Show the shortest read-only review queue and write `reports/automation/inbox-latest.json` |
 | `vault automation inbox --include-transcripts --write-handoff` | Add metadata-only uncaptured transcript hints to the inbox handoff |
 | `vault automation report` / `vault automation eval --write-learning-policy` / `vault automation doctor` | Review automation reports, evaluate candidate-outcome feedback into bounded curation hints, and check scheduled-job readiness |

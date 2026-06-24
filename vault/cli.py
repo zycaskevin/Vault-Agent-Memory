@@ -2142,6 +2142,8 @@ def cmd_automation(args):
             workspace = payload.get("workspace") or {}
             workspace_summary = workspace.get("summary") or {}
             print(f"  workspace: {payload.get('workspace_path')}")
+            if payload.get("workspace_markdown_path"):
+                print(f"  workspace markdown: {payload.get('workspace_markdown_path')}")
             print(
                 "  workspace queue: "
                 f"candidates={workspace_summary.get('candidate_queue_items', 0)} "

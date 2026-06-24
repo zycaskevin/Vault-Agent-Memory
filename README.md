@@ -70,7 +70,7 @@ app, or an automatic conversation memory product.
 For most users, the right path is to ask an agent to install it:
 
 ```text
-Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.6.72.
+Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.6.73.
 Ask whether the vault should be shared, private, domain-specific, or temporary.
 Ask for a stable project directory and generate a stable venv script for
 long-lived agent jobs. Ask separately about MCP, semantic search, Supabase,
@@ -83,7 +83,7 @@ The agent should use the guided installer:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.6.72"
+pip install "vault-for-llm[mcp]==0.6.73"
 
 vault setup-agent
 ```
@@ -112,7 +112,7 @@ MCP commands do not depend on a disposable `/tmp` virtualenv.
 ### Manual Quickstart
 
 ```bash
-pip install "vault-for-llm[mcp]==0.6.72"
+pip install "vault-for-llm[mcp]==0.6.73"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -263,7 +263,9 @@ evaluate reviewed outcomes, write the bounded learning policy, then run safe
 automation so Dream can consume the latest hints.
 Add `--write-workspace` to write `reports/automation/cycle-latest.json`, a
 compact next-agent workbench with candidate review, optional transcript paths,
-and the latest curation-policy summary.
+and the latest curation-policy summary. It also writes
+`reports/automation/cycle-latest.md`, a readable handoff with the same safe
+summary and no raw candidate or transcript content.
 
 `vault automation inbox` is the short review surface for that loop. It does not
 mutate memory. It ranks privacy-blocked, sensitive, duplicate, weak-quality, and
@@ -279,8 +281,9 @@ from reviewed outcomes before the next maintenance pass. The schedule is still
 report-first unless the user explicitly opts into `--automation-apply`; pass
 `--automation-command run` for a simpler maintenance-only schedule.
 Add `--automation-write-workspace` when generated schedules should write
-`reports/automation/cycle-latest.json` after the cycle, so the next agent starts
-from the daily memory workbench instead of full reports.
+`reports/automation/cycle-latest.json` and `reports/automation/cycle-latest.md`
+after the cycle, so the next agent starts from the daily memory workbench
+instead of full reports.
 Add `--automation-include-transcripts` only when the scheduled handoff should
 also list uncaptured transcript exports. That list is metadata-only and keeps
 transcript contents out of the generated handoff.
@@ -322,7 +325,7 @@ Remote readers should pass the search result `id` directly into map/read; it
 may be an integer or a Supabase UUID.
 
 ```bash
-pip install "vault-for-llm[supabase]==0.6.72"
+pip install "vault-for-llm[supabase]==0.6.73"
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 

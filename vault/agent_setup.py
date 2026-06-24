@@ -1078,6 +1078,7 @@ def write_automation_schedule_templates(
                 "- scheduled runs write `reports/automation/inbox-latest.json` as the next-agent handoff",
                 f"- scheduled cycle workspace: `{str(bool(write_workspace and normalized_command == 'cycle')).lower()}`",
                 "- cycle workspace path: `reports/automation/cycle-latest.json` when enabled",
+                "- cycle workspace Markdown: `reports/automation/cycle-latest.md` when enabled",
                 f"- uncaptured transcript hints in scheduled handoff: `{str(bool(include_transcripts)).lower()}`",
                 "- transcript discovery is metadata-only and does not read transcript contents",
                 "",
