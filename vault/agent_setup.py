@@ -953,6 +953,22 @@ def automation_inbox_handoff_command(
     return command
 
 
+def automation_learning_health_command(
+    *,
+    project_dir: str | Path,
+    vault_executable: str = "vault",
+) -> list[str]:
+    return [
+        vault_executable,
+        "automation",
+        "learning-health",
+        "--project-dir",
+        str(Path(project_dir).expanduser()),
+        "--write-health",
+        "--pretty",
+    ]
+
+
 def automation_schedule_with_inbox_command(
     *,
     project_dir: str | Path,
@@ -986,7 +1002,11 @@ def automation_schedule_with_inbox_command(
         include_transcripts=include_transcripts,
         transcript_limit=transcript_limit,
     )
-    return ["sh", "-lc", f"{shell_join(primary)} && {shell_join(inbox)}"]
+    health = automation_learning_health_command(
+        project_dir=project_dir,
+        vault_executable=vault_executable,
+    )
+    return ["sh", "-lc", f"{shell_join(primary)} && {shell_join(inbox)} && {shell_join(health)}"]
 
 
 def write_automation_schedule_templates(
@@ -1043,6 +1063,10 @@ def write_automation_schedule_templates(
         vault_executable=vault_executable,
         include_transcripts=include_transcripts,
         transcript_limit=transcript_limit,
+    )
+    health_args = automation_learning_health_command(
+        project_dir=project_dir,
+        vault_executable=vault_executable,
     )
     handoff_args = [
         vault_executable,
@@ -1102,6 +1126,10 @@ def write_automation_schedule_templates(
                 "",
                 f"```bash\n{shell_join(inbox_args)}\n```",
                 "",
+                "Scheduled templates also write the compact learning-health dashboard:",
+                "",
+                f"```bash\n{shell_join(health_args)}\n```",
+                "",
                 "Next agent startup handoff:",
                 "",
                 f"```bash\n{shell_join(handoff_args)}\n```",
@@ -1124,6 +1152,7 @@ def write_automation_schedule_templates(
                 "- automation never hard-deletes memory",
                 "- expired memories with usage are protected and sent to human review",
                 "- scheduled runs write `reports/automation/inbox-latest.json` as the next-agent handoff",
+                "- scheduled runs write `reports/automation/learning-health-latest.json` and `.md` as the short learning dashboard",
                 f"- scheduled cycle workspace: `{str(bool(write_workspace and normalized_command == 'cycle')).lower()}`",
                 "- cycle workspace path: `reports/automation/cycle-latest.json` when enabled",
                 "- cycle workspace Markdown: `reports/automation/cycle-latest.md` when enabled",

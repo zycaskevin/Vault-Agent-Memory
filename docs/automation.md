@@ -156,6 +156,9 @@ future review-summary cards can be ranked by repeated outcomes.
 It summarizes accepted/rejected/deferred outcomes, active learning rules, and
 short health cards without raw feedback reasons. With `--write-health`, it
 writes `reports/automation/learning-health-latest.json` plus `.md`.
+`setup-agent` generated cron, LaunchAgent, and n8n memory automation schedules
+write the same health files after each scheduled run, so dashboards and the next
+agent session can check the loop without opening full reports.
 
 When that brief recommends `summarize_then_cold_store`, run a dry-run first:
 
@@ -280,6 +283,11 @@ is still bounded: it can write review candidates and reversible archive actions
 only when policy plus `--apply` allow them. It does not auto-promote by default,
 hard-delete memory, or override privacy/access policy. Low-risk promotion is a
 separate opt-in policy with narrow gates.
+
+Generated memory automation schedules run the selected automation command, then
+write the inbox handoff, then write the learning-health dashboard. The final
+read-only health step makes scheduled automation observable without adding a
+new MCP tool or asking humans to inspect full reports by default.
 
 Add `--write-workspace` when the next agent should start from one compact
 handoff instead of reading full reports. This writes
