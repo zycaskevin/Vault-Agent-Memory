@@ -70,7 +70,7 @@ app, or an automatic conversation memory product.
 For most users, the right path is to ask an agent to install it:
 
 ```text
-Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.6.107.
+Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.6.108.
 Ask whether the vault should be shared, private, domain-specific, or temporary.
 Ask for a stable project directory and generate a stable venv script for
 long-lived agent jobs. Ask separately about MCP, semantic search, Supabase,
@@ -83,7 +83,7 @@ The agent should use the guided installer:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.6.107"
+pip install "vault-for-llm[mcp]==0.6.108"
 
 vault setup-agent
 ```
@@ -146,7 +146,7 @@ MCP commands do not depend on a disposable `/tmp` virtualenv.
 ### Manual Quickstart
 
 ```bash
-pip install "vault-for-llm[mcp]==0.6.107"
+pip install "vault-for-llm[mcp]==0.6.108"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -222,6 +222,13 @@ Access is not controlled by layer alone. Use governance metadata for policy:
 - `allowed_agents`
 - `memory_type`
 - `expires_at`
+
+MCP writes use the same governance boundary. Low-sensitivity `project` writes
+remain compatible, but `shared`/`public`, `private`, `high`, and `restricted`
+writes require a calling `agent_id` plus the matching explicit capability flag
+such as `allow_shared`, `allow_private`, `allow_high_sensitivity`, or
+`allow_restricted`. This keeps a shared vault from becoming a free-for-all when
+several runtimes connect to the same memory.
 
 Searches record lightweight usage counters (`access_count`, `citation_count`,
 `last_accessed_at`). The default lightweight reranker uses these signals as a
@@ -478,7 +485,7 @@ Remote readers should pass the search result `id` directly into map/read; it
 may be an integer or a Supabase UUID.
 
 ```bash
-pip install "vault-for-llm[supabase]==0.6.107"
+pip install "vault-for-llm[supabase]==0.6.108"
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 

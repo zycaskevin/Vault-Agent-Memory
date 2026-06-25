@@ -1,6 +1,6 @@
 import json
 
-from vault.access_policy import can_read_memory, normalize_read_policy
+from vault.access_policy import can_read_memory, can_write_memory, normalize_read_policy, normalize_write_policy
 from vault.db import VaultDB
 from vault.search import VaultSearch
 from vault import mcp as vault_mcp
@@ -42,6 +42,52 @@ def test_read_policy_private_and_restricted_rules():
     assert can_read_memory(private_row, product_agent_private) is False
     assert can_read_memory(restricted_row, work_agent_default) is True
     assert can_read_memory(restricted_row, product_agent_private) is False
+
+
+def test_write_policy_requires_explicit_shared_and_sensitive_flags():
+    default_policy = normalize_write_policy()
+    shared = {"scope": "shared", "sensitivity": "low"}
+    private = {"scope": "private", "sensitivity": "high", "owner_agent": "profile-agent"}
+    restricted = {
+        "scope": "shared",
+        "sensitivity": "restricted",
+        "owner_agent": "profile-agent",
+        "allowed_agents": '["work-agent"]',
+    }
+
+    allowed, reason = can_write_memory({"scope": "project", "sensitivity": "low"}, default_policy)
+    assert allowed is True
+    assert reason == ""
+
+    allowed, reason = can_write_memory(shared, default_policy)
+    assert allowed is False
+    assert "allow_shared" in reason
+
+    allowed, reason = can_write_memory(private, normalize_write_policy(agent_id="work-agent", allow_private=True))
+    assert allowed is False
+    assert "high-sensitivity" in reason
+
+    allowed, reason = can_write_memory(
+        private,
+        normalize_write_policy(
+            agent_id="profile-agent",
+            allow_private=True,
+            allow_high_sensitivity=True,
+        ),
+    )
+    assert allowed is True
+    assert reason == ""
+
+    allowed, reason = can_write_memory(
+        restricted,
+        normalize_write_policy(
+            agent_id="work-agent",
+            allow_shared=True,
+            allow_restricted=True,
+        ),
+    )
+    assert allowed is True
+    assert reason == ""
 
 
 def test_search_applies_governance_read_filter(tmp_path):

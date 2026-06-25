@@ -1,5 +1,19 @@
 # CHANGELOG
 
+## [0.6.108] - 2026-06-25
+
+### Added
+
+- Added write-side MCP governance for direct active-memory writes and candidate promotion. Shared/public, private, high-sensitivity, and restricted writes now require explicit agent identity plus the matching `allow_*` capability flag.
+- Added deterministic prompt-injection and encoded-secret warnings to the privacy gate, including English and Chinese instruction-override patterns, Taiwan phone/ID warnings, high-entropy token warnings, and Base64 decoded sensitive-content checks.
+- Added in-process MCP tool rate limiting with configurable `VAULT_MCP_RATE_LIMIT_PER_MINUTE` and `VAULT_MCP_RATE_LIMIT_BURST` environment variables.
+
+### Safety
+
+- Legacy low-sensitivity project writes remain compatible, but broader multi-Agent writes must now be explicit.
+- Rate limiting returns a structured `rate_limited` payload with retry guidance instead of exposing internal errors.
+- Prompt-injection findings are warnings, not automatic deletion; they keep candidate-first review flows intact while making risky memory visible.
+
 ## [0.6.107] - 2026-06-25
 
 ### Added

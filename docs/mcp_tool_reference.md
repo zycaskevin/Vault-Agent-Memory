@@ -493,6 +493,12 @@ Use these only in operator or scheduled maintenance sessions.
 manual operator sessions. Autonomous agents should use `vault_memory_propose`
 instead.
 
+Write-side governance is explicit. Low-sensitivity `project` writes remain
+compatible, but `shared`/`public`, `private`, `high`, and `restricted` writes
+require a calling `agent_id` and the matching `allow_shared`, `allow_private`,
+`allow_high_sensitivity`, or `allow_restricted` flag. Do not grant those flags
+to normal autonomous sessions unless the user has approved that scope.
+
 ## Common Mistakes
 
 | Mistake | Better Pattern |

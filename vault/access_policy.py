@@ -1,4 +1,4 @@
-"""Read-side governance filters for multi-agent Vault access."""
+"""Governance filters for multi-agent Vault access."""
 
 from __future__ import annotations
 
@@ -101,3 +101,71 @@ def filter_readable_memories(rows: list[dict[str, Any]], policy: ReadPolicy) -> 
     if not policy.active:
         return rows
     return [row for row in rows if can_read_memory(row, policy)]
+
+
+@dataclass(frozen=True)
+class WritePolicy:
+    agent_id: str = ""
+    allow_shared: bool = False
+    allow_private: bool = False
+    allow_high_sensitivity: bool = False
+    allow_restricted: bool = False
+
+
+def normalize_write_policy(
+    *,
+    agent_id: Any = "",
+    allow_shared: Any = False,
+    allow_private: Any = False,
+    allow_high_sensitivity: Any = False,
+    allow_restricted: Any = False,
+) -> WritePolicy:
+    return WritePolicy(
+        agent_id=_normalize_agent(agent_id),
+        allow_shared=bool(allow_shared),
+        allow_private=bool(allow_private),
+        allow_high_sensitivity=bool(allow_high_sensitivity),
+        allow_restricted=bool(allow_restricted),
+    )
+
+
+def can_write_memory(metadata: dict[str, Any], policy: WritePolicy) -> tuple[bool, str]:
+    """Return whether an agent can write/promote memory with this metadata.
+
+    Local CLI paths remain trusted. MCP callers that do not provide an agent_id
+    can still create low-sensitivity project memories for backwards
+    compatibility, but broader scopes and sensitive memories require explicit
+    identity and capability flags.
+    """
+    scope = str(metadata.get("scope") or "project").strip().lower()
+    sensitivity = str(metadata.get("sensitivity") or "low").strip().lower()
+    owner_agent = _normalize_agent(metadata.get("owner_agent"))
+    allowed_agents = _parse_allowed_agents(metadata.get("allowed_agents"))
+    agent = policy.agent_id
+
+    if sensitivity == "restricted":
+        if not agent:
+            return False, "restricted writes require agent_id"
+        if not policy.allow_restricted:
+            return False, "restricted writes require allow_restricted=true"
+        if owner_agent and agent != owner_agent and agent not in allowed_agents:
+            return False, "restricted writes require owner or allowed agent"
+
+    if sensitivity == "high":
+        if not agent:
+            return False, "high-sensitivity writes require agent_id"
+        if not policy.allow_high_sensitivity:
+            return False, "high-sensitivity writes require allow_high_sensitivity=true"
+
+    if scope == "private":
+        if not agent:
+            return False, "private writes require agent_id"
+        if not policy.allow_private:
+            return False, "private writes require allow_private=true"
+        if owner_agent and agent != owner_agent and agent not in allowed_agents:
+            return False, "private writes require owner or allowed agent"
+
+    if scope in {"shared", "public"} and not policy.allow_shared:
+        return False, "shared/public writes require allow_shared=true"
+
+    return True, ""

@@ -8,6 +8,7 @@ import sqlite3
 import sys
 import os
 import re
+import time
 from pathlib import Path
 
 try:
@@ -20,7 +21,7 @@ VAULT_DIR = str(Path(__file__).parent.parent)
 if VAULT_DIR not in sys.path:
     sys.path.insert(0, VAULT_DIR)
 
-from vault.access_policy import can_read_memory, normalize_read_policy
+from vault.access_policy import can_read_memory, can_write_memory, normalize_read_policy, normalize_write_policy
 
 DB_PATH = os.path.join(
     os.environ.get("VAULT_PATH") or VAULT_DIR,
@@ -61,6 +62,9 @@ MCP_ALLOWED_SEARCH_FIELDS = {
     "content_preview",
 }
 MCP_MEMORY_CANDIDATE_MAX_LIMIT = 100
+MCP_RATE_LIMIT_PER_MINUTE = 300
+MCP_RATE_LIMIT_BURST = 60
+_RATE_BUCKETS: dict[tuple[str, str], tuple[float, float]] = {}
 
 
 def _set_project_dir(project_dir: str | os.PathLike[str]) -> None:
@@ -70,9 +74,92 @@ def _set_project_dir(project_dir: str | os.PathLike[str]) -> None:
     DB_PATH = str(project_path / "vault.db")
 
 
+def _reset_rate_limiter() -> None:
+    """Reset in-memory MCP rate buckets. Intended for tests."""
+    _RATE_BUCKETS.clear()
+
+
 def _canonical_tool_name(name: str) -> str:
     """Return the public Vault MCP tool name unchanged."""
     return name
+
+
+def _rate_limit_config() -> tuple[int, int]:
+    try:
+        per_minute = int(os.environ.get("VAULT_MCP_RATE_LIMIT_PER_MINUTE", MCP_RATE_LIMIT_PER_MINUTE))
+    except ValueError:
+        per_minute = MCP_RATE_LIMIT_PER_MINUTE
+    try:
+        burst = int(os.environ.get("VAULT_MCP_RATE_LIMIT_BURST", MCP_RATE_LIMIT_BURST))
+    except ValueError:
+        burst = MCP_RATE_LIMIT_BURST
+    return max(0, per_minute), max(1, burst)
+
+
+def _check_mcp_rate_limit(tool_name: str, arguments: dict) -> dict | None:
+    per_minute, burst = _rate_limit_config()
+    if per_minute <= 0:
+        return None
+    agent_id = str(arguments.get("agent_id") or arguments.get("owner_agent") or "anonymous").strip().lower()
+    key = (agent_id or "anonymous", tool_name)
+    now = time.monotonic()
+    tokens, updated_at = _RATE_BUCKETS.get(key, (float(burst), now))
+    refill_per_second = per_minute / 60.0
+    tokens = min(float(burst), tokens + max(0.0, now - updated_at) * refill_per_second)
+    if tokens < 1.0:
+        retry_after = max(1, int((1.0 - tokens) / refill_per_second) if refill_per_second else 60)
+        _RATE_BUCKETS[key] = (tokens, now)
+        return {
+            "error": "rate_limited",
+            "failure_mode": "mcp_rate_limited",
+            "message": f"MCP tool rate limit exceeded for {tool_name}. Retry after about {retry_after}s.",
+            "retry_after_seconds": retry_after,
+            "tool": tool_name,
+            "agent_id": agent_id,
+            "next_action": {
+                "tool": tool_name,
+                "arguments": arguments or {},
+                "instruction": "Retry later or lower the calling cadence for this agent/tool.",
+            },
+        }
+    _RATE_BUCKETS[key] = (tokens - 1.0, now)
+    return None
+
+
+def _write_policy_from_arguments(arguments: dict) -> object:
+    return normalize_write_policy(
+        agent_id=arguments.get("agent_id") or arguments.get("owner_agent") or "",
+        allow_shared=bool(arguments.get("allow_shared", False)),
+        allow_private=bool(arguments.get("allow_private", False)),
+        allow_high_sensitivity=bool(arguments.get("allow_high_sensitivity", False)),
+        allow_restricted=bool(arguments.get("allow_restricted", False)),
+    )
+
+
+def _write_denied_payload(operation: str, reason: str, metadata: dict) -> dict:
+    return {
+        "success": False,
+        "error": "write_access_denied",
+        "failure_mode": "write_access_denied",
+        "operation": operation,
+        "message": reason,
+        "scope": str(metadata.get("scope") or "project"),
+        "sensitivity": str(metadata.get("sensitivity") or "low"),
+        "next_action": {
+            "tool": operation,
+            "instruction": (
+                "Use candidate review for normal writes, or pass an agent_id plus the explicit "
+                "allow_* flag only after the user has approved that scope/sensitivity."
+            ),
+        },
+    }
+
+
+def _check_write_allowed(operation: str, arguments: dict, metadata: dict) -> dict | None:
+    allowed, reason = can_write_memory(metadata, _write_policy_from_arguments(arguments))
+    if allowed:
+        return None
+    return _write_denied_payload(operation, reason, metadata)
 
 
 def _get_db():
@@ -1592,6 +1679,11 @@ TOOLS = [
                 "allowed_agents": {"type": "array", "items": {"type": "string"}, "default": []},
                 "memory_type": {"type": "string", "default": "knowledge"},
                 "expires_at": {"type": "string", "default": ""},
+                "agent_id": {"type": "string", "description": "Calling agent identity for write-side governance.", "default": ""},
+                "allow_shared": {"type": "boolean", "description": "Required for shared/public writes.", "default": False},
+                "allow_private": {"type": "boolean", "description": "Required for private writes.", "default": False},
+                "allow_high_sensitivity": {"type": "boolean", "description": "Required for high-sensitivity writes.", "default": False},
+                "allow_restricted": {"type": "boolean", "description": "Required for restricted writes.", "default": False},
             },
             "required": ["title", "content"]
         }
@@ -1616,6 +1708,11 @@ TOOLS = [
                 "allowed_agents": {"type": "array", "items": {"type": "string"}, "default": []},
                 "memory_type": {"type": "string", "default": "knowledge"},
                 "expires_at": {"type": "string", "default": ""},
+                "agent_id": {"type": "string", "description": "Calling agent identity for write-side governance.", "default": ""},
+                "allow_shared": {"type": "boolean", "description": "Required for shared/public candidates.", "default": False},
+                "allow_private": {"type": "boolean", "description": "Required for private candidates.", "default": False},
+                "allow_high_sensitivity": {"type": "boolean", "description": "Required for high-sensitivity candidates.", "default": False},
+                "allow_restricted": {"type": "boolean", "description": "Required for restricted candidates.", "default": False},
                 "reason": {"type": "string", "description": "Why this is worth remembering"},
                 "mode": {"type": "string", "enum": ["candidate", "promote_if_safe"], "default": "candidate"},
             },
@@ -1632,6 +1729,11 @@ TOOLS = [
                 "confirm": {"type": "boolean", "default": True},
                 "compile": {"type": "boolean", "default": True},
                 "build_map": {"type": "boolean", "default": True},
+                "agent_id": {"type": "string", "description": "Calling agent identity for write-side governance.", "default": ""},
+                "allow_shared": {"type": "boolean", "description": "Required when the candidate writes shared/public memory.", "default": False},
+                "allow_private": {"type": "boolean", "description": "Required when the candidate writes private memory.", "default": False},
+                "allow_high_sensitivity": {"type": "boolean", "description": "Required when the candidate writes high-sensitivity memory.", "default": False},
+                "allow_restricted": {"type": "boolean", "description": "Required when the candidate writes restricted memory.", "default": False},
             },
             "required": ["candidate_id", "confirm"]
         }
@@ -2357,6 +2459,10 @@ def _set_active_tools(tool_profile: str = "full", tools: str | None = None) -> N
 def handle_tool_call(name: str, arguments: dict) -> dict:
     """處理 MCP tool call，回傳結果。"""
     name = _canonical_tool_name(name)
+    arguments = arguments or {}
+    rate_limited = _check_mcp_rate_limit(name, arguments)
+    if rate_limited is not None:
+        return {"result": json.dumps(rate_limited, ensure_ascii=False, indent=2)}
     try:
         if name == "vault_search":
             compact = bool(arguments.get("compact", True))
@@ -2456,6 +2562,18 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
             from vault.docmap import build_document_map_for_entry
             from vault.privacy import scan_privacy
 
+            write_denied = _check_write_allowed(
+                "vault_add",
+                arguments,
+                {
+                    "scope": arguments.get("scope", "project"),
+                    "sensitivity": arguments.get("sensitivity", "low"),
+                    "owner_agent": arguments.get("owner_agent", ""),
+                    "allowed_agents": arguments.get("allowed_agents", []),
+                },
+            )
+            if write_denied is not None:
+                return {"result": json.dumps(write_denied, ensure_ascii=False, indent=2)}
             privacy = scan_privacy(
                 "\n".join(
                     str(arguments.get(field, ""))
@@ -2507,6 +2625,18 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
         elif name == "vault_memory_propose":
             from vault.memory import propose_memory
 
+            write_denied = _check_write_allowed(
+                "vault_memory_propose",
+                arguments,
+                {
+                    "scope": arguments.get("scope", "project"),
+                    "sensitivity": arguments.get("sensitivity", "low"),
+                    "owner_agent": arguments.get("owner_agent", ""),
+                    "allowed_agents": arguments.get("allowed_agents", []),
+                },
+            )
+            if write_denied is not None:
+                return {"result": json.dumps(write_denied, ensure_ascii=False, indent=2)}
             db = _get_db()
             try:
                 payload = propose_memory(
@@ -2538,9 +2668,24 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
             project_dir = str(Path(DB_PATH).resolve().parent)
             db = _get_db()
             try:
+                candidate_id = arguments.get("candidate_id", "")
+                candidate = db.get_memory_candidate(candidate_id)
+                if candidate:
+                    write_denied = _check_write_allowed(
+                        "vault_memory_promote",
+                        arguments,
+                        {
+                            "scope": candidate.get("scope", "project"),
+                            "sensitivity": candidate.get("sensitivity", "low"),
+                            "owner_agent": candidate.get("owner_agent", ""),
+                            "allowed_agents": candidate.get("allowed_agents", []),
+                        },
+                    )
+                    if write_denied is not None:
+                        return {"result": json.dumps(write_denied, ensure_ascii=False, indent=2)}
                 payload = promote_candidate(
                     db,
-                    arguments.get("candidate_id", ""),
+                    candidate_id,
                     confirm=bool(arguments.get("confirm", False)),
                     project_dir=project_dir,
                     compile=bool(arguments.get("compile", True)),

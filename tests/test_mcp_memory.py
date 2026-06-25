@@ -821,6 +821,77 @@ def test_mcp_vault_add_warns_and_builds_document_map(tmp_path):
         assert nodes >= 1
 
 
+def test_mcp_vault_add_requires_explicit_shared_write_permission(tmp_path):
+    _set_project_dir(tmp_path)
+    denied = _payload(handle_tool_call(
+        "vault_add",
+        {
+            "title": "Shared direct write",
+            "content": "Shared writes need an explicit agent write grant.",
+            "scope": "shared",
+            "sensitivity": "low",
+        },
+    ))
+    assert denied["success"] is False
+    assert denied["error"] == "write_access_denied"
+    assert "allow_shared" in denied["message"]
+
+    allowed = _payload(handle_tool_call(
+        "vault_add",
+        {
+            "title": "Shared direct write",
+            "content": "Shared writes need an explicit agent write grant.",
+            "scope": "shared",
+            "sensitivity": "low",
+            "agent_id": "work-agent",
+            "owner_agent": "work-agent",
+            "allow_shared": True,
+        },
+    ))
+    assert allowed["success"] is True
+    with VaultDB(tmp_path / "vault.db") as db:
+        assert db.conn.execute("SELECT COUNT(*) AS n FROM knowledge").fetchone()["n"] == 1
+
+
+def test_mcp_memory_promote_requires_shared_write_permission(tmp_path):
+    _set_project_dir(tmp_path)
+    proposed = _payload(handle_tool_call(
+        "vault_memory_propose",
+        {
+            "title": "Shared promote guard",
+            "content": "Decision: shared memory promotion needs an explicit write grant.",
+            "scope": "shared",
+            "sensitivity": "low",
+            "agent_id": "work-agent",
+            "owner_agent": "work-agent",
+            "allow_shared": True,
+        },
+    ))
+    assert proposed["status"] == "candidate_created"
+
+    denied = _payload(handle_tool_call(
+        "vault_memory_promote",
+        {
+            "candidate_id": proposed["candidate_id"],
+            "confirm": True,
+            "agent_id": "work-agent",
+        },
+    ))
+    assert denied["success"] is False
+    assert denied["error"] == "write_access_denied"
+
+    promoted = _payload(handle_tool_call(
+        "vault_memory_promote",
+        {
+            "candidate_id": proposed["candidate_id"],
+            "confirm": True,
+            "agent_id": "work-agent",
+            "allow_shared": True,
+        },
+    ))
+    assert promoted["status"] == "promoted"
+
+
 def test_mcp_vault_add_blocks_privacy_fail_content(tmp_path):
     _set_project_dir(tmp_path)
     key_name = "api" + "_key"
@@ -836,6 +907,24 @@ def test_mcp_vault_add_blocks_privacy_fail_content(tmp_path):
     assert payload["error"] == "privacy_gate_failed"
     with VaultDB(tmp_path / "vault.db") as db:
         assert db.conn.execute("SELECT COUNT(*) AS n FROM knowledge").fetchone()["n"] == 0
+
+
+def test_mcp_rate_limiter_returns_retry_payload(tmp_path, monkeypatch):
+    from vault import mcp as vault_mcp
+
+    _set_project_dir(tmp_path)
+    vault_mcp._reset_rate_limiter()
+    monkeypatch.setenv("VAULT_MCP_RATE_LIMIT_PER_MINUTE", "1")
+    monkeypatch.setenv("VAULT_MCP_RATE_LIMIT_BURST", "1")
+
+    first = _payload(handle_tool_call("vault_stats", {"agent_id": "rate-agent"}))
+    second = _payload(handle_tool_call("vault_stats", {"agent_id": "rate-agent"}))
+
+    assert "knowledge_count" in first
+    assert second["error"] == "rate_limited"
+    assert second["failure_mode"] == "mcp_rate_limited"
+    assert second["retry_after_seconds"] >= 1
+    vault_mcp._reset_rate_limiter()
 
 
 def test_mcp_vault_add_blocks_privacy_fail_metadata(tmp_path):

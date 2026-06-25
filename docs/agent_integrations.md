@@ -208,6 +208,11 @@ vault or use its own isolated vault.
 
 For shared vaults, keep direct writes restricted. Agents should use
 `vault_memory_propose` and wait for human/operator review before promotion.
+If an operator intentionally allows an MCP write into `shared`/`public`,
+`private`, `high`, or `restricted` memory, pass the calling `agent_id` plus the
+matching `allow_shared`, `allow_private`, `allow_high_sensitivity`, or
+`allow_restricted` flag. Treat those flags like write capabilities, not normal
+retrieval settings.
 
 ## Generic MCP Config
 

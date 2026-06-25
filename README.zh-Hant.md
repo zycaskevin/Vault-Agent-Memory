@@ -58,7 +58,7 @@ Vault-for-LLM 可能不是第一個該拿起來的工具。
 最推薦的方式，是直接把這段交給能執行本機指令的 Agent：
 
 ```text
-幫這個專案安裝 Vault-for-LLM。使用 vault-for-llm[mcp]==0.6.107。
+幫這個專案安裝 Vault-for-LLM。使用 vault-for-llm[mcp]==0.6.108。
 先問我要 shared、private、domain-specific 還是 temporary vault。
 詢問穩定的 project directory，並為長期任務產生 stable venv script。
 逐項詢問 MCP、semantic search、Supabase、Obsidian import、Headroom 壓縮、
@@ -71,7 +71,7 @@ Agent 會使用安裝精靈：
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.6.107"
+pip install "vault-for-llm[mcp]==0.6.108"
 
 vault setup-agent
 ```
@@ -133,7 +133,7 @@ vault setup-agent \
 ### 手動快速開始
 
 ```bash
-pip install "vault-for-llm[mcp]==0.6.107"
+pip install "vault-for-llm[mcp]==0.6.108"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -207,6 +207,12 @@ Vault 使用 L0-L3 表示記憶深度：
 - `allowed_agents`
 - `memory_type`
 - `expires_at`
+
+MCP 寫入也會走同一套治理邊界。低敏感度的 `project` 寫入維持相容；
+但 `shared` / `public`、`private`、`high`、`restricted` 寫入需要呼叫端提供
+`agent_id`，並明確打開對應的 `allow_shared`、`allow_private`、
+`allow_high_sensitivity` 或 `allow_restricted`。這樣多個 runtime 接到同一個
+shared vault 時，不會變成誰都可以直接改正式記憶。
 
 搜尋會記錄輕量使用統計（`access_count`、`citation_count`、
 `last_accessed_at`）。`vault automation brief` 會把這些訊號整理成可解釋的
@@ -414,7 +420,7 @@ SQLite 仍然是 source of truth。Supabase 是可選的共享層。
 Remote reader 應該直接把搜尋結果的 `id` 傳給 map/read；它可能是整數，也可能是 Supabase UUID。
 
 ```bash
-pip install "vault-for-llm[supabase]==0.6.107"
+pip install "vault-for-llm[supabase]==0.6.108"
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 
