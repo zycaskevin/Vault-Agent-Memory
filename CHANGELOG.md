@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [0.6.117] - 2026-06-25
+
+### Changed
+
+- Split automation feedback-learning policy, learning-health cards, and learned priority matching helpers into `vault.automation_learning`.
+- Kept `vault.automation` behavior unchanged while reducing the review surface of the daily automation workflow module.
+- Lowered the `vault/automation.py` module-size baseline after the split.
+
+### Safety
+
+- Automation learning remains a bounded ranking/review hint only; the split does not change auto-promote, archive, cold-store, candidate, or active-memory mutation policy.
+
 ## [0.6.116] - 2026-06-25
 
 ### Changed
