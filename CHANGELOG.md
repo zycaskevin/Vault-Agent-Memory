@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [0.6.112] - 2026-06-25
+
+### Changed
+
+- Split automation report, handoff, and Markdown artifact helpers into `vault.automation_reports`.
+- Kept public automation CLI and MCP behavior unchanged while reducing the review surface of `vault/automation.py`.
+- Lowered the `vault/automation.py` module-size baseline after the split.
+
+### Safety
+
+- Automation lifecycle behavior, candidate promotion policy, report path boundaries, and read-only handoff surfaces are unchanged.
+
 ## [0.6.111] - 2026-06-25
 
 ### Changed
