@@ -16,6 +16,21 @@ ready to become a new release.
 | Supabase safety | Remote-reader, RLS/RPC, and multi-Agent access examples are tested with least-privilege keys; remote map/read stays on guarded RPCs instead of direct table reads. |
 | Install smoke matrix | Source checkout and clean wheel install both validate CLI, MCP stdio, setup-agent, automation, migration, and key integrations. |
 
+## Current Stabilization Evidence
+
+This batch should be treated as stabilization work, not as a reason to publish a
+new release by itself.
+
+| Area | Evidence |
+| --- | --- |
+| Large-module paydown | PR #214 split runtime-template install and startup-contract doctor helpers into `vault.agent_setup_runtime`, with a decision record for the new boundary. Remaining near-limit modules stay under the module-size gate and should be split by ownership, not by line count alone. |
+| README cleanup | README now keeps the daily path short and points detailed MCP/profile guidance to focused docs. |
+| MCP profile guidance | PR #213 recommends `core` for daily agents, documents `review`, `remote`, `maintenance`, and `full`, and records the tool-schema/context tradeoff. |
+| Automation review UX | PR #210 deduped automation brief review cards while keeping raw candidate content hidden by default. |
+| Temporal memory | `tests/test_memory_pipeline_temporal_reflection.py` and `tests/test_mcp_memory.py::test_mcp_memory_pipeline_temporal_and_reflection` cover pipeline, temporal status/list, search state marking, and reflection surfaces. |
+| Supabase safety | PR #215 verifies remote search/map/read stay on guarded Supabase RPCs and do not regress to direct `vault_knowledge*` table reads. |
+| Install smoke matrix | PR #212 added `scripts/install_smoke_matrix.py`; source smoke validates CLI and actual core-profile MCP calls. |
+
 ## Required Local Gates
 
 Run these before opening a release PR or tag:
