@@ -8,14 +8,12 @@ Vault-for-LLM — SQLite + sqlite-vec 資料庫抽象層。
 - 支援降級：沒裝 sqlite-vec 時退回純關鍵字
 """
 
-import hashlib
 import sqlite3
 import sys
 from pathlib import Path
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional, Any
 
-from .diagnostics import embedding_stats
 from .db_fts import delete_fts_row as db_fts_delete_fts_row
 from .db_fts import init_fts_table as db_fts_init_fts_table
 from .db_fts import quote_fts_token as db_fts_quote_fts_token
@@ -53,6 +51,23 @@ from .db_memory import list_memory_feedback as db_memory_list_memory_feedback
 from .db_memory import memory_feedback_summary as db_memory_memory_feedback_summary
 from .db_memory import record_memory_feedback as db_memory_record_memory_feedback
 from .db_memory import update_memory_candidate as db_memory_update_memory_candidate
+from .db_maintenance import add_lint_result as db_maintenance_add_lint_result
+from .db_maintenance import get_config as db_maintenance_get_config
+from .db_maintenance import get_lint_results as db_maintenance_get_lint_results
+from .db_maintenance import set_config as db_maintenance_set_config
+from .db_maintenance import stats as db_maintenance_stats
+from .db_maintenance import update_convergence as db_maintenance_update_convergence
+from .db_maintenance import update_freshness as db_maintenance_update_freshness
+from .db_migrations import applied_migrations as db_migrations_applied_migrations
+from .db_migrations import backfill_claim_uids as db_migrations_backfill_claim_uids
+from .db_migrations import config_schema_version as db_migrations_config_schema_version
+from .db_migrations import ensure_schema_migrations_table as db_migrations_ensure_schema_migrations_table
+from .db_migrations import ensure_table_columns as db_migrations_ensure_table_columns
+from .db_migrations import migrate as db_migrations_migrate
+from .db_migrations import record_migrations_through as db_migrations_record_migrations_through
+from .db_migrations import schema_status as db_migrations_schema_status
+from .db_migrations import table_columns as db_migrations_table_columns
+from .db_migrations import table_names as db_migrations_table_names
 from .db_schema import (
     KNOWLEDGE_UPDATE_COLUMNS as DB_KNOWLEDGE_UPDATE_COLUMNS,
     MEMORY_CANDIDATE_UPDATE_COLUMNS as DB_MEMORY_CANDIDATE_UPDATE_COLUMNS,
@@ -574,135 +589,51 @@ class VaultDB:
 
     def _ensure_schema_migrations_table(self) -> None:
         """Create explicit schema migration metadata table."""
-        self.conn.execute("""
-            CREATE TABLE IF NOT EXISTS schema_migrations (
-                version    INTEGER PRIMARY KEY,
-                name       TEXT NOT NULL,
-                applied_at TEXT NOT NULL
-            )
-        """)
+        db_migrations_ensure_schema_migrations_table(self.conn)
 
     def _record_migrations_through(self, target_version: int) -> None:
         """Record known migrations up to target_version without duplicating rows."""
-        now = datetime.now(timezone.utc).isoformat()
-        for version in range(1, target_version + 1):
-            name = self.MIGRATIONS.get(version, f"schema_v{version}")
-            self.conn.execute(
-                """INSERT OR IGNORE INTO schema_migrations(version, name, applied_at)
-                   VALUES(?, ?, ?)""",
-                (version, name, now),
-            )
+        db_migrations_record_migrations_through(self.conn, target_version, self.MIGRATIONS)
 
     def applied_migrations(self) -> list[dict]:
         """Return applied schema migration metadata rows."""
-        self._ensure_schema_migrations_table()
-        rows = self.conn.execute(
-            "SELECT version, name, applied_at FROM schema_migrations ORDER BY version"
-        ).fetchall()
-        return [dict(row) for row in rows]
+        return db_migrations_applied_migrations(self.conn)
 
     def _table_names(self) -> set[str]:
-        rows = self.conn.execute(
-            """SELECT name FROM sqlite_master
-               WHERE type IN ('table', 'virtual table') AND name NOT LIKE 'sqlite_%'"""
-        ).fetchall()
-        return {row["name"] for row in rows}
+        return db_migrations_table_names(self.conn)
 
     def _config_schema_version(self) -> int:
-        try:
-            value = self._get_config("schema_version", "0")
-            return int(value or 0)
-        except (TypeError, ValueError, sqlite3.OperationalError):
-            return 0
+        return db_migrations_config_schema_version(self.conn)
 
     def schema_status(self) -> dict:
         """Return a JSON-safe schema status summary for operators and tests."""
-        self._ensure_schema_migrations_table()
-        config_version = self._config_schema_version()
-        user_version = int(self.conn.execute("PRAGMA user_version").fetchone()[0] or 0)
-        migration_versions = [int(row["version"]) for row in self.applied_migrations()]
-        current_version = max([config_version, user_version, *migration_versions, 0])
-        tables = self._table_names()
-        required_tables = {
-            "config",
-            "knowledge",
-            "schema_migrations",
-            "knowledge_nodes",
-            "knowledge_claims",
-            "semantic_vectors",
-            "embedding_cache",
-            "memory_candidates",
-            "memory_feedback_events",
-            "content_log",
-            "skills",
-            "lint_cache",
-            "edges",
-            "entities",
-            "entity_knowledge",
-        }
-        missing = sorted(required_tables - tables)
-        return {
-            "current_version": current_version,
-            "target_version": self.SCHEMA_VERSION,
-            "config_schema_version": config_version,
-            "pragma_user_version": user_version,
-            "needs_migration": current_version < self.SCHEMA_VERSION or bool(missing),
-            "applied_migrations": self.applied_migrations(),
-            "db_path": str(self.db_path),
-            "table_count": len(tables),
-            "tables_present": sorted(tables & required_tables),
-            "tables_missing": missing,
-        }
+        return db_migrations_schema_status(
+            self.conn,
+            db_path=self.db_path,
+            schema_version=self.SCHEMA_VERSION,
+        )
 
     def migrate(self, target_version: int | None = None) -> dict:
         """Run idempotent schema migrations and return a JSON-safe summary."""
-        target = self.SCHEMA_VERSION if target_version is None else int(target_version)
-        if target != self.SCHEMA_VERSION:
-            raise ValueError(f"unsupported target schema version: {target}")
-        before = self.schema_status()
-        before_versions = {row["version"] for row in before["applied_migrations"]}
-        self._init_tables()
-        after = self.schema_status()
-        after_versions = {row["version"] for row in after["applied_migrations"]}
-        return {
-            "ok": not after["needs_migration"],
-            "db_path": str(self.db_path),
-            "from_version": before["current_version"],
-            "to_version": after["current_version"],
-            "target_version": self.SCHEMA_VERSION,
-            "applied_versions": sorted(after_versions - before_versions),
-            "before": before,
-            "after": after,
-        }
+        return db_migrations_migrate(
+            self.conn,
+            db_path=self.db_path,
+            schema_version=self.SCHEMA_VERSION,
+            target_version=target_version,
+            init_tables=self._init_tables,
+        )
 
     def _table_columns(self, table: str) -> set[str]:
         """Return existing column names for a SQLite table."""
-        return {row["name"] for row in self.conn.execute(f"PRAGMA table_info({table})")}
+        return db_migrations_table_columns(self.conn, table)
 
     def _ensure_table_columns(self, table: str, columns: dict[str, str]) -> None:
         """Add missing columns to an existing table without bumping schema_version."""
-        existing_cols = self._table_columns(table)
-        for column_name, column_def in columns.items():
-            if column_name not in existing_cols:
-                self.conn.execute(f"ALTER TABLE {table} ADD COLUMN {column_name} {column_def}")
+        db_migrations_ensure_table_columns(self.conn, table, columns)
 
     def _backfill_claim_uids(self) -> None:
         """Populate canonical claim_uid for rows migrated from the pre-canonical table."""
-        rows = self.conn.execute(
-            """SELECT id, claim, line_start, line_end
-               FROM knowledge_claims
-               WHERE claim_uid IS NULL OR claim_uid=''"""
-        ).fetchall()
-        for row in rows:
-            line_start = int(row["line_start"] or 0)
-            line_end = int(row["line_end"] or line_start)
-            claim = row["claim"] or ""
-            digest = hashlib.sha256(f"{line_start}:{line_end}:{claim}".encode()).hexdigest()[:16]
-            claim_uid = f"c-{line_start}-{digest}"
-            self.conn.execute(
-                "UPDATE knowledge_claims SET claim_uid=? WHERE id=?",
-                (claim_uid, row["id"]),
-            )
+        db_migrations_backfill_claim_uids(self.conn)
 
     def _init_fts_table(self) -> None:
         """Create and backfill the optional FTS5 keyword index."""
@@ -750,20 +681,13 @@ class VaultDB:
     # ── Config ─────────────────────────────────────────────
 
     def set_config(self, key: str, value: str):
-        self.conn.execute(
-            "INSERT OR REPLACE INTO config(key, value) VALUES(?, ?)",
-            (key, value),
-        )
-        self.conn.commit()
+        db_maintenance_set_config(self.conn, key, value)
 
     def get_config(self, key: str, default: str = "") -> str:
         return self._get_config(key, default)
 
     def _get_config(self, key: str, default: str = "") -> str:
-        row = self.conn.execute(
-            "SELECT value FROM config WHERE key=?", (key,)
-        ).fetchone()
-        return row["value"] if row else default
+        return db_maintenance_get_config(self.conn, key, default)
 
     # ── 知識 CRUD ──────────────────────────────────────────
 
@@ -1051,18 +975,10 @@ class VaultDB:
     # ── Lint 快取 ───────────────────────────────────────────
 
     def add_lint_result(self, knowledge_id: int, check_type: str, result: str):
-        now = datetime.now(timezone.utc).isoformat()
-        self.conn.execute(
-            "INSERT INTO lint_cache(knowledge_id, check_type, result, checked_at) VALUES(?,?,?,?)",
-            (knowledge_id, check_type, result, now),
-        )
-        self.conn.commit()
+        db_maintenance_add_lint_result(self.conn, knowledge_id, check_type, result)
 
     def get_lint_results(self, knowledge_id: int) -> list[dict]:
-        rows = self.conn.execute(
-            "SELECT * FROM lint_cache WHERE knowledge_id=?", (knowledge_id,)
-        ).fetchall()
-        return [dict(r) for r in rows]
+        return db_maintenance_get_lint_results(self.conn, knowledge_id)
 
     # ── 圖譜操作 ────────────────────────────────────────────
 
@@ -1150,23 +1066,11 @@ class VaultDB:
 
     def update_convergence(self, kid: int, status: str, score: float):
         """更新條目的收斂狀態。status: unknown/partial/complete, score: 0.0~1.0"""
-        now = datetime.now(timezone.utc).isoformat()
-        self.conn.execute(
-            "UPDATE knowledge SET convergence_status=?, convergence_score=?, "
-            "convergence_checked_at=? WHERE id=?",
-            (status, score, now, kid),
-        )
-        self.conn.commit()
+        db_maintenance_update_convergence(self.conn, kid, status, score)
 
     def update_freshness(self, kid: int, freshness: float, last_verified: str = ""):
         """更新條目的新鮮度。freshness: 0.0~1.0"""
-        if not last_verified:
-            last_verified = datetime.now(timezone.utc).isoformat()
-        self.conn.execute(
-            "UPDATE knowledge SET freshness=?, last_verified=? WHERE id=?",
-            (freshness, last_verified, kid),
-        )
-        self.conn.commit()
+        db_maintenance_update_freshness(self.conn, kid, freshness, last_verified)
 
     # ── 技能 CRUD ──────────────────────────────────────────
 
@@ -1251,53 +1155,10 @@ class VaultDB:
     # ── 統計 ────────────────────────────────────────────────
 
     def stats(self) -> dict:
-        k_count = self.conn.execute("SELECT COUNT(*) FROM knowledge").fetchone()[0]
-        vector_stats = embedding_stats(self.conn, vec_available=self._vec_available)
-        # 圖譜統計
-        edge_count = self.conn.execute("SELECT COUNT(*) FROM edges").fetchone()[0]
-        entity_count = self.conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
-
-        # 收斂統計
-        conv_stats = {}
-        try:
-            for row in self.conn.execute(
-                "SELECT convergence_status, COUNT(*) FROM knowledge GROUP BY convergence_status"
-            ).fetchall():
-                conv_stats[row[0]] = row[1]
-        except Exception:
-            pass
-
-        # 新鮮度統計
-        avg_freshness = 0.0
-        try:
-            row = self.conn.execute("SELECT AVG(freshness) FROM knowledge").fetchone()
-            avg_freshness = round(row[0], 3) if row[0] else 0.0
-        except Exception:
-            pass
-
-        # 技能統計
-        skill_count = 0
-        try:
-            skill_count = self.conn.execute("SELECT COUNT(*) FROM skills").fetchone()[0]
-        except Exception:
-            pass
-        usage = self.usage_stats(limit=5)
-
-        return {
-            "knowledge_count": k_count,
-            "active_count": int(usage.get("status_counts", {}).get("active", 0)),
-            "archived_count": int(usage.get("status_counts", {}).get("archived", 0)),
-            "expired_active_count": int(usage.get("expired_active_count", 0)),
-            "total_accesses": int(usage.get("total_accesses", 0)),
-            "total_citations": int(usage.get("total_citations", 0)),
-            **vector_stats,
-            "edge_count": edge_count,
-            "entity_count": entity_count,
-            "skill_count": skill_count,
-            "vec_available": self._vec_available,
-            "vec_load_error": self._vec_load_error,
-            "db_path": str(self.db_path),
-            "db_size_mb": round(self.db_path.stat().st_size / 1024 / 1024, 2) if self.db_path.exists() else 0,
-            "convergence": conv_stats,
-            "avg_freshness": avg_freshness,
-        }
+        return db_maintenance_stats(
+            self.conn,
+            db_path=self.db_path,
+            vec_available=self._vec_available,
+            vec_load_error=self._vec_load_error,
+            usage_stats=self.usage_stats,
+        )
