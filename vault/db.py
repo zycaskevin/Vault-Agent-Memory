@@ -82,6 +82,7 @@ from .db_skills import list_skills as db_skills_list_skills
 from .db_skills import mark_skill_synced as db_skills_mark_skill_synced
 from .db_skills import search_skills as db_skills_search_skills
 from .db_skills import update_skill as db_skills_update_skill
+from .db_tasks import init_task_tables as db_tasks_init_task_tables
 from .db_vector import add_embedding as db_vector_add_embedding
 from .db_vector import init_vec_table as db_vector_init_vec_table
 from .db_vector import search_vector as db_vector_search_vector
@@ -478,6 +479,8 @@ class VaultDB:
         c.execute("CREATE INDEX IF NOT EXISTS idx_memory_feedback_source ON memory_feedback_events(source)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_memory_feedback_memory_type ON memory_feedback_events(memory_type)")
         c.execute("CREATE INDEX IF NOT EXISTS idx_memory_feedback_category ON memory_feedback_events(category)")
+
+        db_tasks_init_task_tables(c)
 
         c.commit()
 
