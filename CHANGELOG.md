@@ -6,6 +6,7 @@
 
 - Added a filterable local GUI document list with layer, category, and sensitivity filters, plus a compact `/api/documents` endpoint that does not return raw memory content.
 - Added a right-side GUI Document Map panel for section and claim navigation, with section clicks opening bounded evidence ranges.
+- Added a compact right-side GUI graph visualization with clickable linked-memory nodes.
 
 ### Changed
 
