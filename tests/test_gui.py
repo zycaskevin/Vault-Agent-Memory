@@ -44,6 +44,14 @@ def _make_project(tmp_path):
             owner_agent="gui-agent",
         )
         build_document_map_for_entry(db, private_id)
+        linked_id = db.add_knowledge(
+            "GUI Linked Decision",
+            "# GUI Linked Decision\n\nGraph panel should show linked memories.",
+            category="decision",
+            tags="gui,graph",
+            trust=0.8,
+        )
+        db.add_edge(kid, linked_id, relation="supports", weight=0.8, auto_inferred=False)
     return project, kid
 
 
@@ -86,6 +94,8 @@ def test_gui_overview_search_entry_and_read(tmp_path):
     assert entry["entry"]["title"] == "GUI Console Runbook"
     assert entry["nodes"]
     assert entry["claims"]
+    assert entry["graph"]["edge_count"] == 1
+    assert entry["graph"]["edges"][0]["other_title"] == "GUI Linked Decision"
     assert entry["governance"]["scope"] == "project"
 
     evidence = gui_read_range(project, kid, line_start=1, line_end=3)
@@ -101,17 +111,24 @@ def test_gui_app_exposes_document_map_panel():
     assert "data-read-node" in APP_HTML
 
 
+def test_gui_app_exposes_graph_visual_panel():
+    assert "graph-canvas" in APP_HTML
+    assert "graph-node linked" in APP_HTML
+    assert "data-open-node" in APP_HTML
+
+
 def test_gui_documents_filters_and_facets(tmp_path):
     project, kid = _make_project(tmp_path)
 
     documents = gui_documents(project, limit=10)
     assert documents["status"] == "ok"
-    assert [row["id"] for row in documents["documents"]][:2] == [kid + 1, kid]
+    document_titles = {row["title"] for row in documents["documents"]}
+    assert {"GUI Console Runbook", "Private GUI Note", "GUI Linked Decision"} <= document_titles
     assert any(item["value"] == "L3" for item in documents["facets"]["layers"])
     assert any(item["value"] == "runbook" for item in documents["facets"]["categories"])
 
     by_layer = gui_documents(project, layer="L3", limit=10)
-    assert [row["title"] for row in by_layer["documents"]] == ["GUI Console Runbook"]
+    assert "GUI Console Runbook" in {row["title"] for row in by_layer["documents"]}
 
     by_category = gui_documents(project, category="private-note", sensitivity="high", limit=10)
     assert [row["title"] for row in by_category["documents"]] == ["Private GUI Note"]

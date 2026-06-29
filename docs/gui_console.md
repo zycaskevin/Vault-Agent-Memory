@@ -36,6 +36,10 @@ sections and visible claims for the selected memory. Clicking a section opens
 that exact line range in the bounded evidence reader instead of loading the
 whole note.
 
+The Graph tab shows a compact local relationship map for the selected memory.
+The center node is the current memory; linked nodes around it can be clicked to
+open the related memory without leaving the console.
+
 ## API
 
 The local server exposes read-only JSON endpoints:
@@ -71,5 +75,7 @@ The GUI should make the automation loop easier to trust:
 - show the smallest human review surface first
 - keep bounded evidence more prominent than raw full-document dumps
 - let the right-side Map tab guide bounded reads before richer graph views
+- keep graph visualization compact and local before adding heavier canvas or
+  WebGL views
 - make temporal and governance metadata visible beside each memory
 - keep future write-capable flows explicit, audited, and rollback-friendly

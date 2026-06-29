@@ -127,6 +127,48 @@ APP_HTML = r"""<!doctype html>
     .map-node strong, .claim strong { display: block; font-size: 13px; }
     .map-node.level-2 { margin-left: 10px; width: calc(100% - 10px); }
     .map-node.level-3, .map-node.level-4, .map-node.level-5, .map-node.level-6 { margin-left: 20px; width: calc(100% - 20px); }
+    .graph-canvas {
+      position: relative;
+      min-height: 270px;
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(216,221,213,.45) 1px, transparent 1px),
+        linear-gradient(rgba(216,221,213,.45) 1px, transparent 1px),
+        #fbfbf8;
+      background-size: 32px 32px;
+      overflow: hidden;
+    }
+    .graph-link {
+      position: absolute;
+      height: 2px;
+      background: #a8b0b8;
+      transform-origin: 0 50%;
+      opacity: .75;
+    }
+    .graph-node {
+      position: absolute;
+      width: 112px;
+      min-height: 58px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      padding: 7px;
+      box-shadow: 0 2px 8px rgba(15, 23, 42, .08);
+      font-size: 12px;
+      text-align: left;
+      overflow-wrap: anywhere;
+    }
+    .graph-node.center {
+      border-color: var(--accent-2);
+      background: #eef2ff;
+      cursor: default;
+    }
+    .graph-node.linked { cursor: pointer; }
+    .graph-node.linked:hover { border-color: var(--accent); }
+    .graph-node small { display: block; color: var(--muted); margin-top: 4px; }
     .empty { padding: 30px 18px; color: var(--muted); text-align: center; }
     @media (max-width: 1040px) {
       .app { grid-template-columns: 280px 1fr; }
@@ -407,8 +449,13 @@ APP_HTML = r"""<!doctype html>
         return;
       }
       if (activeTab === "graph") {
-        $("sidePanel").innerHTML = `<div class="panel"><h3>${esc(currentEntry.entry.title)}</h3><div class="subtle">${esc(data.edge_count || 0)} linked edges</div></div>` +
-          (data.edges || []).map(edge => `<div class="kv"><span>${esc(edge.relation)}</span><strong>#${esc(edge.other_id)} ${esc(edge.other_title)}</strong></div>`).join("");
+        $("sidePanel").innerHTML = renderGraphPanel(currentEntry);
+        $("sidePanel").querySelectorAll("[data-open-node]").forEach(button => {
+          button.addEventListener("click", () => {
+            const id = Number(button.dataset.openNode || 0);
+            if (id) loadEntry(id);
+          });
+        });
         return;
       }
       $("sidePanel").innerHTML = Object.entries(data).map(([key, value]) => `
@@ -445,6 +492,57 @@ APP_HTML = r"""<!doctype html>
         <div class="map-list">${nodeHtml}</div>
         <h2>Claims</h2>
         <div class="map-list">${claimHtml}</div>
+      `;
+    }
+
+    function renderGraphPanel(entry) {
+      const graph = entry.graph || {};
+      const edges = (graph.edges || []).slice(0, 8).filter(edge => Number(edge.other_id || 0));
+      if (!edges.length) {
+        return `
+          <div class="panel">
+            <h3>${esc(entry.entry.title)}</h3>
+            <div class="subtle">No linked memories yet</div>
+          </div>
+          <div class="empty">Build or link the knowledge graph to see relationships here.</div>
+        `;
+      }
+      const center = { x: 132, y: 106 };
+      const radiusX = 102;
+      const radiusY = 82;
+      const nodeHtml = edges.map((edge, index) => {
+        const angle = (-Math.PI / 2) + (index * 2 * Math.PI / edges.length);
+        const x = Math.round(center.x + Math.cos(angle) * radiusX);
+        const y = Math.round(center.y + Math.sin(angle) * radiusY);
+        const dx = x - center.x;
+        const dy = y - center.y;
+        const length = Math.max(1, Math.round(Math.sqrt(dx * dx + dy * dy)));
+        const degrees = Math.round(Math.atan2(dy, dx) * 180 / Math.PI);
+        return `
+          <div class="graph-link" style="left:${center.x + 56}px;top:${center.y + 29}px;width:${length}px;transform:rotate(${degrees}deg)"></div>
+          <button class="graph-node linked" type="button" style="left:${x}px;top:${y}px" data-open-node="${esc(edge.other_id)}">
+            <strong>#${esc(edge.other_id)} ${esc(edge.other_title || "Linked memory")}</strong>
+            <small>${esc(edge.relation || "related")} · ${esc(edge.weight || 0)}</small>
+          </button>
+        `;
+      }).join("");
+      const listHtml = edges.map(edge => `
+        <div class="kv"><span>${esc(edge.relation || "related")}</span><strong>#${esc(edge.other_id)} ${esc(edge.other_title || "Linked memory")}</strong></div>
+      `).join("");
+      return `
+        <div class="panel">
+          <h3>${esc(entry.entry.title)}</h3>
+          <div class="subtle">${esc(graph.edge_count || edges.length)} linked edges</div>
+        </div>
+        <div class="graph-canvas">
+          ${nodeHtml}
+          <div class="graph-node center" style="left:${center.x}px;top:${center.y}px">
+            <strong>#${esc(entry.entry.id)} ${esc(entry.entry.title)}</strong>
+            <small>current memory</small>
+          </div>
+        </div>
+        <h2>Linked Memories</h2>
+        ${listHtml}
       `;
     }
 
