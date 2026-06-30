@@ -8,6 +8,7 @@
 - Added MCP Skill sync status and sync manifest tools so trusted external workers can sync by metadata/hash first and export bounded content only with explicit approval.
 - Added `vault_skill_mark_synced` for recording successful external Skill sync handoff.
 - Added a decision record documenting the Skill MCP write/sync boundary.
+- Added `vault guide` and an agent-first usage guide so humans see a small CLI surface while agents use MCP profiles and generated setup artifacts for the wider toolbox.
 
 ### Safety
 
