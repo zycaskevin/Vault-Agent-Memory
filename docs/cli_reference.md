@@ -1,9 +1,35 @@
 # CLI Reference
 
-This page lists the broader Vault-for-LLM CLI surface. Most agents should start
-with the daily loop in the README and only use these commands when needed.
+This page lists the broader Vault-for-LLM CLI surface. Most people should not
+memorize it. Start with the small human surface, then let agents and scheduled
+jobs use the wider toolbox.
 
-## Daily Workflow
+For the compact map, run:
+
+```bash
+vault guide
+vault guide --mode agent
+vault guide --mode maintenance
+```
+
+See also: [`docs/agent_first_usage.md`](agent_first_usage.md).
+
+## Minimal Human Surface
+
+| Intent | Command |
+|---|---|
+| Install or connect an agent | `vault setup-agent` |
+| See the small command map | `vault guide` |
+| Browse locally | `vault gui` |
+| Search memory | `vault search "query"` |
+| Propose memory safely | `vault remember "Title" --content "..." --reason "..."` |
+| Continue a task | `vault task start/update/handoff` |
+| Check health | `vault doctor` / `vault security doctor` |
+
+## Agent And Operator Workflow
+
+These commands are still useful, but they are mostly for agents, scripts,
+scheduled jobs, or explicit maintenance sessions.
 
 | Command | Purpose |
 |---|---|

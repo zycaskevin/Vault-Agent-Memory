@@ -14,6 +14,9 @@ The default path is agent-driven: ask your coding agent to install Vault, choose
 where the database should live, and run a small search/read/propose smoke test.
 Manual commands are still here, but they are no longer the main story.
 
+If the CLI feels large, run `vault guide`. It shows the small human surface and
+points agents toward the right MCP profile for the wider toolbox.
+
 ## Why It Exists
 
 Most agent failures are practical, not mysterious:
@@ -100,6 +103,13 @@ vault setup-agent
 - Codex, Claude Code, OpenClaw, and Hermes Agent startup templates
 - a runtime update playbook for multi-runtime machines
 - a hybrid shared/private vault layout manifest
+
+To see the small command map:
+
+```bash
+vault guide
+vault guide --mode agent
+```
 
 Check whether that generated startup pack is current:
 
@@ -582,6 +592,7 @@ Governance details: [docs/memory_governance.md](docs/memory_governance.md).
 | Headroom | optional compression after Vault has narrowed context |
 
 Start here: [docs/agent_integrations.md](docs/agent_integrations.md).
+Agent-first usage guide: [docs/agent_first_usage.md](docs/agent_first_usage.md).
 
 ## Optional Supabase Sharing
 

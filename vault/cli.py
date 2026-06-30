@@ -80,6 +80,7 @@ from .cli_flow import (
     cmd_update_status,
     cmd_usage,
 )
+from .cli_guide import cmd_guide as _cmd_guide_impl
 from .cli_map_remote import cmd_map, cmd_remote, _parse_map_line_range, _positive_int
 from .cli_okf import add_okf_parser, cmd_okf
 from .cli_quality import (
@@ -137,6 +138,11 @@ def cmd_security(args):
     print(f"Next: {payload['next_action']}")
 
 
+def cmd_guide(args):
+    """Dispatch compact guide command."""
+    return _cmd_guide_impl(args, json_print=lambda payload, pretty: _json_print(payload, pretty=pretty))
+
+
 def main(argv: list[str] | None = None):
     raw_argv = list(sys.argv[1:] if argv is None else argv)
     normalized_argv, explicit_project_dir = _extract_project_dir_arg(raw_argv)
@@ -150,6 +156,12 @@ def main(argv: list[str] | None = None):
 
     parser.add_argument("--version", action="version", version=f"vault-for-llm {__version__}")
     sub = parser.add_subparsers(dest="command", help="子命令")
+
+    # guide
+    p = sub.add_parser("guide", help="顯示人類/Agent 友善的最小入口指南")
+    p.add_argument("--mode", choices=["human", "agent", "maintenance", "all"], default="human")
+    p.add_argument("--json", action="store_true", help="輸出 JSON")
+    p.add_argument("--pretty", action="store_true", help="輸出 pretty JSON")
 
     # init
     p = sub.add_parser("init", help="初始化專案")
@@ -951,6 +963,7 @@ def main(argv: list[str] | None = None):
 
     commands = {
         "init": cmd_init,
+        "guide": cmd_guide,
         "add": cmd_add,
         "remember": cmd_remember,
         "promote": cmd_promote,

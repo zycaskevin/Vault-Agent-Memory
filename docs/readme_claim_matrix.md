@@ -37,6 +37,7 @@ Scope: public README feature/capability claims for the v0.7.18 Agent Knowledge P
 | C20 | MCP agent identity can be signed for stricter local deployments. | advanced optional | `VAULT_MCP_REQUIRE_AGENT_SIGNATURE=1` requires HMAC-SHA256 `agent_signature`; `VAULT_MCP_AGENT_SECRET_<AGENT>` supports per-agent local secrets and `VAULT_MCP_AGENT_SECRET` is the fallback. | `tests/test_mcp_security.py` covers optional, required, valid, and invalid signature paths. |
 | C21 | Task Ledger gives agents resumable runtime working state without turning in-progress tasks into L0-L3 memory. | usable-alpha | `vault task start/status/update/handoff/complete` stores active work in `task_ledger`. MCP `vault_task_*` tools are available in review/maintenance/full profiles and hidden from core. The local GUI exposes a read-only Active Tasks panel, and `vault automation cycle --write-workspace` includes compact task snapshots in handoff output. | Task Ledger unit, CLI, MCP, GUI API, and automation cycle tests pass. |
 | C22 | Skill Registry MCP tools support reviewable write/sync handoff without silently changing runtime skills. | usable-alpha | `vault_skill_sync_status` and `vault_skill_sync_manifest` are available in review/maintenance/full profiles. `vault_skill_push` and `vault_skill_mark_synced` are available in maintenance/full only, require explicit permission flags, and never write runtime Skill files. Content export is opt-in and privacy-gated. | Skill MCP and DB helper tests pass. |
+| C23 | Humans do not need to memorize the full CLI surface. | usable docs / stable CLI | `vault guide` prints the small human entrypoints and MCP profile guidance. `docs/agent_first_usage.md` separates human intent from agent/maintenance command surfaces. | CLI guide tests and README smoke pass. |
 
 ## Public Boundary Notes
 
@@ -60,6 +61,7 @@ For release v0.7.18, clean Python 3.11 PyPI install closeout should verify:
 
 - `vault-for-llm[mcp]==0.7.18` installs from PyPI.
 - `vault --version` returns `vault-for-llm 0.7.18`.
+- `vault guide`, `vault guide --mode agent --json`, and `vault guide --mode all --pretty` expose the compact human/agent/maintenance command map.
 - `vault add "Title" --content "..."` is the documented active-memory add shape.
 - `vault map read <knowledge_id> --lines START-END` is the documented bounded-read CLI shape.
 - `vault capture discover` lists likely transcript exports without reading transcript content.

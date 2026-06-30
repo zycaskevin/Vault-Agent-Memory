@@ -55,6 +55,19 @@ def main() -> int:
 
     outputs: dict[str, str] = {}
     outputs["vault_help"] = run([python, "-m", "vault.cli", "--help"], cwd=temp_dir, env=env)
+    outputs["vault_guide"] = run([python, "-m", "vault.cli", "guide"], cwd=temp_dir, env=env)
+    if "vault setup-agent" not in outputs["vault_guide"]:
+        raise SystemExit(f"Unexpected guide output:\n{outputs['vault_guide']}")
+    guide_agent = json.loads(
+        run([python, "-m", "vault.cli", "guide", "--mode", "agent", "--json"], cwd=temp_dir, env=env)
+    )
+    if [row.get("profile") for row in guide_agent.get("agent_mcp_profiles", [])] != [
+        "core",
+        "review",
+        "maintenance",
+        "full",
+    ]:
+        raise SystemExit(f"Unexpected agent guide output: {guide_agent}")
     outputs["semantic_help"] = run([python, "-m", "vault.cli", "semantic", "--help"], cwd=temp_dir, env=env)
     outputs["search_qa_help"] = run([python, "-m", "vault.cli", "search-qa", "--help"], cwd=temp_dir, env=env)
 
@@ -169,7 +182,7 @@ def main() -> int:
 
     print("✅ README documented command smoke passed")
     print(f"  temp_project: {temp_dir}")
-    print("  commands: help, init, add, compile --no-embed, default search, search --keyword-only, map build/read, search-qa run, semantic smoke, semantic cache-stats")
+    print("  commands: help, guide, init, add, compile --no-embed, default search, search --keyword-only, map build/read, search-qa run, semantic smoke, semantic cache-stats")
     return 0
 
 
