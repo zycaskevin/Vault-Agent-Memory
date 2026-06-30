@@ -11,6 +11,7 @@ from typing import Any
 from .search_utils import normalize_search_limit
 
 from .governance import normalize_governance_metadata
+from .db_runtime import sqlite_write_with_retry
 
 
 FtsRowSync = Callable[[int], None]
@@ -60,43 +61,47 @@ def add_knowledge(
         supersedes_id=supersedes_id,
     )
 
-    cursor = conn.execute(
-        """INSERT INTO knowledge
-           (title, layer, category, tags, trust,
-            content_raw, content_aaak, content_hash, source,
-            summary, summary_generated_at,
-            scope, sensitivity, owner_agent, allowed_agents, memory_type, expires_at,
-            valid_from, valid_until, supersedes_id,
-            created_at, updated_at)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (
-            title,
-            layer,
-            category,
-            tags,
-            trust,
-            content_raw,
-            content_aaak,
-            content_hash,
-            source,
-            summary,
-            now if summary else "",
-            governance["scope"],
-            governance["sensitivity"],
-            governance["owner_agent"],
-            governance["allowed_agents"],
-            governance["memory_type"],
-            governance["expires_at"],
-            governance["valid_from"],
-            governance["valid_until"],
-            governance["supersedes_id"],
-            now,
-            now,
-        ),
-    )
-    knowledge_id = int(cursor.lastrowid)
-    sync_fts_row(knowledge_id)
-    conn.commit()
+    def write() -> int:
+        cursor = conn.execute(
+            """INSERT INTO knowledge
+               (title, layer, category, tags, trust,
+                content_raw, content_aaak, content_hash, source,
+                summary, summary_generated_at,
+                scope, sensitivity, owner_agent, allowed_agents, memory_type, expires_at,
+                valid_from, valid_until, supersedes_id,
+                created_at, updated_at)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                title,
+                layer,
+                category,
+                tags,
+                trust,
+                content_raw,
+                content_aaak,
+                content_hash,
+                source,
+                summary,
+                now if summary else "",
+                governance["scope"],
+                governance["sensitivity"],
+                governance["owner_agent"],
+                governance["allowed_agents"],
+                governance["memory_type"],
+                governance["expires_at"],
+                governance["valid_from"],
+                governance["valid_until"],
+                governance["supersedes_id"],
+                now,
+                now,
+            ),
+        )
+        knowledge_id = int(cursor.lastrowid)
+        sync_fts_row(knowledge_id)
+        conn.commit()
+        return knowledge_id
+
+    knowledge_id = sqlite_write_with_retry(write, rollback=conn.rollback)
     return knowledge_id
 
 
