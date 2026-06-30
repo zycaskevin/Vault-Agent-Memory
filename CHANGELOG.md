@@ -9,11 +9,13 @@
 - Added `vault_skill_mark_synced` for recording successful external Skill sync handoff.
 - Added a decision record documenting the Skill MCP write/sync boundary.
 - Added `vault guide` and an agent-first usage guide so humans see a small CLI surface while agents use MCP profiles and generated setup artifacts for the wider toolbox.
+- Added a shared SQLite runtime helper that applies WAL, `busy_timeout`, foreign keys, and retry/backoff for common write paths.
 
 ### Safety
 
 - Kept Skill write tools out of the `core` and `review` profiles; only `maintenance` and `full` expose registry writes.
 - Kept Skill sync manifests content-free by default and blocked fail-level privacy findings during content export.
+- Documented the SQLite concurrency boundary for multi-agent installs: the runtime is more tolerant of lock contention, but sustained high-write workloads should still use a long-lived MCP service or future write-worker queue instead of many short-lived CLI subprocesses.
 
 ## [0.7.17] - 2026-06-30
 
