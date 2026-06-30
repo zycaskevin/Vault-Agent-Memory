@@ -8,6 +8,7 @@ import sqlite3
 from typing import Any
 
 from .governance import normalize_governance_metadata
+from .db_runtime import sqlite_write_with_retry
 
 
 def add_memory_candidate(conn: sqlite3.Connection, candidate: dict) -> str:
@@ -29,46 +30,49 @@ def add_memory_candidate(conn: sqlite3.Connection, candidate: dict) -> str:
         supersedes_id=values.get("supersedes_id"),
     )
     values.update(governance)
-    conn.execute(
-        """INSERT INTO memory_candidates
-           (id, created_at, updated_at, title, content, layer, category,
-            tags, trust, source, source_ref, reason, status,
-            privacy_status, duplicate_status, quality_status, gate_payload_json,
-            promoted_knowledge_id,
-            scope, sensitivity, owner_agent, allowed_agents, memory_type, expires_at,
-            valid_from, valid_until, supersedes_id)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (
-            values["id"],
-            values["created_at"],
-            values["updated_at"],
-            values["title"],
-            values["content"],
-            values["layer"],
-            values["category"],
-            values["tags"],
-            values["trust"],
-            values["source"],
-            values["source_ref"],
-            values["reason"],
-            values["status"],
-            values["privacy_status"],
-            values["duplicate_status"],
-            values.get("quality_status", "pass"),
-            values["gate_payload_json"],
-            values.get("promoted_knowledge_id"),
-            values["scope"],
-            values["sensitivity"],
-            values["owner_agent"],
-            values["allowed_agents"],
-            values["memory_type"],
-            values["expires_at"],
-            values["valid_from"],
-            values["valid_until"],
-            values["supersedes_id"],
-        ),
-    )
-    conn.commit()
+    def write() -> None:
+        conn.execute(
+            """INSERT INTO memory_candidates
+               (id, created_at, updated_at, title, content, layer, category,
+                tags, trust, source, source_ref, reason, status,
+                privacy_status, duplicate_status, quality_status, gate_payload_json,
+                promoted_knowledge_id,
+                scope, sensitivity, owner_agent, allowed_agents, memory_type, expires_at,
+                valid_from, valid_until, supersedes_id)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                values["id"],
+                values["created_at"],
+                values["updated_at"],
+                values["title"],
+                values["content"],
+                values["layer"],
+                values["category"],
+                values["tags"],
+                values["trust"],
+                values["source"],
+                values["source_ref"],
+                values["reason"],
+                values["status"],
+                values["privacy_status"],
+                values["duplicate_status"],
+                values.get("quality_status", "pass"),
+                values["gate_payload_json"],
+                values.get("promoted_knowledge_id"),
+                values["scope"],
+                values["sensitivity"],
+                values["owner_agent"],
+                values["allowed_agents"],
+                values["memory_type"],
+                values["expires_at"],
+                values["valid_from"],
+                values["valid_until"],
+                values["supersedes_id"],
+            ),
+        )
+        conn.commit()
+
+    sqlite_write_with_retry(write, rollback=conn.rollback)
     return str(values["id"])
 
 
@@ -131,28 +135,31 @@ def record_memory_feedback(conn: sqlite3.Connection, event: dict) -> int:
     if isinstance(payload, (dict, list)):
         payload = json.dumps(payload, ensure_ascii=False, sort_keys=True)
     values["payload_json"] = str(payload or "{}")
-    cur = conn.execute(
-        """INSERT INTO memory_feedback_events
-           (created_at, event_type, candidate_id, knowledge_id, source, source_ref,
-            memory_type, category, outcome, score, reason, payload_json)
-           VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
-        (
-            values["created_at"],
-            values["event_type"],
-            values["candidate_id"],
-            values.get("knowledge_id"),
-            values["source"],
-            values["source_ref"],
-            values["memory_type"],
-            values["category"],
-            values["outcome"],
-            float(values.get("score") or 0.0),
-            values["reason"],
-            values["payload_json"],
-        ),
-    )
-    conn.commit()
-    return int(cur.lastrowid)
+    def write() -> int:
+        cur = conn.execute(
+            """INSERT INTO memory_feedback_events
+               (created_at, event_type, candidate_id, knowledge_id, source, source_ref,
+                memory_type, category, outcome, score, reason, payload_json)
+               VALUES(?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                values["created_at"],
+                values["event_type"],
+                values["candidate_id"],
+                values.get("knowledge_id"),
+                values["source"],
+                values["source_ref"],
+                values["memory_type"],
+                values["category"],
+                values["outcome"],
+                float(values.get("score") or 0.0),
+                values["reason"],
+                values["payload_json"],
+            ),
+        )
+        conn.commit()
+        return int(cur.lastrowid)
+
+    return sqlite_write_with_retry(write, rollback=conn.rollback)
 
 
 def list_memory_feedback(

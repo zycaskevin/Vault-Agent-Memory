@@ -68,6 +68,7 @@ from .db_migrations import record_migrations_through as db_migrations_record_mig
 from .db_migrations import schema_status as db_migrations_schema_status
 from .db_migrations import table_columns as db_migrations_table_columns
 from .db_migrations import table_names as db_migrations_table_names
+from .db_runtime import connect_sqlite
 from .db_schema import (
     KNOWLEDGE_UPDATE_COLUMNS as DB_KNOWLEDGE_UPDATE_COLUMNS,
     MEMORY_CANDIDATE_UPDATE_COLUMNS as DB_MEMORY_CANDIDATE_UPDATE_COLUMNS,
@@ -127,10 +128,8 @@ class VaultDB:
 
     def connect(self) -> "VaultDB":
         """開啟資料庫連線，註冊 sqlite-vec 擴展。"""
-        self.conn = sqlite3.connect(str(self.db_path))
+        self.conn = connect_sqlite(self.db_path)
         self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA journal_mode=WAL")
-        self.conn.execute("PRAGMA foreign_keys=ON")
 
         # 註冊 sqlite-vec 擴展. Some Python sqlite builds (including many
         # restricted or system builds) expose the sqlite module without loadable

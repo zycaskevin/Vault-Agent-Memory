@@ -178,6 +178,41 @@ identity (`agent_id`) and, when appropriate, a `max_sensitivity` cap. Only pass
 `include_private=true` when the user or local policy explicitly allows that
 agent to read its owner/allow-list private memory.
 
+## Multi-Agent SQLite Concurrency
+
+Multiple local agents can share one `vault.db`, but SQLite is still a single
+file database with one writer at a time. This is a good fit for local
+project-memory workflows where reads dominate and writes happen as reviewed
+candidates, scheduled automation, or bounded CLI actions.
+
+Recommended shape:
+
+- Use `vault-mcp` for long-running agent sessions so repeated search/read/write
+  calls do not pay a fresh Python process startup cost every time.
+- Use scheduled CLI jobs for batch maintenance: compile, Search QA, backup,
+  Dream/reflection, and automation cycle.
+- Avoid using many short-lived subprocesses as a high-throughput write queue.
+  They are safe, but latency can climb under write-lock contention.
+- Keep shared vault writes candidate-first. Agents should prefer
+  `vault_memory_propose` or `vault remember` over direct active writes unless a
+  local policy explicitly allows direct writes.
+
+Vault configures SQLite with WAL mode, `synchronous=NORMAL`, an explicit busy
+timeout, and write retry for common `database is locked` paths such as direct
+knowledge add and memory-candidate creation. Tune these only when a host has a
+known contention profile:
+
+```bash
+export VAULT_SQLITE_BUSY_TIMEOUT_MS=30000
+export VAULT_SQLITE_WRITE_RETRY_ATTEMPTS=4
+export VAULT_SQLITE_WRITE_RETRY_BASE_MS=50
+```
+
+These settings improve reliability and predictability. They do not turn a local
+SQLite file into a distributed queue. If many hosted services need sustained
+concurrent writes, put a small local write worker or MCP service in front of the
+vault and let remote systems submit candidates to that worker.
+
 Use map/inspect tools only when the agent needs section navigation before
 choosing a bounded read range.
 
