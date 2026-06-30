@@ -7,7 +7,7 @@ APP_HTML = r"""<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vault Console</title>
+  <title>Vault Memory Control Center</title>
   <style>
     :root {
       color-scheme: light;
@@ -35,6 +35,8 @@ APP_HTML = r"""<!doctype html>
     .left, .right { background: var(--panel); border-right: 1px solid var(--line); overflow: auto; }
     .right { border-right: 0; border-left: 1px solid var(--line); }
     .topbar { padding: 18px 18px 14px; border-bottom: 1px solid var(--line); }
+    .topbar-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .language-select { max-width: 118px; padding: 7px 8px; font-size: 13px; }
     h1 { margin: 0; font-size: 22px; letter-spacing: 0; }
     h2 { margin: 18px 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
     h3 { margin: 0 0 4px; font-size: 15px; }
@@ -49,6 +51,29 @@ APP_HTML = r"""<!doctype html>
     }
     .metric strong { display: block; font-size: 22px; }
     .metric span { color: var(--muted); font-size: 12px; }
+    .hero {
+      margin: 16px 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+    .hero h2 {
+      margin: 0 0 6px;
+      color: var(--ink);
+      font-size: 20px;
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .hero .next { margin-top: 12px; color: var(--muted); line-height: 1.5; }
+    .choice-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0 18px 16px; }
+    .choice-row .panel { min-height: 96px; }
+    .safety-strip {
+      margin: 0 18px 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
     .searchbar { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 16px 18px; border-bottom: 1px solid var(--line); background: #fbfbf8; }
     input, select {
       border: 1px solid var(--line);
@@ -70,6 +95,7 @@ APP_HTML = r"""<!doctype html>
     button.danger { background: var(--danger); border-color: var(--danger); }
     button.warn { background: var(--warn); border-color: var(--warn); }
     .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+    .mini-action { margin-top: 10px; padding: 7px 9px; font-size: 13px; }
     .filter-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
     .filter-grid input, .filter-grid select { width: 100%; padding: 8px 9px; font-size: 13px; }
     textarea {
@@ -177,6 +203,7 @@ APP_HTML = r"""<!doctype html>
     @media (max-width: 760px) {
       .app { display: block; }
       .left, .right { border: 0; border-bottom: 1px solid var(--line); }
+      .choice-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -184,19 +211,26 @@ APP_HTML = r"""<!doctype html>
   <div class="app">
     <aside class="left">
       <div class="topbar">
-        <h1>Vault Console</h1>
+        <div class="topbar-row">
+          <h1 id="appTitle">Vault Memory</h1>
+          <select id="languageSelect" class="language-select" aria-label="Language">
+            <option value="zh-Hant">繁中</option>
+            <option value="zh-CN">简中</option>
+            <option value="en">English</option>
+          </select>
+        </div>
         <div class="subtle" id="projectPath"></div>
       </div>
       <div class="section">
-        <h2>Status</h2>
-        <div class="metric-grid" id="metrics"></div>
-        <h2>Active Tasks</h2>
-        <div id="taskList"></div>
-        <h2>Daily Report</h2>
+        <h2 id="dailyHeading">Daily Report</h2>
         <div id="dailyReport"></div>
-        <h2>Review Inbox</h2>
+        <h2 id="statusHeading">Status</h2>
+        <div class="metric-grid" id="metrics"></div>
+        <h2 id="tasksHeading">Active Tasks</h2>
+        <div id="taskList"></div>
+        <h2 id="reviewHeading">Review Inbox</h2>
         <div id="reviewQueue"></div>
-        <h2>Documents</h2>
+        <h2 id="documentsHeading">Documents</h2>
         <div class="filter-grid">
           <input id="docQuery" placeholder="Filter documents">
           <select id="docLayer"><option value="">Any layer</option></select>
@@ -213,7 +247,7 @@ APP_HTML = r"""<!doctype html>
     <main class="content">
       <form class="searchbar" id="searchForm">
         <input id="query" name="query" placeholder="Search project memory" autocomplete="off">
-        <button type="submit">Search</button>
+        <button id="searchButton" type="submit">Search</button>
       </form>
       <div class="results" id="results"></div>
       <div class="evidence" id="evidence" hidden>
@@ -237,10 +271,243 @@ APP_HTML = r"""<!doctype html>
     let currentTask = null;
     let activeTab = "map";
     let documentFacets = {};
+    const defaultLanguage = "__VAULT_DEFAULT_LANGUAGE__";
+    let currentLanguage = localStorage.getItem("vaultGuiLanguage") || (defaultLanguage.startsWith("__") ? "zh-Hant" : defaultLanguage);
 
     const $ = (id) => document.getElementById(id);
     const esc = (value) => String(value ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const api = async (path) => (await fetch(path, {cache: "no-store"})).json();
+    const UI_TEXT = {
+      "zh-Hant": {
+        title: "Vault 記憶",
+        pageTitle: "Vault 記憶控制台",
+        daily: "每日報告",
+        status: "狀態",
+        tasks: "進行中任務",
+        review: "審核佇列",
+        documents: "文件",
+        knowledge: "知識",
+        candidates: "候選",
+        vectors: "向量",
+        dbMb: "DB MB",
+        anyLayer: "任何層級",
+        anyCategory: "任何分類",
+        anySensitivity: "任何敏感度",
+        searchPlaceholder: "搜尋專案記憶",
+        search: "搜尋",
+        apply: "套用",
+        clear: "清除",
+        noDaily: "還沒有每日報告",
+        noDecision: "今天不需要你決定",
+        noTasks: "沒有進行中任務",
+        noReview: "沒有待審項目",
+        noDocs: "沒有文件",
+        noMemory: "沒有符合的記憶",
+        selectMemory: "選擇一筆記憶",
+        controlCenter: "記憶控制台",
+        noDecisionBody: "你的 Agent 可以繼續維護記憶。明天再看下一份短報告。",
+        agents: "Agent",
+        toConfirm: "待確認",
+        expired: "過期",
+        reviewItem: "審核項目",
+        reviewAction: "審核",
+        decide: "決定",
+        reviewPrompt: "請確認",
+        candidateDecisionQuestion: "是否收進正式記憶？",
+        cleanupDecisionQuestion: "是否需要整理或冷存？",
+        reviewDecisionQuestion: "是否保留這則建議？",
+        suggestedDirection: "建議",
+        viewBeforeDecision: "查看內容",
+        candidateContent: "候選記憶",
+        reviewReason: "你的備註",
+        optionalReason: "如果不收錄或封鎖，可以簡短寫原因。",
+        keepMemory: "保留為正式記憶",
+        rejectMemory: "不收錄",
+        blockMemory: "封鎖類似內容",
+        actionAuditNote: "按下前會再次確認，並記錄這次選擇。",
+        readOnly: "唯讀報告",
+        tokenProtected: "GUI token 保護",
+        noSilentMutation: "不會偷偷收錄、封存或刪除",
+        boundedReads: "先讀有邊界證據",
+        agentDefaultHeadline: "你的 Agent 可以操作 Vault；你只看每日短報告。",
+        noHumanAction: "今天不需要人處理。",
+        next: "下一步",
+        blockers: "阻礙",
+        map: "地圖",
+        graph: "圖譜",
+        timeline: "時間線",
+        governance: "治理",
+        usage: "使用",
+        currentPlan: "目前計畫",
+        completed: "已完成",
+        hardDecisions: "重要決定",
+        nextActions: "下一步",
+        handoffMarkdown: "交接摘要",
+        candidateReview: "候選記憶審核",
+        privacy: "隱私",
+        duplicate: "重複",
+        quality: "品質",
+        unknown: "未知",
+        confirmAction: "確認執行這次記憶決定？",
+        confirmToken: "確認碼",
+        reviewFailed: "審核動作失敗",
+        reviewCompleted: "審核已完成",
+      },
+      "zh-CN": {
+        title: "Vault 记忆",
+        pageTitle: "Vault 记忆控制台",
+        daily: "每日报告",
+        status: "状态",
+        tasks: "进行中任务",
+        review: "审核队列",
+        documents: "文件",
+        knowledge: "知识",
+        candidates: "候选",
+        vectors: "向量",
+        dbMb: "DB MB",
+        anyLayer: "任何层级",
+        anyCategory: "任何分类",
+        anySensitivity: "任何敏感度",
+        searchPlaceholder: "搜索项目记忆",
+        search: "搜索",
+        apply: "应用",
+        clear: "清除",
+        noDaily: "还没有每日报告",
+        noDecision: "今天不需要你决定",
+        noTasks: "没有进行中任务",
+        noReview: "没有待审项目",
+        noDocs: "没有文件",
+        noMemory: "没有匹配的记忆",
+        selectMemory: "选择一条记忆",
+        controlCenter: "记忆控制台",
+        noDecisionBody: "你的 Agent 可以继续维护记忆。明天再看下一份短报告。",
+        agents: "Agent",
+        toConfirm: "待确认",
+        expired: "过期",
+        reviewItem: "审核项目",
+        reviewAction: "审核",
+        decide: "决定",
+        reviewPrompt: "请确认",
+        candidateDecisionQuestion: "是否收进正式记忆？",
+        cleanupDecisionQuestion: "是否需要整理或冷存？",
+        reviewDecisionQuestion: "是否保留这条建议？",
+        suggestedDirection: "建议",
+        viewBeforeDecision: "查看内容",
+        candidateContent: "候选记忆",
+        reviewReason: "你的备注",
+        optionalReason: "如果不收录或封锁，可以简短写原因。",
+        keepMemory: "保留为正式记忆",
+        rejectMemory: "不收录",
+        blockMemory: "封锁类似内容",
+        actionAuditNote: "按下前会再次确认，并记录这次选择。",
+        readOnly: "只读报告",
+        tokenProtected: "GUI token 保护",
+        noSilentMutation: "不会偷偷收录、归档或删除",
+        boundedReads: "先读有边界证据",
+        agentDefaultHeadline: "你的 Agent 可以操作 Vault；你只看每日短报告。",
+        noHumanAction: "今天不需要人处理。",
+        next: "下一步",
+        blockers: "阻碍",
+        map: "地图",
+        graph: "图谱",
+        timeline: "时间线",
+        governance: "治理",
+        usage: "使用",
+        currentPlan: "当前计划",
+        completed: "已完成",
+        hardDecisions: "重要决定",
+        nextActions: "下一步",
+        handoffMarkdown: "交接摘要",
+        candidateReview: "候选记忆审核",
+        privacy: "隐私",
+        duplicate: "重复",
+        quality: "质量",
+        unknown: "未知",
+        confirmAction: "确认执行这次记忆决定？",
+        confirmToken: "确认码",
+        reviewFailed: "审核动作失败",
+        reviewCompleted: "审核已完成",
+      },
+      en: {
+        title: "Vault Memory",
+        pageTitle: "Vault Memory Control Center",
+        daily: "Daily Report",
+        status: "Status",
+        tasks: "Active Tasks",
+        review: "Review Inbox",
+        documents: "Documents",
+        knowledge: "Knowledge",
+        candidates: "Candidates",
+        vectors: "Vectors",
+        dbMb: "DB MB",
+        anyLayer: "Any layer",
+        anyCategory: "Any category",
+        anySensitivity: "Any sensitivity",
+        searchPlaceholder: "Search project memory",
+        search: "Search",
+        apply: "Apply",
+        clear: "Clear",
+        noDaily: "No daily report yet",
+        noDecision: "No decision needed",
+        noTasks: "No active tasks",
+        noReview: "No review items",
+        noDocs: "No documents",
+        noMemory: "No matching memory",
+        selectMemory: "Select a memory",
+        controlCenter: "Memory Control Center",
+        noDecisionBody: "Your agent can keep maintaining memory. Come back tomorrow for the next short report.",
+        agents: "agents",
+        toConfirm: "to confirm",
+        expired: "expired",
+        reviewItem: "Review item",
+        reviewAction: "review",
+        decide: "decide",
+        reviewPrompt: "Please confirm",
+        candidateDecisionQuestion: "Save this to official memory?",
+        cleanupDecisionQuestion: "Clean up or cold-store this memory?",
+        reviewDecisionQuestion: "Keep this suggestion?",
+        suggestedDirection: "Suggestion",
+        viewBeforeDecision: "View details",
+        candidateContent: "Candidate Memory",
+        reviewReason: "Your note",
+        optionalReason: "If you do not keep it or want to block it, add a short reason.",
+        keepMemory: "Save to official memory",
+        rejectMemory: "Do not save",
+        blockMemory: "Block similar items",
+        actionAuditNote: "You will confirm before it runs, and this choice will be recorded.",
+        readOnly: "read-only report",
+        tokenProtected: "GUI token protected",
+        noSilentMutation: "No silent promote/archive/delete",
+        boundedReads: "Bounded reads first",
+        agentDefaultHeadline: "Your agent can operate Vault; you only review the daily report.",
+        noHumanAction: "No human action needed today.",
+        next: "next",
+        blockers: "blockers",
+        map: "Map",
+        graph: "Graph",
+        timeline: "Timeline",
+        governance: "Governance",
+        usage: "Usage",
+        currentPlan: "Current Plan",
+        completed: "Completed",
+        hardDecisions: "Hard Decisions",
+        nextActions: "Next Actions",
+        handoffMarkdown: "Handoff Markdown",
+        candidateReview: "Candidate review",
+        privacy: "privacy",
+        duplicate: "duplicate",
+        quality: "quality",
+        unknown: "unknown",
+        confirmAction: "Confirm this memory decision?",
+        confirmToken: "Confirmation token",
+        reviewFailed: "Review action failed",
+        reviewCompleted: "Review action completed",
+      }
+    };
+    const ui = () => UI_TEXT[currentLanguage] || UI_TEXT.en;
+    const api = async (path) => {
+      const separator = path.includes("?") ? "&" : "?";
+      return (await fetch(`${path}${separator}lang=${encodeURIComponent(currentLanguage)}`, {cache: "no-store"})).json();
+    };
     const postApi = async (path, payload) => (await fetch(path, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
@@ -252,13 +519,36 @@ APP_HTML = r"""<!doctype html>
       return `<span class="pill ${kind}">${esc(text)}</span>`;
     }
 
+    function applyLanguage() {
+      const text = ui();
+      document.title = text.pageTitle;
+      $("languageSelect").value = currentLanguage;
+      $("appTitle").textContent = text.title;
+      $("dailyHeading").textContent = text.daily;
+      $("statusHeading").textContent = text.status;
+      $("tasksHeading").textContent = text.tasks;
+      $("reviewHeading").textContent = text.review;
+      $("documentsHeading").textContent = text.documents;
+      $("query").placeholder = text.searchPlaceholder;
+      $("docQuery").placeholder = text.documents;
+      $("searchButton").textContent = text.search;
+      $("applyDocFilters").textContent = text.apply;
+      $("clearDocFilters").textContent = text.clear;
+      document.querySelector('[data-tab="map"]').textContent = text.map;
+      document.querySelector('[data-tab="graph"]').textContent = text.graph;
+      document.querySelector('[data-tab="timeline"]').textContent = text.timeline;
+      document.querySelector('[data-tab="governance"]').textContent = text.governance;
+      document.querySelector('[data-tab="usage"]').textContent = text.usage;
+    }
+
     function renderMetrics(stats, inbox) {
       const pending = inbox?.summary?.pending_candidates ?? 0;
+      const text = ui();
       $("metrics").innerHTML = [
-        ["Knowledge", stats?.knowledge_count ?? stats?.total_knowledge ?? 0],
-        ["Candidates", pending],
-        ["Vectors", stats?.embedding_count ?? 0],
-        ["DB MB", stats?.db_size_mb ?? stats?.size_mb ?? 0],
+        [text.knowledge, stats?.knowledge_count ?? stats?.total_knowledge ?? 0],
+        [text.candidates, pending],
+        [text.vectors, stats?.embedding_count ?? 0],
+        [text.dbMb, stats?.db_size_mb ?? stats?.size_mb ?? 0],
       ].map(([label, value]) => `<div class="metric"><strong>${esc(value)}</strong><span>${esc(label)}</span></div>`).join("");
     }
 
@@ -295,7 +585,7 @@ APP_HTML = r"""<!doctype html>
     function renderTaskList(items) {
       const node = $("taskList");
       if (!items || !items.length) {
-        node.innerHTML = `<div class="empty">No active tasks</div>`;
+        node.innerHTML = `<div class="empty">${esc(ui().noTasks)}</div>`;
         return;
       }
       node.innerHTML = items.map(task => `
@@ -304,8 +594,8 @@ APP_HTML = r"""<!doctype html>
           <div class="subtle">${esc(task.goal || task.continuation_note || "")}</div>
           <div class="meta">
             ${pill(task.status || "active", task.status === "blocked" ? "warn" : "good")}
-            ${pill((task.next_actions || []).length + " next")}
-            ${task.blockers && task.blockers.length ? pill(task.blockers.length + " blockers", "warn") : ""}
+            ${pill((task.next_actions || []).length + " " + ui().next)}
+            ${task.blockers && task.blockers.length ? pill(task.blockers.length + " " + ui().blockers, "warn") : ""}
           </div>
         </div>
       `).join("");
@@ -314,35 +604,105 @@ APP_HTML = r"""<!doctype html>
       });
     }
 
+    function decisionQuestionFor(card) {
+      const action = String(card.recommended_action || card.suggested_decision || "").toLowerCase();
+      if (String(card.id || "").startsWith("mem_") || action.includes("promote") || action.includes("candidate")) {
+        return ui().candidateDecisionQuestion;
+      }
+      if (action.includes("archive") || action.includes("cold") || action.includes("cleanup")) {
+        return ui().cleanupDecisionQuestion;
+      }
+      return ui().reviewDecisionQuestion;
+    }
+
+    function renderDecisionCard(card, className="item") {
+      const text = ui();
+      const cardId = String(card.id || "");
+      const canOpen = cardId.startsWith("mem_") || Number(cardId || 0) > 0;
+      return `
+        <div class="${className}" data-daily-card="${esc(card.id || "")}">
+          <h3>${esc(card.title || card.id || card.kind || text.reviewItem)}</h3>
+          <div class="subtle"><strong>${esc(text.reviewPrompt)}:</strong> ${esc(decisionQuestionFor(card))}</div>
+          <div class="subtle">${esc(card.reason || card.safe_action || "")}</div>
+          <div class="meta">
+            ${pill(`${text.suggestedDirection}: ${card.suggested_decision || text.reviewAction}`, "warn")}
+          </div>
+          ${canOpen ? `<button class="secondary mini-action" type="button" data-open-daily-card="${esc(card.id || "")}">${esc(text.viewBeforeDecision)}</button>` : ""}
+        </div>
+      `;
+    }
+
+    function bindDecisionCards(root) {
+      root.querySelectorAll("[data-daily-card], [data-open-daily-card]").forEach(el => {
+        const id = el.dataset.dailyCard || el.dataset.openDailyCard || "";
+        if (id.startsWith("mem_")) el.addEventListener("click", (event) => {
+          if (el.dataset.openDailyCard) event.stopPropagation();
+          loadCandidate(id);
+        });
+        else if (Number(id || 0) > 0) el.addEventListener("click", (event) => {
+          if (el.dataset.openDailyCard) event.stopPropagation();
+          loadEntry(Number(id));
+        });
+      });
+    }
+
     function renderDailyReport(report) {
       const node = $("dailyReport");
+      const text = ui();
       if (!report || !report.summary) {
-        node.innerHTML = `<div class="empty">No daily report yet</div>`;
+        node.innerHTML = `<div class="empty">${esc(text.noDaily)}</div>`;
         return;
       }
       const summary = report.summary || {};
       const cards = report.review_cards || [];
-      const cardHtml = cards.length ? cards.slice(0, 3).map(card => `
-        <div class="item">
-          <h3>${esc(card.title || card.id || card.kind || "Review item")}</h3>
-          <div class="subtle">${esc(card.reason || card.safe_action || "")}</div>
-          <div class="meta">
-            ${pill(card.suggested_decision || "review", "warn")}
-            ${pill((card.choices || []).slice(0, 2).join(" / ") || "decide")}
-          </div>
-        </div>
-      `).join("") : `<div class="empty">No human decision needed today</div>`;
+      const cardHtml = cards.length ? cards.slice(0, 3).map(card => renderDecisionCard(card)).join("") : `<div class="empty">${esc(text.noDecision)}</div>`;
       node.innerHTML = `
         <div class="panel">
-          <h3>${esc(report.headline || "Daily memory report")}</h3>
+          <h3>${esc(report.headline || text.daily)}</h3>
+          <div class="subtle">${esc(report.next_action || "")}</div>
           <div class="meta">
-            ${pill(`${summary.needs_confirmation || 0} to confirm`, summary.needs_confirmation ? "warn" : "good")}
-            ${pill(`${summary.pending_candidates || 0} candidates`)}
-            ${pill(`${summary.expired_active || 0} expired`)}
+            ${pill(`${summary.needs_confirmation || 0} ${text.toConfirm}`, summary.needs_confirmation ? "warn" : "good")}
+            ${pill(`${summary.pending_candidates || 0} ${text.candidates}`)}
+            ${pill(`${summary.expired_active || 0} ${text.expired}`)}
+            ${pill(report.safety?.read_only ? text.readOnly : text.reviewAction)}
           </div>
         </div>
         ${cardHtml}
       `;
+      bindDecisionCards(node);
+    }
+
+    function renderMemoryControlCenter(overview) {
+      const report = overview.daily_report || {};
+      const summary = report.summary || {};
+      const cards = report.review_cards || [];
+      const text = ui();
+      const choices = cards.length ? cards.slice(0, 3).map(card => renderDecisionCard(card, "panel")).join("") : `
+        <div class="panel">
+          <h3>${esc(text.noDecision)}</h3>
+          <div class="subtle">${esc(text.noDecisionBody)}</div>
+        </div>
+      `;
+      $("results").innerHTML = `
+        <section class="hero">
+          <h2>${esc(text.controlCenter)}</h2>
+          <div class="subtle">${esc(report.headline || text.agentDefaultHeadline)}</div>
+          <div class="meta">
+            ${pill(`${summary.needs_confirmation || 0} ${text.toConfirm}`, summary.needs_confirmation ? "warn" : "good")}
+            ${pill(`${summary.pending_candidates || 0} ${text.candidates}`)}
+            ${pill(`${summary.registered_agents || 0} ${text.agents}`)}
+            ${pill(text.readOnly, "good")}
+          </div>
+          <div class="next">${esc(report.next_action || text.noHumanAction)}</div>
+        </section>
+        <div class="safety-strip">
+          ${pill(text.tokenProtected, "good")}
+          ${pill(text.noSilentMutation, "good")}
+          ${pill(text.boundedReads, "good")}
+        </div>
+        <div class="choice-row">${choices}</div>
+      `;
+      bindDecisionCards($("results"));
     }
 
     function renderFacetSelect(id, label, items, selected) {
@@ -359,9 +719,9 @@ APP_HTML = r"""<!doctype html>
     function renderDocumentFilters(filters, facets) {
       documentFacets = facets || documentFacets || {};
       $("docQuery").value = filters?.query || $("docQuery").value || "";
-      renderFacetSelect("docLayer", "Any layer", documentFacets.layers || [], filters?.layer || "");
-      renderFacetSelect("docCategory", "Any category", documentFacets.categories || [], filters?.category || "");
-      renderFacetSelect("docSensitivity", "Any sensitivity", documentFacets.sensitivities || [], filters?.sensitivity || "");
+      renderFacetSelect("docLayer", ui().anyLayer, documentFacets.layers || [], filters?.layer || "");
+      renderFacetSelect("docCategory", ui().anyCategory, documentFacets.categories || [], filters?.category || "");
+      renderFacetSelect("docSensitivity", ui().anySensitivity, documentFacets.sensitivities || [], filters?.sensitivity || "");
     }
 
     async function loadDocuments() {
@@ -374,12 +734,12 @@ APP_HTML = r"""<!doctype html>
       });
       const payload = await api(`/api/documents?${params.toString()}`);
       renderDocumentFilters(payload.filters || {}, payload.facets || {});
-      renderList("documentList", payload.documents || [], "No documents");
+      renderList("documentList", payload.documents || [], ui().noDocs);
     }
 
     function renderResults(items) {
       if (!items.length) {
-        $("results").innerHTML = `<div class="empty">No matching memory</div>`;
+        $("results").innerHTML = `<div class="empty">${esc(ui().noMemory)}</div>`;
         return;
       }
       $("results").innerHTML = items.map(row => `
@@ -437,24 +797,25 @@ APP_HTML = r"""<!doctype html>
             ${pill(row.layer)}
             ${pill(row.scope)}
             ${pill(row.sensitivity, row.sensitivity === "low" ? "good" : "warn")}
-            ${pill("privacy:" + (row.privacy_status || "unknown"))}
-            ${pill("duplicate:" + (row.duplicate_status || "unknown"))}
-            ${pill("quality:" + (row.quality_status || "unknown"))}
+            ${pill(ui().privacy + ":" + (row.privacy_status || ui().unknown))}
+            ${pill(ui().duplicate + ":" + (row.duplicate_status || ui().unknown))}
+            ${pill(ui().quality + ":" + (row.quality_status || ui().unknown))}
           </div>
         </article>
         <div class="panel">
-          <h3>Candidate Content</h3>
+          <h3>${esc(ui().candidateContent)}</h3>
+          <div class="subtle"><strong>${esc(ui().reviewPrompt)}:</strong> ${esc(ui().candidateDecisionQuestion)}</div>
           <pre>${esc(row.content || "")}</pre>
         </div>
         <div class="panel">
-          <h3>Review Reason</h3>
-          <textarea id="reviewReason" placeholder="Optional reason for reject/block. Promotion records the existing gate result."></textarea>
+          <h3>${esc(ui().reviewReason)}</h3>
+          <textarea id="reviewReason" placeholder="${esc(ui().optionalReason)}"></textarea>
           <div class="actions">
-            <button id="promoteCandidate" type="button">Promote</button>
-            <button id="rejectCandidate" class="warn" type="button">Reject</button>
-            <button id="blockCandidate" class="danger" type="button">Block</button>
+            <button id="promoteCandidate" type="button">${esc(ui().keepMemory)}</button>
+            <button id="rejectCandidate" class="warn" type="button">${esc(ui().rejectMemory)}</button>
+            <button id="blockCandidate" class="danger" type="button">${esc(ui().blockMemory)}</button>
           </div>
-          <div class="subtle">Every action requires explicit confirmation and records feedback for automation learning.</div>
+          <div class="subtle">${esc(ui().actionAuditNote)}</div>
         </div>
       `;
       $("sidePanel").innerHTML = renderCandidateSide(row);
@@ -493,13 +854,13 @@ APP_HTML = r"""<!doctype html>
             ${pill(task.sensitivity || "low", task.sensitivity === "low" ? "good" : "warn")}
           </div>
         </article>
-        ${section("Current Plan", task.current_plan)}
-        ${section("Completed", task.completed)}
-        ${section("Hard Decisions", task.hard_decisions)}
-        ${section("Blockers", task.blockers)}
-        ${section("Next Actions", task.next_actions)}
+        ${section(ui().currentPlan, task.current_plan)}
+        ${section(ui().completed, task.completed)}
+        ${section(ui().hardDecisions, task.hard_decisions)}
+        ${section(ui().blockers, task.blockers)}
+        ${section(ui().nextActions, task.next_actions)}
         <div class="panel">
-          <h3>Handoff Markdown</h3>
+          <h3>${esc(ui().handoffMarkdown)}</h3>
           <pre>${esc(markdown || "")}</pre>
         </div>
       `;
@@ -509,13 +870,12 @@ APP_HTML = r"""<!doctype html>
       const keys = ["status", "source", "source_ref", "memory_type", "trust", "created_at", "updated_at", "valid_from", "valid_until", "expires_at"];
       const fields = keys.map(key => `<div class="kv"><span>${esc(key)}</span><strong>${esc(row[key] || "—")}</strong></div>`).join("");
       const gates = row.gates ? `<pre>${esc(JSON.stringify(row.gates, null, 2))}</pre>` : "";
-      return `<div class="panel"><h3>${esc(row.title)}</h3><div class="subtle">Candidate review</div></div>${fields}${gates}`;
+      return `<div class="panel"><h3>${esc(row.title)}</h3><div class="subtle">${esc(ui().candidateReview)}</div></div>${fields}${gates}`;
     }
 
     async function reviewCandidate(id, action) {
       const token = `${id}:${action}`;
-      const label = action === "promote" ? "promote into active knowledge" : `${action} this candidate`;
-      if (!window.confirm(`Confirm ${label}?\\n\\nRequired token: ${token}`)) return;
+      if (!window.confirm(`${ui().confirmAction}\\n\\n${ui().confirmToken}: ${token}`)) return;
       const reason = $("reviewReason")?.value || "";
       const payload = await postApi(`/api/candidate/${encodeURIComponent(id)}/review`, {
         action,
@@ -523,10 +883,10 @@ APP_HTML = r"""<!doctype html>
         confirm: token
       });
       if (payload.status !== "ok") {
-        window.alert(payload.error || payload.reason || "Review action failed");
+        window.alert(payload.error || payload.reason || ui().reviewFailed);
         return;
       }
-      window.alert(`Review action completed: ${payload.result?.status || action}`);
+      window.alert(`${ui().reviewCompleted}: ${payload.result?.status || action}`);
       await boot();
       if (payload.result?.knowledge_id) {
         await loadEntry(payload.result.knowledge_id);
@@ -539,7 +899,7 @@ APP_HTML = r"""<!doctype html>
         return;
       }
       if (!currentEntry || currentEntry.status !== "ok") {
-        $("sidePanel").innerHTML = `<div class="empty">Select a memory</div>`;
+        $("sidePanel").innerHTML = `<div class="empty">${esc(ui().selectMemory)}</div>`;
         return;
       }
       const data = currentEntry[activeTab] || {};
@@ -680,6 +1040,7 @@ APP_HTML = r"""<!doctype html>
     }
 
     async function boot() {
+      applyLanguage();
       const overview = await api("/api/overview");
       $("projectPath").textContent = overview.project_dir || "";
       renderMetrics(overview.stats || {}, overview.inbox || {});
@@ -687,9 +1048,16 @@ APP_HTML = r"""<!doctype html>
       renderDailyReport(overview.daily_report || {});
       renderList("reviewQueue", overview.candidates || overview.inbox?.review_queue || overview.inbox?.review_digest?.items || [], "No review items");
       await loadDocuments();
-      $("results").innerHTML = `<div class="empty">Search or choose a memory</div>`;
+      renderMemoryControlCenter(overview);
       renderSidePanel();
     }
+
+    $("languageSelect").addEventListener("change", async () => {
+      currentLanguage = $("languageSelect").value || "en";
+      localStorage.setItem("vaultGuiLanguage", currentLanguage);
+      applyLanguage();
+      await boot();
+    });
 
     $("searchForm").addEventListener("submit", async (event) => {
       event.preventDefault();

@@ -185,6 +185,7 @@ def main(argv: list[str] | None = None):
     p.add_argument("--min-events", type=int, default=5, help="學習規則需要的最少 feedback 事件")
     p.add_argument("--write-report", action="store_true", help="寫入 reports/daily/daily-report-latest.json 和 .md")
     p.add_argument("--report-path", default="", help="自訂 reports/daily/*.json 輸出路徑")
+    p.add_argument("--language", choices=["en", "zh-Hant", "zh-CN"], default="en", help="日報語言")
     p.add_argument("--json", action="store_true", help="輸出 JSON")
     p.add_argument("--pretty", action="store_true", help="輸出 pretty JSON")
 
@@ -243,6 +244,8 @@ def main(argv: list[str] | None = None):
     p.add_argument("--no-open", action="store_true", help="不要自動開啟瀏覽器")
     p.add_argument("--auth-token", default=None, help="GUI 存取 token；省略時自動產生或讀 VAULT_GUI_TOKEN")
     p.add_argument("--no-auth", action="store_true", help="只允許 localhost 使用；關閉 GUI token 驗證")
+    p.add_argument("--language", choices=["en", "zh-Hant", "zh-CN"], default="zh-Hant",
+                   help="GUI 預設語言；瀏覽器 localStorage 仍可覆蓋")
 
     p = sub.add_parser("security", help="安全預設與 agent-facing surface 自檢")
     security_sub = p.add_subparsers(dest="security_action", help="安全子命令")
@@ -572,6 +575,8 @@ def main(argv: list[str] | None = None):
                         help="排程最多自動 capture 的 transcript 數（預設 3，上限 20）")
         ap.add_argument("--automation-auto-promote-low-risk", action="store_true",
                         help="寫入 policy，允許 --automation-apply 只提升低風險 session_capture/session_lesson 候選")
+        ap.add_argument("--daily-report-time", default="",
+                        help="consumer 每日記憶整理與報告排程時間，例如 09:00；consumer 預設 09:00")
         ap.add_argument("--stable-venv",
                         help="產生穩定 Python virtualenv bootstrap 腳本，建議 ~/.hermes/venvs/vault-for-llm")
         ap.add_argument("--write-stable-venv-script", action="store_true",

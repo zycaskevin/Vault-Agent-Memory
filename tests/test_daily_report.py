@@ -59,6 +59,65 @@ def test_render_daily_report_text_is_short_and_human_first(tmp_path):
     assert "raw candidate" not in text.lower()
 
 
+def test_daily_report_supports_traditional_and_simplified_chinese(tmp_path):
+    project, _candidate_id = _project_with_candidate(tmp_path)
+
+    zh_hant = build_daily_report(project, limit=3, language="zh-Hant")
+    zh_cn = build_daily_report(project, limit=3, language="zh-CN")
+
+    assert zh_hant["language"] == "zh-Hant"
+    assert zh_cn["language"] == "zh-CN"
+    assert "需要你確認" in zh_hant["headline"]
+    assert "需要你确认" in zh_cn["headline"]
+    assert "Vault 每日記憶報告" in render_daily_report_text(zh_hant)
+    assert "Vault 每日记忆报告" in render_daily_report_text(zh_cn)
+
+
+def test_daily_report_does_not_escalate_observe_cards_to_human_decisions(tmp_path, monkeypatch):
+    import vault.daily_report as daily_report
+
+    project = tmp_path / "project"
+    project.mkdir()
+    with VaultDB(project / "vault.db"):
+        pass
+
+    monkeypatch.setattr(
+        daily_report,
+        "automation_brief",
+        lambda *args, **kwargs: {
+            "status": "completed",
+            "summary": {
+                "pending_candidates": 0,
+                "learning_rules": 0,
+                "expired_active": 0,
+            },
+            "agent_health": {"agent_count": 1},
+        },
+    )
+    monkeypatch.setattr(
+        daily_report,
+        "automation_review_summary",
+        lambda *args, **kwargs: {
+            "cards": [
+                {
+                    "kind": "memory_importance",
+                    "id": 1,
+                    "title": "Observed useful memory",
+                    "recommended_action": "keep_observing",
+                    "reason": "This is useful but does not need a human decision.",
+                    "requires_human_decision": False,
+                }
+            ]
+        },
+    )
+
+    payload = daily_report.build_daily_report(project, language="zh-Hant")
+
+    assert payload["summary"]["needs_confirmation"] == 0
+    assert payload["review_cards"] == []
+    assert "今天沒有需要人決定" in payload["headline"]
+
+
 def test_cli_daily_report_json_and_write_report(tmp_path, capsys):
     project, _candidate_id = _project_with_candidate(tmp_path)
 
@@ -68,3 +127,13 @@ def test_cli_daily_report_json_and_write_report(tmp_path, capsys):
     assert payload["action"] == "daily-report"
     assert payload["paths"]["json"] == "reports/daily/daily-report-latest.json"
     assert (project / "reports" / "daily" / "daily-report-latest.md").exists()
+
+
+def test_cli_daily_report_accepts_language(tmp_path, capsys):
+    project, _candidate_id = _project_with_candidate(tmp_path)
+
+    main(["--project-dir", str(project), "daily-report", "--language", "zh-CN", "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["language"] == "zh-CN"
+    assert payload["labels"]["title"] == "Vault 每日记忆报告"
