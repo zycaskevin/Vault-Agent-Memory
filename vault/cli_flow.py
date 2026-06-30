@@ -559,6 +559,7 @@ def cmd_export(args):
 
 def cmd_setup_agent(args):
     """Interactive/non-interactive agent setup wizard."""
+    from vault.agent_access import agent_access_preset
     from vault.agent_setup import (
         AgentSetupConfig,
         default_stable_venv_path,
@@ -569,18 +570,20 @@ def cmd_setup_agent(args):
     )
 
     if getattr(args, "non_interactive", False):
-        scope = args.scope or "private"
+        preset = agent_access_preset(args.agent_preset)
+        scope = args.scope or preset.get("setup_scope") or "private"
         project_dir = Path(args.agent_project_dir or default_project_dir(scope, agent=args.agent))
         config = AgentSetupConfig(
             project_dir=project_dir,
             scope=scope,
             agent=args.agent,
+            agent_preset=args.agent_preset or "",
             audience=args.audience,
-            memory_layout=args.memory_layout,
+            memory_layout=args.memory_layout or preset.get("memory_layout") or "hybrid",
             agent_private_dir=Path(args.agent_private_dir).expanduser() if args.agent_private_dir else None,
             features=normalize_features(args.features),
             language=args.language,
-            tool_profile=args.tool_profile,
+            tool_profile=args.tool_profile or preset.get("tool_profile") or "core",
             install_optional_deps=bool(args.install_optional_deps),
             install_embedding_model=args.install_embedding_model,
             obsidian_vault=Path(args.obsidian_vault).expanduser() if args.obsidian_vault else None,
@@ -618,6 +621,7 @@ def cmd_setup_agent(args):
     else:
         setup_values = {
             "agent": args.agent,
+            "agent_preset": args.agent_preset,
             "scope": args.scope,
             "audience": args.audience,
             "project_dir": args.agent_project_dir,
@@ -747,6 +751,10 @@ def cmd_setup_agent(args):
     if payload.get("memory_layout_files"):
         print("  memory_layout_files:")
         for name, path in payload["memory_layout_files"].items():
+            print(f"    {name}: {path}")
+    if payload.get("agent_access"):
+        print("  agent_access:")
+        for name, path in payload["agent_access"].items():
             print(f"    {name}: {path}")
     if payload.get("update_status_templates"):
         print("  update_status_templates:")

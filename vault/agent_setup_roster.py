@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 import json
-import re
 import shlex
 from pathlib import Path
 from typing import Any
 
+from vault.agent_access import (
+    agent_access_preset,
+    preset_for_role,
+    render_agent_access_presets_markdown,
+)
 from vault.agent_setup_templates import shell_join
 
 
@@ -39,19 +43,16 @@ def _safe_slug(value: object, default: str = "agent") -> str:
 
 def _role_defaults(role: str) -> dict[str, Any]:
     normalized = str(role or "work").strip().lower()
-    if normalized == "profile":
-        return {"scope": "private", "max_sensitivity": "high", "tool_profile": "review", "can_write_candidates": True}
+    preset = preset_for_role(normalized)
     if normalized == "care":
-        return {"scope": "private", "max_sensitivity": "medium", "tool_profile": "core", "can_write_candidates": True}
+        preset["max_sensitivity"] = "medium"
+        preset["tool_profile"] = "core"
     if normalized == "dream":
-        return {"scope": "private", "max_sensitivity": "medium", "tool_profile": "maintenance", "can_write_candidates": True}
-    if normalized == "remote":
-        return {"scope": "shared", "max_sensitivity": "medium", "tool_profile": "remote", "can_write_candidates": False}
-    if normalized == "automation":
-        return {"scope": "shared", "max_sensitivity": "low", "tool_profile": "core", "can_write_candidates": False}
+        preset["scope"] = "private"
+        preset["private_memory"] = True
     if normalized == "observer":
-        return {"scope": "shared", "max_sensitivity": "low", "tool_profile": "core", "can_write_candidates": False}
-    return {"scope": "shared", "max_sensitivity": "medium", "tool_profile": "core", "can_write_candidates": True}
+        preset["max_sensitivity"] = "low"
+    return preset
 
 
 def normalize_agent_roster(raw: str | list[dict[str, Any]] | None) -> list[dict[str, Any]]:
@@ -90,7 +91,8 @@ def normalize_agent_roster(raw: str | list[dict[str, Any]] | None) -> list[dict[
         if role not in VALID_AGENT_ROLES:
             allowed = ", ".join(sorted(VALID_AGENT_ROLES))
             raise ValueError(f"unknown agent role '{role}' (expected one of: {allowed})")
-        defaults = _role_defaults(role)
+        preset_name = str(item.get("access_preset") or item.get("preset") or "").strip()
+        defaults = agent_access_preset(preset_name) if preset_name else _role_defaults(role)
         scope = str(item.get("scope") or defaults["scope"]).strip().lower()
         if scope not in {"private", "project", "shared", "public"}:
             raise ValueError("agent roster scope must be private, project, shared, or public")
@@ -101,12 +103,17 @@ def normalize_agent_roster(raw: str | list[dict[str, Any]] | None) -> list[dict[
             {
                 "agent_id": agent_id,
                 "role": role,
+                "access_preset": str(defaults.get("preset") or preset_name or ""),
+                "summary": str(defaults.get("summary") or ""),
                 "scope": scope,
                 "max_sensitivity": max_sensitivity,
                 "tool_profile": str(item.get("tool_profile") or defaults["tool_profile"]),
                 "can_write_candidates": bool(item.get("can_write_candidates", defaults["can_write_candidates"])),
-                "private_memory": bool(item.get("private_memory", role in {"profile", "care", "dream"})),
-                "remote_reader": bool(item.get("remote_reader", role in {"remote", "automation", "observer"})),
+                "can_promote": bool(item.get("can_promote", defaults.get("can_promote", False))),
+                "can_write_shared": bool(item.get("can_write_shared", defaults.get("can_write_shared", False))),
+                "can_write_private": bool(item.get("can_write_private", defaults.get("can_write_private", False))),
+                "private_memory": bool(item.get("private_memory", defaults.get("private_memory", role in {"profile", "care", "dream"}))),
+                "remote_reader": bool(item.get("remote_reader", defaults.get("remote_reader", role in {"remote", "automation", "observer"}))),
             }
         )
     return normalized
@@ -118,12 +125,12 @@ def render_agent_access_matrix(roster: list[dict[str, Any]]) -> str:
         "",
         "Use this file as the reviewed roster for multi-agent memory sharing.",
         "",
-        "| Agent | Role | Scope | Max sensitivity | Tool profile | Candidate write | Private memory | Remote reader |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Agent | Preset | Role | Scope | Max sensitivity | Tool profile | Candidate write | Promote | Shared write | Private write | Private memory | Remote reader |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for item in roster:
         lines.append(
-            "| {agent_id} | {role} | {scope} | {max_sensitivity} | {tool_profile} | {can_write_candidates} | {private_memory} | {remote_reader} |".format(
+            "| {agent_id} | {access_preset} | {role} | {scope} | {max_sensitivity} | {tool_profile} | {can_write_candidates} | {can_promote} | {can_write_shared} | {can_write_private} | {private_memory} | {remote_reader} |".format(
                 **item
             )
         )
@@ -162,6 +169,8 @@ def write_agent_roster_templates(
 
     matrix_path = out / "AGENT_ACCESS_MATRIX.md"
     matrix_path.write_text(render_agent_access_matrix(normalized), encoding="utf-8")
+    presets_path = out / "AGENT_ACCESS_PRESETS.md"
+    presets_path.write_text(render_agent_access_presets_markdown(), encoding="utf-8")
 
     command_lines = ["#!/usr/bin/env sh", "set -eu", ""]
     env_paths: dict[str, str] = {}
@@ -176,6 +185,9 @@ def write_agent_roster_templates(
                     f"VAULT_SCOPE={item['scope']}",
                     f"VAULT_MAX_SENSITIVITY={item['max_sensitivity']}",
                     f"VAULT_TOOL_PROFILE={item['tool_profile']}",
+                    f"VAULT_AGENT_ACCESS_PRESET={item['access_preset']}",
+                    f"VAULT_CAN_WRITE_CANDIDATES={str(item['can_write_candidates']).lower()}",
+                    f"VAULT_CAN_PROMOTE={str(item['can_promote']).lower()}",
                     f"VAULT_PROJECT_DIR={project_path}",
                     "SUPABASE_URL=https://YOUR_PROJECT.supabase.co",
                     "SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY",
@@ -201,6 +213,8 @@ def write_agent_roster_templates(
                     "core,mcp",
                     "--tool-profile",
                     item["tool_profile"],
+                    "--agent-preset",
+                    item["access_preset"] or "work-agent",
                     "--json",
                 ]
             )
@@ -219,6 +233,7 @@ def write_agent_roster_templates(
                 "",
                 "- `agent-roster.json`: machine-readable roster.",
                 "- `AGENT_ACCESS_MATRIX.md`: human-reviewed sharing policy.",
+                "- `AGENT_ACCESS_PRESETS.md`: preset catalog for common Agent roles.",
                 "- `agent-env/*.env.example`: per-agent environment examples.",
                 "- `agent-setup-commands.sh`: local setup commands for each agent.",
                 "",
@@ -233,6 +248,7 @@ def write_agent_roster_templates(
         "count": len(normalized),
         "roster": str(roster_path),
         "matrix": str(matrix_path),
+        "presets": str(presets_path),
         "commands": str(commands_path),
         "readme": str(readme_path),
         "env": env_paths,

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import contextlib
 import io
+import json
 import os
 import shlex
 import shutil
@@ -18,6 +19,7 @@ from typing import Any
 import yaml
 
 from vault import __version__
+from vault.agent_access import agent_access_preset, render_agent_access_presets_markdown
 from vault.agent_registry import register_agent
 from vault.agent_setup_templates import (
     DEFAULT_AUTOMATION_INTERVAL_MINUTES,
@@ -82,6 +84,7 @@ from vault.agent_setup_supabase import (
     render_supabase_setup_guide,
     write_supabase_setup_guide,
 )
+from vault.agent_setup_venv import default_stable_venv_path, write_stable_venv_template
 from vault.agent_setup_roster import (
     VALID_AGENT_ROLES,
     VALID_VALIDATION_PACK_TARGETS,
@@ -263,6 +266,7 @@ class AgentSetupConfig:
     project_dir: Path
     scope: str = "private"
     agent: str = "generic"
+    agent_preset: str = ""
     audience: str = "builder"
     memory_layout: str = "hybrid"
     agent_private_dir: Path | None = None
@@ -302,6 +306,7 @@ class AgentSetupConfig:
 
 
 def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
+    access_preset = agent_access_preset(config.agent_preset)
     project_path = ensure_project(config.project_dir)
     features = normalize_features(config.features)
     language = _normalize_setup_language(config.language)
@@ -333,6 +338,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         "project_dir": str(project_path),
         "scope": config.scope,
         "agent": config.agent,
+        "agent_preset": access_preset,
         "audience": audience,
         "memory_layout": memory_layout,
         "agent_private_dir": str(private_project_path) if private_project_path else "",
@@ -358,6 +364,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         "stable_venv": {},
         "memory_layout_files": {},
         "consumer_daily_report": {},
+        "agent_access": {},
         "security_hardening": {},
         "mcp_startup": {},
         "update_status_templates": {},
@@ -383,6 +390,17 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
     )
     result["next_steps"].insert(0, "Check local agent registry and update status: vault update-status")
     template_dir = config.template_dir or (project_path / "agent-install")
+    if access_preset:
+        access_path = Path(template_dir).expanduser().resolve() / "agent-access-preset.json"
+        access_path.parent.mkdir(parents=True, exist_ok=True)
+        access_path.write_text(json.dumps(access_preset, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        catalog_path = access_path.parent / "AGENT_ACCESS_PRESETS.md"
+        catalog_path.write_text(render_agent_access_presets_markdown(), encoding="utf-8")
+        result["agent_access"] = {
+            "preset": access_preset["preset"],
+            "path": str(access_path),
+            "catalog": str(catalog_path),
+        }
     result["memory_layout_files"] = write_memory_layout_manifest(
         output_dir=template_dir,
         agent=config.agent,
@@ -391,6 +409,10 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         private_project_dir=private_project_path,
     )
     result["next_steps"].append(f"Review memory layout manifest: {result['memory_layout_files']['manifest']}")
+    if access_preset:
+        result["next_steps"].append(
+            f"Review agent access preset: {access_preset['preset']} ({access_preset['summary']})"
+        )
     result["mcp_startup"] = write_mcp_startup_guide(
         output_dir=template_dir,
         project_dir=project_path,
@@ -471,6 +493,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
             scope=config.scope,
             features=features,
             tool_profile=config.tool_profile,
+            agent_preset=config.agent_preset,
             install_embedding_model=config.install_embedding_model,
         )
         result["next_steps"].append(
@@ -620,140 +643,6 @@ def _normalize_audience(value: str | None) -> str:
     if text in {"builder", "developer", "agent-builder", "dev"}:
         return "builder"
     raise ValueError("audience must be consumer or builder")
-
-
-def default_stable_venv_path() -> Path:
-    return Path("~/.hermes/venvs/vault-for-llm").expanduser()
-
-
-def _pypi_install_target_for_features(features: list[str]) -> str:
-    selected = normalize_features(features)
-    extras = [feature for feature in ["mcp", "semantic", "supabase", "dev"] if feature in selected]
-    if extras:
-        return f"vault-for-llm[{','.join(extras)}]=={__version__}"
-    return f"vault-for-llm=={__version__}"
-
-
-def render_stable_venv_script(
-    *,
-    venv_path: str | Path,
-    project_dir: str | Path,
-    agent: str,
-    scope: str,
-    features: list[str],
-    tool_profile: str,
-    install_embedding_model: str | None = None,
-) -> str:
-    selected = normalize_features(features)
-    install_target = _pypi_install_target_for_features(selected)
-    project_path = Path(project_dir).expanduser()
-    venv = Path(venv_path).expanduser()
-    setup_command = [
-        '"$VENV/bin/vault"',
-        "setup-agent",
-        "--non-interactive",
-        "--agent",
-        agent,
-        "--scope",
-        scope,
-        "--agent-project-dir",
-        str(project_path),
-        "--features",
-        ",".join(selected),
-        "--tool-profile",
-        tool_profile,
-        "--json",
-    ]
-    if install_embedding_model:
-        setup_command.extend(["--install-embedding-model", install_embedding_model])
-
-    lines = [
-        "#!/usr/bin/env sh",
-        "set -eu",
-        "",
-        f"VENV={shlex.quote(str(venv))}",
-        f"PROJECT_DIR={shlex.quote(str(project_path))}",
-        "",
-        "mkdir -p \"$(dirname \"$VENV\")\"",
-        "python3 -m venv \"$VENV\"",
-        "\"$VENV/bin/python\" -m pip install --upgrade pip",
-        f"\"$VENV/bin/python\" -m pip install {shlex.quote(install_target)}",
-    ]
-    if "headroom" in selected:
-        lines.append("\"$VENV/bin/python\" -m pip install headroom-ai")
-    lines.extend(
-        [
-            "\"$VENV/bin/vault\" --version",
-            "mkdir -p \"$PROJECT_DIR\"",
-            " ".join(shlex.quote(part) if "$" not in part else part for part in setup_command),
-            "",
-        ]
-    )
-    return "\n".join(lines)
-
-
-def render_stable_venv_readme(*, venv_path: str | Path, script_path: str | Path) -> str:
-    return "\n".join(
-        [
-            "# Stable Python Virtualenv",
-            "",
-            "This template creates a long-lived Python virtualenv for Vault-for-LLM.",
-            "Use it for scheduled jobs, MCP commands, Supabase sync, and agent runtimes.",
-            "",
-            f"Recommended venv path: `{Path(venv_path).expanduser()}`",
-            "",
-            "Run:",
-            "",
-            "```bash",
-            f"sh {shlex.quote(str(script_path))}",
-            "```",
-            "",
-            "After it succeeds, point scheduled jobs and agent MCP commands at the",
-            "`vault` and `vault-mcp` executables inside that venv instead of a",
-            "temporary `/tmp/...` virtualenv.",
-            "",
-        ]
-    )
-
-
-def write_stable_venv_template(
-    *,
-    output_dir: str | Path,
-    project_dir: str | Path,
-    venv_path: str | Path,
-    agent: str,
-    scope: str,
-    features: list[str],
-    tool_profile: str,
-    install_embedding_model: str | None = None,
-) -> dict[str, Any]:
-    out = Path(output_dir).expanduser().resolve()
-    out.mkdir(parents=True, exist_ok=True)
-    script_path = out / "setup-stable-venv.sh"
-    script_path.write_text(
-        render_stable_venv_script(
-            venv_path=venv_path,
-            project_dir=project_dir,
-            agent=agent,
-            scope=scope,
-            features=features,
-            tool_profile=tool_profile,
-            install_embedding_model=install_embedding_model,
-        ),
-        encoding="utf-8",
-    )
-    script_path.chmod(0o755)
-
-    readme_path = out / "README-stable-venv.md"
-    readme_path.write_text(
-        render_stable_venv_readme(venv_path=venv_path, script_path=script_path),
-        encoding="utf-8",
-    )
-    return {
-        "venv_path": str(Path(venv_path).expanduser()),
-        "script": str(script_path),
-        "readme": str(readme_path),
-    }
 
 
 def install_optional_dependencies(features: list[str]) -> dict[str, Any]:
@@ -1032,6 +921,7 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
         project_dir=Path(project_dir),
         scope=scope,
         agent=agent,
+        agent_preset=str(argv_config.get("agent_preset") or ""),
         audience=audience,
         memory_layout=memory_layout,
         agent_private_dir=Path(agent_private_dir).expanduser() if agent_private_dir else None,
@@ -1115,6 +1005,7 @@ def _interactive_consumer_setup(argv_config: dict[str, Any], *, agent: str, audi
         project_dir=Path(project_dir),
         scope=scope,
         agent=agent,
+        agent_preset=str(argv_config.get("agent_preset") or ""),
         audience=audience,
         memory_layout=memory_layout,
         features=features,

@@ -194,6 +194,24 @@ vault setup-agent \
 This can generate `agent-install/setup-stable-venv.sh`, so scheduled jobs and
 MCP commands do not depend on a disposable `/tmp` virtualenv.
 
+If an agent should not choose every access flag by hand, use an Agent Access
+Preset:
+
+```bash
+vault setup-agent \
+  --non-interactive \
+  --agent coze \
+  --agent-preset remote-readonly-agent \
+  --agent-project-dir ~/Vaults/my-project \
+  --features core,mcp,supabase \
+  --json
+```
+
+Preset choices are `personal-agent`, `work-agent`, `review-agent`,
+`automation-agent`, `remote-readonly-agent`, and `admin-agent`. Presets are setup
+defaults, not authentication; keep MCP HMAC, Supabase RLS/RPC, service-key
+separation, and review gates enabled where they matter.
+
 Smoke-test note: `vault remember` creates a candidate memory. It should not
 appear in normal `vault search` until reviewed and promoted. Use `vault add` for
 the temporary active note in a search/read smoke test, then use `vault remember`

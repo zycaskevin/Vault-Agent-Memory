@@ -511,6 +511,16 @@ def main(argv: list[str] | None = None):
 
     def add_agent_setup_args(ap):
         ap.add_argument("--agent", default="generic", help="Agent/runtime 名稱，例如 hermes/openclaw/codex/n8n")
+        ap.add_argument("--agent-preset",
+                        choices=[
+                            "personal-agent",
+                            "work-agent",
+                            "review-agent",
+                            "automation-agent",
+                            "remote-readonly-agent",
+                            "admin-agent",
+                        ],
+                        help="常見 Agent 權限預設；會建議 scope、MCP profile、共享/私有邊界")
         ap.add_argument("--audience", choices=["consumer", "builder"], default="builder",
                         help="安裝受眾；consumer 會產生日報導向的一般使用者說明與安全排程模板")
         ap.add_argument("--scope", choices=["shared", "private", "domain", "temporary"], help="Vault 資料庫範圍")
@@ -521,8 +531,8 @@ def main(argv: list[str] | None = None):
         ap.add_argument("--language", choices=["en", "zh-Hant", "zh-CN"], default=None,
                         help="互動式安裝與產生文件的語言；非互動模式預設 en")
         ap.add_argument("--tool-profile", choices=["core", "review", "remote", "maintenance", "full"],
-                        default="core", help="建議的 MCP tool profile")
-        ap.add_argument("--memory-layout", choices=["hybrid", "shared", "private"], default="hybrid",
+                        default=None, help="建議的 MCP tool profile；未提供時可由 --agent-preset 決定")
+        ap.add_argument("--memory-layout", choices=["hybrid", "shared", "private"], default=None,
                         help="記憶庫布局：hybrid=shared project vault + private Agent vault")
         ap.add_argument("--agent-private-dir",
                         help="hybrid/private layout 使用的 Agent 私有 vault 目錄")
