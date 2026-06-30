@@ -351,9 +351,39 @@ vault setup-agent \
 ```
 
 `--agent-roster` writes `agent-roster.json`, `AGENT_ACCESS_MATRIX.md`,
-`agent-env/*.env.example`, and `agent-setup-commands.sh`.
+`AGENT_ACCESS_PRESETS.md`, `agent-env/*.env.example`, and
+`agent-setup-commands.sh`.
 Roster roles are intentionally fixed so access defaults stay reviewable:
 `work`, `profile`, `care`, `dream`, `remote`, `automation`, and `observer`.
+
+### Agent Access Presets
+
+Use `--agent-preset` when the user wants a safe common role instead of a pile of
+flags:
+
+| Preset | Use for | Default shape |
+|---|---|---|
+| `personal-agent` | profile/care assistants | private or hybrid memory, candidate-first writes |
+| `work-agent` | coding/project agents | shared project memory, candidate-first writes |
+| `review-agent` | reviewers and auditors | shared read/review, no writes |
+| `automation-agent` | scheduled maintenance | low-sensitivity reports and candidates |
+| `remote-readonly-agent` | Coze, n8n, browser, hosted readers | shared remote reads, no writes |
+| `admin-agent` | trusted local maintainer | explicit maintenance/promote workflows |
+
+Example:
+
+```bash
+vault setup-agent \
+  --non-interactive \
+  --agent coze \
+  --agent-preset remote-readonly-agent \
+  --agent-project-dir ~/Vaults/project-memory \
+  --features core,mcp,supabase \
+  --json
+```
+
+Presets are installation defaults. They do not replace MCP HMAC signatures,
+Supabase RLS/RPC, service-role key separation, or candidate review.
 
 ## MCP Profiles
 

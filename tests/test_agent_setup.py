@@ -713,7 +713,7 @@ def test_run_agent_setup_writes_agent_roster_and_validation_pack(tmp_path):
     roster = result["agent_roster"]
     validation = result["live_validation_pack"]
     assert roster["count"] == 5
-    assert {"roster", "matrix", "commands", "readme", "env"}.issubset(roster)
+    assert {"roster", "matrix", "presets", "commands", "readme", "env"}.issubset(roster)
     assert {"remote", "n8n", "coze", "readme"}.issubset(validation)
 
     roster_json = json.loads((tmp_path / "templates" / "agent-roster.json").read_text(encoding="utf-8"))
@@ -724,10 +724,14 @@ def test_run_agent_setup_writes_agent_roster_and_validation_pack(tmp_path):
 
     assert roster_json["agents"][0]["agent_id"] == "profile-agent"
     assert roster_json["agents"][0]["role"] == "profile"
+    assert roster_json["agents"][0]["access_preset"] == "personal-agent"
     assert roster_json["agents"][0]["private_memory"] is True
     assert any(item["agent_id"] == "remote-agent" and item["remote_reader"] for item in roster_json["agents"])
-    assert "| profile-agent | profile | private | high | review | True | True | False |" in matrix
+    assert "| profile-agent | personal-agent | profile | private | high | review | True | False | False | True | True | False |" in matrix
+    assert "remote-readonly-agent" in (tmp_path / "templates" / "AGENT_ACCESS_PRESETS.md").read_text(encoding="utf-8")
     assert "VAULT_AGENT_ROLE=profile" in profile_agent_env
+    assert "VAULT_AGENT_ACCESS_PRESET=personal-agent" in profile_agent_env
+    assert "VAULT_CAN_PROMOTE=false" in profile_agent_env
     assert "vault remote smoke" in validate_remote
     assert "--json" in validate_remote
     assert "pricing SOP" in validate_remote
@@ -774,6 +778,40 @@ def test_setup_agent_cli_non_interactive(tmp_path, capsys):
     assert payload["obsidian"]["import"]["added"] == 1
     assert "cron" in payload["sync_templates"]
     assert (project / "raw" / "obsidian" / "Note.md").exists()
+
+
+def test_setup_agent_cli_agent_preset_applies_safe_defaults(tmp_path, capsys):
+    from vault.cli import main
+
+    project = tmp_path / "remote-reader-project"
+    main(
+        [
+            "setup-agent",
+            "--non-interactive",
+            "--agent",
+            "coze",
+            "--agent-preset",
+            "remote-readonly-agent",
+            "--agent-project-dir",
+            str(project),
+            "--features",
+            "core,mcp,supabase",
+            "--json",
+        ]
+    )
+
+    captured = capsys.readouterr()
+    payload = json.loads(captured.out)
+    assert payload["agent"] == "coze"
+    assert payload["scope"] == "shared"
+    assert payload["memory_layout"] == "shared"
+    assert payload["tool_profile"] == "remote"
+    assert payload["agent_preset"]["preset"] == "remote-readonly-agent"
+    assert payload["agent_preset"]["can_promote"] is False
+    assert payload["agent_preset"]["remote_reader"] is True
+    assert payload["agent_access"]["preset"] == "remote-readonly-agent"
+    assert Path(payload["agent_access"]["path"]).exists()
+    assert Path(payload["agent_access"]["catalog"]).exists()
 
 
 def test_agent_install_runtime_template_is_dry_run_then_apply(tmp_path, capsys):
@@ -1039,6 +1077,7 @@ def test_setup_agent_help_exposes_supabase_sync_options(capsys):
     assert "--supabase-setup" in captured.out
     assert "--supabase-sync-interval-minutes" in captured.out
     assert "--remote-reader" in captured.out
+    assert "--agent-preset" in captured.out
     assert "--agent-roster" in captured.out
     assert "work/profile/care/dream/remote/automation/observer" in captured.out
     assert "--validation-pack" in captured.out
@@ -1218,6 +1257,7 @@ def test_run_agent_setup_writes_stable_venv_template(tmp_path):
             project_dir=project,
             scope="shared",
             agent="codex",
+            agent_preset="work-agent",
             features=["core", "mcp", "supabase", "headroom"],
             stable_venv_path=stable_venv,
         )
@@ -1233,6 +1273,7 @@ def test_run_agent_setup_writes_stable_venv_template(tmp_path):
     assert "python3 -m venv \"$VENV\"" in body
     assert "vault-for-llm[mcp,supabase]==0.7.19" in body
     assert "headroom-ai" in body
+    assert "--agent-preset work-agent" in body
     assert "--agent-project-dir" in body
     assert str(project) in body
     assert any("setup-stable-venv.sh" in step for step in result["next_steps"])
