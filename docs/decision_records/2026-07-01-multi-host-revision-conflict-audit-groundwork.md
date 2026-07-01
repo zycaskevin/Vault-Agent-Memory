@@ -50,11 +50,23 @@ Implemented now:
 - `vault sync audit`
 - `vault sync resolve-conflict`
 
+Conflict resolution supports three reviewed decisions:
+
+- `keep_local`: keep the active local row and reject the conflicting candidate.
+- `manual`: record that a trusted operator handled the conflict outside the
+  automatic path.
+- `accept_remote --apply-memory-change`: promote the remote candidate through
+  the normal candidate path and archive the conflicting local row.
+
+`accept_remote` is deliberately guarded by an explicit flag because it changes
+active memory. It still does not silently overwrite rows; the old local content
+remains archived for audit and restore.
+
 Not implemented yet:
 
 - multi-master active-knowledge writes
 - automatic conflict merging
-- rollback of active knowledge from the revision graph
+- full active-knowledge rollback from the revision graph
 - distributed revision exchange
 - cryptographic remote writer identity beyond existing agent/MCP controls
 
@@ -64,6 +76,8 @@ Use this phrasing externally:
 
 > Remote machines can submit memory candidates. A trusted local Vault pulls them
 > into review, records revisions, detects conflicts, and keeps an audit trail.
+> If a trusted reviewer accepts a remote candidate, Vault promotes it through the
+> candidate path and archives the conflicting local row instead of overwriting it.
 > Full multi-master active-memory writes are intentionally not enabled yet.
 
 Avoid saying:

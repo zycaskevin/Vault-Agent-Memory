@@ -34,7 +34,7 @@ Candidate sync gives us useful bidirectional behavior now:
 - No direct remote writes into `vault_knowledge`.
 - No automatic promotion from remote requests in phase 1.
 - No multi-master active knowledge merge.
-- No conflict resolver or revision graph yet.
+- No active-memory overwrite or distributed revision exchange yet.
 
 ## Next Phases
 
@@ -42,7 +42,12 @@ Candidate sync gives us useful bidirectional behavior now:
    low sensitivity, high trust, no conflict, passing local gates can be promoted
    by explicit policy; everything else goes to the daily 5% review report.
 2. True multi-host co-writing:
-   revision graph, conflict resolver, rollback, and append-only audit log.
+   distributed revision exchange, rollback, and append-only audit log.
+
+Status update: a later PR added local revision/conflict/audit tracking and a
+guarded conflict resolver. Remote candidates still flow through local review;
+`accept_remote --apply-memory-change` promotes the candidate and archives the
+conflicting local row.
 
 ## Operator Boundary
 

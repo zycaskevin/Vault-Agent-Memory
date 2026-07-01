@@ -6,6 +6,7 @@ import hashlib
 import json
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from .db import VaultDB
@@ -287,18 +288,35 @@ def resolve_conflict(
     resolution: str,
     reason: str = "",
     actor_agent: str = "",
+    apply_memory_change: bool = False,
+    project_dir: str | Path | None = None,
+    compile: bool = True,
+    build_map: bool = True,
 ) -> dict[str, Any]:
     if resolution not in {"keep_local", "accept_remote", "manual"}:
         raise ValueError("resolution must be keep_local, accept_remote, or manual")
     row = db.conn.execute("SELECT * FROM memory_conflicts WHERE id=?", (conflict_id,)).fetchone()
     if not row:
         raise KeyError(f"conflict not found: {conflict_id}")
+    row_d = dict(row)
+    applied_changes = _apply_conflict_resolution(
+        db,
+        row_d,
+        resolution=resolution,
+        actor_agent=actor_agent,
+        apply_memory_change=apply_memory_change,
+        project_dir=project_dir,
+        compile=compile,
+        build_map=build_map,
+    )
     now = utc_now()
     payload = {
         "resolution": resolution,
         "reason": reason,
         "actor_agent": actor_agent,
         "resolved_at": now,
+        "memory_change_applied": bool(applied_changes),
+        "applied_changes": applied_changes,
     }
     db.conn.execute(
         """UPDATE memory_conflicts
@@ -313,7 +331,128 @@ def resolve_conflict(
         action="conflict:resolved",
         target_type="conflict",
         target_id=conflict_id,
-        revision_id=str(row["right_revision_id"] or row["left_revision_id"] or ""),
+        revision_id=str(row_d.get("right_revision_id") or row_d.get("left_revision_id") or ""),
         payload=payload,
     )
     return dict(db.conn.execute("SELECT * FROM memory_conflicts WHERE id=?", (conflict_id,)).fetchone())
+
+
+def _apply_conflict_resolution(
+    db: VaultDB,
+    conflict: dict[str, Any],
+    *,
+    resolution: str,
+    actor_agent: str = "",
+    apply_memory_change: bool = False,
+    project_dir: str | Path | None = None,
+    compile: bool = True,
+    build_map: bool = True,
+) -> list[dict[str, Any]]:
+    """Apply the memory-side effects for a reviewed conflict resolution.
+
+    `manual` intentionally leaves memory untouched. `accept_remote` is guarded
+    by `apply_memory_change` because it promotes a remote candidate and archives
+    the current local row. This keeps remote writes candidate-first and
+    auditable instead of silently overwriting active knowledge.
+    """
+    candidate_id = str(conflict.get("candidate_id") or "")
+    knowledge_id = int(conflict["knowledge_id"]) if conflict.get("knowledge_id") is not None else None
+    right_revision_id = str(conflict.get("right_revision_id") or "")
+    applied: list[dict[str, Any]] = []
+
+    if resolution == "manual":
+        return applied
+
+    if not candidate_id:
+        raise ValueError("conflict has no candidate_id to resolve")
+    candidate = db.get_memory_candidate(candidate_id)
+    if not candidate:
+        raise KeyError(f"candidate not found: {candidate_id}")
+
+    if resolution == "keep_local":
+        if candidate.get("status") != "promoted":
+            db.update_memory_candidate(candidate_id, status="rejected")
+            record_memory_revision(
+                db,
+                title=str(candidate.get("title") or ""),
+                content=str(candidate.get("content") or ""),
+                operation="remote_candidate_rejected_keep_local",
+                status="rejected",
+                candidate_id=candidate_id,
+                parent_revision_id=right_revision_id,
+                source_agent=actor_agent,
+                payload={"conflict_id": conflict.get("id"), "resolution": resolution},
+            )
+            applied.append({"target": "candidate", "id": candidate_id, "action": "rejected"})
+        return applied
+
+    if resolution != "accept_remote":
+        return applied
+    if not apply_memory_change:
+        raise ValueError("accept_remote requires apply_memory_change=True")
+
+    from .memory import promote_candidate
+
+    promotion = promote_candidate(
+        db,
+        candidate_id,
+        confirm=True,
+        project_dir=project_dir,
+        compile=compile,
+        build_map=build_map,
+    )
+    promoted_id = int(promotion.get("knowledge_id") or 0)
+    applied.append({"target": "candidate", "id": candidate_id, "action": "promoted", "knowledge_id": promoted_id})
+
+    if knowledge_id and promoted_id and knowledge_id != promoted_id:
+        old = db.get_knowledge(knowledge_id)
+        if old and str(old.get("status") or "active") != "archived":
+            archived_at = utc_now()
+            record_memory_revision(
+                db,
+                title=str(old.get("title") or ""),
+                content=str(old.get("content_raw") or ""),
+                operation="local_knowledge_archived_for_remote_accept",
+                status="archived",
+                knowledge_id=knowledge_id,
+                parent_revision_id=right_revision_id,
+                source_agent=actor_agent,
+                payload={
+                    "conflict_id": conflict.get("id"),
+                    "replacement_knowledge_id": promoted_id,
+                    "resolution": resolution,
+                },
+            )
+            db.update_knowledge(knowledge_id, status="archived", archived_at=archived_at)
+            record_audit_event(
+                db,
+                actor_agent=actor_agent,
+                action="knowledge:archived_for_remote_accept",
+                target_type="knowledge",
+                target_id=str(knowledge_id),
+                revision_id=right_revision_id,
+                payload={"replacement_knowledge_id": promoted_id, "conflict_id": conflict.get("id")},
+            )
+            applied.append(
+                {
+                    "target": "knowledge",
+                    "id": knowledge_id,
+                    "action": "archived",
+                    "replacement_knowledge_id": promoted_id,
+                }
+            )
+
+    if promoted_id:
+        record_memory_revision(
+            db,
+            title=str(candidate.get("title") or ""),
+            content=str(candidate.get("content") or ""),
+            operation="remote_candidate_promoted_accept_remote",
+            status="active",
+            knowledge_id=promoted_id,
+            candidate_id=candidate_id,
+            parent_revision_id=right_revision_id,
+            source_agent=actor_agent,
+            payload={"conflict_id": conflict.get("id"), "resolution": resolution},
+        )
+    return applied

@@ -67,7 +67,8 @@ scheduled jobs, or explicit maintenance sessions.
 | `vault sync revisions --json` | Inspect the local revision graph created by remote candidate imports and promotions |
 | `vault sync conflicts --json` | List open local sync conflicts, such as same-title remote candidates that differ from active reviewed knowledge |
 | `vault sync audit --json` | Inspect local sync audit events without reading private memory content |
-| `vault sync resolve-conflict <conflict_id> --resolution keep_local --agent-id work-agent` | Mark a conflict as reviewed; does not overwrite active knowledge |
+| `vault sync resolve-conflict <conflict_id> --resolution keep_local --agent-id work-agent` | Keep local knowledge and reject the conflicting remote candidate |
+| `vault sync resolve-conflict <conflict_id> --resolution accept_remote --apply-memory-change --agent-id work-agent` | Promote the remote candidate and archive the conflicting local row; old content stays auditable |
 | `vault remove <id> --confirm` | Remove a knowledge entry after reviewing its ID |
 
 ## Knowledge Ingestion
@@ -177,10 +178,10 @@ role key to write local `memory_candidates`, not active `knowledge`.
 trust above threshold, and a source reference.
 `vault sync revisions/conflicts/audit` is the local safety surface for the next
 multi-host phase. It records what arrived, what was promoted, what conflicted,
-and who marked a conflict resolved. It is not multi-master active-knowledge
-sync: conflict resolution currently records the decision and audit trail, while
-active knowledge still changes through candidate review or allowed low-risk
-promotion.
+and who marked a conflict resolved. `accept_remote` requires
+`--apply-memory-change` because it changes active memory by promoting the remote
+candidate and archiving the local row. This is still candidate-first sync, not
+multi-master active-knowledge sync.
 Multi-agent roster templates are opt-in with `--agent-roster`; each entry uses
 `agent_id:role[:scope[:max_sensitivity]]`, for example
 `profile-agent:profile,work-agent:work,remote-agent:remote,n8n:automation`.

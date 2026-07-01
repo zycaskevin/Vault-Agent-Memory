@@ -39,6 +39,8 @@ def cmd_sync(args) -> None:
                         resolution=args.resolution,
                         reason=args.reason or "",
                         actor_agent=args.agent_id or "",
+                        apply_memory_change=bool(getattr(args, "apply_memory_change", False)),
+                        project_dir=project_dir,
                     ),
                 }
             else:
