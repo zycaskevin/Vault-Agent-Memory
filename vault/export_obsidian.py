@@ -145,6 +145,45 @@ def _load_recent_knowledge(conn: sqlite3.Connection, *, limit: int = 8) -> list[
     return [dict(row) for row in rows]
 
 
+def _note_basename(row: dict[str, Any]) -> str:
+    return f"{int(row['id']):04d}-{slugify_filename(str(row.get('title') or 'untitled'))}"
+
+
+def _note_wikilink(row: dict[str, Any]) -> str:
+    title = row.get("title") or f"Vault #{row['id']}"
+    return f"[[{_note_basename(row)}|{title}]]"
+
+
+def _load_graph_edges(conn: sqlite3.Connection, *, limit: int = 40) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT e.id, e.relation, e.weight, e.auto_inferred, e.created_at,
+               s.id AS source_id, s.title AS source_title, s.category AS source_category,
+               t.id AS target_id, t.title AS target_title, t.category AS target_category
+        FROM edges e
+        JOIN knowledge s ON s.id = e.source_id
+        JOIN knowledge t ON t.id = e.target_id
+        ORDER BY e.weight DESC, e.id ASC
+        LIMIT ?
+        """,
+        (max(1, min(int(limit or 40), 200)),),
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def _load_category_counts(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        """
+        SELECT category, COUNT(*) AS count
+        FROM knowledge
+        GROUP BY category
+        ORDER BY count DESC, category ASC
+        LIMIT 20
+        """
+    ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def _load_obsidian_manifest(project_path: Path) -> dict[str, Any]:
     path = project_path / ".vault" / "obsidian-import-manifest.json"
     if not path.exists():
@@ -398,6 +437,114 @@ filesystem scan.
     }
 
 
+def _render_graph_overview(
+    *,
+    recent: list[dict[str, Any]],
+    category_counts: list[dict[str, Any]],
+    edges: list[dict[str, Any]],
+    generated_at: str,
+) -> dict[str, str]:
+    recent_lines = "\n".join(f"- {_note_wikilink(row)}" for row in recent) or "- No active knowledge yet."
+    category_lines = "\n".join(
+        f"- **{row.get('category') or 'general'}**: {int(row.get('count') or 0)}"
+        for row in category_counts
+    ) or "- No categories yet."
+    edge_lines = []
+    for row in edges:
+        source = {"id": row["source_id"], "title": row["source_title"]}
+        target = {"id": row["target_id"], "title": row["target_title"]}
+        edge_lines.append(
+            f"- {_note_wikilink(source)} -- `{row.get('relation')}` "
+            f"({float(row.get('weight') or 0):g}) -> {_note_wikilink(target)}"
+        )
+    edge_text = "\n".join(edge_lines) or "- No graph edges yet. Run `vault graph build` after importing Obsidian notes."
+
+    home = f"""---
+title: "Vault Home"
+generated_by: "vault-for-llm"
+generated_at: "{generated_at}"
+---
+
+# Vault Home
+
+## Start Here
+
+- [[Graph Overview]]
+- [[Daily Memory Report]]
+- [[Memory Candidates]]
+- [[Sync Status]]
+- [[Folder Rules Preview]]
+
+## Recent Knowledge
+
+{recent_lines}
+
+## Categories
+
+{category_lines}
+"""
+    graph = f"""---
+title: "Vault Graph Overview"
+generated_by: "vault-for-llm"
+generated_at: "{generated_at}"
+---
+
+# Vault Graph Overview
+
+This is a human-readable graph doorway for Obsidian. Agent retrieval should
+still use Vault search, Document Map, and bounded reads.
+
+## Strongest Links
+
+{edge_text}
+"""
+    return {
+        "_Index/Vault Home.md": home,
+        "_Index/Graph Overview.md": graph,
+    }
+
+
+def export_obsidian_graph_overview(
+    *,
+    project_dir: str | Path,
+    vault_dir: str | Path,
+    dry_run: bool = False,
+    export_dir_name: str = DEFAULT_EXPORT_DIR,
+    limit: int = 40,
+) -> dict[str, Any]:
+    """Export Obsidian index notes that turn Vault into a browsable graph GUI."""
+    project_path = Path(project_dir)
+    destination = Path(vault_dir)
+    db_path = project_path / "vault.db"
+    generated_at = datetime.now(timezone.utc).isoformat()
+    with _connect_readonly(db_path) as conn:
+        rendered = _render_graph_overview(
+            recent=_load_recent_knowledge(conn, limit=10),
+            category_counts=_load_category_counts(conn),
+            edges=_load_graph_edges(conn, limit=limit),
+            generated_at=generated_at,
+        )
+
+    paths: list[str] = []
+    written = 0
+    for relative, content in rendered.items():
+        note_path = destination / export_dir_name / relative
+        paths.append(str(note_path))
+        if dry_run:
+            continue
+        note_path.parent.mkdir(parents=True, exist_ok=True)
+        note_path.write_text(content, encoding="utf-8")
+        written += 1
+    return {
+        "matched": len(rendered),
+        "written": written,
+        "dry_run": dry_run,
+        "vault_dir": str(destination),
+        "export_dir": export_dir_name,
+        "paths": paths,
+    }
+
+
 def export_obsidian_review_inbox(
     *,
     project_dir: str | Path,
@@ -466,6 +613,7 @@ def export_obsidian_vault(
     dry_run: bool = False,
     export_dir_name: str = DEFAULT_EXPORT_DIR,
     include_review_inbox: bool = False,
+    include_graph_overview: bool = False,
 ) -> dict[str, Any]:
     """Export knowledge entries to an Obsidian vault as Markdown notes.
 
@@ -512,6 +660,17 @@ def export_obsidian_vault(
         planned.extend(review_result["paths"])
         written += int(review_result["written"])
 
+    graph_result: dict[str, Any] | None = None
+    if include_graph_overview:
+        graph_result = export_obsidian_graph_overview(
+            project_dir=project_path,
+            vault_dir=destination,
+            dry_run=dry_run,
+            export_dir_name=export_dir_name,
+        )
+        planned.extend(graph_result["paths"])
+        written += int(graph_result["written"])
+
     payload = {
         "matched": len(rows),
         "written": written,
@@ -522,4 +681,6 @@ def export_obsidian_vault(
     }
     if review_result is not None:
         payload["review_inbox"] = review_result
+    if graph_result is not None:
+        payload["graph_overview"] = graph_result
     return payload

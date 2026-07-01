@@ -10,7 +10,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from vault.db import VaultDB
-from vault.export_obsidian import export_obsidian_review_inbox, export_obsidian_vault, slugify_filename
+from vault.export_obsidian import (
+    export_obsidian_graph_overview,
+    export_obsidian_review_inbox,
+    export_obsidian_vault,
+    slugify_filename,
+)
 
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -331,6 +336,53 @@ def test_export_obsidian_can_include_review_inbox(tmp_path):
     assert (vault_dir / "00-Vault-Knowledge" / "_Inbox" / "Daily Memory Report.md").exists()
 
 
+def test_export_obsidian_graph_overview_writes_home_and_graph_notes(tmp_path):
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    db_path = project_dir / "vault.db"
+    ids = _make_vault_db(db_path)
+    with VaultDB(db_path) as db:
+        db.add_edge(ids[0], ids[1], relation="obsidian_link", weight=0.8)
+
+    vault_dir = tmp_path / "ObsidianVault"
+    result = export_obsidian_graph_overview(project_dir=project_dir, vault_dir=vault_dir)
+
+    assert result["matched"] == 2
+    assert result["written"] == 2
+    home = vault_dir / "00-Vault-Knowledge" / "_Index" / "Vault Home.md"
+    graph = vault_dir / "00-Vault-Knowledge" / "_Index" / "Graph Overview.md"
+    assert home.exists()
+    assert graph.exists()
+    home_text = home.read_text(encoding="utf-8")
+    graph_text = graph.read_text(encoding="utf-8")
+    assert "[[Graph Overview]]" in home_text
+    assert "[[0001-Vault-Document-Map-Example|Vault Document Map Example]]" in home_text
+    assert "`obsidian_link`" in graph_text
+    assert "[[0002-Bad-Name-Quoted|Bad / Name: \"Quoted\"?]]" in graph_text
+
+
+def test_export_obsidian_can_include_graph_overview(tmp_path):
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    db_path = project_dir / "vault.db"
+    ids = _make_vault_db(db_path)
+    with VaultDB(db_path) as db:
+        db.add_edge(ids[0], ids[1], relation="related", weight=0.7)
+
+    vault_dir = tmp_path / "ObsidianVault"
+    result = export_obsidian_vault(
+        project_dir=project_dir,
+        vault_dir=vault_dir,
+        category="technique",
+        include_graph_overview=True,
+    )
+
+    assert result["matched"] == 2
+    assert result["graph_overview"]["written"] == 2
+    assert (vault_dir / "00-Vault-Knowledge" / "_Index" / "Vault Home.md").exists()
+    assert (vault_dir / "00-Vault-Knowledge" / "_Index" / "Graph Overview.md").exists()
+
+
 def test_export_obsidian_rejects_unsupported_sources(tmp_path):
     project_dir = tmp_path / "project"
     project_dir.mkdir()
@@ -395,6 +447,32 @@ def test_export_obsidian_cli_writes_notes(tmp_path):
     assert "written=2" in result.stdout
     assert (vault_dir / "00-Vault-Knowledge" / "technique" / "0001-Vault-Document-Map-Example.md").exists()
     assert (vault_dir / "00-Vault-Knowledge" / "error" / "0002-Bad-Name-Quoted.md").exists()
+
+
+def test_export_obsidian_cli_json_can_include_graph_overview(tmp_path):
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    db_path = project_dir / "vault.db"
+    ids = _make_vault_db(db_path)
+    with VaultDB(db_path) as db:
+        db.add_edge(ids[0], ids[1], relation="related", weight=0.7)
+    vault_dir = tmp_path / "ObsidianVault"
+
+    result = _run_cli(
+        project_dir,
+        "export",
+        "obsidian",
+        "--vault",
+        str(vault_dir),
+        "--include-graph-overview",
+        "--json",
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(result.stdout)
+    assert payload["ok"] is True
+    assert payload["graph_overview"]["matched"] == 2
+    assert (vault_dir / "00-Vault-Knowledge" / "_Index" / "Vault Home.md").exists()
 
 
 def test_export_obsidian_cli_rejects_unsupported_source_without_traceback(tmp_path):

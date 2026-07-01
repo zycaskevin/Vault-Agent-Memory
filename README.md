@@ -752,8 +752,12 @@ Export compiled Vault knowledge back into Obsidian-readable notes:
 ```bash
 vault export obsidian --project-dir ~/Vaults/my-project --vault ~/Documents/ObsidianVault --dry-run --json
 vault export obsidian --project-dir ~/Vaults/my-project --vault ~/Documents/ObsidianVault
+vault export obsidian --project-dir ~/Vaults/my-project --vault ~/Documents/ObsidianVault \
+  --include-graph-overview --include-review-inbox
 ```
 
+The graph overview export writes `00-Vault-Knowledge/_Index/Vault Home.md`
+and `Graph Overview.md`, so Obsidian can act as a human-readable Vault browser.
 The importer skips `.obsidian`, `.trash`, `.git`, and generated Vault export
 folders by default.
 

@@ -90,6 +90,7 @@ scheduled jobs, or explicit maintenance sessions.
 | `vault import obsidian --vault /path/to/ObsidianVault --dry-run` | Preview importing existing Obsidian notes into `raw/obsidian/` |
 | `vault import obsidian --vault /path/to/ObsidianVault --compile` | Import changed Obsidian notes and compile them into `vault.db` |
 | `vault export obsidian --vault /path/to/ObsidianVault --dry-run --json` | Preview read-only Markdown notes for Obsidian browsing with machine-readable output |
+| `vault export obsidian --vault /path/to/ObsidianVault --include-graph-overview --include-review-inbox` | Write `Vault Home`, `Graph Overview`, and review inbox notes so Obsidian can act as the human GUI |
 | `vault okf validate ./okf-bundle --json --pretty` | Validate an OKF-style Markdown knowledge bundle before import, export, or publication |
 | `vault export okf --bundle ./okf-bundle --dry-run --json --pretty` | Preview a read-only OKF-style export; private and restricted memories are excluded by default |
 | `vault export okf --bundle ./okf-bundle --include-private --include-restricted` | Explicitly include protected memories when creating a private/internal bundle |

@@ -59,6 +59,25 @@ The later slices are:
 - a watch/scheduled sync mode once conflict handling is visible and safe;
 - optional Obsidian plugin support after the file-based workflow is stable.
 
+## 2026-07-01 Update: Index And Graph Doorway
+
+The Obsidian export path should support an optional GUI-oriented index layer:
+
+- `Vault Home.md` gives humans a first page for recent knowledge, categories,
+  review inbox links, and graph overview links.
+- `Graph Overview.md` summarizes the strongest Vault graph edges using
+  Obsidian wikilinks to exported knowledge notes.
+- Review inbox export remains separate but can be enabled together with the
+  graph overview.
+
+These generated index files are safe to delete and regenerate. They make
+Obsidian a friendlier human browser, but they do not change the source of
+truth: agents still use Vault's governed retrieval APIs, not the Obsidian
+mirror, as their authority.
+
+Future live or bidirectional Obsidian sync must continue to preserve
+candidate-first writes, folder governance, conflict review, and auditability.
+
 ## Non-Goals
 
 - Do not overwrite arbitrary user-authored Obsidian notes from agent output.
