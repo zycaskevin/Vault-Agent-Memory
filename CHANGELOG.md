@@ -1,5 +1,47 @@
 # CHANGELOG
 
+## [0.7.23] - 2026-07-01
+
+### Added
+
+- Added Obsidian as a human-facing Vault review surface: generated `_Inbox`
+  notes now include Daily Memory Report, Memory Candidates, Sync Status, and
+  Folder Rules Preview.
+- Added Obsidian folder-rule support for imports, letting human folder
+  structure map into Vault `scope`, `sensitivity`, category, and tags.
+- Added Obsidian `[[wikilink]]` preservation and graph import so source notes
+  can contribute `obsidian_link` edges after `vault graph build`.
+- Added `setup-agent` Obsidian options for writing conservative default folder
+  rules, exporting the review inbox, and generating a short
+  `README-obsidian-human-gui.md` guide.
+
+### Changed
+
+- Updated Agent install docs to present Obsidian as the human-readable notebook
+  while Vault remains the governed agent memory core.
+- Generated Obsidian sync templates can now run incremental import and then
+  export the review inbox back to `00-Vault-Knowledge/_Inbox/`.
+- Obsidian Sync Status now reports unmatched active notes so users can tune
+  folder rules without learning the full CLI.
+
+### Safety
+
+- Vault-generated Obsidian notes stay under `00-Vault-Knowledge/` and are
+  skipped by the importer to avoid feeding generated review cards back into raw
+  source notes.
+- Folder rules are conservative: protected folders can make notes more
+  restrictive, but note frontmatter should not accidentally downgrade those
+  folders.
+- Sync conflict cards remain metadata-only and do not expose raw conflicting
+  memory content.
+
+### Validation
+
+- Verified Obsidian import/export, setup-agent, module-size, history privacy,
+  and package compile checks locally.
+- Verified a real setup-agent Obsidian cron smoke: generated templates, executed
+  the sync command, and confirmed `_Inbox` notes were written.
+
 ## [0.7.22] - 2026-07-01
 
 ### Added
