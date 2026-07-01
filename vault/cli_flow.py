@@ -554,7 +554,6 @@ def cmd_db(args):
         raise SystemExit(2) from exc
 
     _json_print(payload, pretty=args.pretty)
-
 def cmd_export(args):
     """One-way export commands for human-readable knowledge browsing."""
     if args.export_target not in {"obsidian", "okf"}:
@@ -563,7 +562,6 @@ def cmd_export(args):
     json_output, pretty_output = _json_flags(args)
     if args.export_target == "okf":
         from vault.okf import export_okf_bundle
-
         try:
             result = export_okf_bundle(
                 project_dir=find_project_dir(),
@@ -596,6 +594,7 @@ def cmd_export(args):
         return
 
     from vault.export_obsidian import export_obsidian_vault
+    include_review, include_graph = _arg_value(args, "include_review_inbox", False) is True, _arg_value(args, "include_graph_overview", False) is True
     try:
         result = export_obsidian_vault(
             project_dir=find_project_dir(),
@@ -607,7 +606,8 @@ def cmd_export(args):
             min_trust=args.min_trust,
             source=args.source,
             dry_run=args.dry_run,
-            include_review_inbox=getattr(args, "include_review_inbox", False),
+            include_review_inbox=include_review,
+            include_graph_overview=include_graph,
         )
     except (FileNotFoundError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)

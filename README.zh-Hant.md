@@ -507,9 +507,13 @@ vault import obsidian --vault ~/Documents/ObsidianVault --project-dir ~/Vaults/m
 ```bash
 vault export obsidian --project-dir ~/Vaults/my-project --vault ~/Documents/ObsidianVault --dry-run --json
 vault export obsidian --project-dir ~/Vaults/my-project --vault ~/Documents/ObsidianVault
+vault export obsidian --project-dir ~/Vaults/my-project --vault ~/Documents/ObsidianVault \
+  --include-graph-overview --include-review-inbox
 ```
 
-Importer 預設會跳過 `.obsidian`、`.trash`、`.git` 和 Vault 自己匯出的資料夾。
+Graph overview 會寫出 `00-Vault-Knowledge/_Index/Vault Home.md` 和
+`Graph Overview.md`，讓 Obsidian 變成 Vault 的人類瀏覽入口。Importer
+預設會跳過 `.obsidian`、`.trash`、`.git` 和 Vault 自己匯出的資料夾。
 
 ## 搜尋品質
 

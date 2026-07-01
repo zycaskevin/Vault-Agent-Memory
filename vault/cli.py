@@ -703,6 +703,7 @@ def main(argv: list[str] | None = None):
     ep.add_argument("--source", choices=["db", "raw", "compiled"], default="db", help="來源（MVP 支援 db）")
     ep.add_argument("--dry-run", action="store_true", help="只列出將寫入的檔案，不建立檔案")
     ep.add_argument("--include-review-inbox", action="store_true", help="同時輸出 Daily Report、候選記憶與同步狀態到 Obsidian _Inbox")
+    ep.add_argument("--include-graph-overview", action="store_true", help="同時輸出 Vault Home 與 Graph Overview，讓 Obsidian 作為瀏覽入口")
     ep.add_argument("--json", action="store_true", help="輸出 JSON")
     ep.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
 
