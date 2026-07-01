@@ -82,6 +82,8 @@ scheduled jobs, or explicit maintenance sessions.
 | `vault add "Title" --content "..."` | Add one active knowledge entry directly |
 | `vault add "Title" --file note.md` | Add an entry from a Markdown file |
 | `vault import long-doc.md` | Import and chunk a long document |
+| `vault import memory --source ./chatbox-export.json --format auto --dry-run --json --pretty` | Preview an external memory export from Chatbox, ChatGPT, Claude, Markdown, JSON, CSV, transcript, or OKF |
+| `vault import memory --source ./chatbox-export.json --write-candidates --only summaries,decisions,preferences` | Write external memories into `memory_candidates` for review; never writes active knowledge directly |
 | `vault import okf --bundle ./okf-bundle --dry-run --json --pretty` | Preview candidate-first import from an OKF-style Markdown bundle |
 | `vault import okf --bundle ./okf-bundle --scope shared --owner-agent work-agent` | Write OKF concepts into `memory_candidates` for review, not active knowledge |
 | `vault import obsidian --vault /path/to/ObsidianVault --dry-run` | Preview importing existing Obsidian notes into `raw/obsidian/` |
@@ -99,6 +101,12 @@ memory access pattern. Gateway keeps the public surface small:
 `/search`, `/read-range`, `/submit-candidate`, and `/health`. It requires
 `agent_id`, hides private memory by default, writes only candidates, and records
 compact audit rows in `reports/gateway/audit.jsonl`.
+
+Use `vault import memory` when moving memory from another product, an exported
+chat transcript, a JSON/CSV archive, or a folder of Markdown notes. The import
+is candidate-first: preview is the default, `--write-candidates` writes review
+candidates, and promotion into active `knowledge` still requires the normal
+review gates.
 
 `vault import obsidian` skips `.obsidian/`, `.trash/`, `.git/`, and
 `00-Vault-Knowledge/` by default. The generated raw notes include
