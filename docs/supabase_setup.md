@@ -96,9 +96,22 @@ The first multi-host safety surface is local revision/conflict/audit tracking.
 remote candidates arrived, what changed locally, and what needs a human or
 trusted agent decision.
 
+Reviewed conflicts can be closed in three ways:
+
+```bash
+vault sync resolve-conflict conf_123 --resolution keep_local --agent-id review-agent
+vault sync resolve-conflict conf_123 --resolution manual --reason "merged by hand" --agent-id review-agent
+vault sync resolve-conflict conf_123 --resolution accept_remote --apply-memory-change --agent-id review-agent
+```
+
+`accept_remote` is intentionally explicit. It promotes the remote candidate
+through the normal candidate path and archives the conflicting local knowledge
+instead of silently overwriting it. The old row remains available for audit and
+restore.
+
 True multi-master active-knowledge writing is not enabled yet. That future
-phase needs a stronger revision graph, conflict resolver, rollback plan, and
-audit policy before multiple machines can safely overwrite reviewed knowledge.
+phase still needs a stronger distributed revision protocol and rollback policy
+before multiple machines can safely overwrite reviewed knowledge directly.
 
 ## Agent-Guided Setup
 

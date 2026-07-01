@@ -864,6 +864,11 @@ def main(argv: list[str] | None = None):
     sp.add_argument("--resolution", choices=["keep_local", "accept_remote", "manual"], required=True)
     sp.add_argument("--reason", default="", help="解決原因")
     sp.add_argument("--agent-id", default="", help="處理此衝突的 Agent ID")
+    sp.add_argument(
+        "--apply-memory-change",
+        action="store_true",
+        help="允許 accept_remote 實際 promote 遠端候選並歸檔本地舊知識；manual/keep_local 不需要",
+    )
     add_sync_output_args(sp)
 
     # skill — 本機跨 Agent 技能登錄（實驗性）

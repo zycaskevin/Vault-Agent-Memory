@@ -43,10 +43,15 @@ creation, compile, Document Map build, and audit feedback happen.
 
 - No remote direct writes to `vault_knowledge`.
 - No automatic merge without local policy.
-- No multi-host conflict resolver yet.
-- No revision graph or rollback protocol yet.
+- No multi-host active-memory direct overwrite.
+- No full revision-graph rollback protocol yet.
 
 ## Next Phase
 
-True multi-host co-writing still requires revision graph, conflict resolver,
-rollback, and append-only audit log.
+True multi-host co-writing still requires distributed revision exchange,
+stronger rollback policy, and append-only audit enforcement.
+
+Status update: the next PR added a local revision/conflict/audit surface and a
+guarded conflict resolver. `accept_remote --apply-memory-change` promotes the
+remote candidate and archives the conflicting local row instead of overwriting
+it.

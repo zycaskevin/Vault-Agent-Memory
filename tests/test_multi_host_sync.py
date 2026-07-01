@@ -2,6 +2,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from vault.db import VaultDB
@@ -73,6 +75,116 @@ def test_revision_conflict_and_audit_helpers(tmp_path):
         assert resolved["status"] == "resolved"
         assert list_conflicts(db, status="open", limit=5) == []
         assert any(row["action"] == "conflict:resolved" for row in list_audit_log(db, limit=10))
+
+
+def test_accept_remote_conflict_requires_explicit_memory_apply(tmp_path):
+    db_path = tmp_path / "vault.db"
+    with VaultDB(db_path) as db:
+        knowledge_id = db.add_knowledge(
+            "Shared deployment rule",
+            "Current rule says smoke tests run after deploy.",
+            source="local",
+        )
+        candidate = create_candidate(
+            db,
+            title="Shared deployment rule",
+            content="Decision: smoke tests should run before deploy because rollback risk is lower.",
+            reason="Remote agent observed a safer workflow.",
+            source="remote_write_request",
+            source_ref="remote_write_request:req-apply",
+            memory_type="remote_candidate",
+            category="decision",
+            tags="deploy,smoke,remote",
+            trust=0.9,
+            scope="shared",
+            sensitivity="low",
+        )
+        revision = record_memory_revision(
+            db,
+            title="Shared deployment rule",
+            content="Decision: smoke tests should run before deploy because rollback risk is lower.",
+            operation="remote_candidate_imported",
+            status="candidate_created",
+            candidate_id=candidate["candidate_id"],
+            remote_request_id="req-apply",
+            source_agent="remote-agent",
+        )
+        conflict = detect_candidate_conflicts(
+            db,
+            candidate_id=candidate["candidate_id"],
+            revision_id=revision["revision_id"],
+        )[0]
+
+        with pytest.raises(ValueError, match="apply_memory_change"):
+            resolve_conflict(db, conflict["id"], resolution="accept_remote")
+
+        assert db.get_knowledge(knowledge_id)["status"] == "active"
+        assert db.get_memory_candidate(candidate["candidate_id"])["status"] == "candidate"
+
+
+def test_accept_remote_conflict_promotes_candidate_and_archives_local(tmp_path):
+    db_path = tmp_path / "vault.db"
+    with VaultDB(db_path) as db:
+        knowledge_id = db.add_knowledge(
+            "Shared deployment rule",
+            "Current rule says smoke tests run after deploy.",
+            source="local",
+        )
+        candidate = create_candidate(
+            db,
+            title="Shared deployment rule",
+            content="Decision: smoke tests should run before deploy because rollback risk is lower.",
+            reason="Remote agent observed a safer workflow.",
+            source="remote_write_request",
+            source_ref="remote_write_request:req-accept",
+            memory_type="remote_candidate",
+            category="decision",
+            tags="deploy,smoke,remote",
+            trust=0.9,
+            scope="shared",
+            sensitivity="low",
+        )
+        revision = record_memory_revision(
+            db,
+            title="Shared deployment rule",
+            content="Decision: smoke tests should run before deploy because rollback risk is lower.",
+            operation="remote_candidate_imported",
+            status="candidate_created",
+            candidate_id=candidate["candidate_id"],
+            remote_request_id="req-accept",
+            source_agent="remote-agent",
+        )
+        conflict = detect_candidate_conflicts(
+            db,
+            candidate_id=candidate["candidate_id"],
+            revision_id=revision["revision_id"],
+        )[0]
+
+        resolved = resolve_conflict(
+            db,
+            conflict["id"],
+            resolution="accept_remote",
+            reason="Remote candidate is newer and safer.",
+            actor_agent="review-agent",
+            apply_memory_change=True,
+            project_dir=tmp_path,
+            compile=False,
+            build_map=False,
+        )
+
+        resolution = json.loads(resolved["resolution_json"])
+        promoted_id = db.get_memory_candidate(candidate["candidate_id"])["promoted_knowledge_id"]
+        assert resolved["status"] == "resolved"
+        assert resolution["memory_change_applied"] is True
+        assert db.get_knowledge(knowledge_id)["status"] == "archived"
+        assert db.get_knowledge(promoted_id)["status"] == "active"
+        assert db.get_knowledge(promoted_id)["content_raw"].startswith("Decision: smoke tests")
+        actions = [row["action"] for row in list_audit_log(db, limit=20)]
+        assert "knowledge:archived_for_remote_accept" in actions
+        assert "conflict:resolved" in actions
+        operations = [row["operation"] for row in list_revisions(db, limit=20)]
+        assert "remote_candidate_promoted_accept_remote" in operations
+        assert "local_knowledge_archived_for_remote_accept" in operations
 
 
 def test_sync_cli_revisions_conflicts_audit_and_resolve(tmp_path, capsys):
