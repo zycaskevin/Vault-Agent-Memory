@@ -593,6 +593,12 @@ def main(argv: list[str] | None = None):
         ap.add_argument("--obsidian-vault", help="既有 Obsidian vault 路徑；提供後會先 dry-run")
         ap.add_argument("--import-obsidian", action="store_true",
                         help="dry-run 後執行第一次 Obsidian 匯入並 compile")
+        ap.add_argument("--obsidian-rules",
+                        help="Obsidian folder rules YAML；未提供時可用 --obsidian-write-default-rules 產生保守預設")
+        ap.add_argument("--obsidian-write-default-rules", action="store_true",
+                        help="在 project/.vault/obsidian-folder-rules.yaml 產生保守資料夾權限規則")
+        ap.add_argument("--obsidian-review-inbox", action="store_true",
+                        help="同步模板同時把 Daily Report、候選記憶與同步狀態輸出到 Obsidian _Inbox")
         ap.add_argument("--obsidian-sync", choices=["none", "cron", "launchagent", "n8n", "all"],
                         default="none", help="產生後續自動同步模板")
         ap.add_argument("--sync-interval-minutes", type=int, default=15,
