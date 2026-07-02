@@ -1,5 +1,17 @@
 # CHANGELOG
 
+## [0.7.26] - 2026-07-02
+
+### Changed
+
+- Normalized `vault search --json` with the same agent-friendly `ok` and
+  `status` envelope used by other common CLI JSON commands while preserving
+  existing `query`, `mode`, `count`, and `results` fields for compatibility.
+
+### Validation
+
+- Added regression coverage for the `vault search --json` status envelope.
+
 ## [0.7.25] - 2026-07-02
 
 ### Added
