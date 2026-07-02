@@ -242,6 +242,60 @@ def test_cmd_import_obsidian_compile_writes_vault_db(tmp_path, monkeypatch, caps
     assert row["source"] == "obsidian/Runbook.md"
 
 
+def test_cmd_import_obsidian_watch_updates_changed_notes(tmp_path, monkeypatch, capsys):
+    from vault import cli_content
+    from vault.cli import cmd_import
+
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    obsidian = tmp_path / "ObsidianVault"
+    obsidian.mkdir()
+    note = obsidian / "Watch.md"
+    note.write_text("# Watch\n\nFirst version.\n", encoding="utf-8")
+
+    sleep_calls = 0
+
+    def fake_sleep(_seconds):
+        nonlocal sleep_calls
+        sleep_calls += 1
+        note.write_text("# Watch\n\nSecond version.\n", encoding="utf-8")
+
+    monkeypatch.setattr(cli_content.time, "sleep", fake_sleep)
+    monkeypatch.chdir(project_dir)
+    args = Namespace(
+        file="obsidian",
+        vault=str(obsidian),
+        category="notes",
+        tags="watch",
+        layer="L3",
+        trust=0.7,
+        obsidian_raw_subdir="obsidian",
+        exclude=[],
+        prune_missing=False,
+        watch=True,
+        watch_interval=0.2,
+        watch_iterations=2,
+        dry_run=False,
+        compile=False,
+        no_embed=True,
+        allow_private=False,
+        json=True,
+        pretty=False,
+        obsidian_rules=None,
+    )
+
+    cmd_import(args)
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["ok"] is True
+    assert payload["watch"]["iterations"] == 2
+    assert payload["cycles"][0]["import"]["added"] == 1
+    assert payload["cycles"][1]["import"]["updated"] == 1
+    assert sleep_calls == 1
+    raw_note = project_dir / "raw" / "obsidian" / "Watch.md"
+    assert "Second version." in raw_note.read_text(encoding="utf-8")
+
+
 def test_obsidian_wikilinks_build_graph_edges(tmp_path):
     from vault.compiler import VaultCompiler
     from vault.db import VaultDB

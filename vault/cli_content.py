@@ -9,6 +9,7 @@ import json
 import os
 import sqlite3
 import sys
+import time
 from pathlib import Path
 
 from .cli_context import _arg_value, _enforce_cli_privacy, _json_print, find_project_dir
@@ -324,52 +325,34 @@ def cmd_import(args):
         return
 
     if args.file == "obsidian":
-        from vault.import_obsidian import sync_obsidian_vault
-
         if not getattr(args, "vault", None):
             print("❌ vault import obsidian 需要 --vault /path/to/ObsidianVault")
             raise SystemExit(2)
 
+        json_output = _arg_value(args, "json", False) is True or _arg_value(args, "pretty", False) is True
+        pretty_output = _arg_value(args, "pretty", False) is True
+        if getattr(args, "watch", False):
+            if json_output and int(getattr(args, "watch_iterations", 0) or 0) <= 0:
+                print("❌ --json 搭配 --watch 時需要 --watch-iterations，避免 agent 卡在無限輸出。")
+                raise SystemExit(2)
+            _cmd_import_obsidian_watch(args, project_dir, json_output=json_output, pretty_output=pretty_output)
+            return
+
         try:
-            result = sync_obsidian_vault(
-                project_dir=project_dir,
-                vault_dir=args.vault,
-                category=args.category,
-                tags=args.tags,
-                layer=args.layer,
-                trust=args.trust,
-                raw_subdir=args.obsidian_raw_subdir,
-                excludes=set(args.exclude or []),
-                dry_run=args.dry_run,
-                allow_private=getattr(args, "allow_private", False),
-                prune_missing=getattr(args, "prune_missing", False),
-                folder_rules_path=getattr(args, "obsidian_rules", None),
-            )
+            result = _run_obsidian_import_once(args, project_dir)
         except Exception as e:
             print(f"❌ Obsidian 匯入失敗: {e}")
             raise SystemExit(2) from e
 
-        json_output = _arg_value(args, "json", False) is True or _arg_value(args, "pretty", False) is True
-        pretty_output = _arg_value(args, "pretty", False) is True
         if json_output:
             payload = {
                 "ok": not bool(result.get("errors")),
                 "status": "ok" if not result.get("errors") else "warning",
                 "import": result,
             }
-            if not args.dry_run and args.compile:
-                import argparse
-                from .cli_core import cmd_compile
-
-                compile_args = argparse.Namespace(
-                    dry_run=False,
-                    no_embed=args.no_embed,
-                    allow_private=getattr(args, "allow_private", False),
-                )
-                captured = io.StringIO()
-                with contextlib.redirect_stdout(captured):
-                    cmd_compile(compile_args)
-                payload["compile_output"] = captured.getvalue()
+            compile_output = _compile_after_obsidian_import(args, capture=True)
+            if compile_output:
+                payload["compile_output"] = compile_output
             _json_print(payload, pretty=pretty_output)
             return
 
@@ -395,15 +378,7 @@ def cmd_import(args):
             return
 
         if args.compile:
-            import argparse
-            from .cli_core import cmd_compile
-
-            compile_args = argparse.Namespace(
-                dry_run=False,
-                no_embed=args.no_embed,
-                allow_private=getattr(args, "allow_private", False),
-            )
-            cmd_compile(compile_args)
+            _compile_after_obsidian_import(args, capture=False)
         else:
             print("下一步：執行 vault compile，或下次同步時加 --compile。")
         return
@@ -491,6 +466,109 @@ def cmd_import(args):
         traceback.print_exc()
     finally:
         db.close()
+
+
+def _run_obsidian_import_once(args, project_dir: Path) -> dict:
+    from vault.import_obsidian import sync_obsidian_vault
+
+    return sync_obsidian_vault(
+        project_dir=project_dir,
+        vault_dir=args.vault,
+        category=args.category,
+        tags=args.tags,
+        layer=args.layer,
+        trust=args.trust,
+        raw_subdir=args.obsidian_raw_subdir,
+        excludes=set(args.exclude or []),
+        dry_run=args.dry_run,
+        allow_private=getattr(args, "allow_private", False),
+        prune_missing=getattr(args, "prune_missing", False),
+        folder_rules_path=getattr(args, "obsidian_rules", None),
+    )
+
+
+def _obsidian_import_changed(result: dict) -> bool:
+    return any(int(result.get(key) or 0) > 0 for key in ("added", "updated", "deleted"))
+
+
+def _compile_after_obsidian_import(args, *, capture: bool) -> str:
+    if getattr(args, "dry_run", False) or not getattr(args, "compile", False):
+        return ""
+    import argparse
+    from .cli_core import cmd_compile
+
+    compile_args = argparse.Namespace(
+        dry_run=False,
+        no_embed=args.no_embed,
+        allow_private=getattr(args, "allow_private", False),
+    )
+    if not capture:
+        cmd_compile(compile_args)
+        return ""
+    captured = io.StringIO()
+    with contextlib.redirect_stdout(captured):
+        cmd_compile(compile_args)
+    return captured.getvalue()
+
+
+def _cmd_import_obsidian_watch(args, project_dir: Path, *, json_output: bool, pretty_output: bool) -> None:
+    interval = max(0.2, min(float(getattr(args, "watch_interval", 5.0) or 5.0), 3600.0))
+    max_iterations = max(0, int(getattr(args, "watch_iterations", 0) or 0))
+    cycles: list[dict] = []
+    iteration = 0
+    if not json_output:
+        print(f"👀 Obsidian watch started: {args.vault}")
+        print(f"  interval: {interval:g}s")
+        print(f"  iterations: {max_iterations if max_iterations else 'until Ctrl+C'}")
+    try:
+        while True:
+            iteration += 1
+            result = _run_obsidian_import_once(args, project_dir)
+            cycle = {
+                "iteration": iteration,
+                "import": result,
+                "compiled": False,
+                "compile_output": "",
+            }
+            if _obsidian_import_changed(result):
+                compile_output = _compile_after_obsidian_import(args, capture=json_output)
+                cycle["compiled"] = bool(getattr(args, "compile", False) and not getattr(args, "dry_run", False))
+                if compile_output:
+                    cycle["compile_output"] = compile_output
+            cycles.append(cycle)
+            if not json_output:
+                print(
+                    f"  cycle {iteration}: "
+                    f"added={result.get('added', 0)} "
+                    f"updated={result.get('updated', 0)} "
+                    f"skipped={result.get('skipped', 0)} "
+                    f"conflicts={result.get('conflicts', 0)} "
+                    f"errors={len(result.get('errors', []))}"
+                )
+            if max_iterations and iteration >= max_iterations:
+                break
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        if not json_output:
+            print("\nStopping Obsidian watch.")
+
+    has_errors = any(cycle["import"].get("errors") for cycle in cycles)
+    payload = {
+        "ok": not has_errors,
+        "status": "ok" if not has_errors else "warning",
+        "watch": {
+            "vault": str(args.vault),
+            "interval_seconds": interval,
+            "iterations": len(cycles),
+            "compile": bool(getattr(args, "compile", False)),
+            "dry_run": bool(getattr(args, "dry_run", False)),
+        },
+        "cycles": cycles,
+    }
+    if json_output:
+        _json_print(payload, pretty=pretty_output)
+        return
+    print(f"Obsidian watch summary: {payload['status']} cycles={len(cycles)}")
 
 
 def cmd_skill(args):
