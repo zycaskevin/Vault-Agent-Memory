@@ -338,12 +338,16 @@ def cmd_search(args):
         raise SystemExit(2) from exc
 
     if bool(_arg_value(args, "json", False)):
+        result_mode = results[0].get("_mode", mode) if results else mode
         payload = {
+            "ok": True,
+            "status": "ok",
             "query": args.query,
             "requested_mode": mode,
-            "mode": results[0].get("_mode", mode) if results else mode,
+            "mode": result_mode,
             "count": len(results),
             "results": results,
+            "next_action": "Use vault map show/read for source-grounded answers." if results else "No results. Try a broader query or check vault compile status.",
         }
         indent = 2 if bool(_arg_value(args, "pretty", False)) else None
         print(json.dumps(payload, ensure_ascii=False, indent=indent, default=str))
