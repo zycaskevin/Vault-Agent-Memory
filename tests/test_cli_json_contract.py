@@ -100,6 +100,20 @@ def test_init_and_compile_json_contracts_are_parseable(tmp_path, capsys):
     assert pretty["stats"]["total_files"] == 1
 
 
+def test_search_json_contract_has_agent_status_envelope(tmp_path, capsys):
+    project = _make_project(tmp_path, capsys)
+
+    main(["search", "contract", "--project-dir", str(project), "--json"])
+    searched = _read_json(capsys)
+
+    assert searched["ok"] is True
+    assert searched["status"] == "ok"
+    assert searched["query"] == "contract"
+    assert searched["count"] >= 1
+    assert isinstance(searched["results"], list)
+    assert searched["next_action"]
+
+
 def test_map_and_graph_json_contracts_are_parseable(tmp_path, capsys):
     project = _make_project(tmp_path, capsys)
 
