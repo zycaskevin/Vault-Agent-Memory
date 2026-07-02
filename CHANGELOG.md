@@ -1,5 +1,40 @@
 # CHANGELOG
 
+## [0.7.27] - 2026-07-02
+
+### Added
+
+- Added a gentler GUI review surface for Obsidian conflicts so the daily report
+  and memory control center show the same human-review items instead of
+  contradicting each other.
+- Added Gateway / Remote access health to the multi-Agent dashboard, including
+  blocked/failed event counts, unique client IP counts, and next safe actions.
+- Added human-first Obsidian conflict inbox wording with three explicit
+  resolver choices: accept Obsidian, accept Vault, or keep both.
+
+### Changed
+
+- `vault daily-report --json` now includes the standard `ok: true` success
+  marker used by other agent-facing JSON commands while preserving the existing
+  report payload.
+- GUI documentation now explains Dashboard review cards, Obsidian conflict
+  inbox behavior, and Gateway / Remote safety expectations.
+
+### Safety
+
+- Obsidian conflict inbox notes remain metadata-only and do not include
+  conflicting note bodies.
+- Gateway / Remote health remains read-only in the GUI and keeps blocked
+  events visible before wider exposure.
+
+### Validation
+
+- Full local test suite: `2378 passed, 10 skipped`.
+- Built wheel and sdist; `twine check` passed.
+- Local wheel smoke verified `vault --version`, `init`, `add`,
+  `search --json`, `daily-report --json`, and `gateway audit --json`.
+- Release readiness CI passed on PRs #294 and #295.
+
 ## [0.7.26] - 2026-07-02
 
 ### Changed
