@@ -259,6 +259,30 @@ These jobs are incremental: Vault records Obsidian source hashes in
 missing source notes. Missing notes are not pruned from `raw/` unless the command
 explicitly uses `--prune-missing`.
 
+For a local always-on agent or desktop helper, use watch mode instead of making
+the user remember a manual import command:
+
+```bash
+vault import obsidian \
+  --vault /path/to/ObsidianVault \
+  --project-dir ~/Vaults/project-memory \
+  --compile \
+  --no-embed \
+  --watch \
+  --watch-interval 5
+```
+
+Agent-run automation should prefer a bounded form so JSON output cannot hang:
+
+```bash
+vault import obsidian \
+  --vault /path/to/ObsidianVault \
+  --project-dir ~/Vaults/project-memory \
+  --watch \
+  --watch-iterations 2 \
+  --json
+```
+
 For agent-led setup, prefer `--obsidian-write-default-rules` and
 `--obsidian-review-inbox`:
 
