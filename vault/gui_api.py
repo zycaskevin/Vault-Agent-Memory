@@ -106,16 +106,29 @@ def _obsidian_sync_item(project: Path) -> dict[str, Any]:
         key for key, value in notes.items()
         if isinstance(value, dict) and value.get("status") == "conflict"
     ]
+    conflict_items = list_obsidian_conflicts(project, limit=5)
     return {
         "kind": "obsidian",
         "label": "Obsidian incremental import",
         "status": "needs_review" if conflicts else ("ok" if manifest else "not_configured"),
         "updated_at": manifest.get("updated_at", "") or _file_updated_at(manifest_path),
         "path": str(manifest_path),
+        "next_action": (
+            "Open each note conflict and choose Accept Obsidian, Accept Vault, or Keep both."
+            if conflicts
+            else "No Obsidian note conflict needs human review."
+        ),
         "summary": {
             "active_notes": max(0, len(notes) - len(missing) - len(conflicts)),
             "missing_notes": len(missing),
             "conflict_notes": len(conflicts),
+            "conflict_paths": conflicts[:5],
+            "conflict_items": conflict_items,
+            "review_label": (
+                f"{len(conflicts)} notes changed in both Obsidian and Vault"
+                if conflicts
+                else ""
+            ),
             "raw_subdir": manifest.get("raw_subdir", ""),
         },
     }
@@ -174,7 +187,10 @@ def _dashboard_activity_health(
             obsidian_conflicts = int((item.get("summary") or {}).get("conflict_notes") or 0)
 
     review_count = int((review_inbox.get("summary") or {}).get("total") or 0)
-    if open_sync_conflicts or obsidian_conflicts:
+    if obsidian_conflicts and not open_sync_conflicts:
+        status = "needs_review"
+        next_action = "Open the Obsidian note review and choose which version to keep."
+    elif open_sync_conflicts or obsidian_conflicts:
         status = "needs_review"
         next_action = "Review sync conflicts before changing shared memory."
     elif review_count:
@@ -196,6 +212,11 @@ def _dashboard_activity_health(
         "open_sync_conflicts": open_sync_conflicts,
         "obsidian_conflicts": obsidian_conflicts,
         "sync_report_warnings": stale_sync_items,
+        "review_breakdown": {
+            "memory_candidates": len(recent_candidates),
+            "remote_sync_conflicts": open_sync_conflicts,
+            "obsidian_note_conflicts": obsidian_conflicts,
+        },
         "next_action": next_action,
         "safety": {
             "read_only": True,
@@ -300,8 +321,8 @@ def _build_gui_review_inbox(
         items.append(_review_item(
             kind="obsidian_conflict",
             item_id=source_path,
-            title=f"Obsidian note conflict: {source_path}",
-            reason=str(conflict.get("reason") or "Choose which side should be kept."),
+            title=str(conflict.get("title") or f"筆記兩邊都改過：{source_path}"),
+            reason=str(conflict.get("reason") or "請打開詳情後選擇要保留哪一邊。"),
             action="resolve_obsidian_conflict",
             target_id=source_path,
             target_kind="obsidian_note",

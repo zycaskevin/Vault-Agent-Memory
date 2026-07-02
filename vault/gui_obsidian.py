@@ -24,6 +24,14 @@ def _load_manifest(project: Path) -> dict[str, Any]:
     return _load_json_file(project / ".vault" / "obsidian-import-manifest.json")
 
 
+def friendly_obsidian_conflict_title(source_path: str) -> str:
+    return f"筆記兩邊都改過：{source_path}"
+
+
+def friendly_obsidian_conflict_reason() -> str:
+    return "Obsidian 和 Vault 都有新版本，請打開詳情後選擇要保留哪一邊。"
+
+
 def list_obsidian_conflicts(project: Path, *, limit: int = 20) -> list[dict[str, Any]]:
     """Return compact open Obsidian conflicts without loading note bodies."""
     manifest = _load_manifest(project)
@@ -38,12 +46,15 @@ def list_obsidian_conflicts(project: Path, *, limit: int = 20) -> list[dict[str,
                 "id": source_text,
                 "source_path": source_text,
                 "raw_path": str(entry.get("raw_path") or ""),
-                "reason": str(entry.get("reason") or "Obsidian and Vault both changed this note."),
+                "reason": friendly_obsidian_conflict_reason(),
+                "technical_reason": str(entry.get("reason") or "obsidian_source_and_vault_raw_both_changed"),
+                "title": friendly_obsidian_conflict_title(source_text),
                 "status": "conflict",
                 "folder_rule": str(entry.get("folder_rule") or ""),
                 "current_source_hash": str(entry.get("current_source_hash") or ""),
                 "current_raw_hash": str(entry.get("current_raw_hash") or ""),
                 "pending_source_hash": str(entry.get("pending_source_hash") or ""),
+                "next_action": "打開詳情，選擇接受 Obsidian、接受 Vault，或保留兩份。",
             }
         )
     return sorted(conflicts, key=lambda item: item["source_path"])[: max(0, int(limit or 20))]
@@ -112,7 +123,9 @@ def gui_obsidian_conflict(project_dir: str | Path, source_path: str) -> dict[str
             "id": source,
             "source_path": source,
             "raw_path": str(entry.get("raw_path") or ""),
-            "reason": str(entry.get("reason") or "Obsidian and Vault both changed this note."),
+            "title": friendly_obsidian_conflict_title(source),
+            "reason": friendly_obsidian_conflict_reason(),
+            "technical_reason": str(entry.get("reason") or "obsidian_source_and_vault_raw_both_changed"),
             "status": "conflict",
             "obsidian": {
                 "path": str(source_file),
