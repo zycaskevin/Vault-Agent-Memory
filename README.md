@@ -14,6 +14,9 @@ For most users, the main interface is not a long CLI manual. Ask an agent to
 install Vault, answer four setup questions, then read a short daily memory
 report.
 
+New here? Start with the visual demo:
+[`docs/landing/index.html`](docs/landing/index.html).
+
 ## 30-Second Version
 
 Vault-for-LLM exists because agent memory fails in practical ways:
