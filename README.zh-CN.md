@@ -2,101 +2,137 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
-给 AI Agent 使用的本地优先项目记忆层。
+给 AI Agent 用的记忆金库。
 
-Vault-for-LLM 会把项目笔记、决策、错误修复、SOP、Obsidian 笔记，以及
-Agent 提出的候选记忆，整理成一个可携带的 SQLite vault。Agent 可以搜索、
-按范围阅读、引用来源、测试召回、备份，必要时也能同步到 Supabase 让不同主机读取。
+它让 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 等不同 Agent，
+可以使用同一套项目记忆，而不是每次换工具就重新交代背景。
 
-它不是要取代模型、wiki、Obsidian 或 hosted memory system。它更像中间那一层：
-让 Agent 使用项目知识时，不只是“记得”，而是记得有来源、有边界、可审查，也能回滚。
+你不需要先学一堆命令。最简单的用法是：把下面那段话贴给你的 Agent，
+让它帮你安装、设置、测试，之后你每天只看一份很短的记忆报告。
 
-默认路径是让 Agent 代为安装：用户只回答语言、独立/共享记忆库、
-是否连接 Obsidian / Supabase、每日报告时间。手动命令仍然保留，
-但不是新手的主路径。
+## 30 秒版
 
-## 为什么需要它
+Vault-for-LLM 解决的不是“把更多东西塞进 AI”。
 
-很多 Agent 问题不是模型不够聪明，而是工作记忆太混乱：
+它解决的是：
 
-- 新 session 又像第一天上班
-- 旧文件和新决策混在一起
-- 修过的 bug 留在聊天记录里，下一次又重踩
-- 私人观察被误放进共享项目记忆
-- 团队不知道搜索到底有没有找对来源
+- Agent 修过的 bug，下次不要再重踩。
+- 项目决策有来源，不要散在聊天记录里。
+- 多个 Agent 可以共享工作知识，但私人记忆不乱流。
+- 新记忆先进入候选区，安全、低风险的才自动进入正式记忆。
+- 不确定、敏感、冲突的内容，每天整理成报告让人确认。
 
-Vault-for-LLM 想解决的是这个问题：
+一句话：
 
-> 这个项目已经学到什么？来源在哪里？这个 Agent 可以使用它吗？
+> Vault-for-LLM 不是让 Agent 什么都记住，而是让 Agent 可信地记、可审查地记、需要时能回滚。
 
-## 你会得到什么
+## 最推荐：让 Agent 帮你安装
 
-- **本地优先**：核心功能只需要 Markdown 和 SQLite，不必先接云端。
-- **Agent 友好**：提供 CLI 和 MCP，支持搜索、bounded read、候选记忆、Document Map。
-- **候选制写入**：Agent 先提出记忆，通过检查后才进入正式知识库。
-- **治理 metadata**：每条记忆都可以带 scope、sensitivity、owner agent、allowed agents、过期时间。
-- **Obsidian 人类界面工作流**：可导入既有 Obsidian 笔记、watch 增量导入、导出成 Obsidian 可读格式，并用明确的冲突审核保护原文。
-- **可选远端共享**：Supabase sync 和 read-only RPC 让不同主机或 hosted agent 读共享记忆。
-- **Report-first 自动化**：可生成 cron、LaunchAgent、n8n 模板，定期整理记忆，但不会偷偷删除或提升记忆。
-- **可测试召回**：Search QA 和 onboarding benchmark 可以量化 Agent 是否找得到正确来源。
-
-## 什么时候适合用
-
-适合你，如果：
-
-- 你用 Claude Code、Codex、Hermes Agent、OpenClaw、OpenCode、n8n 或其他 Agent 做项目
-- 你希望多个 Agent 共用项目知识，但不要互相读到私人原始对话
-- 你已经有 Markdown 或 Obsidian 笔记，希望 Agent 能查、能引用
-- 你想本地保存记忆，但又需要 Supabase 让其他主机读取安全摘要
-- 你在意召回质量，希望能测，而不是只靠感觉
-
-如果你只需要 hosted vector database、普通笔记软件，或完全自动的聊天记忆产品，
-Vault-for-LLM 可能不是第一个该拿起来的工具。
-
-## 安装
-
-### 让 Agent 代为安装
-
-最推荐的方式，是直接把这段交给能执行本机命令的 Agent：
+把这段贴给能执行本机命令的 Agent：
 
 ```text
 帮这个项目安装 Vault-for-LLM。使用 vault-for-llm[mcp]==0.7.27。
-使用 consumer mode 与 governed-auto memory。
-除非我主动要求，不要教我 CLI flags。
-只问我：
-1. Vault 要使用繁体中文、简体中文，还是英文？
-2. 这要是独立记忆库，还是给多个 Agent 共用的共享记忆库？
-3. Vault 要连接 Obsidian、Supabase、两者都连，还是都不连？
-4. 每天几点生成记忆报告？
-安装后请跑 smoke check，并显示 daily report 或本机 GUI link。
-日常使用规则：安全的记忆可以自动保留；不确定的记忆放进报告让我审核。
+请用一般用户模式与 governed-auto 记忆模式。
+
+不要先教我 CLI 参数。只问我四件事：
+1. 我要用繁体中文、简体中文，还是英文？
+2. 这个 Vault 是独立记忆库，还是给多个 Agent 共用？
+3. 要不要连接 Obsidian 或 Supabase？
+4. 每天几点给我记忆报告？
+
+安装后请做一次 smoke check，并告诉我：
+- Vault 放在哪里
+- 每日记忆报告怎么看
+- 本地 GUI 或下一步入口在哪里
+
+日常规则：
+安全、低风险、有来源的记忆可以自动保留；
+不确定、敏感、冲突、策略性的记忆放进每日报告让我审核。
 ```
 
-Agent 会使用安装精灵：
+如果你是开发者，也可以手动执行：
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install "vault-for-llm[mcp]==0.7.27"
-
 vault setup-agent --audience consumer
 ```
 
-也可以直接让 CLI 打印这段给 Agent 的安装话术：
+也可以让 Vault 打印可复制给 Agent 的安装话术：
 
 ```bash
 vault guide --intent install
 ```
 
-Consumer mode 会生成 `agent-install/README-consumer-daily-report.md` 与每日排程模板。
-默认记忆模式是 `governed-auto`：有来源、低风险、通过 privacy / duplicate /
-metadata / quality gates 的候选记忆可以自动进入正式 vault；策略、私人、敏感、
-冲突或低信任记忆会留在每日报告里给人审核。记忆不会被自动硬删除。
+## 每天怎么用
 
-完整安装细节放在 [`docs/agent_install.md`](docs/agent_install.md)。开发者或
-进阶 Agent 可以使用完整的 `vault setup-agent` 流程。
+一般用户不需要每天打命令。理想流程是：
 
-### 手动快速开始
+1. Agent 工作时，会把“可能值得记住的事”提出来。
+2. Vault 先检查隐私、重复、质量和来源。
+3. 安全、低风险、有来源的记忆可以自动进入正式 Vault。
+4. 需要你判断的内容，整理成每日记忆报告。
+5. 你只看很少几张卡片：接受、拒绝、延后或保留两份。
+
+每日报告应该回答三件事：
+
+- 今天 Vault 帮我记住了什么？
+- 有哪些记忆需要我看一眼？
+- 有没有冲突、过期、敏感或不该长期保存的内容？
+
+这就是 Vault 的核心路线：Agent 可以越来越会整理，但人保留最后的审核权。
+
+## 适合谁
+
+Vault-for-LLM 适合：
+
+- 用 Codex、Claude Code、Hermes、OpenClaw、OpenCode、n8n 或 Coze 做项目的人。
+- 希望多个 Agent 共用同一套项目记忆的人。
+- 已经有 Markdown 或 Obsidian 笔记，希望 Agent 能查、能引用的人。
+- 想把记忆留在自己手上，而不是一开始就交给云端的人。
+- 想知道 Agent 到底根据哪份文件回答，而不是只相信它“好像记得”的人。
+
+如果你只想要普通笔记软件、纯向量数据库，或完全黑盒的聊天记忆产品，
+Vault-for-LLM 可能不是第一个该拿起来的工具。
+
+## 它不是什么
+
+它不是 Obsidian 替代品。
+
+Obsidian 很适合人看笔记；Vault 让 Agent 能安全地使用那些笔记。
+
+它不是单纯 RAG。
+
+RAG 通常只管“查得到”。Vault 更在意“谁写的、能不能信、是否过期、谁能读、错了能不能回滚”。
+
+它也不是聊天记录垃圾桶。
+
+Vault 不鼓励把所有对话原封不动塞进长期记忆。它鼓励候选制、日报审核和低风险自动入库。
+
+## 三个常见场景
+
+### 1. 多个 Agent 共用项目记忆
+
+Claude Code 修过一个测试流程，Codex 下一次可以查到；Hermes 可以看到已审核的决策；
+OpenClaw 可以读共享 SOP，但不能读私人原始对话。
+
+这是 Vault 最重要的方向：一个记忆库，多个 Agent 使用，各自有权限边界。
+
+### 2. Obsidian 变成 Agent 可用的知识入口
+
+你可以把既有 Obsidian 笔记导入 Vault，或让 Vault 把正式记忆导出成 Obsidian 可读格式。
+
+目标不是把 Obsidian 变成数据库，而是让人的笔记和 Agent 的记忆能互相看见。
+
+### 3. 多台机器或 hosted Agent 读共享记忆
+
+本地 SQLite 仍是最简单、最可控的起点。
+
+如果你需要跨主机共享，可以选 Supabase 或 Vault Gateway / Remote Server。
+Vault 的设计方向是 adapter-first：同步层可以换，但统一记忆层要保持稳定。
+
+## 开发者快速开始
 
 ```bash
 pip install "vault-for-llm[mcp]==0.7.27"
@@ -107,35 +143,29 @@ vault add "First lesson" \
   --project-dir ~/Vaults/demo
 vault compile --project-dir ~/Vaults/demo --no-embed
 vault search "cache key" --project-dir ~/Vaults/demo
+vault --project-dir ~/Vaults/demo map build
+vault --project-dir ~/Vaults/demo map read 1 --lines 1-20
 ```
 
-## Agent 日常流程
-
-建议 Agent 这样使用记忆：
-
-1. **先搜索**：找可能相关的来源。
-2. **再按范围读取**：不要整份文件塞进 context。
-3. **回答时引用来源**：citation 要回到 Vault 原文，不要引用压缩摘要。
-4. **提出候选记忆**：新的教训先进入候选区。
-5. **审核后再提升**：保持正式记忆库干净、可追踪。
-
-MCP-capable runtime 可以启动：
+需要 MCP：
 
 ```bash
-vault-mcp --project-dir ~/Vaults/my-project --tool-profile core
+vault-mcp --project-dir ~/Vaults/demo --tool-profile core
 ```
 
-建议先开 core tool profile：
+建议 Agent 一开始只开 core profile：
 
 - `vault_search`
 - `vault_read_range`
 - `vault_memory_propose`
 - `vault_stats`
+- `vault_update_status`
+- `vault_automation_handoff`
 
-MCP 文件：
+完整 MCP 文件：
 
-- 工具参考：[docs/mcp_tool_reference.md](docs/mcp_tool_reference.md)
-- workflow 与 token 预算：[docs/mcp_memory_workflow.md](docs/mcp_memory_workflow.md)
+- [MCP 工具参考](docs/mcp_tool_reference.md)
+- [MCP 记忆工作流](docs/mcp_memory_workflow.md)
 
 ## 记忆分层
 
@@ -148,11 +178,10 @@ Vault 使用 L0-L3 表示记忆深度：
 | `L2` | 已审查的近期上下文、摘要、短中期背景 |
 | `L3` | 详细知识、SOP、bug、决策、来源笔记 |
 
-Task Ledger 是即时任务状态：blocker、下一步、证据链接与 handoff note。
-不要默认把进行中的 todo 放进 L2。只有经过审查后仍值得保留的教训、
-决策与摘要，才提升到 L2/L3。
+Task Ledger 不是 L2。它是任务进行中的工作台：blocker、下一步、证据链接与 handoff note。
+只有经过审查后仍值得保留的教训、决策与摘要，才提升到 L2/L3。
 
-权限不要只靠 layer 判断，请搭配治理 metadata：
+权限不要只靠 layer 判断，还要搭配：
 
 - `scope`: private, project, shared, public
 - `sensitivity`: low, medium, high, restricted
@@ -160,86 +189,9 @@ Task Ledger 是即时任务状态：blocker、下一步、证据链接与 handof
 - `allowed_agents`
 - `memory_type`
 - `expires_at`
+- `valid_from` / `valid_until`
 
-搜索会记录轻量使用统计（`access_count`、`last_accessed_at`）。短期记忆若设置
-`expires_at`，可以到期后移到 `status: archived`，不需要直接删除：
-
-```bash
-vault usage stats
-vault usage archive-expired --apply
-```
-
-设计说明：[docs/memory_governance.md](docs/memory_governance.md)。
-
-Policy-based automation 让 Agent 处理例行整理，但由人保留规则主权：
-
-```bash
-vault automation plan --write-policy
-vault automation run
-vault automation run --apply
-vault automation cycle --apply
-```
-
-`vault automation cycle` 会先评估已审核的候选结果，写出 bounded
-`learning_policy.json`，再跑一次安全自动化，让 Dream 用最新的整理提示排序候选。
-它仍然不会自动 promote、硬删记忆，或绕过隐私与权限规则。
-
-拒绝或阻挡候选也可以变成结构化反馈：
-
-```bash
-vault candidate-review mem_123 --outcome rejected --reason "太模糊，不值得长期保存。"
-```
-
-这让 Agent 知道「不要记这个」也是一种可学习信号，而不是散落在对话里。
-当 Dream 发现重复记忆时，也可以生成 `consolidation_suggestion`
-候选，请 reviewer 决定是否合并、保留或归档；它不会自己改正式知识库。
-
-Agent 安装精灵可以用
-`vault setup-agent --automation-schedule cron|launchagent|n8n|all` 生成 cron、
-LaunchAgent 或 n8n 模板。排程默认跑 `vault automation cycle`，让长期
-Agent 可以先从已审核结果写出 bounded learning policy，再整理记忆。排程仍然是
-report-first；只有使用者明确加上 `--automation-apply`，才会执行 policy
-允许的可逆归档。想要更单纯的维护排程，可以加 `--automation-command run`。
-
-自动化细节：[docs/automation.md](docs/automation.md)。
-
-## 记忆整理 Agent
-
-Vault 可以生成 Profile、Dream、Forgetting agent 的使用指引。这些 agent
-默认应该保守：Dream 先生成 report，cleanup 检查 stale entries、duplicates
-和 weak metadata；若使用 `apply_safe`，应先建立 backup，让 rollback 保持可行。
-promotion、deletion、archive、expiry 这类动作，在使用者批准策略前都应保持
-candidate-only 或 report-only。
-
-设置入口：[docs/agent_install.md](docs/agent_install.md)。
-治理细节：[docs/memory_governance.md](docs/memory_governance.md)。
-
-## 可整合的系统
-
-| 系统 | 使用方式 |
-|---|---|
-| Claude Code / Codex / OpenCode | CLI 或 local stdio MCP |
-| Hermes Agent / OpenClaw | CLI、MCP、生成的 agent install files |
-| n8n | Supabase sync 和 remote-reader workflow templates |
-| Coze 或 hosted agents | Supabase read-only RPC 和 OpenAPI template |
-| Obsidian | 导入既有笔记，或导出 Vault 知识 |
-| Headroom | Vault 筛出内容后，再做可选 context 压缩 |
-
-整合文件入口：[docs/agent_integrations.md](docs/agent_integrations.md)。
-
-## 可选：Supabase 共享
-
-SQLite 仍然是 source of truth。Supabase 是可选的共享层。
-
-当不同主机、n8n、Coze 或 hosted agent 需要读取共享记忆时，可以同步安全摘要：
-
-```bash
-pip install "vault-for-llm[supabase]==0.7.27"
-python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
-```
-
-设置指南：[docs/supabase_setup.md](docs/supabase_setup.md)。
-Read policy template：[docs/supabase_read_policy.sql](docs/supabase_read_policy.sql)。
+详细设计：[memory_governance.md](docs/memory_governance.md)。
 
 ## Obsidian
 
@@ -256,62 +208,49 @@ vault import obsidian --vault ~/Documents/ObsidianVault --project-dir ~/Vaults/m
 vault export obsidian --project-dir ~/Vaults/my-project --vault ~/Documents/ObsidianVault
 ```
 
-Importer 默认会跳过 `.obsidian`、`.trash`、`.git` 和 Vault 自己导出的文件夹。
+Obsidian conflict inbox 会用明确选项处理冲突：接受 Obsidian、接受 Vault、或保留两份。
 
-## 搜索质量
+## Supabase 与远端共享
 
-Vault 内置 Search QA，让你测“Agent 有没有找对来源”：
+SQLite 仍然是最简单的 source of truth。Supabase 是可选共享层，适合不同主机、
+n8n、Coze 或 hosted Agent 读共享记忆。
 
 ```bash
-vault search-qa run \
-  --qa-file benchmarks/search_qa/basic.zh-Hant.json \
-  --mode keyword \
-  --output /tmp/vault-searchqa.json
+pip install "vault-for-llm[supabase]==0.7.27"
+python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 
-目前的 benchmark 数字只代表 retrieval evidence，不等于最终回答质量：
+设置指南：
 
-- project onboarding proof：在本地 proof run 中，Vault 对 28/28 任务找到 source-backed project memory
-- LoCoMo retrieval probe：hierarchical session + local evidence-window retrieval 在官方计分类别有高 evidence recall
-- 官方 answerer/judge score 需要另外接 model provider 跑
+- [Supabase 设置](docs/supabase_setup.md)
+- [Supabase read policy SQL](docs/supabase_read_policy.sql)
 
-更多资料：[docs/agent_onboarding_benchmark.md](docs/agent_onboarding_benchmark.md)、
-[docs/search_qa_benchmarking.md](docs/search_qa_benchmarking.md)。
+## 进阶功能索引
+
+- Agent 安装：[docs/agent_install.md](docs/agent_install.md)
+- Agent 整合：[docs/agent_integrations.md](docs/agent_integrations.md)
+- 自动化与每日报告：[docs/automation.md](docs/automation.md)
+- 记忆治理：[docs/memory_governance.md](docs/memory_governance.md)
+- Gateway / Remote 架构：[docs/decision_records/2026-07-02-vault-remote-gateway-contract.md](docs/decision_records/2026-07-02-vault-remote-gateway-contract.md)
+- Obsidian-as-GUI：[docs/decision_records/2026-07-01-obsidian-as-human-gui.md](docs/decision_records/2026-07-01-obsidian-as-human-gui.md)
+- Search QA：[docs/search_qa_benchmarking.md](docs/search_qa_benchmarking.md)
+- OKF 导入导出：[docs/okf_integration.md](docs/okf_integration.md)
 
 ## 成熟度
 
-| 功能区 | 状态 |
+| 功能 | 状态 |
 |---|---|
-| local SQLite、Markdown compile、keyword search | stable |
-| CLI setup、候选记忆、bounded read | usable |
-| MCP tools | usable，建议用 tool profile 控制 token |
-| Obsidian import/export | usable |
-| Supabase sync 和 remote read templates | advanced optional |
-| policy-based memory automation | usable-alpha |
-| semantic search、API/local embedding providers、rerank、benchmark adapters | evolving |
-| Profile / Dream / Forgetting agents | guidance-first，不会自动删记忆 |
+| Local SQLite vault | 稳定 |
+| CLI / MCP 搜索与 bounded read | 稳定 |
+| Consumer guided setup / governed-auto | 稳定成长中 |
+| Obsidian 导入/导出/冲突审核 | 可用，仍在打磨同步体验 |
+| Supabase / Gateway remote sharing | 可用，部署时要注意权限与传输安全 |
+| Semantic embedding / reranker | 可选，需要额外依赖 |
 
-Vault-for-LLM 还没到 1.0。核心本地路径故意保持简单；进阶整合很有用，但应该由使用者明确开启。
-
-## 文件地图
-
-- Agent 安装手册：[docs/agent_install.md](docs/agent_install.md)
-- CLI 参考：[docs/cli_reference.md](docs/cli_reference.md)
-- Agent 整合：[docs/agent_integrations.md](docs/agent_integrations.md)
-- 记忆自动化：[docs/automation.md](docs/automation.md)
-- 记忆治理：[docs/memory_governance.md](docs/memory_governance.md)
-- Supabase 设置：[docs/supabase_setup.md](docs/supabase_setup.md)
-- MCP 工具参考：[docs/mcp_tool_reference.md](docs/mcp_tool_reference.md)
-- MCP workflow：[docs/mcp_memory_workflow.md](docs/mcp_memory_workflow.md)
-- PageIndex / Headroom 比较：[docs/comparisons/pageindex_headroom.md](docs/comparisons/pageindex_headroom.md)
-- 愿景笔记：[docs/vision.md](docs/vision.md)
-
-## 开发
+## 开发与测试
 
 ```bash
-git clone https://github.com/zycaskevin/Vault-for-LLM.git
-cd Vault-for-LLM
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev,mcp]"
 pytest -q
@@ -319,4 +258,4 @@ pytest -q
 
 ## 授权
 
-Apache-2.0。请见 [LICENSE](LICENSE)。
+Apache-2.0
