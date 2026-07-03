@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vault-for-LLM | Agent Memory Governance</title>
+  <meta name="description" content="Vault-for-LLM helps AI agents share one governed memory vault: propose, review, promote, cite, roll back, and audit.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23101714'/%3E%3Cpath d='M8 9h16l-2 14H10L8 9Z' fill='%23f8f2df'/%3E%3Cpath d='M11 13h10M12 17h8M13 21h6' stroke='%232f8a5f' stroke-width='2'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17201b;
+      --muted: #5f6b64;
+      --paper: #fbfaf7;
+      --surface: #ffffff;
+      --line: #d9ded8;
+      --night: #101714;
+      --night-2: #18231f;
+      --green: #2f8a5f;
+      --cyan: #2c7f91;
+      --amber: #9b6b1f;
+      --red: #b54b42;
+      --blue: #365f9d;
+      --shadow: 0 18px 50px rgba(16, 23, 20, 0.15);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .hero {
+      position: relative;
+      min-height: 86vh;
+      overflow: hidden;
+      color: #f4f1e8;
+      background: var(--night);
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(244, 241, 232, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(244, 241, 232, 0.045) 1px, transparent 1px);
+      background-size: 46px 46px;
+      opacity: 0.52;
+    }
+
+    .hero-scene {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .memory-lane {
+      position: absolute;
+      left: 6vw;
+      right: 6vw;
+      bottom: 8vh;
+      display: grid;
+      grid-template-columns: repeat(6, minmax(120px, 1fr));
+      gap: 14px;
+      opacity: 0.95;
+    }
+
+    .lane-card {
+      min-height: 116px;
+      padding: 14px;
+      border: 1px solid rgba(244, 241, 232, 0.22);
+      border-radius: 8px;
+      background: rgba(251, 250, 247, 0.08);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
+      backdrop-filter: blur(6px);
+    }
+
+    .lane-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.85rem;
+      color: #fff9e8;
+    }
+
+    .lane-card span {
+      display: block;
+      color: rgba(244, 241, 232, 0.76);
+      font-size: 0.76rem;
+      line-height: 1.35;
+    }
+
+    .lane-card:nth-child(1) { border-top: 4px solid var(--cyan); }
+    .lane-card:nth-child(2) { border-top: 4px solid var(--amber); transform: translateY(24px); }
+    .lane-card:nth-child(3) { border-top: 4px solid var(--green); }
+    .lane-card:nth-child(4) { border-top: 4px solid var(--blue); transform: translateY(24px); }
+    .lane-card:nth-child(5) { border-top: 4px solid var(--red); }
+    .lane-card:nth-child(6) { border-top: 4px solid #80715b; transform: translateY(24px); }
+
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+      width: min(1040px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 74px 0 300px;
+    }
+
+    .eyebrow {
+      margin: 0 0 18px;
+      color: #b9dccb;
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      max-width: 880px;
+      font-size: clamp(2.7rem, 7vw, 6.6rem);
+    }
+
+    .hero-copy > p {
+      max-width: 720px;
+      margin: 22px 0 0;
+      color: rgba(244, 241, 232, 0.86);
+      font-size: clamp(1.04rem, 2vw, 1.28rem);
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: 8px;
+      border: 1px solid rgba(244, 241, 232, 0.24);
+      background: #f8f2df;
+      color: #17201b;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .button.secondary {
+      background: transparent;
+      color: #f4f1e8;
+    }
+
+    main {
+      background: var(--paper);
+    }
+
+    .band {
+      padding: 72px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .band.alt {
+      background: #f3f5f1;
+    }
+
+    .wrap {
+      width: min(1080px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .section-head {
+      max-width: 760px;
+      margin-bottom: 34px;
+    }
+
+    .section-head p {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 1.06rem;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 3.4rem);
+    }
+
+    h3 {
+      font-size: 1.18rem;
+    }
+
+    .prompt-box {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: start;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      color: #25302a;
+      font-size: 0.92rem;
+      line-height: 1.5;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+
+    .copy-state {
+      margin-top: 8px;
+      color: var(--green);
+      font-size: 0.86rem;
+      min-height: 1.2em;
+    }
+
+    .story-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .story-card,
+    .report-card,
+    .proof-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(16, 23, 20, 0.08);
+    }
+
+    .story-card .tag,
+    .report-card .tag {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .tag.blue { background: var(--blue); }
+    .tag.green { background: var(--green); }
+    .tag.amber { background: var(--amber); }
+    .tag.red { background: var(--red); }
+    .tag.cyan { background: var(--cyan); }
+
+    .story-card p,
+    .report-card p,
+    .proof-card p {
+      margin: 10px 0 0;
+      color: var(--muted);
+    }
+
+    .compare {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .compare h3 {
+      margin-bottom: 12px;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+    }
+
+    li + li {
+      margin-top: 8px;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .report-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .decision-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .decision {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f8f7f2;
+      padding: 10px 12px;
+      font-weight: 700;
+    }
+
+    .architecture {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .arch-row {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .arch-box {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 10px;
+      font-weight: 700;
+    }
+
+    .arch-core {
+      min-height: 96px;
+      border-color: #90b9a5;
+      background: #eef6f1;
+      font-size: 1.12rem;
+    }
+
+    .proof-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .terminal {
+      border-radius: 8px;
+      border: 1px solid #26322d;
+      background: #111815;
+      color: #dce8df;
+      padding: 18px;
+      overflow-x: auto;
+    }
+
+    .terminal code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92rem;
+    }
+
+    footer {
+      padding: 34px 0;
+      background: var(--night);
+      color: rgba(244, 241, 232, 0.82);
+    }
+
+    footer .wrap {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 900px) {
+      .hero-copy {
+        padding-bottom: 430px;
+      }
+
+      .memory-lane {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        left: 20px;
+        right: 20px;
+        bottom: 34px;
+      }
+
+      .lane-card {
+        min-height: 96px;
+      }
+
+      .lane-card:nth-child(n) {
+        transform: none;
+      }
+
+      .story-grid,
+      .compare,
+      .report-grid,
+      .proof-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .arch-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .prompt-box {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .hero {
+        min-height: auto;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .hero-scene {
+        position: relative;
+        inset: auto;
+        order: 2;
+        padding-bottom: 28px;
+      }
+
+      .hero-copy {
+        padding-top: 44px;
+        padding-bottom: 28px;
+        order: 1;
+      }
+
+      .memory-lane {
+        position: relative;
+        left: auto;
+        right: auto;
+        bottom: auto;
+        width: calc(100% - 40px);
+        margin: 0 auto;
+        grid-template-columns: 1fr;
+      }
+
+      .arch-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-scene" aria-hidden="true">
+      <div class="memory-lane">
+        <div class="lane-card"><strong>Claude Code</strong><span>Finds a reusable testing lesson from a bug fix.</span></div>
+        <div class="lane-card"><strong>Candidate</strong><span>Vault checks privacy, duplicates, quality, and source evidence.</span></div>
+        <div class="lane-card"><strong>Review</strong><span>Low-risk memory can pass; uncertain memory waits for the daily report.</span></div>
+        <div class="lane-card"><strong>Promoted</strong><span>Codex searches reviewed memory and reads the exact source range.</span></div>
+        <div class="lane-card"><strong>Rollback</strong><span>Outdated memory is deprecated instead of silently poisoning context.</span></div>
+        <div class="lane-card"><strong>Audit</strong><span>Teams can see who wrote it, who reviewed it, and why it changed.</span></div>
+      </div>
+    </div>
+    <div class="hero-copy">
+      <p class="eyebrow">Vault-for-LLM</p>
+      <h1>Agents need memory governance, not just RAG.</h1>
+      <p>Give Codex, Claude Code, Hermes, OpenClaw, n8n, and Coze one governed memory vault: propose, review, promote, search, cite, roll back, and audit.</p>
+      <div class="hero-actions">
+        <a class="button" href="#install">Copy the agent install prompt</a>
+        <a class="button secondary" href="#demo">See the three-agent demo</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="band" id="install">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Start by giving this to your Agent.</h2>
+          <p>No one should have to learn forty commands before getting a memory vault. The first path is agent-led: answer four questions, then read a short daily report.</p>
+        </div>
+        <div class="prompt-box">
+          <pre id="installPrompt">Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.7.27.
+Use consumer mode with governed-auto memory.
+
+Do not teach me CLI flags first. Ask me only four questions:
+1. Which language should Vault use: Traditional Chinese, Simplified Chinese, or English?
+2. Should this be an independent vault or a shared vault for multiple agents?
+3. Should Vault connect to Obsidian, Supabase, both, or neither?
+4. What time should the daily memory report run?
+
+After setup, run a smoke check and tell me:
+- where the vault lives
+- how I read the daily memory report
+- where the local GUI or next action is
+
+Daily rule:
+safe, low-risk, sourced memories can be kept automatically;
+uncertain, sensitive, conflicting, or strategic memories should go into the daily report for my review.</pre>
+          <div>
+            <button class="button" type="button" data-copy-target="installPrompt">Copy prompt</button>
+            <div class="copy-state" role="status" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band alt" id="demo">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>One repo. Three Agents. One governed memory.</h2>
+          <p>This is the demo that separates Vault from a plain RAG database: agents can share lessons without silently polluting long-term memory.</p>
+        </div>
+        <div class="story-grid">
+          <article class="story-card">
+            <span class="tag blue">1. Propose</span>
+            <h3>Claude Code fixes a testing bug.</h3>
+            <p>It proposes a reusable lesson with the command output and source file that proved the fix.</p>
+          </article>
+          <article class="story-card">
+            <span class="tag amber">2. Review</span>
+            <h3>Vault does not trust it blindly.</h3>
+            <p>The candidate passes privacy, duplicate, metadata, and quality checks before it can become active memory.</p>
+          </article>
+          <article class="story-card">
+            <span class="tag green">3. Reuse</span>
+            <h3>Codex finds it next time.</h3>
+            <p>Search returns a reviewed memory, then bounded read gives the exact source range for citation.</p>
+          </article>
+        </div>
+        <div class="compare">
+          <div class="story-card">
+            <h3>Without Vault</h3>
+            <ul>
+              <li>Every agent starts cold.</li>
+              <li>Fixes stay trapped in chat logs.</li>
+              <li>Bad memories can silently enter context.</li>
+            </ul>
+          </div>
+          <div class="story-card">
+            <h3>With Vault</h3>
+            <ul>
+              <li>Agents share reviewed project memory.</li>
+              <li>Each answer can return to a source.</li>
+              <li>Outdated memory can be deprecated or rolled back.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>The Daily Memory Report keeps humans in control.</h2>
+          <p>Vault can become more automatic over time, but the review surface stays small. Safe memory can enter the vault; uncertain memory waits for a person.</p>
+        </div>
+        <div class="report-grid">
+          <div class="report-list">
+            <article class="report-card">
+              <span class="tag green">Auto-kept</span>
+              <h3>Testing requires APP_ENV=test before pytest.</h3>
+              <p>Reason: verified by command output. Source: CI log and test run.</p>
+            </article>
+            <article class="report-card">
+              <span class="tag amber">Needs review</span>
+              <h3>Vault should focus on memory governance.</h3>
+              <p>Reason: strategic product direction. Action: approve, edit, or defer.</p>
+            </article>
+            <article class="report-card">
+              <span class="tag red">Rejected</span>
+              <h3>Today's market snapshot.</h3>
+              <p>Reason: short-lived data, not durable project memory.</p>
+            </article>
+          </div>
+          <div class="report-card">
+            <span class="tag cyan">Obsidian conflict inbox</span>
+            <h3>Your notes stay readable. Agent memory stays governed.</h3>
+            <p>When Obsidian and Vault both changed a note, the resolver gives clear choices instead of overwriting silently.</p>
+            <div class="decision-row">
+              <span class="decision">Accept Obsidian</span>
+              <span class="decision">Accept Vault</span>
+              <span class="decision">Keep both</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band alt">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Adapters can change. The governed memory layer stays yours.</h2>
+          <p>Vault starts local-first, then connects to the systems you choose. CLI, MCP, Gateway, Supabase, Obsidian, and future remote servers are adapters around the same memory lifecycle.</p>
+        </div>
+        <div class="architecture" aria-label="Vault architecture">
+          <div class="arch-row">
+            <div class="arch-box">Codex</div>
+            <div class="arch-box">Claude Code</div>
+            <div class="arch-box">Hermes</div>
+            <div class="arch-box">OpenClaw</div>
+            <div class="arch-box">n8n</div>
+            <div class="arch-box">Coze</div>
+          </div>
+          <div class="arch-box arch-core">Vault Gateway / MCP / CLI</div>
+          <div class="arch-box arch-core">Local SQLite Vault + governed memory lifecycle</div>
+          <div class="arch-row">
+            <div class="arch-box">Obsidian</div>
+            <div class="arch-box">Supabase</div>
+            <div class="arch-box">Remote Server</div>
+            <div class="arch-box">Search QA</div>
+            <div class="arch-box">Daily Report</div>
+            <div class="arch-box">Audit Trail</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="band">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Developer proof without making the first page heavy.</h2>
+          <p>The landing page tells the story. The repo keeps the proof: local SQLite, MCP profiles, candidate-first writes, Obsidian import/export, Supabase and Gateway adapters, Search QA, and Apache-2.0.</p>
+        </div>
+        <div class="proof-grid">
+          <article class="proof-card">
+            <h3>Local-first</h3>
+            <p>Core use stays on Markdown and SQLite. Remote sharing is optional.</p>
+          </article>
+          <article class="proof-card">
+            <h3>MCP-ready</h3>
+            <p>Start agents with small tool profiles instead of exposing every maintenance tool.</p>
+          </article>
+          <article class="proof-card">
+            <h3>Measurable</h3>
+            <p>Search QA checks whether agents find the right source, not whether they sound confident.</p>
+          </article>
+          <article class="proof-card">
+            <h3>Reviewable</h3>
+            <p>Candidates, daily reports, conflict inboxes, and audit trails keep memory accountable.</p>
+          </article>
+        </div>
+        <div class="terminal" style="margin-top:18px">
+          <code>pip install "vault-for-llm[mcp]"<br>vault setup-agent --audience consumer<br>vault demo agent-governance --json</code>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span>Vault-for-LLM is Apache-2.0.</span>
+      <span><a href="../../README.md">README</a> · <a href="../demo/three-agent-shared-memory-runbook.md">Demo runbook</a> · <a href="../agent_install.md">Agent install</a></span>
+    </div>
+  </footer>
+
+  <script>
+    const copyButtons = document.querySelectorAll("[data-copy-target]");
+    copyButtons.forEach((button) => {
+      button.addEventListener("click", async () => {
+        const target = document.getElementById(button.getAttribute("data-copy-target"));
+        const state = button.parentElement.querySelector(".copy-state");
+        try {
+          await navigator.clipboard.writeText(target.innerText);
+          state.textContent = "Copied.";
+        } catch (error) {
+          state.textContent = "Select the prompt text and copy it manually.";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

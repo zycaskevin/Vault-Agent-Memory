@@ -10,6 +10,9 @@
 你不需要先学一堆命令。最简单的用法是：把下面那段话贴给你的 Agent，
 让它帮你安装、设置、测试，之后你每天只看一份很短的记忆报告。
 
+第一次看这个项目，可以先打开视觉 Demo：
+[`docs/landing/index.html`](docs/landing/index.html)。
+
 ## 30 秒版
 
 Vault-for-LLM 解决的不是“把更多东西塞进 AI”。
