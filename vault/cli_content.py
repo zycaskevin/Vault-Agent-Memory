@@ -390,7 +390,10 @@ def cmd_import(args):
                 "ok": not bool(result.get("errors")),
                 "status": "ok" if not result.get("errors") else "warning",
                 "import": result,
+                "next_action": _obsidian_import_next_action(args, result),
             }
+            if getattr(args, "dry_run", False):
+                payload["dry_run_semantics"] = _obsidian_dry_run_semantics()
             compile_output = _compile_after_obsidian_import(args, capture=True)
             if compile_output:
                 payload["compile_output"] = compile_output
@@ -416,6 +419,7 @@ def cmd_import(args):
 
         if args.dry_run:
             print("  模式: dry-run，未寫入 raw/，也不會 compile")
+            print("  下一步：確認預覽後移除 --dry-run；需要同步 DB 時再加 --compile。")
             return
 
         if args.compile:
@@ -531,6 +535,25 @@ def _run_obsidian_import_once(args, project_dir: Path) -> dict:
 
 def _obsidian_import_changed(result: dict) -> bool:
     return any(int(result.get(key) or 0) > 0 for key in ("added", "updated", "deleted"))
+
+
+def _obsidian_dry_run_semantics() -> dict[str, bool]:
+    return {
+        "writes_raw": False,
+        "writes_manifest": False,
+        "writes_sqlite_db": False,
+        "runs_compile": False,
+    }
+
+
+def _obsidian_import_next_action(args, result: dict) -> str:
+    if getattr(args, "dry_run", False):
+        return "Review the preview, then rerun without --dry-run; add --compile only when you want raw notes compiled into SQLite."
+    if getattr(args, "compile", False):
+        return "Run vault search to verify the imported Obsidian notes."
+    if _obsidian_import_changed(result):
+        return "Run vault compile, or rerun the import with --compile after reviewing raw/obsidian."
+    return "No import changes detected."
 
 
 def _compile_after_obsidian_import(args, *, capture: bool) -> str:

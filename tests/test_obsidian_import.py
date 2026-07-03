@@ -392,6 +392,77 @@ def test_cmd_import_obsidian_compile_writes_vault_db(tmp_path, monkeypatch, caps
     assert row["source"] == "obsidian/Runbook.md"
 
 
+def test_cmd_import_obsidian_dry_run_compile_never_writes_db_or_raw(tmp_path, monkeypatch, capsys):
+    from vault.cli import cmd_import
+    from vault.db import VaultDB
+
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+    with VaultDB(str(project_dir / "vault.db")):
+        pass
+
+    obsidian = tmp_path / "ObsidianVault"
+    obsidian.mkdir()
+    (obsidian / "Preview.md").write_text(
+        "# Preview\n\nDry-run should not enter active knowledge.\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.chdir(project_dir)
+    args = Namespace(
+        file="obsidian",
+        vault=str(obsidian),
+        category="preview",
+        tags="dry-run",
+        layer="L3",
+        trust=0.8,
+        obsidian_raw_subdir="obsidian",
+        exclude=[],
+        prune_missing=False,
+        dry_run=True,
+        compile=True,
+        no_embed=True,
+        allow_private=False,
+        json=True,
+        pretty=False,
+        obsidian_rules=None,
+        conflict_inbox=False,
+    )
+
+    cmd_import(args)
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["ok"] is True
+    assert payload["import"]["dry_run"] is True
+    assert payload["dry_run_semantics"] == {
+        "writes_raw": False,
+        "writes_manifest": False,
+        "writes_sqlite_db": False,
+        "runs_compile": False,
+    }
+    assert "compile_output" not in payload
+    assert "--dry-run" in payload["next_action"]
+    assert not (project_dir / "raw").exists()
+    assert not (project_dir / ".vault" / "obsidian-import-manifest.json").exists()
+    with VaultDB(str(project_dir / "vault.db")) as db:
+        count = db.conn.execute("SELECT COUNT(*) FROM knowledge").fetchone()[0]
+    assert count == 0
+
+
+def test_cmd_import_help_states_obsidian_dry_run_does_not_write(capsys):
+    from vault.cli import main
+
+    try:
+        main(["import", "--help"])
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    out = capsys.readouterr().out
+    assert "不寫 raw/" in out
+    assert "SQLite DB" in out
+    assert "不會 compile" in out
+
+
 def test_cmd_import_obsidian_watch_updates_changed_notes(tmp_path, monkeypatch, capsys):
     from vault import cli_content
     from vault.cli import cmd_import
