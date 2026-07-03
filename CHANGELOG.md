@@ -1,5 +1,35 @@
 # CHANGELOG
 
+## [0.7.28] - 2026-07-03
+
+### Added
+
+- Added a rendered three-agent memory-governance demo page for public previews,
+  with English, Traditional Chinese, and Simplified Chinese language switching.
+- Added a GitHub Pages deployment workflow so the landing/demo page can be
+  published as a stable public URL.
+- Added external contributor onboarding: issue templates, pull request
+  template, code of conduct, and good-first-issue ideas.
+- Added decision records for Agent-assisted builder positioning and external
+  contributor onboarding.
+
+### Changed
+
+- Reframed public README, landing, and setup-guide language around
+  Agent-assisted builders instead of implying a fully general zero-learning
+  consumer app.
+- Updated package metadata to describe Vault as local-first memory governance
+  for AI agents, not just a Markdown/vector-search utility.
+- Updated install examples to `vault-for-llm==0.7.28`.
+
+### Validation
+
+- README documented command smoke passed.
+- Issue template YAML parse check passed.
+- Targeted setup/guide/landing tests passed while preparing the public-preview
+  docs.
+- Release readiness CI passed on PRs #313 and #314.
+
 ## [0.7.27] - 2026-07-02
 
 ### Added

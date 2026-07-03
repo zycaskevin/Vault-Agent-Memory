@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vault-for-llm"
-version = "0.7.27"
-description = "Local-first Markdown + SQLite memory for LLM agents, with keyword search, optional embeddings, MCP, and bounded citation tools."
+version = "0.7.28"
+description = "Local-first memory governance for AI agents: shared, reviewable, auditable memory via SQLite and MCP."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "Apache-2.0"
@@ -13,7 +13,7 @@ license-files = ["LICENSE"]
 authors = [
     {name = "Vault-for-LLM Contributors"},
 ]
-keywords = ["knowledge-base", "vector-search", "sqlite", "onnx", "embeddings", "local-first"]
+keywords = ["agent-memory", "memory-governance", "mcp", "multi-agent", "sqlite", "local-first"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",

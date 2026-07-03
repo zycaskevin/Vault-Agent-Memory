@@ -43,7 +43,7 @@ In plain language:
 Copy this prompt into an agent that can run local commands:
 
 ```text
-Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.7.27.
+Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.7.28.
 Use the agent-assisted governed-auto memory mode.
 
 Do not show advanced CLI flags first. Ask me only four questions:
@@ -68,7 +68,7 @@ The agent will usually run:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.7.27"
+pip install "vault-for-llm[mcp]==0.7.28"
 vault setup-agent --audience consumer
 ```
 
@@ -153,7 +153,7 @@ Start here:
 ## Developer Quickstart
 
 ```bash
-pip install "vault-for-llm[mcp]==0.7.27"
+pip install "vault-for-llm[mcp]==0.7.28"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -314,7 +314,7 @@ Supabase is useful when hosted agents or other machines need a filtered read
 copy:
 
 ```bash
-pip install "vault-for-llm[supabase]==0.7.27"
+pip install "vault-for-llm[supabase]==0.7.28"
 vault remote status --project-dir ~/Vaults/my-project
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
