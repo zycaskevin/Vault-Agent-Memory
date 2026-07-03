@@ -82,7 +82,7 @@ def test_landing_demo_page_contains_rendered_story() -> None:
         "The story in five moves",
         "五步看懂這個故事",
         "五步看懂这个故事",
-        "vault setup-agent --audience consumer --memory-mode governed-auto",
+        "vault quickstart",
         "flow-path",
         "@keyframes flowDash",
         "prefers-reduced-motion",

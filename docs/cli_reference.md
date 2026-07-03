@@ -132,6 +132,8 @@ changed notes without duplicating unchanged ones.
 
 | Command | Purpose |
 |---|---|
+| `vault quickstart` | Small first-run wizard for agent-assisted users; asks only language, independent/shared memory, optional Obsidian/Supabase connections, and daily report time |
+| `vault quickstart --non-interactive --project ~/Vaults/my-project --json` | Script the consumer defaults without exposing advanced setup-agent flags |
 | `vault setup-agent` | Ask for scope, setup language, optional features, Obsidian import, sync templates, and generate `agent-install/local-smoke.sh` plus common Agent adapter startup templates |
 | `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,obsidian_import` | Agent-friendly scripted install |
 | `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --memory-layout hybrid --features core,mcp --json` | Create a shared project vault plus private Agent vault and write `hybrid-vault-layout.json` |
@@ -156,6 +158,9 @@ changed notes without duplicating unchanged ones.
 | `vault agent startup-doctor --template-dir ./agent-install --json` | Check generated startup contracts plus minimal Codex/Claude/Hermes/OpenClaw/Coze/n8n configs |
 | `vault agent install-runtime-template --runtime codex --target ./AGENTS.md` | Preview applying the generated Codex startup template into a runtime instruction file |
 | `vault agent install-runtime-template --runtime codex --target ./AGENTS.md --apply` | Apply the marked startup block and create a backup before changing an existing file |
+
+`vault quickstart` is the preferred first-run command for new users. It wraps the
+consumer setup path and deliberately hides the advanced feature matrix.
 
 `vault install-agent` is an alias for `vault setup-agent`.
 Interactive setup asks before installing optional dependencies. Non-interactive

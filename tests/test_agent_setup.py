@@ -311,6 +311,78 @@ def test_setup_agent_consumer_text_output_separates_human_and_agent_steps(tmp_pa
     assert "Review MCP startup guide" not in out
 
 
+def test_quickstart_help_stays_small(capsys):
+    from vault.cli import main
+
+    try:
+        main(["quickstart", "--help"])
+    except SystemExit as exc:
+        assert exc.code == 0
+
+    out = capsys.readouterr().out
+    assert "--connections" in out
+    assert "--daily-report-time" in out
+    assert "--obsidian-vault" in out
+    assert "--supabase-sync" not in out
+    assert "--automation-capture-transcripts" not in out
+    assert "--agent-roster" not in out
+    assert "--validation-pack" not in out
+
+
+def test_quickstart_non_interactive_uses_consumer_defaults(tmp_path, capsys):
+    from vault.cli import main
+
+    project = tmp_path / "quickstart-project"
+    main(
+        [
+            "quickstart",
+            "--non-interactive",
+            "--agent",
+            "new-user-agent",
+            "--project",
+            str(project),
+            "--json",
+        ]
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["audience"] == "consumer"
+    assert payload["memory_mode"] == "governed-auto"
+    assert payload["features"] == ["core", "mcp"]
+    assert payload["scope"] == "private"
+    assert payload["memory_layout"] == "private"
+    assert payload["consumer_daily_report"]["guide"].endswith("README-consumer-daily-report.md")
+    assert "cron" in payload["automation_schedule_templates"]
+
+
+def test_quickstart_interactive_asks_only_core_questions(tmp_path, monkeypatch, capsys):
+    from vault.cli import main
+
+    answers = iter(["zh-Hant", "shared", "none", "08:30"])
+    prompts: list[str] = []
+
+    def fake_input(prompt: str) -> str:
+        prompts.append(prompt)
+        return next(answers)
+
+    monkeypatch.setattr("builtins.input", fake_input)
+    main(["quickstart", "--project", str(tmp_path / "quickstart-project"), "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["audience"] == "consumer"
+    assert payload["scope"] == "shared"
+    assert payload["memory_layout"] == "shared"
+    assert payload["language"] == "zh-Hant"
+    assert len(prompts) == 4
+    assert any("Language" in prompt for prompt in prompts)
+    assert any("Memory vault" in prompt for prompt in prompts)
+    assert any("Optional connections" in prompt for prompt in prompts)
+    assert any("Daily report time" in prompt for prompt in prompts)
+    assert not any("semantic search" in prompt for prompt in prompts)
+    assert not any("Supabase sync" in prompt for prompt in prompts)
+
+
 def test_run_agent_setup_writes_supabase_sync_templates(tmp_path):
     from vault.agent_setup import AgentSetupConfig, run_agent_setup
 
