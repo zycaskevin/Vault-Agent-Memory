@@ -1,5 +1,7 @@
 # Vault-for-LLM
 
+[English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
+
 Local-first project memory for AI agents.
 
 Vault-for-LLM turns project notes, decisions, bugs, SOPs, Obsidian notes, and
