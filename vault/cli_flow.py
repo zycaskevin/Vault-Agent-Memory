@@ -635,7 +635,6 @@ def cmd_setup_agent(args):
         normalize_features,
         run_agent_setup,
     )
-
     def _agent_access_overrides_from_args() -> dict[str, object]:
         overrides: dict[str, object] = {}
         if args.scope in {"private", "shared"}:
@@ -659,7 +658,6 @@ def cmd_setup_agent(args):
                 key = "remote_reader" if attr == "agent_remote_reader" else attr
                 overrides[key] = bool(value)
         return overrides
-
     if getattr(args, "non_interactive", False):
         preset = agent_access_preset(args.agent_preset)
         scope = args.scope or preset.get("setup_scope") or "private"
@@ -670,6 +668,7 @@ def cmd_setup_agent(args):
             agent=args.agent,
             agent_preset=args.agent_preset or "",
             audience=args.audience,
+            memory_mode=args.memory_mode or "",
             memory_layout=args.memory_layout or preset.get("memory_layout") or "hybrid",
             agent_private_dir=Path(args.agent_private_dir).expanduser() if args.agent_private_dir else None,
             features=normalize_features(args.features),
@@ -719,6 +718,7 @@ def cmd_setup_agent(args):
             "agent_preset": args.agent_preset,
             "scope": args.scope,
             "audience": args.audience,
+            "memory_mode": args.memory_mode,
             "project_dir": args.agent_project_dir,
             "memory_layout": args.memory_layout,
             "agent_private_dir": args.agent_private_dir,

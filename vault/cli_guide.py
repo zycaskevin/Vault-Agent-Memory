@@ -118,7 +118,7 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
         "agent_mcp_profiles": agent,
         "maintenance_entrypoints": _filter_by_intent(maintenance, intent),
         "docs": docs,
-        "next_action": "Ask your agent to run vault setup-agent --audience consumer, then read vault daily-report or open vault gui.",
+        "next_action": "Ask your agent to run vault setup-agent --audience consumer; governed-auto is the default memory loop for non-technical users.",
     }
     if mode == "human":
         keys = ["ok", "mode", "intent", "message", "intent_shortcuts", "everyday_entrypoints", "docs", "next_action"]

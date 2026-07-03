@@ -127,9 +127,11 @@ def test_run_agent_setup_consumer_audience_writes_daily_report_guide_and_safe_sc
     )
 
     assert result["audience"] == "consumer"
+    assert result["memory_mode"] == "governed-auto"
     assert result["consumer_daily_report"]["guide"].endswith("README-consumer-daily-report.md")
     guide = (tmp_path / "templates" / "README-consumer-daily-report.md").read_text(encoding="utf-8")
     assert "你不需要學 CLI" in guide
+    assert "低風險、有來源" in guide
     assert "vault daily-report" in guide
     assert {"cron", "readme"}.issubset(result["automation_schedule_templates"])
     cron = (tmp_path / "templates" / "memory-automation.cron").read_text(encoding="utf-8")
@@ -139,9 +141,13 @@ def test_run_agent_setup_consumer_audience_writes_daily_report_guide_and_safe_sc
     assert "vault daily-report" in cron
     assert current_vault_executable() in cron
     assert "--language zh-Hant" in cron
+    assert "--apply" in cron
     assert "0 9 * * * sh -lc" in cron
     assert "daily-report-latest" in readme
-    assert "--apply" not in cron
+    assert result["automation_policy"]["auto_promote_low_risk_candidates"] is True
+    assert "auto_promote_low_risk_candidates: true" in (project / "automation_policy.yaml").read_text(
+        encoding="utf-8"
+    )
     assert result["security_hardening"]["readme"].endswith("README-local-safety.md")
     security_env = (tmp_path / "templates" / "local-safety.env.example").read_text(encoding="utf-8")
     assert "VAULT_MCP_REQUIRE_AGENT_SIGNATURE=1" in security_env
@@ -150,6 +156,98 @@ def test_run_agent_setup_consumer_audience_writes_daily_report_guide_and_safe_sc
     assert any("daily report" in step for step in result["human_next_steps"])
     assert any("daily-report" in step for step in result["next_steps"])
     assert result["agent_next_steps"] == result["next_steps"]
+
+
+def test_run_agent_setup_consumer_daily_review_stays_report_only(tmp_path):
+    from vault.agent_setup import AgentSetupConfig, run_agent_setup
+
+    project = tmp_path / "consumer-project"
+    result = run_agent_setup(
+        AgentSetupConfig(
+            project_dir=project,
+            scope="shared",
+            agent="consumer-agent",
+            audience="consumer",
+            memory_mode="daily-review",
+            features=["core", "mcp"],
+            template_dir=tmp_path / "templates",
+        )
+    )
+
+    cron = (tmp_path / "templates" / "memory-automation.cron").read_text(encoding="utf-8")
+    assert result["memory_mode"] == "daily-review"
+    assert "--apply" not in cron
+    assert result["automation_policy"] == {}
+
+
+def test_run_agent_setup_falls_back_private_vault_into_project_when_default_private_root_unavailable(
+    tmp_path, monkeypatch
+):
+    import vault.agent_setup as agent_setup
+    from vault.agent_setup import AgentSetupConfig, run_agent_setup
+
+    default_private_root = tmp_path / "blocked-private-root"
+    monkeypatch.setenv("VAULT_AGENT_PRIVATE_ROOT", str(default_private_root))
+    original_ensure_project = agent_setup.ensure_project
+
+    def fake_ensure_project(path):
+        candidate = Path(path).expanduser()
+        if str(candidate).startswith(str(default_private_root)):
+            raise PermissionError("private root unavailable")
+        return original_ensure_project(path)
+
+    monkeypatch.setattr(agent_setup, "ensure_project", fake_ensure_project)
+
+    project = tmp_path / "consumer-project"
+    result = run_agent_setup(
+        AgentSetupConfig(
+            project_dir=project,
+            scope="shared",
+            agent="consumer-agent",
+            audience="consumer",
+            memory_layout="hybrid",
+            features=["core", "mcp"],
+            template_dir=tmp_path / "templates",
+        )
+    )
+
+    assert result["agent_private_dir"].startswith(str(project / "agent-private"))
+    assert any(item["kind"] == "agent_private_dir" for item in result["path_fallbacks"])
+    assert Path(result["agent_private_dir"], "vault.db").exists()
+
+
+def test_run_agent_setup_falls_back_registry_into_install_pack_when_default_registry_unavailable(
+    tmp_path, monkeypatch
+):
+    import vault.agent_setup as agent_setup
+    from vault.agent_setup import AgentSetupConfig, run_agent_setup
+
+    monkeypatch.delenv("VAULT_AGENT_REGISTRY_DIR", raising=False)
+    original_register_agent = agent_setup.register_agent
+
+    def fake_register_agent(*args, **kwargs):
+        if kwargs.get("path") is None:
+            raise PermissionError("home registry unavailable")
+        return original_register_agent(*args, **kwargs)
+
+    monkeypatch.setattr(agent_setup, "register_agent", fake_register_agent)
+
+    project = tmp_path / "consumer-project"
+    result = run_agent_setup(
+        AgentSetupConfig(
+            project_dir=project,
+            scope="shared",
+            agent="consumer-agent",
+            audience="consumer",
+            memory_layout="shared",
+            features=["core", "mcp"],
+            template_dir=tmp_path / "templates",
+        )
+    )
+
+    assert result["agent_registry"]["registry_path"] == str((tmp_path / "templates" / "agent-registry.json").resolve())
+    assert any(item["kind"] == "agent_registry" for item in result["path_fallbacks"])
+    assert Path(result["agent_registry"]["registry_path"]).exists()
 
 
 def test_run_agent_setup_consumer_audience_supports_simplified_chinese(tmp_path):
@@ -831,6 +929,32 @@ def test_run_agent_setup_can_write_low_risk_auto_promote_policy(tmp_path):
     assert "requires `automation_policy.yaml` plus `--apply`" in readme
     assert "--apply" in cron
     assert any("Review low-risk auto-promote policy" in step for step in result["next_steps"])
+
+
+def test_run_agent_setup_governed_auto_is_independent_from_audience(tmp_path):
+    from vault.agent_setup import AgentSetupConfig, run_agent_setup
+
+    project = tmp_path / "agent-project"
+    result = run_agent_setup(
+        AgentSetupConfig(
+            project_dir=project,
+            scope="shared",
+            agent="work-agent",
+            audience="builder",
+            memory_mode="governed-auto",
+            features=["core", "mcp"],
+            template_dir=tmp_path / "templates",
+        )
+    )
+
+    cron = Path(result["automation_schedule_templates"]["cron"]).read_text(encoding="utf-8")
+    assert result["audience"] == "builder"
+    assert result["memory_mode"] == "governed-auto"
+    assert result["automation_policy"]["auto_promote_low_risk_candidates"] is True
+    assert result["consumer_daily_report"]["guide"].endswith("README-consumer-daily-report.md")
+    assert "--apply" in cron
+    assert "vault daily-report" in cron
+    assert "--language en" in cron
 
 
 def test_run_agent_setup_low_risk_auto_promote_without_apply_is_preview_only(tmp_path):
@@ -1702,6 +1826,7 @@ def test_interactive_consumer_setup_keeps_questions_short(tmp_path, monkeypatch)
     )
 
     assert config.audience == "consumer"
+    assert config.memory_mode == "governed-auto"
     assert config.language == "zh-Hant"
     assert config.scope == "shared"
     assert config.memory_layout == "shared"
@@ -1712,7 +1837,8 @@ def test_interactive_consumer_setup_keeps_questions_short(tmp_path, monkeypatch)
     assert config.remote_reader_targets == "shell"
     assert config.automation_schedule_targets == "cron"
     assert config.automation_write_workspace is True
-    assert config.automation_apply is False
+    assert config.automation_apply is True
+    assert config.automation_auto_promote_low_risk is True
     assert config.daily_report_time == "08:30"
     assert len(prompts) == 6
     assert any("語言" in prompt for prompt in prompts)
