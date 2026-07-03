@@ -227,6 +227,11 @@
       color: #f4f1e8;
     }
 
+    .band .button.secondary {
+      border-color: var(--line);
+      color: var(--ink);
+    }
+
     main {
       background: var(--paper);
     }
@@ -592,7 +597,7 @@
       <p data-i18n="heroBody">Give Codex, Claude Code, Hermes, OpenClaw, n8n, and Coze one governed memory vault: propose, review, promote, search, cite, roll back, and audit.</p>
       <div class="hero-actions">
         <a class="button" href="#install" data-i18n="heroPrimary">Copy the agent install prompt</a>
-        <a class="button secondary" href="#demo" data-i18n="heroSecondary">See the three-agent demo</a>
+        <a class="button secondary" href="demo.html" data-i18n="heroSecondary">See the rendered demo</a>
       </div>
     </div>
   </header>
@@ -670,6 +675,10 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
               <li data-i18n="with3">Outdated memory can be deprecated or rolled back.</li>
             </ul>
           </div>
+        </div>
+        <div class="hero-actions" style="margin-top: 24px">
+          <a class="button" href="demo.html" data-i18n="demoCta">Open the visual demo</a>
+          <a class="button secondary" href="../demo/three-agent-shared-memory-runbook.md" data-i18n="demoRunbook">Read the technical runbook</a>
         </div>
       </div>
     </section>
@@ -790,7 +799,7 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
   <footer>
     <div class="wrap">
       <span data-i18n="footerLicense">Vault-for-LLM is Apache-2.0.</span>
-      <span><a href="../../README.md">README</a> · <a href="../demo/three-agent-shared-memory-runbook.md">Demo runbook</a> · <a href="../agent_install.md">Agent install</a></span>
+      <span><a href="../../README.md">README</a> · <a href="demo.html">Rendered demo</a> · <a href="../demo/three-agent-shared-memory-runbook.md">Technical runbook</a> · <a href="../agent_install.md">Agent install</a></span>
     </div>
   </footer>
 
@@ -813,7 +822,7 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
         heroTitle: "Agents need memory governance, not just RAG.",
         heroBody: "Give Codex, Claude Code, Hermes, OpenClaw, n8n, and Coze one governed memory vault: propose, review, promote, search, cite, roll back, and audit.",
         heroPrimary: "Copy the agent install prompt",
-        heroSecondary: "See the three-agent demo",
+        heroSecondary: "See the rendered demo",
         installTitle: "Start by giving this to your Agent.",
         installBody: "No one should have to learn forty commands before getting a memory vault. The first path is agent-led: answer four questions, then read a short daily report.",
         copyPrompt: "Copy prompt",
@@ -855,6 +864,8 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
         with1: "Agents share reviewed project memory.",
         with2: "Each answer can return to a source.",
         with3: "Outdated memory can be deprecated or rolled back.",
+        demoCta: "Open the visual demo",
+        demoRunbook: "Read the technical runbook",
         reportTitle: "The Daily Memory Report keeps humans in control.",
         reportBody: "Vault can become more automatic over time, but the review surface stays small. Safe memory can enter the vault; uncertain memory waits for a person.",
         autoKept: "Auto-kept",
@@ -908,7 +919,7 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
         heroTitle: "Agent 不只需要 RAG，更需要記憶治理。",
         heroBody: "讓 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 共用同一套受治理的記憶庫：提出、審核、升級、搜尋、引用、回滾、稽核。",
         heroPrimary: "複製 Agent 安裝提示",
-        heroSecondary: "看三 Agent 示範",
+        heroSecondary: "看視覺 demo",
         installTitle: "第一步，把這段交給你的 Agent。",
         installBody: "一般使用者不應該先學一大串指令。最短路徑是讓 Agent 帶你安裝：回答四個問題，之後每天看一份簡短記憶報告。",
         copyPrompt: "複製提示",
@@ -950,6 +961,8 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
         with1: "Agent 共用已審核的專案記憶。",
         with2: "每個回答都能回到來源。",
         with3: "過期記憶可以淘汰或回滾。",
+        demoCta: "開啟視覺 demo",
+        demoRunbook: "閱讀技術 runbook",
         reportTitle: "每日記憶報告，讓人保留控制權。",
         reportBody: "Vault 可以越來越自動，但需要人看的範圍要很小。安全記憶可以進庫，不確定的留給人決定。",
         autoKept: "已自動保留",
@@ -1003,7 +1016,7 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
         heroTitle: "Agent 不只需要 RAG，更需要记忆治理。",
         heroBody: "让 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 共用同一套受治理的记忆库：提出、审核、升级、搜索、引用、回滚、审计。",
         heroPrimary: "复制 Agent 安装提示",
-        heroSecondary: "看三 Agent 演示",
+        heroSecondary: "看视觉 demo",
         installTitle: "第一步，把这段交给你的 Agent。",
         installBody: "普通用户不应该先学一大串命令。最短路径是让 Agent 带你安装：回答四个问题，之后每天看一份简短记忆报告。",
         copyPrompt: "复制提示",
@@ -1045,6 +1058,8 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
         with1: "Agent 共用已审核的项目记忆。",
         with2: "每个回答都能回到来源。",
         with3: "过期记忆可以淘汰或回滚。",
+        demoCta: "打开视觉 demo",
+        demoRunbook: "阅读技术 runbook",
         reportTitle: "每日记忆报告，让人保留控制权。",
         reportBody: "Vault 可以越来越自动，但需要人看的范围要很小。安全记忆可以进库，不确定的留给人决定。",
         autoKept: "已自动保留",

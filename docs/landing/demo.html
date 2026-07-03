@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vault-for-LLM Demo | Governed Agent Memory</title>
+  <meta name="description" content="A rendered three-agent demo showing how Vault-for-LLM governs shared memory across Claude Code, Codex, and Hermes.">
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17201b;
+      --muted: #5f6b64;
+      --paper: #fbfaf7;
+      --surface: #ffffff;
+      --line: #d9ded8;
+      --night: #101714;
+      --green: #2f8a5f;
+      --cyan: #2c7f91;
+      --amber: #9b6b1f;
+      --red: #b54b42;
+      --blue: #365f9d;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    a {
+      color: inherit;
+    }
+
+    header {
+      color: #f4f1e8;
+      background: var(--night);
+      border-bottom: 1px solid rgba(244, 241, 232, 0.16);
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 38px;
+      align-items: center;
+      min-height: 76vh;
+      padding: 52px 0;
+    }
+
+    .language-switcher {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    .language-switcher button,
+    .button {
+      min-height: 38px;
+      border-radius: 8px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .language-switcher button {
+      padding: 0 12px;
+      border: 1px solid rgba(244, 241, 232, 0.28);
+      background: rgba(244, 241, 232, 0.08);
+      color: #f4f1e8;
+    }
+
+    .language-switcher button[aria-pressed="true"] {
+      background: #f8f2df;
+      color: var(--ink);
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: #b9dccb;
+      font-weight: 800;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin: 0;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      font-size: clamp(2.6rem, 6vw, 5.7rem);
+    }
+
+    html[lang^="zh"] h1 {
+      font-size: clamp(2.35rem, 5vw, 4.8rem);
+    }
+
+    .hero-copy p {
+      max-width: 620px;
+      margin: 20px 0 0;
+      color: rgba(244, 241, 232, 0.84);
+      font-size: 1.12rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid rgba(244, 241, 232, 0.24);
+      background: #f8f2df;
+      color: var(--ink);
+      text-decoration: none;
+    }
+
+    .button.secondary {
+      background: transparent;
+      color: #f4f1e8;
+    }
+
+    .demo-map {
+      position: relative;
+      min-height: 420px;
+      border: 1px solid rgba(244, 241, 232, 0.18);
+      border-radius: 8px;
+      background: #15201b;
+      overflow: hidden;
+      box-shadow: 0 20px 70px rgba(0, 0, 0, 0.28);
+    }
+
+    .demo-map svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0.88;
+    }
+
+    .flow-path {
+      fill: none;
+      stroke: rgba(185, 220, 203, 0.8);
+      stroke-width: 4;
+      stroke-linecap: round;
+      stroke-dasharray: 12 16;
+      animation: flowDash 2.8s linear infinite;
+    }
+
+    .flow-path.soft {
+      stroke: rgba(248, 242, 223, 0.28);
+      stroke-width: 2.4;
+      animation-duration: 4.2s;
+    }
+
+    @keyframes flowDash {
+      to {
+        stroke-dashoffset: -56;
+      }
+    }
+
+    .map-node {
+      position: absolute;
+      width: min(240px, 42%);
+      padding: 14px;
+      border: 1px solid rgba(244, 241, 232, 0.22);
+      border-radius: 8px;
+      background: rgba(251, 250, 247, 0.1);
+      backdrop-filter: blur(8px);
+    }
+
+    .map-node strong {
+      display: block;
+      color: #fff9e8;
+    }
+
+    .map-node span {
+      display: block;
+      margin-top: 6px;
+      color: rgba(244, 241, 232, 0.72);
+      font-size: 0.85rem;
+    }
+
+    .node-1 { left: 5%; top: 9%; border-top: 4px solid var(--blue); }
+    .node-2 { right: 6%; top: 14%; border-top: 4px solid var(--amber); }
+    .node-3 { left: 29%; top: 41%; border-top: 4px solid var(--green); }
+    .node-4 { left: 5%; bottom: 9%; border-top: 4px solid var(--cyan); }
+    .node-5 { right: 6%; bottom: 10%; border-top: 4px solid var(--red); }
+
+    main {
+      background: var(--paper);
+    }
+
+    .band {
+      padding: 68px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .band.alt {
+      background: #f3f5f1;
+    }
+
+    .section-head {
+      max-width: 760px;
+      margin-bottom: 30px;
+    }
+
+    .section-head p {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 3.3rem);
+    }
+
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .card,
+    .command-box {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+      padding: 18px;
+      box-shadow: 0 12px 34px rgba(16, 23, 20, 0.08);
+    }
+
+    .tag {
+      display: inline-block;
+      margin-bottom: 12px;
+      padding: 4px 8px;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .tag.blue { background: var(--blue); }
+    .tag.amber { background: var(--amber); }
+    .tag.green { background: var(--green); }
+    .tag.cyan { background: var(--cyan); }
+    .tag.red { background: var(--red); }
+
+    .card p {
+      margin: 10px 0 0;
+      color: var(--muted);
+    }
+
+    .proof-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .command-box {
+      background: #111815;
+      color: #dce8df;
+      overflow-x: auto;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.92rem;
+    }
+
+    footer {
+      padding: 34px 0;
+      color: rgba(244, 241, 232, 0.82);
+      background: var(--night);
+    }
+
+    footer .wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      justify-content: space-between;
+    }
+
+    @media (max-width: 900px) {
+      .hero,
+      .proof-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .steps {
+        grid-template-columns: 1fr;
+      }
+
+      .demo-map {
+        min-height: 560px;
+      }
+
+      .map-node {
+        width: calc(100% - 36px);
+        left: 18px;
+        right: 18px;
+      }
+
+      .node-1 { top: 18px; }
+      .node-2 { top: 126px; }
+      .node-3 { top: 234px; }
+      .node-4 { top: 342px; bottom: auto; }
+      .node-5 { top: 450px; bottom: auto; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flow-path {
+        animation: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap hero">
+      <div class="hero-copy">
+        <div class="language-switcher" aria-label="Language">
+          <button type="button" data-lang="en" aria-pressed="true">English</button>
+          <button type="button" data-lang="zh-Hant" aria-pressed="false">繁體中文</button>
+          <button type="button" data-lang="zh-CN" aria-pressed="false">简体中文</button>
+        </div>
+        <p class="eyebrow">Vault-for-LLM Demo</p>
+        <h1 data-i18n="heroTitle">See governed memory move between agents.</h1>
+        <p data-i18n="heroBody">This visual demo shows why Vault is not just a RAG database: agents can propose memory, but shared knowledge becomes trustworthy only after gates, review, source evidence, rollback, and audit.</p>
+        <div class="hero-actions">
+          <a class="button" href="#story" data-i18n="heroPrimary">Walk through the story</a>
+          <a class="button secondary" href="../demo/three-agent-shared-memory-runbook.md" data-i18n="heroSecondary">Open technical runbook</a>
+        </div>
+      </div>
+      <div class="demo-map" aria-label="Three-agent governed memory flow">
+        <svg viewBox="0 0 720 460" aria-hidden="true">
+          <path class="flow-path soft" d="M108 90 C280 30 448 64 612 108"></path>
+          <path class="flow-path" d="M118 118 C250 182 376 148 590 164 S510 302 378 250 S218 278 118 358"></path>
+          <path class="flow-path soft" d="M180 394 C338 430 506 414 596 356"></path>
+        </svg>
+        <div class="map-node node-1"><strong data-i18n="node1Title">Claude Code</strong><span data-i18n="node1Body">Finds a reusable bug lesson.</span></div>
+        <div class="map-node node-2"><strong data-i18n="node2Title">Candidate gate</strong><span data-i18n="node2Body">Privacy, duplicate, quality, source.</span></div>
+        <div class="map-node node-3"><strong data-i18n="node3Title">Human or policy review</strong><span data-i18n="node3Body">Low-risk can pass; strategy waits.</span></div>
+        <div class="map-node node-4"><strong data-i18n="node4Title">Codex / Hermes</strong><span data-i18n="node4Body">Reuse reviewed memory with citation.</span></div>
+        <div class="map-node node-5"><strong data-i18n="node5Title">Rollback + audit</strong><span data-i18n="node5Body">Wrong or stale memory can be traced.</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="band" id="story">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 data-i18n="storyTitle">The story in five moves</h2>
+          <p data-i18n="storyBody">The point is not that Vault can store text. The point is that shared agent memory has a lifecycle.</p>
+        </div>
+        <div class="steps">
+          <article class="card">
+            <span class="tag blue" data-i18n="step1Tag">1. Propose</span>
+            <h3 data-i18n="step1Title">An agent learns something reusable.</h3>
+            <p data-i18n="step1Body">Claude Code fixes a test failure and proposes the lesson as a candidate, not as trusted memory.</p>
+          </article>
+          <article class="card">
+            <span class="tag amber" data-i18n="step2Tag">2. Gate</span>
+            <h3 data-i18n="step2Title">Vault checks the memory first.</h3>
+            <p data-i18n="step2Body">Privacy, duplicate, metadata, quality, and source checks decide whether it is safe enough to proceed.</p>
+          </article>
+          <article class="card">
+            <span class="tag green" data-i18n="step3Tag">3. Promote</span>
+            <h3 data-i18n="step3Title">Only reviewed memory becomes shared.</h3>
+            <p data-i18n="step3Body">Low-risk sourced lessons can be kept automatically. High-impact or uncertain memory waits for the daily report.</p>
+          </article>
+          <article class="card">
+            <span class="tag cyan" data-i18n="step4Tag">4. Reuse</span>
+            <h3 data-i18n="step4Title">Another agent can use it later.</h3>
+            <p data-i18n="step4Body">Codex or Hermes searches the shared vault, then reads a bounded source range before citing it.</p>
+          </article>
+          <article class="card">
+            <span class="tag red" data-i18n="step5Tag">5. Roll back</span>
+            <h3 data-i18n="step5Title">Bad memory does not linger forever.</h3>
+            <p data-i18n="step5Body">If the project changes, the memory can be deprecated, replaced, audited, or restored from backup.</p>
+          </article>
+          <article class="card">
+            <span class="tag amber" data-i18n="step6Tag">Daily report</span>
+            <h3 data-i18n="step6Title">Humans only see the important 5%.</h3>
+            <p data-i18n="step6Body">The user reviews a short report instead of learning every CLI command or reading every raw chat log.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="band alt">
+      <div class="wrap proof-grid">
+        <div>
+          <div class="section-head">
+            <h2 data-i18n="proofTitle">What this proves</h2>
+            <p data-i18n="proofBody">This is the wedge for Codex, Claude Code, Hermes, OpenClaw, Coze, and n8n: one governed memory layer, many adapters.</p>
+          </div>
+          <div class="steps">
+            <article class="card">
+              <h3 data-i18n="proof1Title">It is not a note app.</h3>
+              <p data-i18n="proof1Body">Notes remain readable, but agent memory gets source, review, permission, and rollback boundaries.</p>
+            </article>
+            <article class="card">
+              <h3 data-i18n="proof2Title">It is not just RAG.</h3>
+              <p data-i18n="proof2Body">RAG reads. Vault also governs what agents write, trust, forget, and share.</p>
+            </article>
+            <article class="card">
+              <h3 data-i18n="proof3Title">It is not cloud-first.</h3>
+              <p data-i18n="proof3Body">The default path is local-first. Supabase, Gateway, and future remote servers are adapters.</p>
+            </article>
+          </div>
+        </div>
+        <div class="command-box">
+          <pre>pip install "vault-for-llm[mcp]"
+vault setup-agent --audience consumer --memory-mode governed-auto
+vault demo agent-governance --json</pre>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <span data-i18n="footerText">Vault-for-LLM is Apache-2.0 and local-first by default.</span>
+      <span><a href="index.html" data-i18n="footerHome">Landing page</a> · <a href="../demo/three-agent-shared-memory-runbook.md" data-i18n="footerRunbook">Technical runbook</a></span>
+    </div>
+  </footer>
+
+  <script>
+    const translations = {
+      en: {
+        lang: "en",
+        heroTitle: "See governed memory move between agents.",
+        heroBody: "This visual demo shows why Vault is not just a RAG database: agents can propose memory, but shared knowledge becomes trustworthy only after gates, review, source evidence, rollback, and audit.",
+        heroPrimary: "Walk through the story",
+        heroSecondary: "Open technical runbook",
+        node1Title: "Claude Code",
+        node1Body: "Finds a reusable bug lesson.",
+        node2Title: "Candidate gate",
+        node2Body: "Privacy, duplicate, quality, source.",
+        node3Title: "Human or policy review",
+        node3Body: "Low-risk can pass; strategy waits.",
+        node4Title: "Codex / Hermes",
+        node4Body: "Reuse reviewed memory with citation.",
+        node5Title: "Rollback + audit",
+        node5Body: "Wrong or stale memory can be traced.",
+        storyTitle: "The story in five moves",
+        storyBody: "The point is not that Vault can store text. The point is that shared agent memory has a lifecycle.",
+        step1Tag: "1. Propose",
+        step1Title: "An agent learns something reusable.",
+        step1Body: "Claude Code fixes a test failure and proposes the lesson as a candidate, not as trusted memory.",
+        step2Tag: "2. Gate",
+        step2Title: "Vault checks the memory first.",
+        step2Body: "Privacy, duplicate, metadata, quality, and source checks decide whether it is safe enough to proceed.",
+        step3Tag: "3. Promote",
+        step3Title: "Only reviewed memory becomes shared.",
+        step3Body: "Low-risk sourced lessons can be kept automatically. High-impact or uncertain memory waits for the daily report.",
+        step4Tag: "4. Reuse",
+        step4Title: "Another agent can use it later.",
+        step4Body: "Codex or Hermes searches the shared vault, then reads a bounded source range before citing it.",
+        step5Tag: "5. Roll back",
+        step5Title: "Bad memory does not linger forever.",
+        step5Body: "If the project changes, the memory can be deprecated, replaced, audited, or restored from backup.",
+        step6Tag: "Daily report",
+        step6Title: "Humans only see the important 5%.",
+        step6Body: "The user reviews a short report instead of learning every CLI command or reading every raw chat log.",
+        proofTitle: "What this proves",
+        proofBody: "This is the wedge for Codex, Claude Code, Hermes, OpenClaw, Coze, and n8n: one governed memory layer, many adapters.",
+        proof1Title: "It is not a note app.",
+        proof1Body: "Notes remain readable, but agent memory gets source, review, permission, and rollback boundaries.",
+        proof2Title: "It is not just RAG.",
+        proof2Body: "RAG reads. Vault also governs what agents write, trust, forget, and share.",
+        proof3Title: "It is not cloud-first.",
+        proof3Body: "The default path is local-first. Supabase, Gateway, and future remote servers are adapters.",
+        footerText: "Vault-for-LLM is Apache-2.0 and local-first by default.",
+        footerHome: "Landing page",
+        footerRunbook: "Technical runbook"
+      },
+      "zh-Hant": {
+        lang: "zh-Hant",
+        heroTitle: "看受治理的記憶如何在 Agent 之間流動。",
+        heroBody: "這個視覺 demo 說明 Vault 為什麼不只是 RAG：Agent 可以提出記憶，但共享知識必須經過門禁、審核、來源證據、回滾與稽核後才值得信任。",
+        heroPrimary: "看完整故事",
+        heroSecondary: "開啟技術 runbook",
+        node1Title: "Claude Code",
+        node1Body: "找出可重複使用的 bug 經驗。",
+        node2Title: "候選門禁",
+        node2Body: "隱私、重複、品質、來源。",
+        node3Title: "人或政策審核",
+        node3Body: "低風險可通過；策略先等待。",
+        node4Title: "Codex / Hermes",
+        node4Body: "用引用來源重用已審核記憶。",
+        node5Title: "回滾與稽核",
+        node5Body: "錯誤或過期記憶可以追溯。",
+        storyTitle: "五步看懂這個故事",
+        storyBody: "重點不是 Vault 能不能存文字，而是共享 Agent 記憶有一套生命週期。",
+        step1Tag: "1. 提出",
+        step1Title: "Agent 學到可重複使用的經驗。",
+        step1Body: "Claude Code 修好測試失敗後，把經驗提出成候選，而不是直接變成可信記憶。",
+        step2Tag: "2. 門禁",
+        step2Title: "Vault 先檢查這條記憶。",
+        step2Body: "隱私、重複、後設資料、品質與來源檢查，會判斷它是否足夠安全。",
+        step3Tag: "3. 升級",
+        step3Title: "只有審核過的記憶能共享。",
+        step3Body: "低風險且有來源的經驗可以自動保留；高影響或不確定內容留到每日報告。",
+        step4Tag: "4. 再使用",
+        step4Title: "另一個 Agent 之後可以使用。",
+        step4Body: "Codex 或 Hermes 搜尋共享 vault，再讀取 bounded source range 後才引用。",
+        step5Tag: "5. 回滾",
+        step5Title: "壞記憶不會永遠停留。",
+        step5Body: "專案改變後，記憶可以被淘汰、替換、稽核，或從備份恢復。",
+        step6Tag: "每日報告",
+        step6Title: "人只需要看重要的 5%。",
+        step6Body: "使用者看一份短報告，而不是學每個 CLI 指令或讀每段原始聊天。",
+        proofTitle: "這個 demo 證明什麼",
+        proofBody: "這就是 Codex、Claude Code、Hermes、OpenClaw、Coze、n8n 的切入口：一套受治理的記憶層，很多 adapter。",
+        proof1Title: "它不是筆記 app。",
+        proof1Body: "筆記保持可讀，但 Agent 記憶多了來源、審核、權限與回滾邊界。",
+        proof2Title: "它不只是 RAG。",
+        proof2Body: "RAG 負責讀。Vault 還治理 Agent 寫什麼、信什麼、忘什麼、共享什麼。",
+        proof3Title: "它不是 cloud-first。",
+        proof3Body: "預設是 local-first。Supabase、Gateway 與未來 remote server 都是 adapter。",
+        footerText: "Vault-for-LLM 採用 Apache-2.0，預設 local-first。",
+        footerHome: "Landing page",
+        footerRunbook: "技術 runbook"
+      },
+      "zh-CN": {
+        lang: "zh-CN",
+        heroTitle: "看受治理的记忆如何在 Agent 之间流动。",
+        heroBody: "这个视觉 demo 说明 Vault 为什么不只是 RAG：Agent 可以提出记忆，但共享知识必须经过门禁、审核、来源证据、回滚与审计后才值得信任。",
+        heroPrimary: "看完整故事",
+        heroSecondary: "打开技术 runbook",
+        node1Title: "Claude Code",
+        node1Body: "找出可重复使用的 bug 经验。",
+        node2Title: "候选门禁",
+        node2Body: "隐私、重复、质量、来源。",
+        node3Title: "人或政策审核",
+        node3Body: "低风险可通过；策略先等待。",
+        node4Title: "Codex / Hermes",
+        node4Body: "用引用来源重用已审核记忆。",
+        node5Title: "回滚与审计",
+        node5Body: "错误或过期记忆可以追溯。",
+        storyTitle: "五步看懂这个故事",
+        storyBody: "重点不是 Vault 能不能存文字，而是共享 Agent 记忆有一套生命周期。",
+        step1Tag: "1. 提出",
+        step1Title: "Agent 学到可重复使用的经验。",
+        step1Body: "Claude Code 修好测试失败后，把经验提出成候选，而不是直接变成可信记忆。",
+        step2Tag: "2. 门禁",
+        step2Title: "Vault 先检查这条记忆。",
+        step2Body: "隐私、重复、元数据、质量与来源检查，会判断它是否足够安全。",
+        step3Tag: "3. 升级",
+        step3Title: "只有审核过的记忆能共享。",
+        step3Body: "低风险且有来源的经验可以自动保留；高影响或不确定内容留到每日报告。",
+        step4Tag: "4. 再使用",
+        step4Title: "另一个 Agent 之后可以使用。",
+        step4Body: "Codex 或 Hermes 搜索共享 vault，再读取 bounded source range 后才引用。",
+        step5Tag: "5. 回滚",
+        step5Title: "坏记忆不会永远停留。",
+        step5Body: "项目改变后，记忆可以被淘汰、替换、审计，或从备份恢复。",
+        step6Tag: "每日报告",
+        step6Title: "人只需要看重要的 5%。",
+        step6Body: "用户看一份短报告，而不是学每个 CLI 命令或读每段原始聊天。",
+        proofTitle: "这个 demo 证明什么",
+        proofBody: "这就是 Codex、Claude Code、Hermes、OpenClaw、Coze、n8n 的切入口：一套受治理的记忆层，很多 adapter。",
+        proof1Title: "它不是笔记 app。",
+        proof1Body: "笔记保持可读，但 Agent 记忆多了来源、审核、权限与回滚边界。",
+        proof2Title: "它不只是 RAG。",
+        proof2Body: "RAG 负责读。Vault 还治理 Agent 写什么、信什么、忘什么、共享什么。",
+        proof3Title: "它不是 cloud-first。",
+        proof3Body: "默认是 local-first。Supabase、Gateway 与未来 remote server 都是 adapter。",
+        footerText: "Vault-for-LLM 采用 Apache-2.0，默认 local-first。",
+        footerHome: "Landing page",
+        footerRunbook: "技术 runbook"
+      }
+    };
+
+    function applyLanguage(lang) {
+      const bundle = translations[lang] || translations.en;
+      document.documentElement.lang = bundle.lang;
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        const key = node.getAttribute("data-i18n");
+        if (bundle[key]) {
+          node.textContent = bundle[key];
+        }
+      });
+      document.querySelectorAll("[data-lang]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.getAttribute("data-lang") === lang));
+      });
+      localStorage.setItem("vaultLandingLanguage", lang);
+    }
+
+    document.querySelectorAll("[data-lang]").forEach((button) => {
+      button.addEventListener("click", () => applyLanguage(button.getAttribute("data-lang")));
+    });
+
+    const savedLanguage = localStorage.getItem("vaultLandingLanguage");
+    if (savedLanguage && translations[savedLanguage]) {
+      applyLanguage(savedLanguage);
+    }
+  </script>
+</body>
+</html>
