@@ -40,6 +40,9 @@ Open the generated files:
 ~/Vaults/demo-shared-memory/reports/demo/public-demo-script.zh-Hant.md
 ~/Vaults/demo-shared-memory/reports/demo/public-demo-script.zh-CN.md
 ~/Vaults/demo-shared-memory/reports/demo/acceptance-checklist.md
+~/Vaults/demo-shared-memory/reports/demo/consumer-mode-demo.md
+~/Vaults/demo-shared-memory/reports/demo/automation-mode-demo.md
+~/Vaults/demo-shared-memory/reports/demo/multi-host-sync-demo.md
 ~/Vaults/demo-shared-memory/agent-config-snippets/
 ```
 
@@ -108,6 +111,18 @@ Each agent should follow this startup contract:
 The generated snippets under `agent-config-snippets/` are intentionally short.
 They are suitable for project instructions such as `AGENTS.md`, `CLAUDE.md`, or
 a Hermes profile bootstrap.
+
+## Step 4A: Pick A Follow-Up Scenario
+
+The generated demo pack includes three follow-up guides:
+
+- `consumer-mode-demo.md`: use this when the audience asks how a new user gets
+  value in five minutes without learning every setup-agent flag.
+- `automation-mode-demo.md`: use this when the audience asks how daily memory
+  review, health, and handoff stay observable.
+- `multi-host-sync-demo.md`: use this when the audience asks how separate
+  hosts or runtimes submit memory without writing directly into active
+  knowledge.
 
 ## Step 5: Run The Live Story
 

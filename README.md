@@ -148,6 +148,10 @@ It simulates Codex, Claude Code, and Hermes sharing one governed vault:
 4. another agent finds it later with search and bounded read
 5. the memory can be deprecated or rolled back when it becomes outdated
 
+The generated demo pack also includes three follow-up guides:
+`consumer-mode-demo.md`, `automation-mode-demo.md`, and
+`multi-host-sync-demo.md`.
+
 Start here:
 
 - [Agents Need Memory Governance, Not Just RAG](docs/articles/agents-need-memory-governance-not-just-rag.md)

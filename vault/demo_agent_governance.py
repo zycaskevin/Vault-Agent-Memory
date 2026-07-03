@@ -86,6 +86,7 @@ def run_agent_governance_demo(
         db_path=str(db_path),
     )
 
+    demo_scenarios = _build_demo_scenarios(project, agents)
     artifacts = _write_demo_artifacts(
         project=project,
         agents=agents,
@@ -97,6 +98,7 @@ def run_agent_governance_demo(
         backup=backup,
         created_temp=created_temp,
         keep_project=keep_project,
+        demo_scenarios=demo_scenarios,
     )
 
     return {
@@ -132,6 +134,7 @@ def run_agent_governance_demo(
             "sha256": backup.get("sha256", ""),
             "verified": bool(backup.get("verified")),
         },
+        "demo_scenarios": demo_scenarios,
         "artifacts": artifacts,
         "next_action": [
             "Open start-here.md first, then demo-report.md and evidence-summary.md.",
@@ -194,6 +197,7 @@ def _write_demo_artifacts(
     backup: dict[str, Any],
     created_temp: bool,
     keep_project: bool,
+    demo_scenarios: list[dict[str, Any]],
 ) -> dict[str, str]:
     reports = project / "reports" / "demo"
     snippets = project / "agent-config-snippets"
@@ -222,6 +226,8 @@ def _write_demo_artifacts(
             "verified": bool(backup.get("verified")),
         },
     }
+    payload["demo_scenarios"] = demo_scenarios
+
     json_path = reports / "demo-report.json"
     json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -247,6 +253,8 @@ def _write_demo_artifacts(
     evidence_md_path = reports / "evidence-summary.md"
     evidence_md_path.write_text(_render_evidence_summary_markdown(evidence), encoding="utf-8")
 
+    scenario_paths = _write_demo_scenario_guides(reports, demo_scenarios)
+
     snippet_paths = _write_agent_snippets(snippets, project, agents)
 
     start_here_path = reports / "start-here.md"
@@ -260,6 +268,7 @@ def _write_demo_artifacts(
             evidence=evidence_md_path,
             checklist=checklist_path,
             snippets=snippets,
+            scenario_paths=scenario_paths,
         ),
         encoding="utf-8",
     )
@@ -275,6 +284,7 @@ def _write_demo_artifacts(
         "evidence_summary_md": str(evidence_md_path),
         "evidence_summary_json": str(evidence_json_path),
         "snippet_dir": str(snippets),
+        **scenario_paths,
         **snippet_paths,
     }
 
@@ -327,6 +337,7 @@ def _render_start_here(
     evidence: Path,
     checklist: Path,
     snippets: Path,
+    scenario_paths: dict[str, str],
 ) -> str:
     return "\n".join(
         [
@@ -354,6 +365,9 @@ def _render_start_here(
             f"5. Simplified Chinese talk track: `{script_zh_cn}`",
             f"6. Acceptance checklist: `{checklist}`",
             f"7. Agent startup snippets: `{snippets}`",
+            f"8. Consumer mode scenario: `{scenario_paths['consumer_mode_demo']}`",
+            f"9. Automation mode scenario: `{scenario_paths['automation_mode_demo']}`",
+            f"10. Multi-host sync scenario: `{scenario_paths['multi_host_sync_demo']}`",
             "",
             "## One-Sentence Close",
             "",
@@ -365,6 +379,109 @@ def _render_start_here(
             "",
         ]
     )
+
+
+def _build_demo_scenarios(project: Path, agents: list[str]) -> list[dict[str, Any]]:
+    codex, claude_code, hermes = agents
+    return [
+        {
+            "id": "consumer_mode",
+            "title": "Consumer Mode Demo",
+            "artifact": "consumer-mode-demo.md",
+            "audience": "agent-assisted builders trying Vault for the first time",
+            "story": [
+                "Start from the smallest useful path instead of exposing setup-agent's full option surface.",
+                "Use the guided quickstart to create a governed local vault.",
+                "Open the daily report as the first human review surface.",
+            ],
+            "commands": [
+                f"vault quickstart --project {project} --non-interactive",
+                f"vault --project-dir {project} daily-report --pretty",
+                f"vault --project-dir {project} search \"agent memory governance\"",
+            ],
+            "proof_points": [
+                "The first run has one guided path.",
+                "Memory starts reviewed or candidate-first, not silently trusted.",
+                "A non-expert user sees the next action from daily report output.",
+            ],
+            "next_action": "Use this when the demo audience asks how a new user starts in five minutes.",
+        },
+        {
+            "id": "automation_mode",
+            "title": "Automation Mode Demo",
+            "artifact": "automation-mode-demo.md",
+            "audience": "operators who want routine memory maintenance without silent writes",
+            "story": [
+                "Show that automation starts with read-only health and review surfaces.",
+                "Run the automation brief and inbox before any apply step.",
+                "Explain that low-risk automation remains policy-gated and observable.",
+            ],
+            "commands": [
+                f"vault --project-dir {project} automation doctor --pretty",
+                f"vault --project-dir {project} automation brief --pretty",
+                f"vault --project-dir {project} automation inbox --limit 5 --pretty",
+            ],
+            "proof_points": [
+                "Automation has a doctor/readiness check.",
+                "The review inbox is the human approval surface.",
+                "Reports are generated under reports/automation for handoff and audit.",
+            ],
+            "next_action": "Use this after the governance lifecycle proof, when the audience asks what happens every day.",
+        },
+        {
+            "id": "multi_host_sync",
+            "title": "Multi-Host Sync Demo",
+            "artifact": "multi-host-sync-demo.md",
+            "audience": "teams using more than one machine or runtime surface",
+            "story": [
+                f"{codex} submits a remote candidate from one host.",
+                f"{claude_code} reviews pulled candidates on the owner vault.",
+                f"{hermes} checks remote health before trusting cross-host memory.",
+            ],
+            "commands": [
+                f"vault --project-dir {project} remote status --pretty",
+                f"vault --project-dir {project} remote hmac-keys --json",
+                f"vault --project-dir {project} remote pull-candidates --require-hmac --json",
+            ],
+            "proof_points": [
+                "Cross-host writes arrive as candidates, not active knowledge.",
+                "HMAC status is visible without printing secrets.",
+                "Remote health can be checked before enabling review/apply workflows.",
+            ],
+            "next_action": "Use this for remote deployment discussions; keep it framed as remote candidate sync, not broad bidirectional sync.",
+        },
+    ]
+
+
+def _write_demo_scenario_guides(reports: Path, scenarios: list[dict[str, Any]]) -> dict[str, str]:
+    index_path = reports / "demo-scenarios.json"
+    index_path.write_text(json.dumps(scenarios, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    written: dict[str, str] = {"demo_scenarios_json": str(index_path)}
+    for scenario in scenarios:
+        artifact = str(scenario["artifact"])
+        path = reports / artifact
+        path.write_text(_render_demo_scenario_markdown(scenario), encoding="utf-8")
+        written[f"{scenario['id']}_demo"] = str(path)
+    return written
+
+
+def _render_demo_scenario_markdown(scenario: dict[str, Any]) -> str:
+    lines = [
+        f"# {scenario['title']}",
+        "",
+        f"Audience: {scenario['audience']}",
+        "",
+        "## Story",
+        "",
+    ]
+    lines.extend(f"- {item}" for item in scenario["story"])
+    lines.extend(["", "## Commands", "", "```bash"])
+    lines.extend(scenario["commands"])
+    lines.extend(["```", "", "## Proof Points", ""])
+    lines.extend(f"- {item}" for item in scenario["proof_points"])
+    lines.extend(["", "## Next Action", "", scenario["next_action"], ""])
+    return "\n".join(lines)
 
 
 def _render_public_demo_script(project: Path, agents: list[str]) -> str:

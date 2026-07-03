@@ -34,6 +34,10 @@ The command creates:
 - `reports/demo/acceptance-checklist.md`
 - `reports/demo/evidence-summary.md`
 - `reports/demo/evidence-summary.json`
+- `reports/demo/demo-scenarios.json`
+- `reports/demo/consumer-mode-demo.md`
+- `reports/demo/automation-mode-demo.md`
+- `reports/demo/multi-host-sync-demo.md`
 - `agent-config-snippets/codex-startup.md`
 - `agent-config-snippets/claude-code-startup.md`
 - `agent-config-snippets/hermes-startup.md`
@@ -50,6 +54,9 @@ Show these artifacts in order:
 6. `public-demo-script.zh-CN.md`: the Simplified Chinese talk track.
 7. `acceptance-checklist.md`: the proof criteria.
 8. `agent-config-snippets/`: the shortest setup snippets for each agent.
+9. `consumer-mode-demo.md`: the five-minute first-run story.
+10. `automation-mode-demo.md`: the governed routine-memory story.
+11. `multi-host-sync-demo.md`: the remote candidate-sync story.
 
 Do not lead with embeddings, vector search, or benchmark numbers. Lead with the
 governed lifecycle.
@@ -107,6 +114,17 @@ governed memory lifecycle. It checks:
 
 Use `evidence-summary.md` in screenshots, release notes, or demo writeups when
 you need a concise human-readable proof.
+
+## Scenario Guides
+
+The generated `demo-scenarios.json` indexes three follow-up demo paths:
+
+- `consumer-mode-demo.md`: show a new user starting with quickstart, daily
+  report, and first search instead of the full setup-agent option surface.
+- `automation-mode-demo.md`: show readiness, brief, and inbox before any
+  apply step, so routine memory maintenance remains observable.
+- `multi-host-sync-demo.md`: show remote status, HMAC key visibility, and
+  candidate pull as remote candidate sync rather than broad bidirectional sync.
 
 ## Follow-Up Integrations
 
