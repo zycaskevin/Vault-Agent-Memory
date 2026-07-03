@@ -1,5 +1,7 @@
 # Vault-for-LLM
 
+[English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
+
 给 AI Agent 使用的本地优先项目记忆层。
 
 Vault-for-LLM 会把项目笔记、决策、错误修复、SOP、Obsidian 笔记，以及
