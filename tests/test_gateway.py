@@ -121,6 +121,8 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert payload["status"] == "ok"
         assert payload["gateway"]["candidate_first_writes"] is True
         assert "/openapi.json" in payload["gateway"]["endpoints"]
+        assert payload["gateway"]["graceful_shutdown_supported"] is True
+        assert payload["gateway"]["default_shutdown_timeout_seconds"] == 10.0
         assert payload["gateway"]["remote_ready"]["active_multi_master_sync"] is False
         conn.close()
 
@@ -312,6 +314,73 @@ def test_gateway_bounded_worker_pool_rejects_excess_requests():
         second.close()
         assert response.status == 503
         assert payload["error"] == "gateway_overloaded"
+    finally:
+        release.set()
+        if first_thread is not None:
+            first_thread.join(timeout=5)
+        if first_conn is not None:
+            first_conn.close()
+        server.shutdown()
+        server.server_close()
+
+
+def test_gateway_drain_rejects_new_requests_and_waits_for_active_requests():
+    entered = threading.Event()
+    release = threading.Event()
+
+    class BlockingHandler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == "/hold":
+                entered.set()
+                release.wait(timeout=5)
+            body = b'{"ok": true}'
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def log_message(self, _format, *args):
+            return
+
+    server = BoundedThreadPoolHTTPServer(
+        ("127.0.0.1", 0),
+        BlockingHandler,
+        max_workers=2,
+        shutdown_timeout_seconds=0.1,
+    )
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    first_thread = None
+    first_conn = None
+    try:
+        host, port = server.server_address
+        first_conn = http.client.HTTPConnection(host, port, timeout=5)
+
+        def hold_request():
+            assert first_conn is not None
+            first_conn.request("GET", "/hold")
+            response = first_conn.getresponse()
+            response.read()
+
+        first_thread = threading.Thread(target=hold_request)
+        first_thread.start()
+        assert entered.wait(timeout=5)
+        assert server.active_requests == 1
+
+        server.begin_draining()
+        assert server.wait_for_active_requests(timeout=0.01) is False
+
+        second = http.client.HTTPConnection(host, port, timeout=5)
+        second.request("GET", "/health")
+        response = second.getresponse()
+        payload = json.loads(response.read().decode("utf-8"))
+        second.close()
+        assert response.status == 503
+        assert payload["error"] == "gateway_draining"
+
+        release.set()
+        assert server.wait_for_active_requests(timeout=5) is True
     finally:
         release.set()
         if first_thread is not None:
@@ -625,23 +694,39 @@ def test_gateway_tls_requires_cert_and_key(tmp_path):
 
 def test_gateway_startup_prints_token_and_remote_safety_checklist(tmp_path, monkeypatch, capsys):
     class FakeServer:
-        def __init__(self, address, _handler, *, max_workers):
+        def __init__(self, address, _handler, *, max_workers, shutdown_timeout_seconds):
             self.server_address = address
             self.max_workers = max_workers
+            self.shutdown_timeout_seconds = shutdown_timeout_seconds
+            self.active_requests = 0
 
         def serve_forever(self):
             raise KeyboardInterrupt
+
+        def begin_draining(self):
+            return None
+
+        def wait_for_active_requests(self, *, timeout):
+            return True
 
         def server_close(self):
             return None
 
     monkeypatch.setattr("vault.gateway.BoundedThreadPoolHTTPServer", FakeServer)
-    run_gateway(tmp_path, host="0.0.0.0", port=8789, auth_token="stable-token")
+    run_gateway(
+        tmp_path,
+        host="0.0.0.0",
+        port=8789,
+        auth_token="stable-token",
+        shutdown_timeout_seconds=2,
+    )
 
     out = capsys.readouterr().out
+    assert "Shutdown drain timeout: 2s" in out
     assert "SECURITY: copy this token only into trusted local agent configuration." in out
     assert "Token: stable-token" in out
     assert "REMOTE CHECKLIST: use TLS or a trusted reverse proxy" in out
+    assert "Vault Gateway drain complete." in out
 
 
 def test_remote_server_cli_and_generated_validation_script_end_to_end(tmp_path):

@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
 import json
 import os
 from pathlib import Path
 import secrets
+import signal
 import ssl
 import threading
 from typing import Any
@@ -18,6 +18,11 @@ from urllib.parse import parse_qs, urlparse
 from .access_policy import can_write_memory, normalize_write_policy
 from .db import VaultDB
 from .gateway_security import GatewaySecurityPolicy, GatewaySecurityState
+from .gateway_server import (
+    DEFAULT_GATEWAY_MAX_WORKERS,
+    DEFAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS,
+    BoundedThreadPoolHTTPServer,
+)
 from .gui_format import compact_knowledge
 from .mcp_read import _vault_read_range_payload
 from .memory import create_candidate
@@ -27,74 +32,11 @@ from .search_utils import MAX_SEARCH_QUERY_CHARS, normalize_search_limit, valida
 
 DEFAULT_GATEWAY_HOST = "127.0.0.1"
 DEFAULT_GATEWAY_PORT = 8789
-DEFAULT_GATEWAY_MAX_WORKERS = 32
 DEFAULT_GATEWAY_AUDIT_MAX_BYTES = 5 * 1024 * 1024
 DEFAULT_GATEWAY_AUDIT_BACKUPS = 5
 LOCALHOSTS = {"127.0.0.1", "localhost", "::1"}
 GATEWAY_CONTRACT_VERSION = "2026-07-02"
 GATEWAY_ENDPOINTS = ["/health", "/openapi.json", "/search", "/read-range", "/submit-candidate"]
-
-
-class BoundedThreadPoolHTTPServer(ThreadingHTTPServer):
-    """ThreadingHTTPServer variant with a hard cap on active request workers."""
-
-    daemon_threads = True
-
-    def __init__(
-        self,
-        server_address: tuple[str, int],
-        request_handler_class: type[BaseHTTPRequestHandler],
-        *,
-        max_workers: int,
-    ):
-        super().__init__(server_address, request_handler_class)
-        self.max_workers = max(1, int(max_workers or DEFAULT_GATEWAY_MAX_WORKERS))
-        self._executor = ThreadPoolExecutor(max_workers=self.max_workers, thread_name_prefix="vault-gateway")
-        self._worker_slots = threading.BoundedSemaphore(self.max_workers)
-
-    def process_request(self, request: Any, client_address: Any) -> None:
-        if not self._worker_slots.acquire(blocking=False):
-            self._reject_overloaded(request)
-            return
-        try:
-            self._executor.submit(self._process_request_with_slot, request, client_address)
-        except RuntimeError:
-            self._worker_slots.release()
-            self.shutdown_request(request)
-
-    def server_close(self) -> None:
-        try:
-            super().server_close()
-        finally:
-            self._executor.shutdown(wait=True, cancel_futures=False)
-
-    def _process_request_with_slot(self, request: Any, client_address: Any) -> None:
-        try:
-            self.process_request_thread(request, client_address)
-        finally:
-            self._worker_slots.release()
-
-    def _reject_overloaded(self, request: Any) -> None:
-        body = json.dumps(
-            {
-                "ok": False,
-                "status": "blocked",
-                "error": "gateway_overloaded",
-                "message": "Gateway worker pool is full; retry later.",
-            }
-        ).encode("utf-8")
-        try:
-            request.sendall(
-                b"HTTP/1.1 503 Service Unavailable\r\n"
-                b"Connection: close\r\n"
-                b"Content-Type: application/json; charset=utf-8\r\n"
-                b"X-Content-Type-Options: nosniff\r\n"
-                b"Referrer-Policy: no-referrer\r\n"
-                + f"Content-Length: {len(body)}\r\n\r\n".encode("ascii")
-                + body
-            )
-        finally:
-            self.shutdown_request(request)
 
 
 def gateway_health(project_dir: str | Path) -> dict[str, Any]:
@@ -126,6 +68,8 @@ def gateway_health(project_dir: str | Path) -> dict[str, Any]:
             "default_include_private": False,
             "max_workers_supported": True,
             "default_max_workers": DEFAULT_GATEWAY_MAX_WORKERS,
+            "graceful_shutdown_supported": True,
+            "default_shutdown_timeout_seconds": DEFAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS,
             "audit_rotation": {
                 "supported": True,
                 "default_max_bytes": DEFAULT_GATEWAY_AUDIT_MAX_BYTES,
@@ -718,6 +662,7 @@ def run_gateway(
     allow_private_candidates: bool = False,
     allow_high_sensitivity_candidates: bool = False,
     allow_restricted_candidates: bool = False,
+    shutdown_timeout_seconds: float | None = None,
 ) -> None:
     """Start the thin Gateway server and block."""
     host_text = str(host or DEFAULT_GATEWAY_HOST)
@@ -736,7 +681,13 @@ def run_gateway(
         allow_restricted_candidates=allow_restricted_candidates,
     )
     workers = _gateway_max_workers(max_workers)
-    server = BoundedThreadPoolHTTPServer((host_text, int(port)), handler, max_workers=workers)
+    shutdown_timeout = _gateway_shutdown_timeout_seconds(shutdown_timeout_seconds)
+    server = BoundedThreadPoolHTTPServer(
+        (host_text, int(port)),
+        handler,
+        max_workers=workers,
+        shutdown_timeout_seconds=shutdown_timeout,
+    )
     scheme = "https" if tls_paths else "http"
     if tls_paths:
         server.socket = _wrap_gateway_tls(server.socket, certfile=tls_paths[0], keyfile=tls_paths[1])
@@ -744,6 +695,7 @@ def run_gateway(
     print(f"Auth: {'enabled' if token else 'disabled'}")
     print(f"TLS: {'enabled' if tls_paths else 'disabled'}")
     print(f"Max workers: {workers}")
+    print(f"Shutdown drain timeout: {shutdown_timeout:g}s")
     if token:
         print("SECURITY: copy this token only into trusted local agent configuration.")
         print(f"Token: {token}")
@@ -752,11 +704,30 @@ def run_gateway(
         print("REMOTE CHECKLIST: use TLS or a trusted reverse proxy, keep auth enabled, restrict firewall/IP access, and review reports/gateway/audit.jsonl.")
     print(f"Project: {Path(project_dir).expanduser().resolve()}")
     print("Press Ctrl+C to stop.")
+    stop_signal = {"name": ""}
+    previous_handlers = _install_gateway_signal_handlers(server, stop_signal)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\nStopping Vault Gateway.")
+        stop_signal["name"] = stop_signal["name"] or "KeyboardInterrupt"
     finally:
+        if previous_handlers:
+            _restore_gateway_signal_handlers(previous_handlers)
+        reason = stop_signal["name"] or "shutdown"
+        print(f"\nDraining {server_label} ({reason}): no new requests; waiting for active requests.")
+        begin = getattr(server, "begin_draining", None)
+        if callable(begin):
+            begin()
+        wait = getattr(server, "wait_for_active_requests", None)
+        completed = bool(wait(timeout=shutdown_timeout)) if callable(wait) else True
+        if completed:
+            print(f"{server_label} drain complete.")
+        else:
+            active = getattr(server, "active_requests", 0)
+            print(
+                f"{server_label} drain timeout after {shutdown_timeout:g}s; "
+                f"{active} request(s) still active."
+            )
         server.server_close()
 
 
@@ -837,6 +808,7 @@ def cmd_gateway(args: Any) -> None:
         allow_private_candidates=bool(getattr(args, "allow_private_candidates", False)),
         allow_high_sensitivity_candidates=bool(getattr(args, "allow_high_sensitivity_candidates", False)),
         allow_restricted_candidates=bool(getattr(args, "allow_restricted_candidates", False)),
+        shutdown_timeout_seconds=getattr(args, "shutdown_timeout_seconds", None),
     )
 
 
@@ -876,6 +848,56 @@ def _gateway_max_workers(value: Any) -> int:
         else:
             parsed = DEFAULT_GATEWAY_MAX_WORKERS
     return max(1, min(parsed, 256))
+
+
+def _gateway_shutdown_timeout_seconds(value: Any) -> float:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        env_value = os.environ.get("VAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS", "")
+        if env_value:
+            try:
+                parsed = float(env_value)
+            except ValueError:
+                parsed = DEFAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS
+        else:
+            parsed = DEFAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS
+    return max(0.0, min(parsed, 300.0))
+
+
+def _install_gateway_signal_handlers(server: Any, stop_signal: dict[str, str]) -> dict[int, Any]:
+    previous: dict[int, Any] = {}
+
+    def request_stop(signum, _frame) -> None:
+        try:
+            name = signal.Signals(signum).name
+        except ValueError:
+            name = str(signum)
+        stop_signal["name"] = name
+        begin = getattr(server, "begin_draining", None)
+        if callable(begin):
+            begin()
+        shutdown = getattr(server, "shutdown", None)
+        if callable(shutdown):
+            threading.Thread(target=shutdown, daemon=True).start()
+
+    for signum in (getattr(signal, "SIGINT", None), getattr(signal, "SIGTERM", None)):
+        if signum is None:
+            continue
+        try:
+            previous[int(signum)] = signal.getsignal(signum)
+            signal.signal(signum, request_stop)
+        except (ValueError, OSError):
+            continue
+    return previous
+
+
+def _restore_gateway_signal_handlers(previous: dict[int, Any]) -> None:
+    for signum, handler in previous.items():
+        try:
+            signal.signal(signum, handler)
+        except (ValueError, OSError):
+            continue
 
 
 def _bool_value(value: Any, default: bool) -> bool:

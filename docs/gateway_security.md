@@ -31,6 +31,26 @@ generated docs.
 - [ ] Check `reports/gateway/audit.jsonl` during the first rollout week.
 - [ ] Rotate the token if it was pasted into an unsafe place.
 
+## Graceful Shutdown
+
+`vault gateway serve` and `vault remote-server serve` drain on `Ctrl+C`,
+`SIGINT`, or `SIGTERM`:
+
+- stop accepting new requests;
+- return `503 gateway_draining` to new clients during shutdown;
+- wait for in-flight requests to finish.
+
+The default drain timeout is 10 seconds. Tune it with:
+
+```bash
+vault remote-server serve --shutdown-timeout-seconds 30
+export VAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS=30
+```
+
+Use a higher value when trusted clients may run long bounded-read or candidate
+submission requests. Keep reverse proxy and supervisor timeouts longer than the
+Gateway drain timeout so the process can finish its own cleanup.
+
 ## HTTP Safety Headers
 
 Gateway JSON responses include:

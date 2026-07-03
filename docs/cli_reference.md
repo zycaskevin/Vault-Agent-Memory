@@ -62,6 +62,7 @@ scheduled jobs, or explicit maintenance sessions.
 | `vault gateway health --json` | Return machine-readable Gateway readiness without starting the HTTP server |
 | `vault gateway openapi --json` | Return the stable Gateway HTTP contract for Coze, n8n, OpenClaw, and future remote adapters |
 | `vault gateway serve --auth-token "$VAULT_GATEWAY_TOKEN"` | Use a stable token instead of printing a generated token at startup |
+| `vault gateway serve --shutdown-timeout-seconds 30` | Drain on SIGINT/SIGTERM: stop new requests and wait for active requests before exit |
 | `vault gateway serve --allow-shared-candidates` | Allow agents to submit shared-scope candidates; they still do not write active knowledge |
 | `vault remote-server health --json` | Check self-hosted remote-server readiness without starting the server |
 | `vault remote-server openapi --json` | Return the same Gateway contract with self-hosted remote-server metadata |
