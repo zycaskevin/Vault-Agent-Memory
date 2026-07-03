@@ -26,7 +26,11 @@ def test_landing_page_contains_core_story() -> None:
 
     required = [
         "Agents need memory governance, not just RAG.",
+        "Agent 不只需要 RAG，更需要記憶治理。",
+        "Agent 不只需要 RAG，更需要记忆治理。",
         "Install Vault-for-LLM for this project.",
+        "請為這個專案安裝 Vault-for-LLM",
+        "请为这个项目安装 Vault-for-LLM",
         "Use consumer mode with governed-auto memory.",
         "Claude Code",
         "Codex",
@@ -36,6 +40,24 @@ def test_landing_page_contains_core_story() -> None:
         "Accept Vault",
         "Keep both",
         "vault demo agent-governance --json",
+    ]
+    for text in required:
+        assert text in html
+
+
+def test_landing_page_has_trilingual_switcher_and_flow_animation() -> None:
+    html = LANDING.read_text(encoding="utf-8")
+
+    required = [
+        'data-lang="en"',
+        'data-lang="zh-Hant"',
+        'data-lang="zh-CN"',
+        "const translations =",
+        "connector-map",
+        "flow-line",
+        "@keyframes flowDash",
+        "prefers-reduced-motion",
+        "arch-flow",
     ]
     for text in required:
         assert text in html
