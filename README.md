@@ -113,13 +113,16 @@ For most users, the right path is to ask an agent to install consumer mode:
 
 ```text
 Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.7.27.
-Use consumer mode. Ask me only:
-1. Traditional Chinese, Simplified Chinese, or English?
-2. Independent vault or shared vault?
-3. Connect Obsidian, Supabase, both, or neither?
+Use consumer mode with governed-auto memory.
+Do not teach me CLI flags unless I ask.
+Ask me only:
+1. Which language should Vault use: Traditional Chinese, Simplified Chinese, or English?
+2. Should this be an independent vault or a shared vault for multiple agents?
+3. Should Vault connect to Obsidian, Supabase, both, or neither?
 4. What time should the daily memory report run?
-Use the default governed-auto memory mode. Then finish with a small smoke check
-and show me the daily report / GUI link.
+After setup, run a smoke check and show me the daily report or local GUI link.
+Daily use should be: safe memories can be kept automatically; uncertain
+memories go into the report for my review.
 ```
 
 The agent should use the guided installer:
@@ -130,6 +133,12 @@ source .venv/bin/activate
 pip install "vault-for-llm[mcp]==0.7.27"
 
 vault setup-agent --audience consumer
+```
+
+You can print this prompt from the CLI:
+
+```bash
+vault guide --intent install
 ```
 
 Builder or advanced agent installs can use the full setup flow:

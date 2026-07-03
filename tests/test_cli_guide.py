@@ -51,3 +51,28 @@ def test_cli_guide_human_intent_skills_is_small(capsys):
     assert [row["command"] for row in payload["maintenance_entrypoints"]] == [
         "vault skill upgrade-plan --installed-file installed-skills.json"
     ]
+
+
+def test_cli_guide_install_prints_copy_paste_agent_prompt(capsys):
+    main(["guide", "--intent", "install"])
+
+    out = capsys.readouterr().out
+    assert "Copy this to your agent" in out
+    assert "Use consumer mode with governed-auto memory" in out
+    assert "Do not teach me CLI flags unless I ask" in out
+    assert "The agent should ask only" in out
+    assert "independent vault or shared vault" in out
+
+
+def test_cli_guide_install_json_has_consumer_contract(capsys):
+    main(["guide", "--intent", "install", "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["ok"] is True
+    assert payload["intent"] == "install"
+    assert payload["agent_install_prompt"].startswith("Install Vault-for-LLM")
+    contract = payload["consumer_install_contract"]
+    assert contract["audience"] == "consumer"
+    assert contract["memory_mode"] == "governed-auto"
+    assert len(contract["human_questions"]) == 4
+    assert any("low-risk" in item for item in contract["agent_must_do"])

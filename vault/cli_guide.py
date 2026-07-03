@@ -7,11 +7,30 @@ from typing import Callable, Any
 
 def guide_payload(mode: str = "human", intent: str = "all") -> dict:
     """Return the compact agent-first command guide."""
+    install_prompt = _consumer_install_prompt()
+    install_contract = {
+        "audience": "consumer",
+        "memory_mode": "governed-auto",
+        "human_questions": [
+            "Language: Traditional Chinese, Simplified Chinese, or English?",
+            "Vault layout: independent vault or shared vault?",
+            "Connections: Obsidian, Supabase, both, or neither?",
+            "Daily report time.",
+        ],
+        "agent_must_do": [
+            "Run the guided consumer installer.",
+            "Keep advanced flags hidden unless the user asks.",
+            "Enable daily report generation.",
+            "Allow only low-risk, sourced, gate-passing memories to enter automatically.",
+            "Leave strategy, private, sensitive, conflicting, or low-trust memories in the daily report.",
+            "Finish with a smoke check and show the daily report or GUI link.",
+        ],
+    }
     everyday = [
         {
             "intent": "install",
-            "command": "vault setup-agent",
-            "purpose": "Guided install for humans and agents. Start here instead of memorizing flags.",
+            "command": "vault setup-agent --audience consumer",
+            "purpose": "Guided install for ordinary users. The agent asks only the small setup questions.",
         },
         {
             "intent": "daily",
@@ -105,6 +124,8 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
         "mode": mode,
         "intent": intent,
         "message": "Most humans should ask their agent to install and operate Vault. Daily use should be a short report, not a CLI lesson.",
+        "agent_install_prompt": install_prompt,
+        "consumer_install_contract": install_contract,
         "intent_shortcuts": [
             {"intent": "install", "use": "Set up or connect an agent"},
             {"intent": "daily", "use": "Search, browse, and continue normal work"},
@@ -118,15 +139,21 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
         "agent_mcp_profiles": agent,
         "maintenance_entrypoints": _filter_by_intent(maintenance, intent),
         "docs": docs,
-        "next_action": "Ask your agent to run vault setup-agent --audience consumer; governed-auto is the default memory loop for non-technical users.",
+        "next_action": "Copy the agent_install_prompt into your agent. It should install consumer governed-auto mode and show the daily report.",
     }
     if mode == "human":
         keys = ["ok", "mode", "intent", "message", "intent_shortcuts", "everyday_entrypoints", "docs", "next_action"]
+        if intent == "install":
+            keys.insert(4, "agent_install_prompt")
+            keys.insert(5, "consumer_install_contract")
         if intent in {"skills", "maintenance"}:
             keys.insert(-2, "maintenance_entrypoints")
         return {key: payload[key] for key in keys}
     if mode == "agent":
-        return {key: payload[key] for key in ["ok", "mode", "intent", "message", "agent_mcp_profiles", "docs", "next_action"]}
+        keys = ["ok", "mode", "intent", "message", "agent_mcp_profiles", "docs", "next_action"]
+        if intent == "install":
+            keys.insert(4, "consumer_install_contract")
+        return {key: payload[key] for key in keys}
     if mode == "maintenance":
         return {key: payload[key] for key in ["ok", "mode", "intent", "message", "maintenance_entrypoints", "docs", "next_action"]}
     return payload
@@ -145,6 +172,20 @@ def cmd_guide(args: Any, *, json_print: Callable[[dict, bool], None]) -> None:
     print()
     print(payload["message"])
     print()
+    if intent == "install" and payload.get("agent_install_prompt"):
+        print("Copy this to your agent:")
+        print()
+        print(payload["agent_install_prompt"])
+        print()
+        contract = payload.get("consumer_install_contract", {})
+        if contract:
+            print("The agent should ask only:")
+            for question in contract.get("human_questions", []):
+                print(f"  - {question}")
+            print()
+        print(f"Next: {payload['next_action']}")
+        return
+
     print("Intent shortcuts:")
     for item in payload.get("intent_shortcuts", []):
         print(f"  - {item['intent']}: {item['use']}")
@@ -175,3 +216,20 @@ def _filter_by_intent(items: list[dict], intent: str) -> list[dict]:
     if intent in {"", "all", "review"}:
         return items
     return [item for item in items if item.get("intent") == intent]
+
+
+def _consumer_install_prompt() -> str:
+    return "\n".join(
+        [
+            "Install Vault-for-LLM for this project.",
+            "Use consumer mode with governed-auto memory.",
+            "Do not teach me CLI flags unless I ask.",
+            "Ask me only:",
+            "1. Which language should Vault use: Traditional Chinese, Simplified Chinese, or English?",
+            "2. Should this be an independent vault or a shared vault for multiple agents?",
+            "3. Should Vault connect to Obsidian, Supabase, both, or neither?",
+            "4. What time should the daily memory report run?",
+            "After setup, run a smoke check and show me the daily report or local GUI link.",
+            "Daily use should be: safe memories can be kept automatically; uncertain memories go into the report for my review.",
+        ]
+    )
