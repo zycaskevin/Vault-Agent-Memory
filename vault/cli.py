@@ -81,6 +81,7 @@ from .cli_flow import (
     cmd_usage,
 )
 from .cli_guide import cmd_guide as _cmd_guide_impl
+from .cli_quickstart import cmd_quickstart
 from .cli_daily_report import cmd_daily_report as _cmd_daily_report_impl
 from .cli_demo import add_demo_parser, cmd_demo as _cmd_demo_impl
 from .cli_gateway import add_gateway_parsers
@@ -651,6 +652,33 @@ def main(argv: list[str] | None = None):
         ap.add_argument("--json", action="store_true", help="輸出 JSON")
         ap.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
 
+    # quickstart — small first-run setup for non-expert users
+    p = sub.add_parser(
+        "quickstart",
+        help="小白快速開始：只問少量問題並產生日報式記憶流程",
+        description=(
+            "Small first-run setup for agent-assisted users. "
+            "Use setup-agent when you need advanced integration and automation flags."
+        ),
+    )
+    p.add_argument("--agent", default="generic", help="Agent/runtime 名稱，預設 generic")
+    p.add_argument("--scope", choices=["private", "shared"], default=None,
+                   help="記憶庫範圍；互動模式會詢問 independent/shared")
+    p.add_argument("--project", "--agent-project-dir", dest="agent_project_dir",
+                   help="Vault project directory；未提供時使用保守預設路徑")
+    p.add_argument("--language", choices=["en", "zh-Hant", "zh-CN"], default=None,
+                   help="安裝與產生文件語言")
+    p.add_argument("--connections", choices=["none", "obsidian", "supabase", "both"], default=None,
+                   help="第一輪連接項目；預設互動詢問")
+    p.add_argument("--obsidian-vault", help="選擇 Obsidian/both 時的 Obsidian vault 路徑")
+    p.add_argument("--daily-report-time", default="", help="每日記憶報告時間，例如 09:00")
+    p.add_argument("--memory-mode", choices=["governed-auto", "daily-review"], default=None,
+                   help="小白模式預設 governed-auto；daily-review 只產生日報審核")
+    p.add_argument("--template-dir", help="安裝產物輸出目錄；預設 project/agent-install")
+    p.add_argument("--non-interactive", action="store_true", help="不要詢問，使用 quickstart defaults")
+    p.add_argument("--json", action="store_true", help="輸出 JSON")
+    p.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+
     # setup-agent / install-agent
     p = sub.add_parser("setup-agent", help="互動式 Agent 安裝精靈")
     add_agent_setup_args(p)
@@ -1022,7 +1050,7 @@ def main(argv: list[str] | None = None):
     if explicit_project_dir:
         if args.command == "init":
             args.project_dir = explicit_project_dir
-        elif args.command in {"setup-agent", "install-agent"}:
+        elif args.command in {"quickstart", "setup-agent", "install-agent"}:
             args.agent_project_dir = explicit_project_dir
         elif args.command == "demo":
             set_project_dir_override(Path(explicit_project_dir).expanduser().resolve())
@@ -1059,6 +1087,7 @@ def main(argv: list[str] | None = None):
         "install-embedding": cmd_install_embedding,
         "update-status": cmd_update_status,
         "agent": cmd_agent,
+        "quickstart": cmd_quickstart,
         "setup-agent": cmd_setup_agent,
         "install-agent": cmd_setup_agent,
         "import": cmd_import,

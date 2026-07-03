@@ -10,7 +10,7 @@ def test_cli_guide_defaults_to_human_surface(capsys):
     assert "Vault-for-LLM guide" in out
     assert "Intent shortcuts" in out
     assert "For humans, keep the surface small" in out
-    assert "vault setup-agent" in out
+    assert "vault quickstart" in out
     assert "vault daily-report" in out
 
 
@@ -59,6 +59,7 @@ def test_cli_guide_install_prints_copy_paste_agent_prompt(capsys):
     out = capsys.readouterr().out
     assert "Copy this to your agent" in out
     assert "Use the agent-assisted governed-auto memory mode" in out
+    assert "vault quickstart" in out
     assert "Do not show advanced CLI flags unless I ask" in out
     assert "The agent should ask only" in out
     assert "independent vault or shared vault" in out

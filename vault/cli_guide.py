@@ -18,7 +18,7 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
             "Daily report time.",
         ],
         "agent_must_do": [
-            "Run the guided agent-assisted installer.",
+            "Run `vault quickstart` for the guided agent-assisted installer.",
             "Keep advanced flags hidden unless the user asks.",
             "Enable daily report generation.",
             "Allow only low-risk, sourced, gate-passing memories to enter automatically.",
@@ -29,7 +29,7 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
     everyday = [
         {
             "intent": "install",
-            "command": "vault setup-agent --audience consumer",
+            "command": "vault quickstart",
             "purpose": "Guided install for agent-assisted builders. The agent asks only the small setup questions.",
         },
         {
@@ -139,7 +139,7 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
         "agent_mcp_profiles": agent,
         "maintenance_entrypoints": _filter_by_intent(maintenance, intent),
         "docs": docs,
-        "next_action": "Copy the agent_install_prompt into your agent. It should install agent-assisted governed-auto mode and show the daily report.",
+        "next_action": "Copy the agent_install_prompt into your agent. It should run `vault quickstart`, install agent-assisted governed-auto mode, and show the daily report.",
     }
     if mode == "human":
         keys = ["ok", "mode", "intent", "message", "intent_shortcuts", "everyday_entrypoints", "docs", "next_action"]
@@ -223,6 +223,7 @@ def _consumer_install_prompt() -> str:
         [
             "Install Vault-for-LLM for this project.",
             "Use the agent-assisted governed-auto memory mode.",
+            "Run `vault quickstart` unless I ask for advanced setup-agent flags.",
             "Do not show advanced CLI flags unless I ask.",
             "Ask me only:",
             "1. Which language should Vault use: Traditional Chinese, Simplified Chinese, or English?",

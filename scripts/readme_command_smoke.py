@@ -56,7 +56,7 @@ def main() -> int:
     outputs: dict[str, str] = {}
     outputs["vault_help"] = run([python, "-m", "vault.cli", "--help"], cwd=temp_dir, env=env)
     outputs["vault_guide"] = run([python, "-m", "vault.cli", "guide"], cwd=temp_dir, env=env)
-    if "vault setup-agent" not in outputs["vault_guide"]:
+    if "vault quickstart" not in outputs["vault_guide"]:
         raise SystemExit(f"Unexpected guide output:\n{outputs['vault_guide']}")
     guide_agent = json.loads(
         run([python, "-m", "vault.cli", "guide", "--mode", "agent", "--json"], cwd=temp_dir, env=env)

@@ -69,7 +69,7 @@ The agent will usually run:
 python3 -m venv .venv
 source .venv/bin/activate
 pip install "vault-for-llm[mcp]==0.7.28"
-vault setup-agent --audience consumer
+vault quickstart
 ```
 
 You can also print the install prompt from Vault itself:
@@ -78,8 +78,12 @@ You can also print the install prompt from Vault itself:
 vault guide --intent install
 ```
 
-Agent-assisted setup uses `governed-auto` by default. Internally this is still
-called `--audience consumer`, but that does not mean Vault is a zero-learning
+`vault quickstart` is the small first-run wizard. It asks only for language,
+independent/shared memory, optional Obsidian/Supabase connections, and daily
+report time. Advanced integration flags stay under `vault setup-agent`.
+
+Agent-assisted quickstart uses `governed-auto` by default. Internally this is
+still the consumer setup path, but that does not mean Vault is a zero-learning
 consumer app. Low-risk, sourced candidates that pass privacy, duplicate,
 metadata, and quality gates may enter the active vault. Strategy, private,
 sensitive, conflicting, or low-trust memories stay in the daily report for

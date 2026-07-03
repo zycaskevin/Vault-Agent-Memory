@@ -62,7 +62,7 @@ Vault-for-LLM 解决的不是“把更多东西塞进 AI”。
 python3 -m venv .venv
 source .venv/bin/activate
 pip install "vault-for-llm[mcp]==0.7.28"
-vault setup-agent --audience consumer
+vault quickstart
 ```
 
 也可以让 Vault 打印可复制给 Agent 的安装话术：

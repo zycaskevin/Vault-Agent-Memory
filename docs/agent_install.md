@@ -27,7 +27,19 @@ only after I confirm. Finish with add/search and candidate-memory smoke tests.
 
 ## Ask Only These First
 
-Start with five questions. Do not open with every optional feature.
+For normal first-run setup, prefer:
+
+```bash
+vault quickstart
+```
+
+It asks only the small consumer path: language, independent/shared memory,
+optional Obsidian/Supabase connections, and daily report time.
+
+Use `vault setup-agent` when the user explicitly needs advanced templates,
+permissions, automation, remote readers, or developer dependencies. In that
+advanced path, start with five questions. Do not open with every optional
+feature.
 
 1. Should this memory be `private`, `shared`, `domain`, or `temporary`?
 2. Which stable project directory should hold `vault.db`?
@@ -70,10 +82,11 @@ Use the PyPI release unless the user explicitly asks for source development:
 
 ```bash
 python -m pip install "vault-for-llm[mcp]==0.7.28"
-vault setup-agent
+vault quickstart
 ```
 
-`setup-agent` also registers the current Agent/runtime in the local registry at
+`quickstart` uses the same setup engine as `setup-agent`, so it also registers
+the current Agent/runtime in the local registry at
 `~/.vault-for-llm/agent-registry.json`. Other tools on the same machine can run
 `vault update-status` to see which Agents are connected, which project vaults
 they use, and which `vault automation handoff --project-dir ...` commands should
