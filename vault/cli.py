@@ -726,7 +726,11 @@ def main(argv: list[str] | None = None):
         choices=["accept-obsidian", "accept-vault", "keep-both"],
         help="Obsidian 衝突解析策略：接受 Obsidian、接受 Vault raw、或保留兩份",
     )
-    p.add_argument("--dry-run", action="store_true", help="Obsidian 匯入時只列出新增/更新，不寫入")
+    p.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Obsidian 匯入純預覽：不寫 raw/、manifest、SQLite DB，也不會 compile",
+    )
     p.add_argument("--compile", action="store_true", help="Obsidian 匯入完成後立刻執行 vault compile")
     p.add_argument("--json", action="store_true", help="輸出 JSON；OKF/Obsidian 匯入支援")
     p.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出；OKF/Obsidian 匯入支援")
