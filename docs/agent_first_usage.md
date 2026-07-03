@@ -15,13 +15,23 @@ vault guide --intent daily
 vault guide --intent skills
 ```
 
+`vault guide --intent install` prints the copy-paste prompt for ordinary users
+to give their agent. The agent should ask only:
+
+- language: Traditional Chinese, Simplified Chinese, or English,
+- memory layout: independent vault or shared vault,
+- optional connections: Obsidian, Supabase, both, or neither,
+- daily report time.
+
+The agent handles the actual commands, smoke check, and daily report link.
+
 ## Human Surface
 
 Most people only need these entrypoints:
 
 | Intent | Command |
 |---|---|
-| Install or connect an agent | `vault setup-agent --audience consumer` |
+| Install or connect an agent | `vault guide --intent install` |
 | Read today's memory report | `vault daily-report` |
 | See the small command map | `vault guide` |
 | Browse locally | `vault gui` |
@@ -69,7 +79,7 @@ the human quickstart keeps the product usable.
 
 ## Recommended Flow
 
-1. Ask an agent to install Vault with `vault setup-agent --audience consumer`.
+1. Ask an agent to install Vault with the prompt from `vault guide --intent install`.
 2. Answer only the consumer questions: language, independent/shared vault,
    optional Obsidian/Supabase connection, and daily report time.
 3. Read `vault daily-report` or open `vault gui` for daily use.
