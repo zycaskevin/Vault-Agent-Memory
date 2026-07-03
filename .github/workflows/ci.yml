@@ -98,21 +98,9 @@ jobs:
       - name: Run README documented command smoke
         run: python scripts/readme_command_smoke.py
 
-  one-click-install-smoke:
-    name: One-click installer smoke (${{ matrix.os }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            shell: bash
-            install-command: bash scripts/install.sh
-            version-command: .venv/bin/vault --version
-          - os: windows-latest
-            shell: pwsh
-            install-command: ./scripts/install.ps1
-            version-command: ./.venv/Scripts/vault.exe --version
+  one-click-install-smoke-linux:
+    name: One-click installer smoke (Linux)
+    runs-on: ubuntu-latest
 
     steps:
       - name: Check out repository
@@ -126,12 +114,33 @@ jobs:
           python-version: '3.12'
 
       - name: Run installer
-        shell: ${{ matrix.shell }}
-        run: ${{ matrix.install-command }}
+        run: bash scripts/install.sh
 
       - name: Verify installed CLI
-        shell: ${{ matrix.shell }}
-        run: ${{ matrix.version-command }}
+        run: .venv/bin/vault --version
+
+  one-click-install-smoke-windows:
+    name: One-click installer smoke (Windows)
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Run installer
+        shell: pwsh
+        run: ./scripts/install.ps1
+
+      - name: Verify installed CLI
+        shell: pwsh
+        run: ./.venv/Scripts/vault.exe --version
 
   uv-dev-smoke:
     name: uv dev workflow smoke
