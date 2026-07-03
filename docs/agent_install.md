@@ -1,6 +1,6 @@
 # Agent Install Runbook
 
-This page is for agents installing Vault-for-LLM for a user. Keep the setup
+This page is for agents installing Vault Agent Memory for a user. Keep the setup
 small at first. Add optional systems only after the user says they need them.
 
 Vault works best when the installer explains one idea clearly:
@@ -16,7 +16,7 @@ For adjacent systems and design comparisons, see
 ## Fast Prompt For Agents
 
 ```text
-Install Vault-for-LLM for this project with vault-for-llm[mcp]==0.7.29.
+Install Vault Agent Memory for this project with vault-for-llm[mcp]==0.7.29.
 Ask me where the vault database should live, whether it should be private or
 shared, and whether you should use a stable Python virtualenv path instead of a
 temporary one. Enable MCP by default if this agent runtime supports MCP. Ask

@@ -1,6 +1,6 @@
 # Supabase Setup
 
-Supabase is optional. Vault-for-LLM starts as a local SQLite memory vault and
+Supabase is optional. Vault Agent Memory starts as a local SQLite memory vault and
 does not need a hosted database for normal single-machine use.
 
 Add Supabase when the memory needs to cross a machine or runtime boundary:

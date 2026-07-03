@@ -529,7 +529,7 @@ def test_run_agent_setup_writes_memory_automation_schedule_templates(tmp_path):
     assert "memory-automation.log" in cron
     assert "memory-automation" in plist
     assert "memory-automation.err.log" in plist
-    assert workflow["name"] == "Vault-for-LLM Memory Automation"
+    assert workflow["name"] == "Vault Agent Memory Automation"
     assert workflow["nodes"][1]["name"] == "Vault Memory Automation"
     assert "vault automation cycle" in workflow["nodes"][1]["parameters"]["command"]
     assert "vault memory pipeline" in workflow["nodes"][1]["parameters"]["command"]

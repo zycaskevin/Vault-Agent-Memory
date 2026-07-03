@@ -1466,7 +1466,7 @@ def test_automation_cycle_writes_compact_workspace_with_transcript_hints(tmp_pat
     assert "## Suggested Next Tasks" in markdown
     assert "## Agent Start Prompt" in markdown
     assert "Review candidate memory queue" in markdown
-    assert "You are continuing a Vault-for-LLM memory automation cycle." in markdown
+    assert "You are continuing a Vault Agent Memory automation cycle." in markdown
     assert "sessions/codex-session.md" in markdown
     assert token not in markdown
 

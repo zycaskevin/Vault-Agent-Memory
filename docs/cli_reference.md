@@ -1,6 +1,6 @@
 # CLI Reference
 
-This page lists the broader Vault-for-LLM CLI surface. Most people should not
+This page lists the broader Vault Agent Memory CLI surface. Most people should not
 memorize it. Start with the small human surface, then let agents and scheduled
 jobs use the wider toolbox.
 

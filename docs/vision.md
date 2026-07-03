@@ -1,6 +1,6 @@
 # Vision: User-Owned Memory for Agent Families
 
-Vault-for-LLM is the memory core.
+Vault Agent Memory is the memory core.
 
 Hermes Agent, OpenClaw, Claude Code, Codex, n8n, robots, car assistants, smart
 home agents, and future embodied systems are the hands.
@@ -30,12 +30,12 @@ same reviewed continuity when the user allows it.
 The question is not whether long-term agent memory will exist. It is who owns
 it.
 
-Vault-for-LLM takes the position that the memory should belong to the user.
+Vault Agent Memory takes the position that the memory should belong to the user.
 
 ## Brain, Hands, Compute
 
 ```text
-Vault-for-LLM       = brain / memory core
+Vault Agent Memory = brain / memory core
 Agent runtimes      = hands / action layers
 Models              = compute tools
 Obsidian + graph    = human-readable memory garden and review surface
@@ -70,7 +70,7 @@ devices share memory, but it should not become the user's only source of truth.
 
 ## Progressive Memory Disclosure
 
-Vault-for-LLM should behave like a guided memory vault, not an open warehouse.
+Vault Agent Memory should behave like a guided memory vault, not an open warehouse.
 An agent should not receive the user's full memory just because it can connect
 to a database.
 
@@ -237,7 +237,7 @@ Near-term work should make the existing pieces more coherent:
 
 The north star:
 
-> Vault-for-LLM is a user-owned lifelong memory layer for agent families. It is
+> Vault Agent Memory is a user-owned lifelong memory layer for agent families. It is
 > the brain that keeps continuity; agents are the hands that act; models are the
 > compute tools that reason over reviewed memory.
 
@@ -246,7 +246,7 @@ self-host team layer, optional cloud, and enterprise governance platform lives
 in [docs/strategy/](strategy/). Use those documents before making large
 roadmap, pricing, cloud, or enterprise-scope decisions.
 
-If this approach works, Vault-for-LLM can become a practical reference design
+If this approach works, Vault Agent Memory can become a practical reference design
 for future user-owned memory vaults: databases that do not merely store facts,
 but help users review, connect, compress, forget, recover, and carry their
 continuity across tools and embodied systems.

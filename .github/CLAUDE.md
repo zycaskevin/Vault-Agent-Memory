@@ -1,8 +1,8 @@
-# Vault-for-LLM — Claude Code Integration Guide
+# Vault Agent Memory — Claude Code Integration Guide
 
 ## Quick Start
 
-Vault-for-LLM is a local-first knowledge system for LLM agents. It compiles
+Vault Agent Memory is a local-first memory governance system for AI agents. It compiles
 Markdown notes into a searchable SQLite database with keyword search (FTS5/BM25),
 optional semantic embeddings, document-map bounded reads, and candidate-first
 memory gates.
@@ -27,7 +27,7 @@ pip install "vault-for-llm[mcp]"
 
 ## MCP Integration
 
-Vault-for-LLM exposes an MCP server for agent memory workflows.
+Vault Agent Memory exposes an MCP server for agent memory workflows.
 
 ### Setup
 

@@ -568,7 +568,7 @@ def render_supabase_setup_guide(
 
 def _render_supabase_setup_guide_en(*, mode: str, project_path: Path, agent: str) -> list[str]:
     lines = [
-        "# Vault-for-LLM Supabase Setup",
+        "# Vault Agent Memory Supabase Setup",
         "",
         "Supabase is optional. Keep using local `vault.db` when one machine is enough.",
         "",
@@ -650,7 +650,7 @@ def _render_supabase_setup_guide_en(*, mode: str, project_path: Path, agent: str
 
 def _render_supabase_setup_guide_zh_hant(*, mode: str, project_path: Path, agent: str) -> list[str]:
     lines = [
-        "# Vault-for-LLM Supabase 設定",
+        "# Vault Agent Memory Supabase 設定",
         "",
         "Supabase 是可選功能。只有一台電腦使用時，繼續使用本地 `vault.db` 就好。",
         "",

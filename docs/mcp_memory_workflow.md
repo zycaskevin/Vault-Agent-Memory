@@ -1,6 +1,6 @@
 # MCP Memory Workflow
 
-Vault-for-LLM now exposes a safer agent memory workflow over MCP. Autonomous agents should prefer candidate-first memory tools instead of writing directly to active knowledge.
+Vault Agent Memory now exposes a safer agent memory workflow over MCP. Autonomous agents should prefer candidate-first memory tools instead of writing directly to active knowledge.
 
 For per-tool inputs, outputs, and agent integration examples, use
 [`docs/mcp_tool_reference.md`](mcp_tool_reference.md).

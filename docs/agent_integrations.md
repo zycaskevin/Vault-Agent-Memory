@@ -1,6 +1,6 @@
 # Agent Integrations
 
-Vault-for-LLM is intentionally agent-runtime agnostic. The stable contract is
+Vault Agent Memory is intentionally agent-runtime agnostic. The stable contract is
 local files plus SQLite, exposed through CLI and optional stdio MCP.
 
 Use it when you want project knowledge to be portable across agent systems
@@ -336,7 +336,7 @@ write directly into active memory.
 
 ## Choose Database Scope At Install Time
 
-Vault-for-LLM is bound to a project directory, not to Hermes, OpenClaw, Codex, or
+Vault Agent Memory is bound to a project directory, not to Hermes, OpenClaw, Codex, or
 any other runtime:
 
 ```text

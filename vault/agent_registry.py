@@ -306,11 +306,11 @@ def build_agent_update_notices(
         behind_latest = bool(latest and ((not has_recorded_version) or is_newer_version(latest, recorded_version)))
         if behind_latest:
             status = "behind_latest"
-            recommended_action = f"Upgrade or restart this Agent runtime with Vault-for-LLM {latest}."
+            recommended_action = f"Upgrade or restart this Agent runtime with Vault Agent Memory {latest}."
         elif behind_current:
             status = "behind_current_runtime"
             recommended_action = (
-                f"Restart or re-register this Agent runtime so it records Vault-for-LLM {current_version}."
+                f"Restart or re-register this Agent runtime so it records Vault Agent Memory {current_version}."
             )
         else:
             status = "current"
@@ -349,9 +349,9 @@ def _update_next_steps(
 ) -> list[str]:
     steps: list[str] = []
     if update_available:
-        steps.append(f"Review release notes and upgrade Vault-for-LLM to {latest_version}.")
+        steps.append(f"Review release notes and upgrade Vault Agent Memory to {latest_version}.")
     else:
-        steps.append("Vault-for-LLM is up to date for the known version source.")
+        steps.append("Vault Agent Memory is up to date for the known version source.")
     notices = agent_update_notices or []
     if any(item.get("needs_attention") for item in notices):
         steps.append("Review `agent_update_notices` for registered runtimes that may need an upgrade or restart.")
@@ -434,7 +434,7 @@ def build_update_distribution_health(
         payload["recommended_actions"].append("Refresh the shared notice with `vault update-status --write-status`.")
     if payload["status_current_runtime_mismatch"]:
         payload["recommended_actions"].append(
-            f"Refresh status because it was written by Vault-for-LLM {status_installed_version}, not {__version__}."
+            f"Refresh status because it was written by Vault Agent Memory {status_installed_version}, not {__version__}."
         )
     if payload["agents_needing_attention"]:
         payload["recommended_actions"].append("Upgrade, restart, or re-register the listed Agent runtimes.")

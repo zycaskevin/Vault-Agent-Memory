@@ -200,7 +200,7 @@ def cmd_guide(args: Any, *, json_print: Callable[[dict, bool], None]) -> None:
         json_print(payload, getattr(args, "pretty", False))
         return
 
-    print("Vault-for-LLM guide")
+    print("Vault Agent Memory guide")
     print()
     print(payload["message"])
     print()
@@ -274,7 +274,7 @@ def _filter_by_intent(items: list[dict], intent: str) -> list[dict]:
 def _consumer_install_prompt() -> str:
     return "\n".join(
         [
-            "Install Vault-for-LLM for this project.",
+            "Install Vault Agent Memory for this project with vault-for-llm.",
             "Use the agent-assisted governed-auto memory mode.",
             "Run `vault quickstart` unless I ask for advanced setup-agent flags.",
             "Do not show advanced CLI flags unless I ask.",

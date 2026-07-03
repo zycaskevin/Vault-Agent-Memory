@@ -540,7 +540,7 @@ def _cycle_agent_start_prompt(workspace: dict[str, Any]) -> str:
     blocked_tasks = int(summary.get("blocked_tasks") or 0)
     return "\n".join(
         [
-            "You are continuing a Vault-for-LLM memory automation cycle.",
+            "You are continuing a Vault Agent Memory automation cycle.",
             f"Project: {workspace.get('project_dir', '')}",
             "Start from this handoff, not the full raw reports.",
             (

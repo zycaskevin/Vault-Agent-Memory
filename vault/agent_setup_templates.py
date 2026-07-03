@@ -181,7 +181,7 @@ def _xml_escape(value: object) -> str:
 
 def render_n8n_workflow(*, command: list[str], interval_minutes: int = 15) -> str:
     workflow = {
-        "name": "Vault-for-LLM Obsidian Sync",
+        "name": "Vault Agent Memory Obsidian Sync",
         "nodes": [
             {
                 "parameters": {
@@ -215,7 +215,7 @@ def render_n8n_workflow(*, command: list[str], interval_minutes: int = 15) -> st
 
 def render_n8n_automation_workflow(*, command: list[str], interval_minutes: int = DEFAULT_AUTOMATION_INTERVAL_MINUTES) -> str:
     workflow = {
-        "name": "Vault-for-LLM Memory Automation",
+        "name": "Vault Agent Memory Automation",
         "nodes": [
             {
                 "parameters": {
@@ -263,7 +263,7 @@ def render_n8n_remote_reader_workflow(
         "--json",
     ]
     workflow = {
-        "name": "Vault-for-LLM Remote Reader",
+        "name": "Vault Agent Memory Remote Reader",
         "nodes": [
             {
                 "parameters": {},
@@ -295,9 +295,9 @@ def render_coze_supabase_openapi_template(*, agent_id: str) -> str:
     spec = {
         "openapi": "3.1.0",
         "info": {
-            "title": "Vault-for-LLM Supabase Remote Reader",
+            "title": "Vault Agent Memory Supabase Remote Reader",
             "version": __version__,
-            "description": "Read safe Vault-for-LLM memory summaries through the Supabase vault_search_readable RPC.",
+            "description": "Read safe Vault Agent Memory summaries through the Supabase vault_search_readable RPC.",
         },
         "servers": [
             {
@@ -309,7 +309,7 @@ def render_coze_supabase_openapi_template(*, agent_id: str) -> str:
             "/rpc/vault_search_readable": {
                 "post": {
                     "operationId": "vaultRemoteSearch",
-                    "summary": "Search reviewed Vault-for-LLM remote memory summaries",
+                    "summary": "Search reviewed Vault Agent Memory remote memory summaries",
                     "description": "Use an anon/authenticated key. Do not expose SUPABASE_SERVICE_ROLE_KEY to Coze or browser clients.",
                     "security": [{"SupabaseApiKey": []}, {"SupabaseBearer": []}],
                     "requestBody": {
@@ -478,7 +478,7 @@ def write_supabase_sync_templates(
     readme.write_text(
         "\n".join(
             [
-                "# Vault-for-LLM Supabase Sync Templates",
+                "# Vault Agent Memory Supabase Sync Templates",
                 "",
                 "Generated command:",
                 "",
@@ -847,7 +847,7 @@ def write_automation_schedule_templates(
         path.write_text(
             "\n".join(
                 [
-                    "# Vault-for-LLM memory automation",
+                    "# Vault Agent Memory memory automation",
                     f"{schedule} {shell_join(scheduled_args)} >> $HOME/.vault-for-llm/memory-automation.log 2>&1",
                     "",
                 ]
@@ -879,7 +879,7 @@ def write_automation_schedule_templates(
     readme.write_text(
         "\n".join(
             [
-                "# Vault-for-LLM Memory Automation Schedule",
+                "# Vault Agent Memory Automation Schedule",
                 "",
                 "Generated command:",
                 "",
@@ -1057,7 +1057,7 @@ def write_remote_reader_templates(
     readme.write_text(
         "\n".join(
             [
-                "# Vault-for-LLM Remote Reader Templates",
+                "# Vault Agent Memory Remote Reader Templates",
                 "",
                 "Use these templates after Supabase sync and `docs/supabase_read_policy.sql` are applied.",
                 "",
@@ -1139,7 +1139,7 @@ def write_sync_templates(
     readme.write_text(
         "\n".join(
             [
-                "# Vault-for-LLM Obsidian Sync Templates",
+                "# Vault Agent Memory Obsidian Sync Templates",
                 "",
                 "Generated command:",
                 "",

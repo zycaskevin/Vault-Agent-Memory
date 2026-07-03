@@ -1,4 +1,4 @@
-# Vault-for-LLM
+# Vault Agent Memory
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
@@ -18,7 +18,7 @@ Agent，讓它幫你安裝、設定、測試，之後你每天只看一份很短
 
 ## 30 秒版
 
-Vault-for-LLM 解決的不是「把更多東西塞進 AI」。
+Vault Agent Memory 解決的不是「把更多東西塞進 AI」。
 
 它解決的是：
 
@@ -30,7 +30,7 @@ Vault-for-LLM 解決的不是「把更多東西塞進 AI」。
 
 一句話：
 
-> Vault-for-LLM 不是讓 Agent 什麼都記住，而是讓 Agent 可信地記、可審核地記、需要時能回滾。
+> Vault Agent Memory 不是讓 Agent 什麼都記住，而是讓 Agent 可信地記、可審核地記、需要時能回滾。
 
 ```mermaid
 flowchart TB
@@ -106,7 +106,7 @@ propose -> review -> promote -> search -> bounded read -> rollback -> audit
 把這段貼給能執行本機指令的 Agent：
 
 ```text
-幫這個專案安裝 Vault-for-LLM。使用 vault-for-llm[mcp]==0.7.29。
+幫這個專案安裝 Vault Agent Memory。使用 vault-for-llm[mcp]==0.7.29。
 請用 agent-assisted 的 governed-auto 記憶模式。
 
 不要先顯示進階 CLI 參數。只問我四件事：
@@ -160,7 +160,7 @@ vault guide --intent install
 
 ## 適合誰
 
-Vault-for-LLM 適合：
+Vault Agent Memory 適合：
 
 - 用 Codex、Claude Code、Hermes、OpenClaw、OpenCode、n8n 或 Coze 做專案的人。
 - 希望多個 Agent 共用同一套專案記憶的人。
@@ -169,7 +169,7 @@ Vault-for-LLM 適合：
 - 想知道 Agent 到底根據哪份文件回答，而不是只相信它「好像記得」的人。
 
 如果你只想要普通筆記軟體、純向量資料庫，或完全黑盒的聊天記憶產品，
-Vault-for-LLM 可能不是第一個該拿起來的工具。
+Vault Agent Memory 可能不是第一個該拿起來的工具。
 
 如果你完全沒有使用 Agent 的習慣，也不想讓 Agent 幫你安裝或管理工具，
 Vault 現在還不是 app-store 式的一鍵產品。它目前最適合的是：已經踏入

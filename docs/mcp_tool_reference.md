@@ -1,7 +1,7 @@
 # MCP Tool Reference
 
 This page is the practical reference for connecting an MCP-capable agent to
-Vault-for-LLM. For the policy behind the workflow, see
+Vault Agent Memory. For the policy behind the workflow, see
 [`docs/mcp_memory_workflow.md`](mcp_memory_workflow.md).
 
 ## Pick A Profile
@@ -879,7 +879,7 @@ Paste this into an agent system or project instruction when you need a short
 policy:
 
 ```text
-Use Vault-for-LLM through the smallest available MCP profile.
+Use Vault Agent Memory through the smallest available MCP profile.
 Search before answering. Treat search snippets as navigation hints only.
 Use vault_read_range for final evidence and cite its returned citation exactly.
 Use vault_memory_propose for new lessons; do not use direct writes unless the

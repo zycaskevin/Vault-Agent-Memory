@@ -1,6 +1,6 @@
 # Semantic Search Workflow
 
-Vault-for-LLM works without embeddings. Keyword search is the stable default path, and semantic search is an optional alpha workflow for projects that configure a real embedding provider.
+Vault Agent Memory works without embeddings. Keyword search is the stable default path, and semantic search is an optional alpha workflow for projects that configure a real embedding provider.
 
 This guide consolidates the public semantic-search behavior added by the upgrade series:
 

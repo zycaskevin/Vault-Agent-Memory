@@ -1,6 +1,6 @@
 # Memory Governance Layers
 
-Vault-for-LLM uses `L0` through `L3` as memory depth and usage layers. Do not
+Vault Agent Memory uses `L0` through `L3` as memory depth and usage layers. Do not
 use those layers as access-control rules by themselves.
 
 The recommended model is:

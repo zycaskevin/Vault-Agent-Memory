@@ -1,14 +1,16 @@
-# Vault-for-LLM
+# Vault Agent Memory
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
 Local-first memory governance for AI agents.
 
-Vault-for-LLM gives Codex, Claude Code, Hermes, OpenClaw, n8n, Coze, and other
-agents one governed memory vault to share. It is not trying to be another notes
-app or vector database. It helps agents decide what should be remembered, who
-can use it, whether it is still current, and how to roll it back when it is
+Vault Agent Memory gives Codex, Claude Code, Hermes, OpenClaw, n8n, Coze, and
+other agents one governed memory vault to share. It is not trying to be another
+notes app or vector database. It helps agents decide what should be remembered,
+who can use it, whether it is still current, and how to roll it back when it is
 wrong.
+
+The Python package and existing install path remain `vault-for-llm`.
 
 Vault is for people already building or working with agents. The main interface
 should still not be a long CLI manual: ask an agent to install Vault, answer a
@@ -19,7 +21,7 @@ New here? Start with the visual demo:
 
 ## 30-Second Version
 
-Vault-for-LLM exists because agent memory fails in practical ways:
+Vault Agent Memory exists because agent memory fails in practical ways:
 
 - a new session acts like it joined the project on day one
 - bug fixes stay buried in chat history
@@ -106,7 +108,7 @@ In plain language:
 Copy this prompt into an agent that can run local commands:
 
 ```text
-Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.7.29.
+Install Vault Agent Memory for this project. Use vault-for-llm[mcp]==0.7.29.
 Use the agent-assisted governed-auto memory mode.
 
 Do not show advanced CLI flags first. Ask me only four questions:
@@ -495,7 +497,7 @@ More detail:
 | semantic search, embedding providers, rerank, benchmark adapters | evolving |
 | Profile / Dream / Forgetting agents | guidance-first, not autonomous deletion |
 
-Vault-for-LLM is pre-1.0. The core local path is intentionally conservative.
+Vault Agent Memory is pre-1.0. The core local path is intentionally conservative.
 Advanced remote and automation paths are powerful, but should be enabled
 deliberately.
 

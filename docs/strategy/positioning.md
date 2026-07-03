@@ -1,6 +1,6 @@
 # Positioning
 
-Vault-for-LLM is not trying to win by storing more text than a RAG database or
+Vault Agent Memory is not trying to win by storing more text than a RAG database or
 recalling more chat facts than a hosted memory provider.
 
 Its strongest category is:
@@ -9,9 +9,12 @@ Its strongest category is:
 
 The user-facing sentence:
 
-> Vault-for-LLM is the memory governance layer for multi-agent teams. It lets
+> Vault Agent Memory is the memory governance layer for multi-agent teams. It lets
 > organizations safely manage what AI agents remember, trust, share, forget,
 > and roll back.
+
+`vault-for-llm` remains the Python package, repository slug, and compatibility
+install path. Use Vault Agent Memory as the product display name.
 
 The sharper product claim:
 
