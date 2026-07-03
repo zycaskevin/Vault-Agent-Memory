@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## [0.7.29] - 2026-07-03
+
+### Added
+
+- Added `vault quickstart`, a smaller guided first-run path for
+  agent-assisted users who should not start with the full `setup-agent` option
+  surface.
+- Added quickstart and FAQ content to `vault guide install`, plus a generated
+  `docs/quickstart.md` path for the 5-minute onboarding flow.
+- Added Markdown, OKF, and JSON memory export commands with dry-run support.
+- Added rotating remote-candidate HMAC key support through
+  `VAULT_SYNC_HMAC_SECRETS` and `vault remote hmac-keys`.
+- Added consumer, automation, and multi-host follow-up guides to the generated
+  `vault demo agent-governance` demo pack.
+- Added a v0.7.28 closeout review documenting P1/P2/P3 completion,
+  clean-environment smoke results, and remaining release risks.
+
+### Changed
+
+- Strengthened Gateway startup safety guidance, security headers, and graceful
+  shutdown behavior.
+- Tightened common error output with next-step hints for missing databases and
+  setup paths.
+- Bounded search query length instead of relying only on request body limits.
+- Moved small shared helper functions into `vault/utils.py`.
+
+### Safety
+
+- `vault import obsidian --dry-run` now has an explicit no-write contract for
+  active database rows.
+- Remote candidate HMAC rotation exposes active key IDs and counts without
+  printing secrets.
+- Gateway HSTS is limited to TLS mode while other defensive headers are applied
+  broadly.
+
+### Validation
+
+- Full local test suite after the demo-scenario work: `2415 passed, 10 skipped`.
+- Clean Python 3.11.14 virtualenv install from the local repository with
+  `pip install ".[mcp]"`, followed by installed `vault quickstart` and
+  `vault demo agent-governance` smoke checks.
+- Release Readiness CI passed on PRs #317 through #325.
+
 ## [0.7.28] - 2026-07-03
 
 ### Added
