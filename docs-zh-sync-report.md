@@ -8,8 +8,9 @@
 | Item | Status | Notes |
 |------|--------|-------|
 | Version number | ✅ Fixed | Was 0.7.28 → bumped to 0.7.29 |
-| Section count | ⚠️ Different | EN: 21 vs ZH: 14 |
-| Section structure | ❌ Major gap | Chinese versions use different section organization |
+| Launch entry parity | ✅ Fixed | Role table, Mermaid architecture, Why Vault table, one-click install, and core concept link now exist in both Chinese READMEs |
+| Section count | ⚠️ Different | EN: 21 vs ZH: 16 |
+| Section structure | ⚠️ Different | Chinese versions intentionally keep a general-user/product entry shape instead of mirroring EN exactly |
 | MCP tool list | ✅ Present | Core 6 tools all present |
 | Maturity table | ⚠️ Different items | ZH table has fewer and different categories |
 | Quickstart commands | ⚠️ Partial | 6/7 found |
@@ -20,6 +21,11 @@
 The following small fixes were applied directly to both `README.zh-CN.md` and `README.zh-Hant.md`:
 
 - ✅ **Version bump**: `0.7.28` → `0.7.29` in all pip install commands
+- ✅ **Role-oriented entry**: added the 5-role starting-point table
+- ✅ **Architecture visual**: added the Mermaid memory-governance flow
+- ✅ **Why Vault comparison**: added the no-Vault / with-Vault comparison table
+- ✅ **One-click install**: added macOS/Linux and PowerShell install commands with branch/version caveat
+- ✅ **Core concepts link**: added `docs/core-concepts.md` to the Chinese advanced feature index
 
 ## Section-by-Section Comparison (章節對比)
 
@@ -50,30 +56,33 @@ The following small fixes were applied directly to both `README.zh-CN.md` and `R
 ### 中文 Sections
 
 1. **30 秒版**
-2. **最推荐：让 Agent 帮你安装**
-3. **每天怎么用**
-4. **适合谁**
-5. **它不是什么**
-6. **三个常见场景**
-7. **开发者快速开始**
-8. **记忆分层**
-9. **Obsidian**
-10. **Supabase 与远端共享**
-11. **进阶功能索引**
-12. **成熟度**
-13. **开发与测试**
-14. **授权**
+2. **你是哪种用户？先从这里开始**
+3. **最推荐：让 Agent 帮你安装**
+4. **每天怎么用**
+5. **适合谁**
+6. **它不是什么**
+7. **三个常见场景**
+8. **一键安装**
+9. **开发者快速开始**
+10. **记忆分层**
+11. **Obsidian**
+12. **Supabase 与远端共享**
+13. **进阶功能索引**
+14. **成熟度**
+15. **开发与测试**
+16. **授权**
 
 ## Major Structural Gaps (主要結構差異)
 
-The Chinese READMEs have a significantly different structure from the English version.
-Key sections present in EN but missing or differently organized in ZH:
+The Chinese READMEs still have a different structure from the English version,
+but the launch-critical entry sections from this PR are now present. Remaining
+gaps are deeper translation and expansion work:
 
 | Section | Priority | Why It Matters |
 |---------|----------|----------------|
-| Killer Demo: Shared Governed Memory | 🔴 High | The killer demo section with `vault demo agent-governance --json` and demo pack links is absent. This is a critical onboarding section. |
-| Memory Model | 🔴 High | The L0-L3 memory layers explanation + governance metadata + temporal windows. ZH has '记忆分层' but is less detailed (missing temporal facts, expiry vs valid_until distinction). |
-| Automation And Daily Reports | 🔴 High | Automation commands (`vault daily-report`, `vault automation brief`, etc.) and the governed-auto explanation are not a dedicated section in ZH. |
+| Killer Demo: Shared Governed Memory | 🔴 High | ZH has use-case framing, but not the full `vault demo agent-governance --json` demo section and demo pack links. |
+| Memory Model | 🔴 High | ZH has `记忆分层`, but is less detailed than EN on temporal facts, expiry, valid windows, and governance metadata. |
+| Automation And Daily Reports | 🔴 High | ZH explains daily reports in the main flow, but does not have the full command-oriented automation section. |
 | Integrations table | 🔴 Medium | The full integrations table (Codex/Claude/Hermes/n8n/Coze/Obsidian/etc.) is missing. ZH mentions integrations but not in a structured table. |
 | Remote Sharing (full section) | 🔴 Medium | EN has a full Remote Sharing section with both Supabase and Gateway/Remote Server. ZH only covers Supabase briefly. |
 | Memory Migration | 🔴 Medium | The `vault import memory` section with candidate-first migration approach is missing. |
@@ -99,31 +108,33 @@ Given the significant structural differences, here is the recommended translatio
 1. **Killer Demo section** — This is the primary conversion path for new users
 2. **Memory Model section (expanded)** — Core product differentiator; current ZH '记忆分层' is too brief
 3. **Automation And Daily Reports** — Key feature explanation with command examples
-4. **Role-oriented entry table (P0-1)** — The new 'Who Are You?' table from this PR needs translation
 
 ### Phase 2 — Medium Impact (中優先級)
 
-5. **Integrations table** — Helps users quickly understand compatibility
-6. **Retrieval Quality / Search QA** — Evidence-backed quality claims
-7. **Remote Sharing (expanded)** — Gateway/Remote Server documentation
-8. **Maturity table alignment** — Make ZH maturity table match EN items and descriptions
+4. **Integrations table** — Helps users quickly understand compatibility
+5. **Retrieval Quality / Search QA** — Evidence-backed quality claims
+6. **Remote Sharing (expanded)** — Gateway/Remote Server documentation
+7. **Maturity table alignment** — Make ZH maturity table match EN items and descriptions
 
 ### Phase 3 — Lower Impact (低優先級)
 
-9. **Memory Migration section** — Niche use case
-10. **Development section (uv path)** — Developer-only info
-11. **Contributing section** — Community-facing, lower urgency
-12. **Mermaid architecture diagram (P0-2)** — Visual diagram is language-independent but the Why Vault? table needs translation
+8. **Memory Migration section** — Niche use case
+9. **Development section (uv path)** — Developer-only info
+10. **Contributing section** — Community-facing, lower urgency
 
 ## Related New Content from This PR (本次 PR 新增內容)
 
-The following new sections/features were added to the English README in this PR and also need Chinese translation:
+The following new sections/features were added to the English README in this PR
+and have now been mirrored in both Chinese READMEs:
 
 - **P0-1: Who Are You? Start Here** — Role-oriented entry table (5 rows)
-- **P0-2: Mermaid architecture diagram** — Diagram itself is universal; 'Why Vault?' comparison table needs translation
+- **P0-2: Mermaid architecture diagram** — Localized diagram plus Why Vault comparison table
 - **P2-1: One-Click Install section** — Install script references and commands
-- **P2-2: 3-Minute Demo placeholder** — 'Coming soon' section
-- **P1-1: Core Concepts doc link** — `docs/core-concepts.md` link in Documentation Map
+- **P1-1: Core Concepts doc link** — `docs/core-concepts.md` link in the Chinese advanced feature index
+
+Still not mirrored by design in this pass:
+
+- **P2-2: 3-Minute Demo placeholder** — English keeps a placeholder; Chinese READMEs currently prefer the existing visual demo and common-scenario framing.
 
 ---
 

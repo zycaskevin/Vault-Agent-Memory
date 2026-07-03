@@ -32,6 +32,75 @@ Vault-for-LLM 解决的不是“把更多东西塞进 AI”。
 
 > Vault-for-LLM 不是让 Agent 什么都记住，而是让 Agent 可信地记、可审查地记、需要时能回滚。
 
+```mermaid
+flowchart TB
+    subgraph Agents["你的 Agent"]
+        C[Codex]
+        CL[Claude Code]
+        H[Hermes]
+        CO[Coze]
+        N[n8n]
+    end
+
+    subgraph Vault["Vault：受治理的记忆层"]
+        direction TB
+        Pipeline["审核管线<br/>隐私 · 重复 · 质量 · 来源"]
+        Report["每日报告<br/>低风险自动保留 · 高风险交给人审"]
+        subgraph Layers["记忆分层"]
+            L0["L0 身份"]
+            L1["L1 规则"]
+            L2["L2 上下文"]
+            L3["L3 知识"]
+        end
+        Ledger["Task Ledger<br/>工作台 · Handoff"]
+        Storage["SQLite / Markdown<br/>本地优先 · 零托管依赖"]
+    end
+
+    subgraph Integrations["集成"]
+        Obs[Obsidian Sync]
+        Sup[Supabase]
+        GW[Gateway API]
+    end
+
+    Agents -->|提出候选记忆| Pipeline
+    Agents -->|搜索 / 有边界读取| Layers
+    Agents -->|更新状态| Ledger
+    Pipeline --> Report
+    Report --> Layers
+    Layers <--> Ledger
+    Layers --> Storage
+    Integrations <-->|导入 / 导出 / 同步| Vault
+
+    style Agents fill:#e1f5fe,stroke:#0288d1
+    style Vault fill:#f3e5f5,stroke:#7b1fa2
+    style Integrations fill:#e8f5e9,stroke:#388e3c
+```
+
+### 为什么要用 Vault？
+
+| 没有 Vault | 有 Vault |
+|---|---|
+| 每个 Agent 各记各的，同一个错误一直重演 | 一个共享记忆库，一次学到，多个 Agent 都能用 |
+| 旧信息和新决策混在一起，Agent 不知道该信谁 | 有时间边界与过期机制，优先浮出最新可信内容 |
+| 敏感信息到处流，没有审计与回滚 | 用治理 metadata 管 scope、sensitivity、owner、allowed agents |
+| 记忆只是聊天记录堆，信号很难找 | 候选 → 审核 → 提升，只留下值得长期使用的记忆 |
+
+核心流程：
+
+```text
+propose -> review -> promote -> search -> bounded read -> rollback -> audit
+```
+
+## 你是哪种用户？先从这里开始
+
+| 角色 | 你在意的事 | 起点 |
+|---|---|---|
+| Agent 开发者 | 要怎么把 Vault 接进自己的 Agent？ | [MCP 记忆工作流](docs/mcp_memory_workflow.md) |
+| 重度 Agent 用户 | 怎么让 Claude/Codex 不要一直忘？ | [5 分钟 Quickstart](docs/quickstart.md)，或直接复制下面的安装话术 |
+| 团队协作 | 多个 Agent 怎么共享记忆但不失控？ | [三 Agent 共享记忆 runbook](docs/demo/three-agent-shared-memory-runbook.md) |
+| Obsidian 用户 | 怎么让 Agent 安全使用我的笔记？ | [Obsidian](#obsidian) |
+| 架构 / 技术负责人 | 这套东西可靠吗？边界在哪？ | [决策记录](docs/decision_records/) 与 [Search QA](docs/search_qa_benchmarking.md) |
+
 ## 最推荐：让 Agent 帮你安装
 
 把这段贴给能执行本机命令的 Agent：
@@ -142,6 +211,28 @@ OpenClaw 可以读共享 SOP，但不能读私人原始对话。
 如果你需要跨主机共享，可以选 Supabase 或 Vault Gateway / Remote Server。
 Vault 的设计方向是 adapter-first：同步层可以换，但统一记忆层要保持稳定。
 
+## 一键安装
+
+### macOS / Linux
+
+```bash
+curl -sSL https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.sh | bash
+```
+
+### Windows PowerShell
+
+```powershell
+irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.ps1 | iex
+```
+
+安装完成后，执行 `vault quickstart` 完成设置。
+
+这两个 raw GitHub URL 需要等本 PR merge 到 `main` 后才会直接可用；
+如果要按照正式版本文档走，请等 v0.7.30+。在此之前，可以使用本分支脚本，
+或直接用上方的 Agent 安装话术。
+
+来源：[`scripts/install.sh`](scripts/install.sh) · [`scripts/install.ps1`](scripts/install.ps1)
+
 ## 开发者快速开始
 
 ```bash
@@ -237,6 +328,7 @@ python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-
 
 ## 进阶功能索引
 
+- 核心概念白话版：[docs/core-concepts.md](docs/core-concepts.md)
 - Agent 安装：[docs/agent_install.md](docs/agent_install.md)
 - Agent 整合：[docs/agent_integrations.md](docs/agent_integrations.md)
 - 自动化与每日报告：[docs/automation.md](docs/automation.md)
