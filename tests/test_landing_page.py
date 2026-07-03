@@ -32,7 +32,7 @@ def test_landing_page_contains_core_story() -> None:
         "Install Vault-for-LLM for this project.",
         "請為這個專案安裝 Vault-for-LLM",
         "请为这个项目安装 Vault-for-LLM",
-        "Use consumer mode with governed-auto memory.",
+        "Use the agent-assisted governed-auto memory mode.",
         "Claude Code",
         "Codex",
         "Hermes",

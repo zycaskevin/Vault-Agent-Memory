@@ -130,7 +130,8 @@ def test_run_agent_setup_consumer_audience_writes_daily_report_guide_and_safe_sc
     assert result["memory_mode"] == "governed-auto"
     assert result["consumer_daily_report"]["guide"].endswith("README-consumer-daily-report.md")
     guide = (tmp_path / "templates" / "README-consumer-daily-report.md").read_text(encoding="utf-8")
-    assert "你不需要學 CLI" in guide
+    assert "Agent-assisted 記憶模式" in guide
+    assert "不需要為了 Vault 先學完整 CLI" in guide
     assert "低風險、有來源" in guide
     assert "vault daily-report" in guide
     assert {"cron", "readme"}.issubset(result["automation_schedule_templates"])
@@ -269,8 +270,8 @@ def test_run_agent_setup_consumer_audience_supports_simplified_chinese(tmp_path)
     assert result["language"] == "zh-CN"
     guide = (tmp_path / "templates" / "README-consumer-daily-report.md").read_text(encoding="utf-8")
     safety = (tmp_path / "templates" / "README-local-safety.md").read_text(encoding="utf-8")
-    assert "一般用户模式" in guide
-    assert "你不需要学习 CLI" in guide
+    assert "Agent-assisted 记忆模式" in guide
+    assert "不需要为了 Vault 先学习完整 CLI" in guide
     cron = (tmp_path / "templates" / "memory-automation.cron").read_text(encoding="utf-8")
     assert "--language zh-CN" in cron
     assert "本机安全默认值" in safety

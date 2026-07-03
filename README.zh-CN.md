@@ -7,8 +7,11 @@
 它让 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 等不同 Agent，
 可以使用同一套项目记忆，而不是每次换工具就重新交代背景。
 
-你不需要先学一堆命令。最简单的用法是：把下面那段话贴给你的 Agent，
-让它帮你安装、设置、测试，之后你每天只看一份很短的记忆报告。
+Vault 不是给完全没接触 Agent 的大众 app。它先服务已经在用
+Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 这类工具的 builder。
+
+你仍然不需要先学一堆命令。最简单的用法是：把下面那段话贴给你的
+Agent，让它帮你安装、设置、测试，之后你每天只看一份很短的记忆报告。
 
 第一次看这个项目，可以先打开视觉 Demo：
 [`docs/landing/index.html`](docs/landing/index.html)。
@@ -35,9 +38,9 @@ Vault-for-LLM 解决的不是“把更多东西塞进 AI”。
 
 ```text
 帮这个项目安装 Vault-for-LLM。使用 vault-for-llm[mcp]==0.7.27。
-请用一般用户模式与 governed-auto 记忆模式。
+请用 agent-assisted 的 governed-auto 记忆模式。
 
-不要先教我 CLI 参数。只问我四件事：
+不要先显示进阶 CLI 参数。只问我四件事：
 1. 我要用繁体中文、简体中文，还是英文？
 2. 这个 Vault 是独立记忆库，还是给多个 Agent 共用？
 3. 要不要连接 Obsidian 或 Supabase？
@@ -70,7 +73,7 @@ vault guide --intent install
 
 ## 每天怎么用
 
-一般用户不需要每天打命令。理想流程是：
+已经在用 Agent 的 builder，不应该每天为了记忆库打命令。理想流程是：
 
 1. Agent 工作时，会把“可能值得记住的事”提出来。
 2. Vault 先检查隐私、重复、质量和来源。
@@ -98,6 +101,10 @@ Vault-for-LLM 适合：
 
 如果你只想要普通笔记软件、纯向量数据库，或完全黑盒的聊天记忆产品，
 Vault-for-LLM 可能不是第一个该拿起来的工具。
+
+如果你完全没有使用 Agent 的习惯，也不想让 Agent 帮你安装或管理工具，
+Vault 现在还不是 app-store 式的一键产品。它目前最适合的是：已经踏入
+Agent 工作流，但希望记忆不要分散、不要污染、不要失控的人。
 
 ## 它不是什么
 

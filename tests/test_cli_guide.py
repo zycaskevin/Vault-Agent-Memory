@@ -58,8 +58,8 @@ def test_cli_guide_install_prints_copy_paste_agent_prompt(capsys):
 
     out = capsys.readouterr().out
     assert "Copy this to your agent" in out
-    assert "Use consumer mode with governed-auto memory" in out
-    assert "Do not teach me CLI flags unless I ask" in out
+    assert "Use the agent-assisted governed-auto memory mode" in out
+    assert "Do not show advanced CLI flags unless I ask" in out
     assert "The agent should ask only" in out
     assert "independent vault or shared vault" in out
 

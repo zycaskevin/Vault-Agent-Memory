@@ -18,7 +18,7 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
             "Daily report time.",
         ],
         "agent_must_do": [
-            "Run the guided consumer installer.",
+            "Run the guided agent-assisted installer.",
             "Keep advanced flags hidden unless the user asks.",
             "Enable daily report generation.",
             "Allow only low-risk, sourced, gate-passing memories to enter automatically.",
@@ -30,7 +30,7 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
         {
             "intent": "install",
             "command": "vault setup-agent --audience consumer",
-            "purpose": "Guided install for ordinary users. The agent asks only the small setup questions.",
+            "purpose": "Guided install for agent-assisted builders. The agent asks only the small setup questions.",
         },
         {
             "intent": "daily",
@@ -123,7 +123,7 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
         "ok": True,
         "mode": mode,
         "intent": intent,
-        "message": "Most humans should ask their agent to install and operate Vault. Daily use should be a short report, not a CLI lesson.",
+        "message": "Most agent-assisted builders should ask their agent to install and operate Vault. Daily use should be a short report, not a CLI lesson.",
         "agent_install_prompt": install_prompt,
         "consumer_install_contract": install_contract,
         "intent_shortcuts": [
@@ -139,7 +139,7 @@ def guide_payload(mode: str = "human", intent: str = "all") -> dict:
         "agent_mcp_profiles": agent,
         "maintenance_entrypoints": _filter_by_intent(maintenance, intent),
         "docs": docs,
-        "next_action": "Copy the agent_install_prompt into your agent. It should install consumer governed-auto mode and show the daily report.",
+        "next_action": "Copy the agent_install_prompt into your agent. It should install agent-assisted governed-auto mode and show the daily report.",
     }
     if mode == "human":
         keys = ["ok", "mode", "intent", "message", "intent_shortcuts", "everyday_entrypoints", "docs", "next_action"]
@@ -222,8 +222,8 @@ def _consumer_install_prompt() -> str:
     return "\n".join(
         [
             "Install Vault-for-LLM for this project.",
-            "Use consumer mode with governed-auto memory.",
-            "Do not teach me CLI flags unless I ask.",
+            "Use the agent-assisted governed-auto memory mode.",
+            "Do not show advanced CLI flags unless I ask.",
             "Ask me only:",
             "1. Which language should Vault use: Traditional Chinese, Simplified Chinese, or English?",
             "2. Should this be an independent vault or a shared vault for multiple agents?",

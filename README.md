@@ -10,9 +10,9 @@ app or vector database. It helps agents decide what should be remembered, who
 can use it, whether it is still current, and how to roll it back when it is
 wrong.
 
-For most users, the main interface is not a long CLI manual. Ask an agent to
-install Vault, answer four setup questions, then read a short daily memory
-report.
+Vault is for people already building or working with agents. The main interface
+should still not be a long CLI manual: ask an agent to install Vault, answer a
+few setup questions, then read a short daily memory report.
 
 New here? Start with the visual demo:
 [`docs/landing/index.html`](docs/landing/index.html).
@@ -38,15 +38,15 @@ In plain language:
 > Vault is not about helping agents remember everything. It is about helping
 > teams govern what agents remember, trust, share, forget, and roll back.
 
-## For Most Users: Ask Your Agent To Install It
+## For Agent Builders: Ask Your Agent To Install It
 
 Copy this prompt into an agent that can run local commands:
 
 ```text
 Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.7.27.
-Use consumer mode with governed-auto memory.
+Use the agent-assisted governed-auto memory mode.
 
-Do not teach me CLI flags first. Ask me only four questions:
+Do not show advanced CLI flags first. Ask me only four questions:
 1. Which language should Vault use: Traditional Chinese, Simplified Chinese, or English?
 2. Should this be an independent vault or a shared vault for multiple agents?
 3. Should Vault connect to Obsidian, Supabase, both, or neither?
@@ -78,10 +78,12 @@ You can also print the install prompt from Vault itself:
 vault guide --intent install
 ```
 
-Consumer setup uses `governed-auto` by default. Low-risk, sourced candidates
-that pass privacy, duplicate, metadata, and quality gates may enter the active
-vault. Strategy, private, sensitive, conflicting, or low-trust memories stay in
-the daily report for human review. Nothing is hard-deleted automatically.
+Agent-assisted setup uses `governed-auto` by default. Internally this is still
+called `--audience consumer`, but that does not mean Vault is a zero-learning
+consumer app. Low-risk, sourced candidates that pass privacy, duplicate,
+metadata, and quality gates may enter the active vault. Strategy, private,
+sensitive, conflicting, or low-trust memories stay in the daily report for
+human review. Nothing is hard-deleted automatically.
 
 ## Daily Use
 
@@ -118,6 +120,12 @@ Vault is not a raw chat-history landfill.
 
 It is candidate-first. Agents can suggest memory, but long-term memory should
 stay source-backed, reviewable, and clean.
+
+Vault is not a zero-setup app-store product for people who do not use agents.
+
+The first public audience is agent-assisted builders: people using Codex,
+Claude Code, Hermes, OpenClaw, n8n, Coze, or similar systems who want one
+governed memory layer without studying every internal command.
 
 ## Killer Demo: Shared Governed Memory
 
