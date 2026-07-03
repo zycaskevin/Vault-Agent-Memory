@@ -36,10 +36,18 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v6
 
+      - name: Prepare static site
+        run: |
+          set -euo pipefail
+          site_dir="${RUNNER_TEMP}/site"
+          mkdir -p "${site_dir}/docs"
+          cp index.html "${site_dir}/index.html"
+          cp -R docs/landing "${site_dir}/docs/landing"
+
       - name: Upload static site
         uses: actions/upload-pages-artifact@v5
         with:
-          path: "."
+          path: ${{ runner.temp }}/site
 
       - name: Deploy to GitHub Pages
         id: deployment
