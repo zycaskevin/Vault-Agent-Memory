@@ -32,6 +32,11 @@ def test_agent_governance_demo_runs_full_lifecycle(tmp_path):
     assert payload["rollback_available"] is True
     assert payload["rollback"]["verified"] is True
     assert any(event["outcome"] == "promoted" for event in payload["audit_events"])
+    assert {scenario["id"] for scenario in payload["demo_scenarios"]} == {
+        "consumer_mode",
+        "automation_mode",
+        "multi_host_sync",
+    }
     assert payload["next_action"][0].startswith("Open start-here.md first")
 
     report = Path(payload["artifacts"]["report_md"])
@@ -66,6 +71,22 @@ def test_agent_governance_demo_runs_full_lifecycle(tmp_path):
     evidence_md = Path(payload["artifacts"]["evidence_summary_md"])
     assert evidence_md.exists()
     assert "status: `pass`" in evidence_md.read_text(encoding="utf-8").lower()
+    scenarios_json = Path(payload["artifacts"]["demo_scenarios_json"])
+    scenarios = json.loads(scenarios_json.read_text(encoding="utf-8"))
+    assert [scenario["artifact"] for scenario in scenarios] == [
+        "consumer-mode-demo.md",
+        "automation-mode-demo.md",
+        "multi-host-sync-demo.md",
+    ]
+    consumer = Path(payload["artifacts"]["consumer_mode_demo"])
+    assert consumer.exists()
+    assert "vault --project-dir" in consumer.read_text(encoding="utf-8")
+    automation = Path(payload["artifacts"]["automation_mode_demo"])
+    assert automation.exists()
+    assert "automation inbox" in automation.read_text(encoding="utf-8")
+    multi_host = Path(payload["artifacts"]["multi_host_sync_demo"])
+    assert multi_host.exists()
+    assert "remote hmac-keys" in multi_host.read_text(encoding="utf-8")
     assert Path(payload["artifacts"]["codex_startup"]).exists()
     assert Path(payload["artifacts"]["claude_code_startup"]).exists()
     assert Path(payload["artifacts"]["hermes_startup"]).exists()
