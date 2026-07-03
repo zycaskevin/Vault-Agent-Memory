@@ -85,3 +85,6 @@ surfaces:
 
 The integration should keep the same principle: agents may propose memory, but
 shared active memory should remain reviewed, source-grounded, and reversible.
+
+For a concrete Codex + Claude Code + Hermes setup, use
+[Three-Agent Shared Memory Runbook](three-agent-shared-memory-runbook.md).

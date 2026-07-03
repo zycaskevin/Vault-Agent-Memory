@@ -6,6 +6,9 @@ local files plus SQLite, exposed through CLI and optional stdio MCP.
 Use it when you want project knowledge to be portable across agent systems
 instead of locked inside one runtime's hidden memory.
 
+For a public proof of the multi-agent workflow, see
+[`docs/demo/three-agent-shared-memory-runbook.md`](demo/three-agent-shared-memory-runbook.md).
+
 ## Agent-Facing Source Of Truth
 
 For agent-driven installs or repo modifications, start with:
