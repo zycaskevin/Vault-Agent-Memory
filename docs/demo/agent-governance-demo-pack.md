@@ -25,9 +25,12 @@ vault demo agent-governance --project-dir ./vault-governance-demo --json
 
 The command creates:
 
+- `reports/demo/start-here.md`
 - `reports/demo/demo-report.md`
 - `reports/demo/demo-report.json`
 - `reports/demo/public-demo-script.md`
+- `reports/demo/public-demo-script.zh-Hant.md`
+- `reports/demo/public-demo-script.zh-CN.md`
 - `reports/demo/acceptance-checklist.md`
 - `reports/demo/evidence-summary.md`
 - `reports/demo/evidence-summary.json`
@@ -39,11 +42,14 @@ The command creates:
 
 Show these artifacts in order:
 
-1. `demo-report.md`: the lifecycle proof.
-2. `public-demo-script.md`: the external talk track.
+1. `start-here.md`: the shortest path for a person opening the generated pack.
+2. `demo-report.md`: the lifecycle proof.
 3. `evidence-summary.md`: the generated pass/fail evidence for the proof.
-4. `acceptance-checklist.md`: the proof criteria.
-5. `agent-config-snippets/`: the shortest setup snippets for each agent.
+4. `public-demo-script.md`: the external English talk track.
+5. `public-demo-script.zh-Hant.md`: the Traditional Chinese talk track.
+6. `public-demo-script.zh-CN.md`: the Simplified Chinese talk track.
+7. `acceptance-checklist.md`: the proof criteria.
+8. `agent-config-snippets/`: the shortest setup snippets for each agent.
 
 Do not lead with embeddings, vector search, or benchmark numbers. Lead with the
 governed lifecycle.
@@ -60,6 +66,18 @@ governed lifecycle.
 5. Close with the product sentence:
 
 > Vault controls what agents remember, trust, share, forget, and roll back.
+
+## First-Run Rule
+
+If someone runs this demo and asks "what should I open?", point them to:
+
+```text
+reports/demo/start-here.md
+```
+
+That file keeps the demo from feeling like a folder full of artifacts. It tells
+the user what happened, which proof file to open, and which language script to
+use for a public explanation.
 
 ## Acceptance Criteria
 

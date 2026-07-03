@@ -32,13 +32,23 @@ def test_agent_governance_demo_runs_full_lifecycle(tmp_path):
     assert payload["rollback_available"] is True
     assert payload["rollback"]["verified"] is True
     assert any(event["outcome"] == "promoted" for event in payload["audit_events"])
+    assert payload["next_action"][0].startswith("Open start-here.md first")
 
     report = Path(payload["artifacts"]["report_md"])
     assert report.exists()
     assert "memory governance" in report.read_text(encoding="utf-8").lower()
+    start_here = Path(payload["artifacts"]["start_here"])
+    assert start_here.exists()
+    assert "Open These In Order" in start_here.read_text(encoding="utf-8")
     public_script = Path(payload["artifacts"]["public_demo_script"])
     assert public_script.exists()
     assert "memory governance" in public_script.read_text(encoding="utf-8").lower()
+    public_script_zh_hant = Path(payload["artifacts"]["public_demo_script_zh_hant"])
+    assert public_script_zh_hant.exists()
+    assert "受治理的共享記憶" in public_script_zh_hant.read_text(encoding="utf-8")
+    public_script_zh_cn = Path(payload["artifacts"]["public_demo_script_zh_cn"])
+    assert public_script_zh_cn.exists()
+    assert "受治理的共享记忆" in public_script_zh_cn.read_text(encoding="utf-8")
     checklist = Path(payload["artifacts"]["acceptance_checklist"])
     assert checklist.exists()
     assert "bounded read" in checklist.read_text(encoding="utf-8").lower()
@@ -70,6 +80,7 @@ def test_agent_governance_demo_cli_json_with_explicit_project_dir(tmp_path, caps
     assert payload["ok"] is True
     assert payload["project_dir"] == str(project.resolve())
     assert payload["temporary_project"] is False
+    assert Path(payload["artifacts"]["start_here"]).exists()
     assert Path(payload["artifacts"]["report_json"]).exists()
     assert Path(payload["artifacts"]["snippet_dir"]).is_dir()
 
