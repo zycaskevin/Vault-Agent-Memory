@@ -134,7 +134,7 @@ def run_agent_governance_demo(
         },
         "artifacts": artifacts,
         "next_action": [
-            "Open demo-report.md to explain why this is memory governance, not just RAG.",
+            "Open start-here.md first, then demo-report.md and evidence-summary.md.",
             "Copy the runtime snippets into Codex, Claude Code, and Hermes startup configs when running the real demo.",
             "Use the same lifecycle in public demos: propose -> review -> promote -> bounded read -> rollback/audit.",
         ],
@@ -231,6 +231,12 @@ def _write_demo_artifacts(
     script_path = reports / "public-demo-script.md"
     script_path.write_text(_render_public_demo_script(project, agents), encoding="utf-8")
 
+    script_zh_hant_path = reports / "public-demo-script.zh-Hant.md"
+    script_zh_hant_path.write_text(_render_public_demo_script_zh_hant(project, agents), encoding="utf-8")
+
+    script_zh_cn_path = reports / "public-demo-script.zh-CN.md"
+    script_zh_cn_path.write_text(_render_public_demo_script_zh_cn(project, agents), encoding="utf-8")
+
     checklist_path = reports / "acceptance-checklist.md"
     checklist_path.write_text(_render_acceptance_checklist(), encoding="utf-8")
 
@@ -242,10 +248,29 @@ def _write_demo_artifacts(
     evidence_md_path.write_text(_render_evidence_summary_markdown(evidence), encoding="utf-8")
 
     snippet_paths = _write_agent_snippets(snippets, project, agents)
+
+    start_here_path = reports / "start-here.md"
+    start_here_path.write_text(
+        _render_start_here(
+            project=project,
+            report=md_path,
+            script=script_path,
+            script_zh_hant=script_zh_hant_path,
+            script_zh_cn=script_zh_cn_path,
+            evidence=evidence_md_path,
+            checklist=checklist_path,
+            snippets=snippets,
+        ),
+        encoding="utf-8",
+    )
+
     return {
+        "start_here": str(start_here_path),
         "report_md": str(md_path),
         "report_json": str(json_path),
         "public_demo_script": str(script_path),
+        "public_demo_script_zh_hant": str(script_zh_hant_path),
+        "public_demo_script_zh_cn": str(script_zh_cn_path),
         "acceptance_checklist": str(checklist_path),
         "evidence_summary_md": str(evidence_md_path),
         "evidence_summary_json": str(evidence_json_path),
@@ -292,6 +317,56 @@ def _render_demo_markdown(payload: dict[str, Any]) -> str:
     )
 
 
+def _render_start_here(
+    *,
+    project: Path,
+    report: Path,
+    script: Path,
+    script_zh_hant: Path,
+    script_zh_cn: Path,
+    evidence: Path,
+    checklist: Path,
+    snippets: Path,
+) -> str:
+    return "\n".join(
+        [
+            "# Start Here: Three-Agent Governed Memory Demo",
+            "",
+            "Open this file first after running `vault demo agent-governance`.",
+            "",
+            "This demo is not trying to prove that Vault can search text. It proves that",
+            "multiple agents can share one memory layer without turning long-term memory",
+            "into an unreviewed note dump.",
+            "",
+            "## 30-Second Story",
+            "",
+            "1. Codex proposes a reusable project lesson as a candidate.",
+            "2. Claude Code reviews and promotes it only after gates pass.",
+            "3. Hermes recalls the promoted memory with a bounded citation.",
+            "4. Vault leaves a backup and audit trail so the memory can be rolled back.",
+            "",
+            "## Open These In Order",
+            "",
+            f"1. Lifecycle proof: `{report}`",
+            f"2. Evidence summary: `{evidence}`",
+            f"3. English talk track: `{script}`",
+            f"4. Traditional Chinese talk track: `{script_zh_hant}`",
+            f"5. Simplified Chinese talk track: `{script_zh_cn}`",
+            f"6. Acceptance checklist: `{checklist}`",
+            f"7. Agent startup snippets: `{snippets}`",
+            "",
+            "## One-Sentence Close",
+            "",
+            "Vault-for-LLM governs what agents remember, trust, share, forget, and roll back.",
+            "",
+            "## Project",
+            "",
+            f"`{project}`",
+            "",
+        ]
+    )
+
+
 def _render_public_demo_script(project: Path, agents: list[str]) -> str:
     codex, claude_code, hermes = agents
     return "\n".join(
@@ -327,6 +402,78 @@ def _render_public_demo_script(project: Path, agents: list[str]) -> str:
             "",
             "Vault is not another place for agents to dump notes. It is the governance",
             "layer that controls what agents remember, trust, share, forget, and roll back.",
+            "",
+        ]
+    )
+
+
+def _render_public_demo_script_zh_hant(project: Path, agents: list[str]) -> str:
+    codex, claude_code, hermes = agents
+    return "\n".join(
+        [
+            "# 公開 Demo 講稿：受治理的共享記憶",
+            "",
+            "這份講稿用來錄影或對外展示。重點不是搜尋比較準，而是記憶可以被治理。",
+            "",
+            "## 設定",
+            "",
+            "```bash",
+            f"vault demo agent-governance --project-dir {project} --json",
+            "```",
+            "",
+            "打開：",
+            "",
+            f"- `{project / 'reports' / 'demo' / 'demo-report.md'}`",
+            f"- `{project / 'reports' / 'demo' / 'evidence-summary.md'}`",
+            f"- `{project / 'agent-config-snippets'}`",
+            "",
+            "## 講解順序",
+            "",
+            "1. 先說問題：多個 Agent 可以一起工作，但如果每個 Agent 都能直接寫長期記憶，共享記憶很快會被污染。",
+            f"2. `{codex}` 先把經驗提出為候選記憶。它存在，但還不是正式共享記憶。",
+            f"3. `{claude_code}` 審核並 promote。重點是記憶進正式庫前有邊界。",
+            f"4. `{hermes}` 搜尋共享 Vault，然後用 bounded read 取得可引用來源。",
+            "5. 最後展示 backup 與 audit。錯誤或過期記憶可以回滾或淘汰，不會永遠留在上下文裡。",
+            "",
+            "## 收尾句",
+            "",
+            "Vault 不是讓 Agent 亂丟筆記的地方。它是治理層，負責控制 Agent 記住什麼、相信什麼、分享什麼、忘記什麼，以及如何回滾。",
+            "",
+        ]
+    )
+
+
+def _render_public_demo_script_zh_cn(project: Path, agents: list[str]) -> str:
+    codex, claude_code, hermes = agents
+    return "\n".join(
+        [
+            "# 公开 Demo 讲稿：受治理的共享记忆",
+            "",
+            "这份讲稿用来录屏或对外展示。重点不是搜索比较准，而是记忆可以被治理。",
+            "",
+            "## 设置",
+            "",
+            "```bash",
+            f"vault demo agent-governance --project-dir {project} --json",
+            "```",
+            "",
+            "打开：",
+            "",
+            f"- `{project / 'reports' / 'demo' / 'demo-report.md'}`",
+            f"- `{project / 'reports' / 'demo' / 'evidence-summary.md'}`",
+            f"- `{project / 'agent-config-snippets'}`",
+            "",
+            "## 讲解顺序",
+            "",
+            "1. 先说问题：多个 Agent 可以一起工作，但如果每个 Agent 都能直接写长期记忆，共享记忆很快会被污染。",
+            f"2. `{codex}` 先把经验提出为候选记忆。它存在，但还不是正式共享记忆。",
+            f"3. `{claude_code}` 审核并 promote。重点是记忆进正式库前有边界。",
+            f"4. `{hermes}` 搜索共享 Vault，然后用 bounded read 取得可引用来源。",
+            "5. 最后展示 backup 与 audit。错误或过期记忆可以回滚或淘汰，不会永远留在上下文里。",
+            "",
+            "## 收尾句",
+            "",
+            "Vault 不是让 Agent 乱丢笔记的地方。它是治理层，负责控制 Agent 记住什么、相信什么、分享什么、忘记什么，以及如何回滚。",
             "",
         ]
     )

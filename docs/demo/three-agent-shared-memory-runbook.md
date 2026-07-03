@@ -34,13 +34,18 @@ vault demo agent-governance --project-dir ~/Vaults/demo-shared-memory --json
 Open the generated files:
 
 ```text
+~/Vaults/demo-shared-memory/reports/demo/start-here.md
 ~/Vaults/demo-shared-memory/reports/demo/demo-report.md
 ~/Vaults/demo-shared-memory/reports/demo/public-demo-script.md
+~/Vaults/demo-shared-memory/reports/demo/public-demo-script.zh-Hant.md
+~/Vaults/demo-shared-memory/reports/demo/public-demo-script.zh-CN.md
 ~/Vaults/demo-shared-memory/reports/demo/acceptance-checklist.md
 ~/Vaults/demo-shared-memory/agent-config-snippets/
 ```
 
-These prove the lifecycle before any real agent runtime is configured.
+Start with `start-here.md`. It tells a new user which proof file to open first,
+which talk track to use, and what the demo is supposed to prove before any real
+agent runtime is configured.
 
 ## Step 2: Pick One Access Mode
 
