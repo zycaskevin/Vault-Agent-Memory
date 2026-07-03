@@ -32,12 +32,81 @@ Vault-for-LLM 解決的不是「把更多東西塞進 AI」。
 
 > Vault-for-LLM 不是讓 Agent 什麼都記住，而是讓 Agent 可信地記、可審核地記、需要時能回滾。
 
+```mermaid
+flowchart TB
+    subgraph Agents["你的 Agent"]
+        C[Codex]
+        CL[Claude Code]
+        H[Hermes]
+        CO[Coze]
+        N[n8n]
+    end
+
+    subgraph Vault["Vault：受治理的記憶層"]
+        direction TB
+        Pipeline["審核管線<br/>隱私 · 重複 · 品質 · 來源"]
+        Report["每日報告<br/>低風險自動保留 · 高風險交給人審"]
+        subgraph Layers["記憶分層"]
+            L0["L0 身份"]
+            L1["L1 規則"]
+            L2["L2 上下文"]
+            L3["L3 知識"]
+        end
+        Ledger["Task Ledger<br/>工作台 · Handoff"]
+        Storage["SQLite / Markdown<br/>本地優先 · 零託管依賴"]
+    end
+
+    subgraph Integrations["整合"]
+        Obs[Obsidian Sync]
+        Sup[Supabase]
+        GW[Gateway API]
+    end
+
+    Agents -->|提出候選記憶| Pipeline
+    Agents -->|搜尋 / 有邊界讀取| Layers
+    Agents -->|更新狀態| Ledger
+    Pipeline --> Report
+    Report --> Layers
+    Layers <--> Ledger
+    Layers --> Storage
+    Integrations <-->|匯入 / 匯出 / 同步| Vault
+
+    style Agents fill:#e1f5fe,stroke:#0288d1
+    style Vault fill:#f3e5f5,stroke:#7b1fa2
+    style Integrations fill:#e8f5e9,stroke:#388e3c
+```
+
+### 為什麼要用 Vault？
+
+| 沒有 Vault | 有 Vault |
+|---|---|
+| 每個 Agent 各記各的，同一個錯誤一直重演 | 一個共享記憶庫，一次學到，多個 Agent 都能用 |
+| 舊資訊和新決策混在一起，Agent 不知道該信誰 | 有時間邊界與過期機制，優先浮出最新可信內容 |
+| 敏感資訊到處流，沒有審計與回滾 | 用治理 metadata 管 scope、sensitivity、owner、allowed agents |
+| 記憶只是聊天紀錄堆，訊號很難找 | 候選 → 審核 → 提升，只留下值得長期使用的記憶 |
+
+核心流程：
+
+```text
+propose -> review -> promote -> search -> bounded read -> rollback -> audit
+```
+
+## 你是哪種使用者？先從這裡開始
+
+| 角色 | 你在意的事 | 起點 |
+|---|---|---|
+| Agent 開發者 | 要怎麼把 Vault 接進自己的 Agent？ | [MCP 記憶工作流](docs/mcp_memory_workflow.md) |
+| 重度 Agent 使用者 | 怎麼讓 Claude/Codex 不要一直忘？ | [5 分鐘 Quickstart](docs/quickstart.md)，或直接複製下面的安裝話術 |
+| 團隊協作 | 多個 Agent 怎麼共享記憶但不失控？ | [三 Agent 共享記憶 runbook](docs/demo/three-agent-shared-memory-runbook.md) |
+| Obsidian 使用者 | 怎麼讓 Agent 安全使用我的筆記？ | [Obsidian](#obsidian) |
+| 架構 / 技術負責人 | 這套東西可靠嗎？邊界在哪？ | [決策紀錄](docs/decision_records/) 與 [Search QA](docs/search_qa_benchmarking.md) |
+
 ## 最推薦：讓 Agent 幫你安裝
 
 把這段貼給能執行本機指令的 Agent：
 
 ```text
-幫這個專案安裝 Vault-for-LLM。使用 vault-for-llm[mcp]==0.7.28。
+幫這個專案安裝 Vault-for-LLM。使用 vault-for-llm[mcp]==0.7.29。
 請用 agent-assisted 的 governed-auto 記憶模式。
 
 不要先顯示進階 CLI 參數。只問我四件事：
@@ -61,7 +130,7 @@ Vault-for-LLM 解決的不是「把更多東西塞進 AI」。
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.7.28"
+pip install "vault-for-llm[mcp]==0.7.29"
 vault quickstart
 ```
 
@@ -142,10 +211,32 @@ OpenClaw 可以讀共享 SOP，但不能讀私人原始對話。
 如果你需要跨主機共享，可以選 Supabase 或 Vault Gateway / Remote Server。
 Vault 的設計方向是 adapter-first：同步層可以換，但統一記憶層要保持穩定。
 
+## 一鍵安裝
+
+### macOS / Linux
+
+```bash
+curl -sSL https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.sh | bash
+```
+
+### Windows PowerShell
+
+```powershell
+irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.ps1 | iex
+```
+
+安裝完成後，執行 `vault quickstart` 完成設定。
+
+這兩個 raw GitHub URL 需要等本 PR merge 到 `main` 後才會直接可用；
+如果要依照正式版本文件走，請等 v0.7.30+。在此之前，可以使用本分支腳本，
+或直接用上方的 Agent 安裝話術。
+
+來源：[`scripts/install.sh`](scripts/install.sh) · [`scripts/install.ps1`](scripts/install.ps1)
+
 ## 開發者快速開始
 
 ```bash
-pip install "vault-for-llm[mcp]==0.7.28"
+pip install "vault-for-llm[mcp]==0.7.29"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -226,7 +317,7 @@ SQLite 仍然是最簡單的 source of truth。Supabase 是可選共享層，適
 n8n、Coze 或 hosted Agent 讀共享記憶。
 
 ```bash
-pip install "vault-for-llm[supabase]==0.7.28"
+pip install "vault-for-llm[supabase]==0.7.29"
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 
@@ -237,6 +328,7 @@ python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-
 
 ## 進階功能索引
 
+- 核心概念白話版：[docs/core-concepts.md](docs/core-concepts.md)
 - Agent 安裝：[docs/agent_install.md](docs/agent_install.md)
 - Agent 整合：[docs/agent_integrations.md](docs/agent_integrations.md)
 - 自動化與每日報告：[docs/automation.md](docs/automation.md)
