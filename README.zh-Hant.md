@@ -37,7 +37,7 @@ Vault-for-LLM 解決的不是「把更多東西塞進 AI」。
 把這段貼給能執行本機指令的 Agent：
 
 ```text
-幫這個專案安裝 Vault-for-LLM。使用 vault-for-llm[mcp]==0.7.27。
+幫這個專案安裝 Vault-for-LLM。使用 vault-for-llm[mcp]==0.7.28。
 請用 agent-assisted 的 governed-auto 記憶模式。
 
 不要先顯示進階 CLI 參數。只問我四件事：
@@ -61,7 +61,7 @@ Vault-for-LLM 解決的不是「把更多東西塞進 AI」。
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.7.27"
+pip install "vault-for-llm[mcp]==0.7.28"
 vault setup-agent --audience consumer
 ```
 
@@ -145,7 +145,7 @@ Vault 的設計方向是 adapter-first：同步層可以換，但統一記憶層
 ## 開發者快速開始
 
 ```bash
-pip install "vault-for-llm[mcp]==0.7.27"
+pip install "vault-for-llm[mcp]==0.7.28"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -226,7 +226,7 @@ SQLite 仍然是最簡單的 source of truth。Supabase 是可選共享層，適
 n8n、Coze 或 hosted Agent 讀共享記憶。
 
 ```bash
-pip install "vault-for-llm[supabase]==0.7.27"
+pip install "vault-for-llm[supabase]==0.7.28"
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 
