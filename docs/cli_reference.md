@@ -8,6 +8,7 @@ For the compact map, run:
 
 ```bash
 vault guide
+vault guide --intent faq
 vault guide --mode agent
 vault guide --mode maintenance
 ```
@@ -18,7 +19,8 @@ See also: [`docs/agent_first_usage.md`](agent_first_usage.md).
 
 | Intent | Command |
 |---|---|
-| Install or connect an agent | `vault setup-agent` |
+| Install or connect an agent | `vault quickstart` |
+| Read beginner FAQ | `vault guide --intent faq` |
 | See the small command map | `vault guide` |
 | Browse locally | `vault gui` |
 | Give agents one safe HTTP entrypoint | `vault gateway serve` |

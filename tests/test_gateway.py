@@ -18,6 +18,7 @@ from vault.db import VaultDB
 from vault.docmap import build_document_map_for_entry
 from vault.gateway import (
     BoundedThreadPoolHTTPServer,
+    gateway_health,
     gateway_read_range,
     gateway_openapi,
     gateway_search,
@@ -113,6 +114,9 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         conn.request("GET", "/health", headers={"X-Vault-Gateway-Token": "secret"})
         allowed = conn.getresponse()
         assert allowed.status == 200
+        assert allowed.getheader("X-Content-Type-Options") == "nosniff"
+        assert allowed.getheader("Referrer-Policy") == "no-referrer"
+        assert allowed.getheader("Strict-Transport-Security") is None
         payload = json.loads(allowed.read().decode("utf-8"))
         assert payload["status"] == "ok"
         assert payload["gateway"]["candidate_first_writes"] is True
@@ -128,6 +132,8 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert contract["info"]["title"] == "Vault Gateway"
         assert contract["x-vault-safety"]["candidate_first_writes"] is True
         assert contract["x-vault-safety"]["writes_active_knowledge"] is False
+        assert contract["x-vault-safety"]["max_search_query_chars"] == 1000
+        assert contract["components"]["schemas"]["SearchRequest"]["properties"]["query"]["maxLength"] == 1000
         conn.close()
     finally:
         server.shutdown()
@@ -139,6 +145,7 @@ def test_gateway_search_and_read_range_apply_agent_policy(tmp_path):
 
     missing_agent = gateway_search(project, query="Gateway", agent_id="")
     assert missing_agent["error"] == "agent_id_required"
+    assert "next_action" in missing_agent
 
     search = gateway_search(project, query="Gateway", agent_id="work-agent", max_sensitivity="low")
     assert search["status"] == "ok"
@@ -169,6 +176,50 @@ def test_gateway_search_and_read_range_apply_agent_policy(tmp_path):
     assert allowed["status"] == "ok"
     assert allowed["entry_id"] == public_id
     assert "Shared Gateway Runbook" in allowed["title"]
+
+
+def test_gateway_health_missing_db_suggests_init(tmp_path):
+    payload = gateway_health(tmp_path / "empty-project")
+
+    assert payload["status"] == "blocked"
+    assert payload["db_exists"] is False
+    assert "vault init" in payload["try"][0]
+    assert "next_action" in payload
+
+
+def test_gateway_search_rejects_overlong_query_and_missing_db_has_next_step(tmp_path):
+    missing = gateway_search(tmp_path / "missing", query="runbook", agent_id="work-agent")
+    assert missing["error"] == "db_not_found"
+    assert "vault init" in missing["try"][0]
+    assert "next_action" in missing
+
+    project, _public_id, _private_id = _project(tmp_path)
+    too_long = gateway_search(project, query="x" * 1001, agent_id="work-agent")
+    assert too_long["error"] == "query_too_long"
+    assert too_long["max_query_chars"] == 1000
+    assert "next_action" in too_long
+
+
+def test_gateway_http_security_headers_include_hsts_when_tls_mode(tmp_path):
+    project, _public_id, _private_id = _project(tmp_path)
+    handler = make_gateway_handler(project, auth_token="secret", tls_enabled=True)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        host, port = server.server_address
+        conn = http.client.HTTPConnection(host, port, timeout=5)
+        conn.request("GET", "/health", headers={"Authorization": "Bearer secret"})
+        response = conn.getresponse()
+        response.read()
+        conn.close()
+        assert response.status == 200
+        assert response.getheader("X-Content-Type-Options") == "nosniff"
+        assert response.getheader("Referrer-Policy") == "no-referrer"
+        assert response.getheader("Strict-Transport-Security") == "max-age=31536000; includeSubDomains"
+    finally:
+        server.shutdown()
+        server.server_close()
 
 
 def test_gateway_submit_candidate_is_candidate_first_and_policy_bound(tmp_path):
@@ -570,6 +621,27 @@ def test_gateway_tls_requires_cert_and_key(tmp_path):
         run_gateway(tmp_path, no_auth=True, tls_cert=tmp_path / "cert.pem")
     with pytest.raises(FileNotFoundError, match="TLS certificate not found"):
         run_gateway(tmp_path, no_auth=True, tls_cert=tmp_path / "missing-cert.pem", tls_key=tmp_path / "missing-key.pem")
+
+
+def test_gateway_startup_prints_token_and_remote_safety_checklist(tmp_path, monkeypatch, capsys):
+    class FakeServer:
+        def __init__(self, address, _handler, *, max_workers):
+            self.server_address = address
+            self.max_workers = max_workers
+
+        def serve_forever(self):
+            raise KeyboardInterrupt
+
+        def server_close(self):
+            return None
+
+    monkeypatch.setattr("vault.gateway.BoundedThreadPoolHTTPServer", FakeServer)
+    run_gateway(tmp_path, host="0.0.0.0", port=8789, auth_token="stable-token")
+
+    out = capsys.readouterr().out
+    assert "SECURITY: copy this token only into trusted local agent configuration." in out
+    assert "Token: stable-token" in out
+    assert "REMOTE CHECKLIST: use TLS or a trusted reverse proxy" in out
 
 
 def test_remote_server_cli_and_generated_validation_script_end_to_end(tmp_path):

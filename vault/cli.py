@@ -177,7 +177,7 @@ def main(argv: list[str] | None = None):
     p.add_argument("--mode", choices=["human", "agent", "maintenance", "all"], default="human")
     p.add_argument(
         "--intent",
-        choices=["all", "install", "daily", "remember", "task", "review", "skills", "maintenance"],
+        choices=["all", "install", "daily", "remember", "task", "review", "skills", "maintenance", "faq"],
         default="all",
         help="依使用意圖縮小指南內容",
     )

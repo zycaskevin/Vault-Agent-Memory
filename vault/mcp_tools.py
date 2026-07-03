@@ -9,6 +9,7 @@ from vault.mcp_memory import (
 )
 from vault.mcp_gateway import MCP_GATEWAY_TOOL_NAMES, MCP_GATEWAY_TOOLS
 from vault.mcp_search import MCP_SEARCH_MAX_LIMIT, MCP_SEARCH_MAX_OFFSET
+from vault.search_utils import MAX_SEARCH_QUERY_CHARS
 from vault.mcp_skill import (
     MCP_SKILL_READ_TOOL_NAMES,
     MCP_SKILL_SYNC_TOOL_NAMES,
@@ -28,7 +29,8 @@ TOOLS = [
             "properties": {
                 "query": {
                     "type": "string",
-                    "description": "搜尋查詢（中英文皆可）"
+                    "description": "搜尋查詢（中英文皆可）",
+                    "maxLength": MAX_SEARCH_QUERY_CHARS
                 },
                 "mode": {
                     "type": "string",
@@ -770,6 +772,7 @@ TOOLS = [
                 "query": {
                     "type": "string",
                     "description": "搜尋字串；空字串會回傳最新可讀記憶",
+                    "maxLength": MAX_SEARCH_QUERY_CHARS,
                     "default": ""
                 },
                 "agent_id": {

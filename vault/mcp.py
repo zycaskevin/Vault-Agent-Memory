@@ -35,6 +35,7 @@ from vault.mcp_search import (
     search_field_set as _search_field_set,
     shape_search_results as _shape_search_results,
 )
+from vault.search_utils import validate_search_query
 from vault.mcp_tools import (
     TOOLS,
     TOOL_PROFILES,
@@ -196,6 +197,9 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
         return {"result": json.dumps(signature_denied, ensure_ascii=False, indent=2)}
     try:
         if name == "vault_search":
+            query, query_error = validate_search_query(arguments.get("query", ""))
+            if query_error is not None:
+                return {"result": json.dumps(query_error, ensure_ascii=False, indent=2)}
             compact = bool(arguments.get("compact", True))
             field_set = _search_field_set(arguments.get("fields"))
             limit = _clamp_int(
@@ -212,7 +216,7 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
             )
             db, search = _get_search()
             results = search.search(
-                query=arguments.get("query", ""),
+                query=query,
                 mode=arguments.get("mode", "auto"),
                 limit=limit,
                 offset=offset,

@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .cli_context import _arg_value, _enforce_cli_privacy, _json_print, find_project_dir
 from .cli_search import temporal_search_kwargs
+from .search_utils import validate_search_query
 
 
 def cmd_init(args):
@@ -282,6 +283,14 @@ def cmd_search(args):
 
     project_dir = find_project_dir()
     db_path = project_dir / "vault.db"
+    query, query_error = validate_search_query(args.query)
+    if query_error:
+        if bool(_arg_value(args, "json", False)):
+            _json_print(query_error, pretty=bool(_arg_value(args, "pretty", False)))
+        else:
+            print(f"error: {query_error['message']}", file=sys.stderr)
+            print(f"Try: {query_error['try'][0]}", file=sys.stderr)
+        raise SystemExit(2)
 
     db = VaultDB(str(db_path))
     db.connect()
@@ -316,7 +325,7 @@ def cmd_search(args):
 
     try:
         results = search.search(
-            args.query,
+            query,
             mode=mode,
             limit=args.limit,
             min_trust=args.min_trust,
@@ -342,7 +351,7 @@ def cmd_search(args):
         payload = {
             "ok": True,
             "status": "ok",
-            "query": args.query,
+            "query": query,
             "requested_mode": mode,
             "mode": result_mode,
             "count": len(results),

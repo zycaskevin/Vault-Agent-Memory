@@ -22,7 +22,7 @@ from .gui_format import compact_knowledge
 from .mcp_read import _vault_read_range_payload
 from .memory import create_candidate
 from .search import VaultSearch
-from .search_utils import normalize_search_limit
+from .search_utils import MAX_SEARCH_QUERY_CHARS, normalize_search_limit, validate_search_query
 
 
 DEFAULT_GATEWAY_HOST = "127.0.0.1"
@@ -88,6 +88,8 @@ class BoundedThreadPoolHTTPServer(ThreadingHTTPServer):
                 b"HTTP/1.1 503 Service Unavailable\r\n"
                 b"Connection: close\r\n"
                 b"Content-Type: application/json; charset=utf-8\r\n"
+                b"X-Content-Type-Options: nosniff\r\n"
+                b"Referrer-Policy: no-referrer\r\n"
                 + f"Content-Length: {len(body)}\r\n\r\n".encode("ascii")
                 + body
             )
@@ -106,7 +108,7 @@ def gateway_health(project_dir: str | Path) -> dict[str, Any]:
                 stats = db.stats()
         except Exception:
             stats = {}
-    return {
+    payload = {
         "status": "ok" if db_path.exists() else "blocked",
         "project_dir": str(project),
         "db_exists": db_path.exists(),
@@ -139,6 +141,13 @@ def gateway_health(project_dir: str | Path) -> dict[str, Any]:
             },
         },
     }
+    if not db_path.exists():
+        payload["try"] = [
+            f"vault init --project-dir {project}",
+            f"vault compile --project-dir {project} --no-embed",
+        ]
+        payload["next_action"] = "Initialize this project vault before starting Gateway clients."
+    return payload
 
 
 def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
@@ -219,7 +228,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                     "required": ["agent_id", "query"],
                     "properties": {
                         "agent_id": {"type": "string"},
-                        "query": {"type": "string"},
+                        "query": {"type": "string", "maxLength": MAX_SEARCH_QUERY_CHARS},
                         "mode": {
                             "type": "string",
                             "enum": ["auto", "keyword", "semantic", "hybrid", "vector"],
@@ -277,6 +286,9 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
             "ip_policy_supported": True,
             "auth_lockout_supported": True,
             "tls_supported": True,
+            "http_security_headers": True,
+            "hsts_when_tls_enabled": True,
+            "max_search_query_chars": MAX_SEARCH_QUERY_CHARS,
             "bounded_worker_pool_supported": True,
             "default_max_workers": DEFAULT_GATEWAY_MAX_WORKERS,
             "audit_rotation_supported": True,
@@ -306,14 +318,17 @@ def gateway_search(
         return _error("db_not_found", "vault.db missing", status="blocked")
     if not agent:
         return _error("agent_id_required", "Gateway search requires agent_id")
-    if not str(query or "").strip() or limit_i <= 0:
-        return {"status": "ok", "query": query, "mode": mode, "results": []}
+    query_text, query_error = validate_search_query(query)
+    if query_error:
+        return query_error
+    if not query_text.strip() or limit_i <= 0:
+        return {"status": "ok", "query": query_text, "mode": mode, "results": []}
     if mode not in {"auto", "keyword", "semantic", "hybrid", "vector"}:
         mode = "keyword"
     with VaultDB(db_path) as db:
         search = VaultSearch(db, embed_provider=None, embed_provider_name="none")
         rows = search.search(
-            query,
+            query_text,
             mode=mode,
             limit=limit_i,
             use_rerank=False,
@@ -347,7 +362,7 @@ def gateway_search(
         )
     return {
         "status": "ok",
-        "query": query,
+        "query": query_text,
         "mode": mode,
         "agent_id": agent,
         "results": [compact_knowledge(row) for row in rows],
@@ -663,6 +678,10 @@ def make_gateway_handler(
             self.send_response(int(status))
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Referrer-Policy", "no-referrer")
+            if tls_enabled:
+                self.send_header("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
             self.send_header("Content-Length", str(len(data)))
             self.end_headers()
             self.wfile.write(data)
@@ -726,7 +745,11 @@ def run_gateway(
     print(f"TLS: {'enabled' if tls_paths else 'disabled'}")
     print(f"Max workers: {workers}")
     if token:
+        print("SECURITY: copy this token only into trusted local agent configuration.")
         print(f"Token: {token}")
+        print("SECURITY: store long-lived remote-server tokens in environment variables or a secret manager.")
+    if host_text not in LOCALHOSTS:
+        print("REMOTE CHECKLIST: use TLS or a trusted reverse proxy, keep auth enabled, restrict firewall/IP access, and review reports/gateway/audit.jsonl.")
     print(f"Project: {Path(project_dir).expanduser().resolve()}")
     print("Press Ctrl+C to stop.")
     try:
@@ -879,7 +902,46 @@ def _arg_int_or_default(args: Any, name: str, default: int) -> int:
 
 
 def _error(code: str, message: str, *, status: str = "error") -> dict[str, Any]:
-    return {"status": status, "error": code, "message": message}
+    payload: dict[str, Any] = {"status": status, "error": code, "message": message}
+    suggestions = _error_suggestions(code)
+    if suggestions:
+        payload.update(suggestions)
+    return payload
+
+
+def _error_suggestions(code: str) -> dict[str, Any]:
+    if code == "db_not_found":
+        return {
+            "try": [
+                "Run `vault init --project-dir <project>` before starting the Gateway.",
+                "Pass the intended project with `--project-dir <project>`.",
+            ],
+            "next_action": "Initialize the vault, then retry the Gateway request.",
+        }
+    if code in {"auth_failed", "auth_locked"}:
+        return {
+            "try": [
+                "Send `Authorization: Bearer $VAULT_GATEWAY_TOKEN` or `X-Vault-Gateway-Token`.",
+                "If locked out, wait for the lockout window or restart the local Gateway.",
+            ],
+            "next_action": "Retry with the configured Gateway token.",
+        }
+    if code == "rate_limited":
+        return {
+            "try": ["Reduce request rate or raise `--rate-limit-per-minute` for trusted local clients."],
+            "next_action": "Wait and retry the request.",
+        }
+    if code == "agent_id_required":
+        return {
+            "try": ["Include `agent_id` in the JSON body, for example `codex` or `claude-code`."],
+            "next_action": "Retry with an explicit agent_id.",
+        }
+    if code == "not_found":
+        return {
+            "try": ["Use `/health`, `/openapi.json`, `/search`, `/read-range`, or `/submit-candidate`."],
+            "next_action": "Check `/openapi.json` for the supported Gateway contract.",
+        }
+    return {}
 
 
 def _resolve_tls_paths(tls_cert: str | Path | None, tls_key: str | Path | None) -> tuple[str, str] | None:

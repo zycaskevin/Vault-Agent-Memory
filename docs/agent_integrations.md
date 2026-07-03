@@ -83,6 +83,11 @@ documents the safety boundary: search hides raw content, `submit-candidate`
 does not write active knowledge, and active multi-master sync is not part of
 Gateway v0.
 
+Before binding Gateway beyond localhost, review
+[`docs/gateway_security.md`](gateway_security.md): keep token auth enabled, use
+TLS or a trusted reverse proxy, restrict network access, and monitor the audit
+log.
+
 For a self-hosted central memory server, use the first-class alias:
 
 ```bash
