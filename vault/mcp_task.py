@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any
 
+from .utils import clean_string_list as _as_list
+
 
 MCP_TASK_TOOL_NAMES = [
     "vault_task_start",
@@ -179,16 +181,6 @@ MCP_TASK_TOOLS = [
 
 def _json_result(payload: dict[str, Any] | list[dict[str, Any]]) -> dict[str, str]:
     return {"result": json.dumps(payload, ensure_ascii=False, indent=2)}
-
-
-def _as_list(value: Any) -> list[str]:
-    if value is None or value == "":
-        return []
-    if isinstance(value, str):
-        return [value.strip()] if value.strip() else []
-    if isinstance(value, (list, tuple)):
-        return [str(item).strip() for item in value if str(item).strip()]
-    return [str(value).strip()] if str(value).strip() else []
 
 
 def _clamp_int(value: Any, *, default: int, minimum: int, maximum: int) -> int:
