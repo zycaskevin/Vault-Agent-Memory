@@ -1,0 +1,69 @@
+name: Feature request
+description: Propose a new Vault-for-LLM capability or integration.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests are easiest to evaluate when they name the Agent
+        workflow, the memory-governance problem, and the expected user path.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem should this solve?
+      placeholder: "Example: I use Claude Code and n8n on the same machine, but I cannot see which Agent created a memory candidate."
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      placeholder: "Example: Add a dashboard card that groups memory candidates by owner_agent."
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Agent install / setup
+        - MCP integration
+        - Gateway / remote server
+        - Supabase / sync
+        - Obsidian-as-GUI
+        - Daily report / automation
+        - Memory governance
+        - Search / retrieval
+        - Migration from another memory tool
+        - Documentation / examples
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: agent
+    attributes:
+      label: Agent or tool involved
+      description: Name the Agent client, automation tool, or platform if relevant.
+      placeholder: "Codex, Claude Code, Hermes, OpenClaw, Coze, n8n, Cursor, Obsidian, etc."
+    validations:
+      required: false
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Change size
+      options:
+        - Small docs or example
+        - Small behavior change
+        - New command or MCP tool
+        - Schema or security-sensitive change
+        - Not sure
+    validations:
+      required: true
+  - type: checkboxes
+    id: planning
+    attributes:
+      label: Planning check
+      options:
+        - label: I understand that large schema, security, Gateway, sync, or automation-policy changes should be discussed before implementation.
+          required: true

@@ -1,0 +1,86 @@
+name: Bug report
+description: Report a reproducible Vault-for-LLM problem.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please do not include real API keys, tokens,
+        customer data, medical data, private chat logs, or production vault
+        exports.
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened?
+      description: Describe the problem in a few sentences.
+      placeholder: "Example: vault setup-agent generated a schedule, but daily-report did not run."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      placeholder: "Example: daily-report should be created under reports/automation."
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Use the smallest safe reproduction you can share.
+      placeholder: |
+        1. Run ...
+        2. Then ...
+        3. See ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Install / setup-agent
+        - CLI
+        - MCP
+        - Gateway / remote server
+        - Supabase / sync
+        - Obsidian
+        - GUI / dashboard
+        - Search / retrieval
+        - Memory candidates / automation
+        - Privacy / security
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Vault version
+      description: Output of `vault --version`, package version, or commit SHA.
+      placeholder: "0.7.27 or main@abc123"
+    validations:
+      required: false
+  - type: input
+    id: python
+    attributes:
+      label: Python version and OS
+      placeholder: "Python 3.11 on macOS 15 / Ubuntu 24.04 / Windows 11"
+    validations:
+      required: false
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant output
+      description: Paste redacted logs or command output.
+      render: shell
+    validations:
+      required: false
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety check
+      options:
+        - label: I removed secrets, tokens, private chat logs, and sensitive personal data from this report.
+          required: true
