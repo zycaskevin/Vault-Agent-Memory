@@ -66,6 +66,37 @@
       pointer-events: none;
     }
 
+    .connector-map {
+      position: absolute;
+      left: 5vw;
+      right: 5vw;
+      bottom: calc(8vh + 24px);
+      width: 90vw;
+      height: 260px;
+      opacity: 0.72;
+    }
+
+    .flow-line {
+      fill: none;
+      stroke: rgba(185, 220, 203, 0.72);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-dasharray: 12 16;
+      animation: flowDash 2.4s linear infinite;
+    }
+
+    .flow-line.secondary {
+      stroke: rgba(248, 242, 223, 0.34);
+      stroke-width: 2;
+      animation-duration: 3.4s;
+    }
+
+    @keyframes flowDash {
+      to {
+        stroke-dashoffset: -56;
+      }
+    }
+
     .memory-lane {
       position: absolute;
       left: 6vw;
@@ -116,6 +147,29 @@
       padding: 74px 0 300px;
     }
 
+    .language-switcher {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .language-switcher button {
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid rgba(244, 241, 232, 0.28);
+      border-radius: 999px;
+      background: rgba(244, 241, 232, 0.08);
+      color: #f4f1e8;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .language-switcher button[aria-pressed="true"] {
+      background: #f8f2df;
+      color: #17201b;
+    }
+
     .eyebrow {
       margin: 0 0 18px;
       color: #b9dccb;
@@ -132,6 +186,11 @@
     h1 {
       max-width: 880px;
       font-size: clamp(2.7rem, 7vw, 6.6rem);
+    }
+
+    html[lang^="zh"] h1 {
+      max-width: 1020px;
+      font-size: clamp(2.45rem, 5.6vw, 5.15rem);
     }
 
     .hero-copy > p {
@@ -322,9 +381,29 @@
     }
 
     .architecture {
+      position: relative;
       display: grid;
       grid-template-columns: 1fr;
       gap: 14px;
+    }
+
+    .arch-flow {
+      height: 52px;
+    }
+
+    .arch-flow svg {
+      width: 100%;
+      height: 52px;
+      display: block;
+    }
+
+    .arch-flow path {
+      fill: none;
+      stroke: #7da992;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      stroke-dasharray: 10 12;
+      animation: flowDash 2.8s linear infinite;
     }
 
     .arch-row {
@@ -391,6 +470,10 @@
         padding-bottom: 430px;
       }
 
+      .connector-map {
+        display: none;
+      }
+
       .memory-lane {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         left: 20px;
@@ -415,6 +498,14 @@
 
       .arch-row {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .arch-flow {
+        height: 38px;
+      }
+
+      .arch-flow svg {
+        height: 38px;
       }
 
       .prompt-box {
@@ -455,28 +546,53 @@
       .arch-row {
         grid-template-columns: 1fr;
       }
+
+      .language-switcher {
+        margin-bottom: 18px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .flow-line,
+      .arch-flow path {
+        animation: none;
+      }
     }
   </style>
 </head>
 <body>
   <header class="hero">
     <div class="hero-scene" aria-hidden="true">
+      <svg class="connector-map" viewBox="0 0 1200 260" role="img">
+        <defs>
+          <marker id="arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+            <path d="M2 2 L10 6 L2 10 Z" fill="rgba(185, 220, 203, 0.78)"></path>
+          </marker>
+        </defs>
+        <path class="flow-line secondary" d="M80 170 C210 50 320 50 430 150 S660 240 780 132 S1010 35 1120 136"></path>
+        <path class="flow-line" marker-end="url(#arrow)" d="M78 132 C210 132 245 170 332 170 S475 86 560 86 S705 172 790 172 S940 86 1122 86"></path>
+      </svg>
       <div class="memory-lane">
-        <div class="lane-card"><strong>Claude Code</strong><span>Finds a reusable testing lesson from a bug fix.</span></div>
-        <div class="lane-card"><strong>Candidate</strong><span>Vault checks privacy, duplicates, quality, and source evidence.</span></div>
-        <div class="lane-card"><strong>Review</strong><span>Low-risk memory can pass; uncertain memory waits for the daily report.</span></div>
-        <div class="lane-card"><strong>Promoted</strong><span>Codex searches reviewed memory and reads the exact source range.</span></div>
-        <div class="lane-card"><strong>Rollback</strong><span>Outdated memory is deprecated instead of silently poisoning context.</span></div>
-        <div class="lane-card"><strong>Audit</strong><span>Teams can see who wrote it, who reviewed it, and why it changed.</span></div>
+        <div class="lane-card"><strong data-i18n="lane1Title">Claude Code</strong><span data-i18n="lane1Body">Finds a reusable testing lesson from a bug fix.</span></div>
+        <div class="lane-card"><strong data-i18n="lane2Title">Candidate</strong><span data-i18n="lane2Body">Vault checks privacy, duplicates, quality, and source evidence.</span></div>
+        <div class="lane-card"><strong data-i18n="lane3Title">Review</strong><span data-i18n="lane3Body">Low-risk memory can pass; uncertain memory waits for the daily report.</span></div>
+        <div class="lane-card"><strong data-i18n="lane4Title">Promoted</strong><span data-i18n="lane4Body">Codex searches reviewed memory and reads the exact source range.</span></div>
+        <div class="lane-card"><strong data-i18n="lane5Title">Rollback</strong><span data-i18n="lane5Body">Outdated memory is deprecated instead of silently poisoning context.</span></div>
+        <div class="lane-card"><strong data-i18n="lane6Title">Audit</strong><span data-i18n="lane6Body">Teams can see who wrote it, who reviewed it, and why it changed.</span></div>
       </div>
     </div>
     <div class="hero-copy">
+      <div class="language-switcher" aria-label="Language">
+        <button type="button" data-lang="en" aria-pressed="true">English</button>
+        <button type="button" data-lang="zh-Hant" aria-pressed="false">繁體中文</button>
+        <button type="button" data-lang="zh-CN" aria-pressed="false">简体中文</button>
+      </div>
       <p class="eyebrow">Vault-for-LLM</p>
-      <h1>Agents need memory governance, not just RAG.</h1>
-      <p>Give Codex, Claude Code, Hermes, OpenClaw, n8n, and Coze one governed memory vault: propose, review, promote, search, cite, roll back, and audit.</p>
+      <h1 data-i18n="heroTitle">Agents need memory governance, not just RAG.</h1>
+      <p data-i18n="heroBody">Give Codex, Claude Code, Hermes, OpenClaw, n8n, and Coze one governed memory vault: propose, review, promote, search, cite, roll back, and audit.</p>
       <div class="hero-actions">
-        <a class="button" href="#install">Copy the agent install prompt</a>
-        <a class="button secondary" href="#demo">See the three-agent demo</a>
+        <a class="button" href="#install" data-i18n="heroPrimary">Copy the agent install prompt</a>
+        <a class="button secondary" href="#demo" data-i18n="heroSecondary">See the three-agent demo</a>
       </div>
     </div>
   </header>
@@ -485,10 +601,10 @@
     <section class="band" id="install">
       <div class="wrap">
         <div class="section-head">
-          <h2>Start by giving this to your Agent.</h2>
-          <p>No one should have to learn forty commands before getting a memory vault. The first path is agent-led: answer four questions, then read a short daily report.</p>
+          <h2 data-i18n="installTitle">Start by giving this to your Agent.</h2>
+          <p data-i18n="installBody">No one should have to learn forty commands before getting a memory vault. The first path is agent-led: answer four questions, then read a short daily report.</p>
         </div>
-        <div class="prompt-box">
+        <div class="prompt-box" data-i18n-prompt="installPrompt">
           <pre id="installPrompt">Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.7.27.
 Use consumer mode with governed-auto memory.
 
@@ -507,7 +623,7 @@ Daily rule:
 safe, low-risk, sourced memories can be kept automatically;
 uncertain, sensitive, conflicting, or strategic memories should go into the daily report for my review.</pre>
           <div>
-            <button class="button" type="button" data-copy-target="installPrompt">Copy prompt</button>
+            <button class="button" type="button" data-copy-target="installPrompt" data-i18n="copyPrompt">Copy prompt</button>
             <div class="copy-state" role="status" aria-live="polite"></div>
           </div>
         </div>
@@ -517,41 +633,41 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
     <section class="band alt" id="demo">
       <div class="wrap">
         <div class="section-head">
-          <h2>One repo. Three Agents. One governed memory.</h2>
-          <p>This is the demo that separates Vault from a plain RAG database: agents can share lessons without silently polluting long-term memory.</p>
+          <h2 data-i18n="demoTitle">One repo. Three Agents. One governed memory.</h2>
+          <p data-i18n="demoBody">This is the demo that separates Vault from a plain RAG database: agents can share lessons without silently polluting long-term memory.</p>
         </div>
         <div class="story-grid">
           <article class="story-card">
-            <span class="tag blue">1. Propose</span>
-            <h3>Claude Code fixes a testing bug.</h3>
-            <p>It proposes a reusable lesson with the command output and source file that proved the fix.</p>
+            <span class="tag blue" data-i18n="story1Tag">1. Propose</span>
+            <h3 data-i18n="story1Title">Claude Code fixes a testing bug.</h3>
+            <p data-i18n="story1Body">It proposes a reusable lesson with the command output and source file that proved the fix.</p>
           </article>
           <article class="story-card">
-            <span class="tag amber">2. Review</span>
-            <h3>Vault does not trust it blindly.</h3>
-            <p>The candidate passes privacy, duplicate, metadata, and quality checks before it can become active memory.</p>
+            <span class="tag amber" data-i18n="story2Tag">2. Review</span>
+            <h3 data-i18n="story2Title">Vault does not trust it blindly.</h3>
+            <p data-i18n="story2Body">The candidate passes privacy, duplicate, metadata, and quality checks before it can become active memory.</p>
           </article>
           <article class="story-card">
-            <span class="tag green">3. Reuse</span>
-            <h3>Codex finds it next time.</h3>
-            <p>Search returns a reviewed memory, then bounded read gives the exact source range for citation.</p>
+            <span class="tag green" data-i18n="story3Tag">3. Reuse</span>
+            <h3 data-i18n="story3Title">Codex finds it next time.</h3>
+            <p data-i18n="story3Body">Search returns a reviewed memory, then bounded read gives the exact source range for citation.</p>
           </article>
         </div>
         <div class="compare">
           <div class="story-card">
-            <h3>Without Vault</h3>
+            <h3 data-i18n="withoutTitle">Without Vault</h3>
             <ul>
-              <li>Every agent starts cold.</li>
-              <li>Fixes stay trapped in chat logs.</li>
-              <li>Bad memories can silently enter context.</li>
+              <li data-i18n="without1">Every agent starts cold.</li>
+              <li data-i18n="without2">Fixes stay trapped in chat logs.</li>
+              <li data-i18n="without3">Bad memories can silently enter context.</li>
             </ul>
           </div>
           <div class="story-card">
-            <h3>With Vault</h3>
+            <h3 data-i18n="withTitle">With Vault</h3>
             <ul>
-              <li>Agents share reviewed project memory.</li>
-              <li>Each answer can return to a source.</li>
-              <li>Outdated memory can be deprecated or rolled back.</li>
+              <li data-i18n="with1">Agents share reviewed project memory.</li>
+              <li data-i18n="with2">Each answer can return to a source.</li>
+              <li data-i18n="with3">Outdated memory can be deprecated or rolled back.</li>
             </ul>
           </div>
         </div>
@@ -561,35 +677,35 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
     <section class="band">
       <div class="wrap">
         <div class="section-head">
-          <h2>The Daily Memory Report keeps humans in control.</h2>
-          <p>Vault can become more automatic over time, but the review surface stays small. Safe memory can enter the vault; uncertain memory waits for a person.</p>
+          <h2 data-i18n="reportTitle">The Daily Memory Report keeps humans in control.</h2>
+          <p data-i18n="reportBody">Vault can become more automatic over time, but the review surface stays small. Safe memory can enter the vault; uncertain memory waits for a person.</p>
         </div>
         <div class="report-grid">
           <div class="report-list">
             <article class="report-card">
-              <span class="tag green">Auto-kept</span>
-              <h3>Testing requires APP_ENV=test before pytest.</h3>
-              <p>Reason: verified by command output. Source: CI log and test run.</p>
+              <span class="tag green" data-i18n="autoKept">Auto-kept</span>
+              <h3 data-i18n="autoKeptTitle">Testing requires APP_ENV=test before pytest.</h3>
+              <p data-i18n="autoKeptBody">Reason: verified by command output. Source: CI log and test run.</p>
             </article>
             <article class="report-card">
-              <span class="tag amber">Needs review</span>
-              <h3>Vault should focus on memory governance.</h3>
-              <p>Reason: strategic product direction. Action: approve, edit, or defer.</p>
+              <span class="tag amber" data-i18n="needsReview">Needs review</span>
+              <h3 data-i18n="needsReviewTitle">Vault should focus on memory governance.</h3>
+              <p data-i18n="needsReviewBody">Reason: strategic product direction. Action: approve, edit, or defer.</p>
             </article>
             <article class="report-card">
-              <span class="tag red">Rejected</span>
-              <h3>Today's market snapshot.</h3>
-              <p>Reason: short-lived data, not durable project memory.</p>
+              <span class="tag red" data-i18n="rejected">Rejected</span>
+              <h3 data-i18n="rejectedTitle">Today's market snapshot.</h3>
+              <p data-i18n="rejectedBody">Reason: short-lived data, not durable project memory.</p>
             </article>
           </div>
           <div class="report-card">
-            <span class="tag cyan">Obsidian conflict inbox</span>
-            <h3>Your notes stay readable. Agent memory stays governed.</h3>
-            <p>When Obsidian and Vault both changed a note, the resolver gives clear choices instead of overwriting silently.</p>
+            <span class="tag cyan" data-i18n="conflictTag">Obsidian conflict inbox</span>
+            <h3 data-i18n="conflictTitle">Your notes stay readable. Agent memory stays governed.</h3>
+            <p data-i18n="conflictBody">When Obsidian and Vault both changed a note, the resolver gives clear choices instead of overwriting silently.</p>
             <div class="decision-row">
-              <span class="decision">Accept Obsidian</span>
-              <span class="decision">Accept Vault</span>
-              <span class="decision">Keep both</span>
+              <span class="decision" data-i18n="acceptObsidian">Accept Obsidian</span>
+              <span class="decision" data-i18n="acceptVault">Accept Vault</span>
+              <span class="decision" data-i18n="keepBoth">Keep both</span>
             </div>
           </div>
         </div>
@@ -599,8 +715,8 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
     <section class="band alt">
       <div class="wrap">
         <div class="section-head">
-          <h2>Adapters can change. The governed memory layer stays yours.</h2>
-          <p>Vault starts local-first, then connects to the systems you choose. CLI, MCP, Gateway, Supabase, Obsidian, and future remote servers are adapters around the same memory lifecycle.</p>
+          <h2 data-i18n="archTitle">Adapters can change. The governed memory layer stays yours.</h2>
+          <p data-i18n="archBody">Vault starts local-first, then connects to the systems you choose. CLI, MCP, Gateway, Supabase, Obsidian, and future remote servers are adapters around the same memory lifecycle.</p>
         </div>
         <div class="architecture" aria-label="Vault architecture">
           <div class="arch-row">
@@ -611,15 +727,30 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
             <div class="arch-box">n8n</div>
             <div class="arch-box">Coze</div>
           </div>
-          <div class="arch-box arch-core">Vault Gateway / MCP / CLI</div>
-          <div class="arch-box arch-core">Local SQLite Vault + governed memory lifecycle</div>
+          <div class="arch-flow" aria-hidden="true">
+            <svg viewBox="0 0 1080 52">
+              <path d="M60 8 C210 42 330 42 540 14 C750 42 870 42 1020 8"></path>
+            </svg>
+          </div>
+          <div class="arch-box arch-core" data-i18n="archGateway">Vault Gateway / MCP / CLI</div>
+          <div class="arch-flow" aria-hidden="true">
+            <svg viewBox="0 0 1080 52">
+              <path d="M90 8 C260 42 400 42 540 14 C680 42 820 42 990 8"></path>
+            </svg>
+          </div>
+          <div class="arch-box arch-core" data-i18n="archCore">Local SQLite Vault + governed memory lifecycle</div>
+          <div class="arch-flow" aria-hidden="true">
+            <svg viewBox="0 0 1080 52">
+              <path d="M80 12 C230 42 360 42 540 16 C720 42 850 42 1000 12"></path>
+            </svg>
+          </div>
           <div class="arch-row">
             <div class="arch-box">Obsidian</div>
             <div class="arch-box">Supabase</div>
             <div class="arch-box">Remote Server</div>
-            <div class="arch-box">Search QA</div>
-            <div class="arch-box">Daily Report</div>
-            <div class="arch-box">Audit Trail</div>
+            <div class="arch-box" data-i18n="archSearchQa">Search QA</div>
+            <div class="arch-box" data-i18n="archDaily">Daily Report</div>
+            <div class="arch-box" data-i18n="archAudit">Audit Trail</div>
           </div>
         </div>
       </div>
@@ -628,25 +759,25 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
     <section class="band">
       <div class="wrap">
         <div class="section-head">
-          <h2>Developer proof without making the first page heavy.</h2>
-          <p>The landing page tells the story. The repo keeps the proof: local SQLite, MCP profiles, candidate-first writes, Obsidian import/export, Supabase and Gateway adapters, Search QA, and Apache-2.0.</p>
+          <h2 data-i18n="proofTitle">Developer proof without making the first page heavy.</h2>
+          <p data-i18n="proofBody">The landing page tells the story. The repo keeps the proof: local SQLite, MCP profiles, candidate-first writes, Obsidian import/export, Supabase and Gateway adapters, Search QA, and Apache-2.0.</p>
         </div>
         <div class="proof-grid">
           <article class="proof-card">
-            <h3>Local-first</h3>
-            <p>Core use stays on Markdown and SQLite. Remote sharing is optional.</p>
+            <h3 data-i18n="proof1Title">Local-first</h3>
+            <p data-i18n="proof1Body">Core use stays on Markdown and SQLite. Remote sharing is optional.</p>
           </article>
           <article class="proof-card">
-            <h3>MCP-ready</h3>
-            <p>Start agents with small tool profiles instead of exposing every maintenance tool.</p>
+            <h3 data-i18n="proof2Title">MCP-ready</h3>
+            <p data-i18n="proof2Body">Start agents with small tool profiles instead of exposing every maintenance tool.</p>
           </article>
           <article class="proof-card">
-            <h3>Measurable</h3>
-            <p>Search QA checks whether agents find the right source, not whether they sound confident.</p>
+            <h3 data-i18n="proof3Title">Measurable</h3>
+            <p data-i18n="proof3Body">Search QA checks whether agents find the right source, not whether they sound confident.</p>
           </article>
           <article class="proof-card">
-            <h3>Reviewable</h3>
-            <p>Candidates, daily reports, conflict inboxes, and audit trails keep memory accountable.</p>
+            <h3 data-i18n="proof4Title">Reviewable</h3>
+            <p data-i18n="proof4Body">Candidates, daily reports, conflict inboxes, and audit trails keep memory accountable.</p>
           </article>
         </div>
         <div class="terminal" style="margin-top:18px">
@@ -658,22 +789,343 @@ uncertain, sensitive, conflicting, or strategic memories should go into the dail
 
   <footer>
     <div class="wrap">
-      <span>Vault-for-LLM is Apache-2.0.</span>
+      <span data-i18n="footerLicense">Vault-for-LLM is Apache-2.0.</span>
       <span><a href="../../README.md">README</a> · <a href="../demo/three-agent-shared-memory-runbook.md">Demo runbook</a> · <a href="../agent_install.md">Agent install</a></span>
     </div>
   </footer>
 
   <script>
+    const translations = {
+      en: {
+        lang: "en",
+        lane1Title: "Claude Code",
+        lane1Body: "Finds a reusable testing lesson from a bug fix.",
+        lane2Title: "Candidate",
+        lane2Body: "Vault checks privacy, duplicates, quality, and source evidence.",
+        lane3Title: "Review",
+        lane3Body: "Low-risk memory can pass; uncertain memory waits for the daily report.",
+        lane4Title: "Promoted",
+        lane4Body: "Codex searches reviewed memory and reads the exact source range.",
+        lane5Title: "Rollback",
+        lane5Body: "Outdated memory is deprecated instead of silently poisoning context.",
+        lane6Title: "Audit",
+        lane6Body: "Teams can see who wrote it, who reviewed it, and why it changed.",
+        heroTitle: "Agents need memory governance, not just RAG.",
+        heroBody: "Give Codex, Claude Code, Hermes, OpenClaw, n8n, and Coze one governed memory vault: propose, review, promote, search, cite, roll back, and audit.",
+        heroPrimary: "Copy the agent install prompt",
+        heroSecondary: "See the three-agent demo",
+        installTitle: "Start by giving this to your Agent.",
+        installBody: "No one should have to learn forty commands before getting a memory vault. The first path is agent-led: answer four questions, then read a short daily report.",
+        copyPrompt: "Copy prompt",
+        copied: "Copied.",
+        copyFallback: "Select the prompt text and copy it manually.",
+        installPrompt: `Install Vault-for-LLM for this project. Use vault-for-llm[mcp]==0.7.27.
+Use consumer mode with governed-auto memory.
+
+Do not teach me CLI flags first. Ask me only four questions:
+1. Which language should Vault use: Traditional Chinese, Simplified Chinese, or English?
+2. Should this be an independent vault or a shared vault for multiple agents?
+3. Should Vault connect to Obsidian, Supabase, both, or neither?
+4. What time should the daily memory report run?
+
+After setup, run a smoke check and tell me:
+- where the vault lives
+- how I read the daily memory report
+- where the local GUI or next action is
+
+Daily rule:
+safe, low-risk, sourced memories can be kept automatically;
+uncertain, sensitive, conflicting, or strategic memories should go into the daily report for my review.`,
+        demoTitle: "One repo. Three Agents. One governed memory.",
+        demoBody: "This is the demo that separates Vault from a plain RAG database: agents can share lessons without silently polluting long-term memory.",
+        story1Tag: "1. Propose",
+        story1Title: "Claude Code fixes a testing bug.",
+        story1Body: "It proposes a reusable lesson with the command output and source file that proved the fix.",
+        story2Tag: "2. Review",
+        story2Title: "Vault does not trust it blindly.",
+        story2Body: "The candidate passes privacy, duplicate, metadata, and quality checks before it can become active memory.",
+        story3Tag: "3. Reuse",
+        story3Title: "Codex finds it next time.",
+        story3Body: "Search returns a reviewed memory, then bounded read gives the exact source range for citation.",
+        withoutTitle: "Without Vault",
+        without1: "Every agent starts cold.",
+        without2: "Fixes stay trapped in chat logs.",
+        without3: "Bad memories can silently enter context.",
+        withTitle: "With Vault",
+        with1: "Agents share reviewed project memory.",
+        with2: "Each answer can return to a source.",
+        with3: "Outdated memory can be deprecated or rolled back.",
+        reportTitle: "The Daily Memory Report keeps humans in control.",
+        reportBody: "Vault can become more automatic over time, but the review surface stays small. Safe memory can enter the vault; uncertain memory waits for a person.",
+        autoKept: "Auto-kept",
+        autoKeptTitle: "Testing requires APP_ENV=test before pytest.",
+        autoKeptBody: "Reason: verified by command output. Source: CI log and test run.",
+        needsReview: "Needs review",
+        needsReviewTitle: "Vault should focus on memory governance.",
+        needsReviewBody: "Reason: strategic product direction. Action: approve, edit, or defer.",
+        rejected: "Rejected",
+        rejectedTitle: "Today's market snapshot.",
+        rejectedBody: "Reason: short-lived data, not durable project memory.",
+        conflictTag: "Obsidian conflict inbox",
+        conflictTitle: "Your notes stay readable. Agent memory stays governed.",
+        conflictBody: "When Obsidian and Vault both changed a note, the resolver gives clear choices instead of overwriting silently.",
+        acceptObsidian: "Accept Obsidian",
+        acceptVault: "Accept Vault",
+        keepBoth: "Keep both",
+        archTitle: "Adapters can change. The governed memory layer stays yours.",
+        archBody: "Vault starts local-first, then connects to the systems you choose. CLI, MCP, Gateway, Supabase, Obsidian, and future remote servers are adapters around the same memory lifecycle.",
+        archGateway: "Vault Gateway / MCP / CLI",
+        archCore: "Local SQLite Vault + governed memory lifecycle",
+        archSearchQa: "Search QA",
+        archDaily: "Daily Report",
+        archAudit: "Audit Trail",
+        proofTitle: "Developer proof without making the first page heavy.",
+        proofBody: "The landing page tells the story. The repo keeps the proof: local SQLite, MCP profiles, candidate-first writes, Obsidian import/export, Supabase and Gateway adapters, Search QA, and Apache-2.0.",
+        proof1Title: "Local-first",
+        proof1Body: "Core use stays on Markdown and SQLite. Remote sharing is optional.",
+        proof2Title: "MCP-ready",
+        proof2Body: "Start agents with small tool profiles instead of exposing every maintenance tool.",
+        proof3Title: "Measurable",
+        proof3Body: "Search QA checks whether agents find the right source, not whether they sound confident.",
+        proof4Title: "Reviewable",
+        proof4Body: "Candidates, daily reports, conflict inboxes, and audit trails keep memory accountable.",
+        footerLicense: "Vault-for-LLM is Apache-2.0."
+      },
+      "zh-Hant": {
+        lang: "zh-Hant",
+        lane1Title: "Claude Code",
+        lane1Body: "從修 bug 的過程中，找出下次還會用到的測試經驗。",
+        lane2Title: "候選記憶",
+        lane2Body: "Vault 先檢查隱私、重複、品質與來源證據。",
+        lane3Title: "審核",
+        lane3Body: "低風險記憶可以通過；不確定的先留到每日報告。",
+        lane4Title: "正式記憶",
+        lane4Body: "Codex 搜到已審核記憶，再讀取精準來源範圍。",
+        lane5Title: "回滾",
+        lane5Body: "過期記憶會被標記淘汰，不會默默污染上下文。",
+        lane6Title: "稽核",
+        lane6Body: "團隊能知道誰寫入、誰審核，以及為什麼改變。",
+        heroTitle: "Agent 不只需要 RAG，更需要記憶治理。",
+        heroBody: "讓 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 共用同一套受治理的記憶庫：提出、審核、升級、搜尋、引用、回滾、稽核。",
+        heroPrimary: "複製 Agent 安裝提示",
+        heroSecondary: "看三 Agent 示範",
+        installTitle: "第一步，把這段交給你的 Agent。",
+        installBody: "一般使用者不應該先學一大串指令。最短路徑是讓 Agent 帶你安裝：回答四個問題，之後每天看一份簡短記憶報告。",
+        copyPrompt: "複製提示",
+        copied: "已複製。",
+        copyFallback: "請選取提示文字後手動複製。",
+        installPrompt: `請為這個專案安裝 Vault-for-LLM，使用 vault-for-llm[mcp]==0.7.27。
+請使用一般使用者模式，並啟用 governed-auto 記憶流程。
+
+不要先教我 CLI 參數。只問我四個問題：
+1. Vault 要使用繁體中文、簡體中文，還是英文？
+2. 這要做成獨立記憶庫，還是多 Agent 共用記憶庫？
+3. 要不要連接 Obsidian、Supabase、兩者都要，或都不要？
+4. 每日記憶報告要幾點產生？
+
+安裝後，請做一次基本檢查，並告訴我：
+- 記憶庫放在哪裡
+- 我要去哪裡看每日記憶報告
+- 本地 GUI 或下一步操作在哪裡
+
+每日規則：
+安全、低風險、有來源的記憶可以自動保留；
+不確定、敏感、衝突或策略性的記憶，請放進每日報告讓我審核。`,
+        demoTitle: "一個 repo。三個 Agent。一套受治理的記憶。",
+        demoBody: "這個示範用來說清楚 Vault 跟一般 RAG 的差異：Agent 可以共享經驗，但不會把未審核內容偷偷寫進長期記憶。",
+        story1Tag: "1. 提出",
+        story1Title: "Claude Code 修好一個測試 bug。",
+        story1Body: "它提出一條可重複使用的經驗，並附上證明修復有效的命令輸出與來源檔案。",
+        story2Tag: "2. 審核",
+        story2Title: "Vault 不會盲目信任。",
+        story2Body: "候選記憶必須通過隱私、重複、後設資料與品質檢查，才可能成為正式記憶。",
+        story3Tag: "3. 再使用",
+        story3Title: "Codex 下次就能找到。",
+        story3Body: "搜尋先回傳已審核記憶，再用 bounded read 讀取精準來源範圍，方便引用。",
+        withoutTitle: "沒有 Vault",
+        without1: "每個 Agent 都像第一天上班。",
+        without2: "修過的坑留在聊天紀錄裡。",
+        without3: "壞記憶可能偷偷進入上下文。",
+        withTitle: "有 Vault",
+        with1: "Agent 共用已審核的專案記憶。",
+        with2: "每個回答都能回到來源。",
+        with3: "過期記憶可以淘汰或回滾。",
+        reportTitle: "每日記憶報告，讓人保留控制權。",
+        reportBody: "Vault 可以越來越自動，但需要人看的範圍要很小。安全記憶可以進庫，不確定的留給人決定。",
+        autoKept: "已自動保留",
+        autoKeptTitle: "跑 pytest 前需要 APP_ENV=test。",
+        autoKeptBody: "原因：命令輸出已驗證。來源：CI log 與測試結果。",
+        needsReview: "需要審核",
+        needsReviewTitle: "Vault 應該聚焦在記憶治理。",
+        needsReviewBody: "原因：這是產品策略方向。動作：核准、編輯或延後。",
+        rejected: "已拒絕",
+        rejectedTitle: "今日市場快照。",
+        rejectedBody: "原因：短期資料，不適合變成長期專案記憶。",
+        conflictTag: "Obsidian 衝突收件匣",
+        conflictTitle: "筆記保持可讀，Agent 記憶保持受治理。",
+        conflictBody: "當 Obsidian 和 Vault 同時改了同一篇筆記，resolver 會給清楚選項，不會默默覆蓋。",
+        acceptObsidian: "接受 Obsidian",
+        acceptVault: "接受 Vault",
+        keepBoth: "保留兩份",
+        archTitle: "Adapter 可以更換；受治理的記憶層留在你手上。",
+        archBody: "Vault 從 local-first 開始，再接到你選擇的系統。CLI、MCP、Gateway、Supabase、Obsidian 與未來 remote server，都只是圍繞同一套記憶生命週期的 adapter。",
+        archGateway: "Vault Gateway / MCP / CLI",
+        archCore: "本地 SQLite Vault + 受治理的記憶生命週期",
+        archSearchQa: "Search QA",
+        archDaily: "每日報告",
+        archAudit: "稽核紀錄",
+        proofTitle: "開發者證據留在 repo，首頁不必變重。",
+        proofBody: "Landing page 負責說故事；repo 保留證據：本地 SQLite、MCP profiles、candidate-first 寫入、Obsidian 匯入匯出、Supabase/Gateway adapter、Search QA 與 Apache-2.0。",
+        proof1Title: "Local-first",
+        proof1Body: "核心使用 Markdown 和 SQLite。遠端共享是可選功能。",
+        proof2Title: "MCP-ready",
+        proof2Body: "用小型工具 profile 啟動 Agent，而不是一次暴露所有維護工具。",
+        proof3Title: "可量測",
+        proof3Body: "Search QA 檢查 Agent 是否找到正確來源，而不是只看它回答得有沒有自信。",
+        proof4Title: "可審核",
+        proof4Body: "候選記憶、每日報告、衝突收件匣與稽核紀錄，讓記憶可以被追責。",
+        footerLicense: "Vault-for-LLM 採用 Apache-2.0。"
+      },
+      "zh-CN": {
+        lang: "zh-CN",
+        lane1Title: "Claude Code",
+        lane1Body: "从修 bug 的过程中，找出下次还会用到的测试经验。",
+        lane2Title: "候选记忆",
+        lane2Body: "Vault 先检查隐私、重复、质量与来源证据。",
+        lane3Title: "审核",
+        lane3Body: "低风险记忆可以通过；不确定的先留到每日报告。",
+        lane4Title: "正式记忆",
+        lane4Body: "Codex 搜到已审核记忆，再读取精确来源范围。",
+        lane5Title: "回滚",
+        lane5Body: "过期记忆会被标记淘汰，不会默默污染上下文。",
+        lane6Title: "审计",
+        lane6Body: "团队能知道谁写入、谁审核，以及为什么改变。",
+        heroTitle: "Agent 不只需要 RAG，更需要记忆治理。",
+        heroBody: "让 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 共用同一套受治理的记忆库：提出、审核、升级、搜索、引用、回滚、审计。",
+        heroPrimary: "复制 Agent 安装提示",
+        heroSecondary: "看三 Agent 演示",
+        installTitle: "第一步，把这段交给你的 Agent。",
+        installBody: "普通用户不应该先学一大串命令。最短路径是让 Agent 带你安装：回答四个问题，之后每天看一份简短记忆报告。",
+        copyPrompt: "复制提示",
+        copied: "已复制。",
+        copyFallback: "请选择提示文字后手动复制。",
+        installPrompt: `请为这个项目安装 Vault-for-LLM，使用 vault-for-llm[mcp]==0.7.27。
+请使用普通用户模式，并启用 governed-auto 记忆流程。
+
+不要先教我 CLI 参数。只问我四个问题：
+1. Vault 要使用繁体中文、简体中文，还是英文？
+2. 这要做成独立记忆库，还是多 Agent 共用记忆库？
+3. 要不要连接 Obsidian、Supabase、两者都要，或都不要？
+4. 每日记忆报告要几点生成？
+
+安装后，请做一次基本检查，并告诉我：
+- 记忆库放在哪里
+- 我要去哪里看每日记忆报告
+- 本地 GUI 或下一步操作在哪里
+
+每日规则：
+安全、低风险、有来源的记忆可以自动保留；
+不确定、敏感、冲突或策略性的记忆，请放进每日报告让我审核。`,
+        demoTitle: "一个 repo。三个 Agent。一套受治理的记忆。",
+        demoBody: "这个演示用来说明 Vault 跟普通 RAG 的差异：Agent 可以共享经验，但不会把未审核内容偷偷写进长期记忆。",
+        story1Tag: "1. 提出",
+        story1Title: "Claude Code 修好一个测试 bug。",
+        story1Body: "它提出一条可重复使用的经验，并附上证明修复有效的命令输出与来源文件。",
+        story2Tag: "2. 审核",
+        story2Title: "Vault 不会盲目信任。",
+        story2Body: "候选记忆必须通过隐私、重复、元数据与质量检查，才可能成为正式记忆。",
+        story3Tag: "3. 再使用",
+        story3Title: "Codex 下次就能找到。",
+        story3Body: "搜索先返回已审核记忆，再用 bounded read 读取精确来源范围，方便引用。",
+        withoutTitle: "没有 Vault",
+        without1: "每个 Agent 都像第一天上班。",
+        without2: "修过的坑留在聊天记录里。",
+        without3: "坏记忆可能偷偷进入上下文。",
+        withTitle: "有 Vault",
+        with1: "Agent 共用已审核的项目记忆。",
+        with2: "每个回答都能回到来源。",
+        with3: "过期记忆可以淘汰或回滚。",
+        reportTitle: "每日记忆报告，让人保留控制权。",
+        reportBody: "Vault 可以越来越自动，但需要人看的范围要很小。安全记忆可以进库，不确定的留给人决定。",
+        autoKept: "已自动保留",
+        autoKeptTitle: "跑 pytest 前需要 APP_ENV=test。",
+        autoKeptBody: "原因：命令输出已验证。来源：CI log 与测试结果。",
+        needsReview: "需要审核",
+        needsReviewTitle: "Vault 应该聚焦在记忆治理。",
+        needsReviewBody: "原因：这是产品策略方向。动作：批准、编辑或延后。",
+        rejected: "已拒绝",
+        rejectedTitle: "今日市场快照。",
+        rejectedBody: "原因：短期数据，不适合变成长期项目记忆。",
+        conflictTag: "Obsidian 冲突收件箱",
+        conflictTitle: "笔记保持可读，Agent 记忆保持受治理。",
+        conflictBody: "当 Obsidian 和 Vault 同时改了同一篇笔记，resolver 会给清楚选项，不会默默覆盖。",
+        acceptObsidian: "接受 Obsidian",
+        acceptVault: "接受 Vault",
+        keepBoth: "保留两份",
+        archTitle: "Adapter 可以更换；受治理的记忆层留在你手上。",
+        archBody: "Vault 从 local-first 开始，再接到你选择的系统。CLI、MCP、Gateway、Supabase、Obsidian 与未来 remote server，都只是围绕同一套记忆生命周期的 adapter。",
+        archGateway: "Vault Gateway / MCP / CLI",
+        archCore: "本地 SQLite Vault + 受治理的记忆生命周期",
+        archSearchQa: "Search QA",
+        archDaily: "每日报告",
+        archAudit: "审计记录",
+        proofTitle: "开发者证据留在 repo，首页不必变重。",
+        proofBody: "Landing page 负责讲故事；repo 保留证据：本地 SQLite、MCP profiles、candidate-first 写入、Obsidian 导入导出、Supabase/Gateway adapter、Search QA 与 Apache-2.0。",
+        proof1Title: "Local-first",
+        proof1Body: "核心使用 Markdown 和 SQLite。远端共享是可选功能。",
+        proof2Title: "MCP-ready",
+        proof2Body: "用小型工具 profile 启动 Agent，而不是一次暴露所有维护工具。",
+        proof3Title: "可量测",
+        proof3Body: "Search QA 检查 Agent 是否找到正确来源，而不是只看它回答得有没有自信。",
+        proof4Title: "可审核",
+        proof4Body: "候选记忆、每日报告、冲突收件箱与审计记录，让记忆可以被追责。",
+        footerLicense: "Vault-for-LLM 采用 Apache-2.0。"
+      }
+    };
+
+    function applyLanguage(lang) {
+      const bundle = translations[lang] || translations.en;
+      document.documentElement.lang = bundle.lang;
+      document.querySelectorAll("[data-i18n]").forEach((node) => {
+        const key = node.getAttribute("data-i18n");
+        if (bundle[key]) {
+          node.textContent = bundle[key];
+        }
+      });
+      document.querySelectorAll("[data-i18n-prompt]").forEach((node) => {
+        const key = node.getAttribute("data-i18n-prompt");
+        const prompt = node.querySelector("pre");
+        if (prompt && bundle[key]) {
+          prompt.textContent = bundle[key];
+        }
+      });
+      document.querySelectorAll("[data-lang]").forEach((button) => {
+        button.setAttribute("aria-pressed", String(button.getAttribute("data-lang") === lang));
+      });
+      localStorage.setItem("vaultLandingLanguage", lang);
+    }
+
+    document.querySelectorAll("[data-lang]").forEach((button) => {
+      button.addEventListener("click", () => applyLanguage(button.getAttribute("data-lang")));
+    });
+
+    const savedLanguage = localStorage.getItem("vaultLandingLanguage");
+    if (savedLanguage && translations[savedLanguage]) {
+      applyLanguage(savedLanguage);
+    }
+
     const copyButtons = document.querySelectorAll("[data-copy-target]");
     copyButtons.forEach((button) => {
       button.addEventListener("click", async () => {
         const target = document.getElementById(button.getAttribute("data-copy-target"));
         const state = button.parentElement.querySelector(".copy-state");
+        const activeLanguage = localStorage.getItem("vaultLandingLanguage") || "en";
+        const bundle = translations[activeLanguage] || translations.en;
         try {
           await navigator.clipboard.writeText(target.innerText);
-          state.textContent = "Copied.";
+          state.textContent = bundle.copied;
         } catch (error) {
-          state.textContent = "Select the prompt text and copy it manually.";
+          state.textContent = bundle.copyFallback;
         }
       });
     });

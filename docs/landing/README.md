@@ -14,6 +14,10 @@ The page is intentionally dependency-free:
 - no external network assets;
 - no hosted analytics;
 - safe to view offline or publish through GitHub Pages.
+- English, Traditional Chinese, and Simplified Chinese switch in-place with a
+  small static dictionary.
+- Directional connector lines use SVG/CSS only and respect
+  `prefers-reduced-motion`.
 
 ## Purpose
 
@@ -34,6 +38,9 @@ It shows the shortest user path:
 
 - Keep the first screen focused on memory governance, not a feature list.
 - Keep the install prompt aligned with `vault guide --intent install`.
+- Keep all three languages aligned when the core story changes.
+- Keep flow animations subtle and directional; they should explain the memory
+  lifecycle, not decorate the page.
 - Keep the Obsidian conflict choices explicit: accept Obsidian, accept Vault,
   or keep both.
 - Keep remote sharing language honest: Supabase and Gateway are adapters, not
