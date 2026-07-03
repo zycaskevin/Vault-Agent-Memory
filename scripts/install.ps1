@@ -1,6 +1,6 @@
 # Vault-for-LLM one-click installer for Windows (PowerShell)
 # Usage: irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.ps1 | iex
-# Requires the install script to exist on main; this lands with v0.7.30+.
+# Available from main. Installs the pinned release version below.
 
 $ErrorActionPreference = "Stop"
 
@@ -21,13 +21,13 @@ try {
     $pythonCmd = $null
     $pythonArgs = @()
     $candidates = @(
-        @("python"),
-        @("python3"),
-        @("py", "-3.14"),
-        @("py", "-3.13"),
         @("py", "-3.12"),
         @("py", "-3.11"),
-        @("py", "-3.10")
+        @("py", "-3.10"),
+        @("python"),
+        @("python3"),
+        @("py", "-3.13"),
+        @("py", "-3.14")
     )
 
     foreach ($candidate in $candidates) {

@@ -227,9 +227,9 @@ irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/inst
 
 安裝完成後，執行 `vault quickstart` 完成設定。
 
-這兩個 raw GitHub URL 需要等本 PR merge 到 `main` 後才會直接可用；
-如果要依照正式版本文件走，請等 v0.7.30+。在此之前，可以使用本分支腳本，
-或直接用上方的 Agent 安裝話術。
+這兩個 raw GitHub URL 已經可以從 `main` 使用，並會安裝本 README 固定的
+release 版本。如果你想完全依照 release-tagged 文件走，請使用包含這兩支
+安裝腳本的下一個正式版本文件。
 
 來源：[`scripts/install.sh`](scripts/install.sh) · [`scripts/install.ps1`](scripts/install.ps1)
 

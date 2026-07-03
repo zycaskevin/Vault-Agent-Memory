@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Vault-for-LLM one-click installer for macOS/Linux
 # Usage: curl -sSL https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.sh | bash
-# Requires the install script to exist on main; this lands with v0.7.30+.
+# Available from main. Installs the pinned release version below.
 
 set -e
 
@@ -20,7 +20,7 @@ echo ""
 echo -e "${YELLOW}[1/4] Checking Python version...${NC}"
 
 PYTHON_CMD=""
-for candidate in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do
+for candidate in python3.12 python3.11 python3.10 python3 python3.13 python3.14; do
     if command -v "$candidate" > /dev/null 2>&1 && "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' > /dev/null 2>&1; then
         PYTHON_CMD="$candidate"
         break

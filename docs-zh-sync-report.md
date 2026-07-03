@@ -24,7 +24,7 @@ The following small fixes were applied directly to both `README.zh-CN.md` and `R
 - ✅ **Role-oriented entry**: added the 5-role starting-point table
 - ✅ **Architecture visual**: added the Mermaid memory-governance flow
 - ✅ **Why Vault comparison**: added the no-Vault / with-Vault comparison table
-- ✅ **One-click install**: added macOS/Linux and PowerShell install commands with branch/version caveat
+- ✅ **One-click install**: added macOS/Linux and PowerShell install commands with main/release wording
 - ✅ **Core concepts link**: added `docs/core-concepts.md` to the Chinese advanced feature index
 
 ## Section-by-Section Comparison (章節對比)

@@ -252,10 +252,9 @@ irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/inst
 
 After the installer finishes, run `vault quickstart` to complete setup.
 
-These raw GitHub URLs require the install scripts to be present on `main` after
-this PR merges, or in v0.7.30+ if you prefer a released documentation version.
-Until then, use the scripts from this branch or the agent-assisted install
-prompt above.
+These raw GitHub URLs are available from `main` and install the pinned release
+version used by this README. If you prefer release-tagged documentation, use
+the next release that includes these installer scripts.
 
 Source: [`scripts/install.sh`](scripts/install.sh) · [`scripts/install.ps1`](scripts/install.ps1)
 
