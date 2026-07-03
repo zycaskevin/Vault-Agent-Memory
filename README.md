@@ -27,6 +27,56 @@ Vault-for-LLM exists because agent memory fails in practical ways:
 - private observations leak into shared project memory
 - teams cannot tell which memory was reviewed, trusted, or deprecated
 
+```mermaid
+flowchart TB
+    subgraph Agents["🤖 Your Agents"]
+        C[Codex]
+        CL[Claude Code]
+        H[Hermes]
+        CO[Coze]
+        N[n8n]
+    end
+
+    subgraph Vault["🔐 Vault — Governed Memory Layer"]
+        direction TB
+        Pipeline["審核管線 Review Pipeline<br/>隱私 · 重複 · 質量 · 來源"]
+        Report["📋 每日報告 Daily Report<br/>低風險自動入庫 · 高風險等人審核"]
+        subgraph Layers["記憶分層 Memory Layers"]
+            L0["L0 身份 Identity"]
+            L1["L1 規則 Rules"]
+            L2["L2 上下文 Context"]
+            L3["L3 知識 Knowledge"]
+        end
+        Ledger["📒 任務賬本 Task Ledger"]
+        Storage["💾 SQLite / Markdown<br/>本地優先 · 零依賴"]
+    end
+
+    subgraph Integrations["🔌 Integrations"]
+        Obs[Obsidian Sync]
+        Sup[Supabase]
+        GW[Gateway API]
+    end
+
+    Agents -- "propose / search / read / update" --> Vault
+    Pipeline --> Report
+    Report --> Layers
+    Layers --> Storage
+    Vault --> Integrations
+
+    style Agents fill:#e1f5fe,stroke:#0288d1
+    style Vault fill:#f3e5f5,stroke:#7b1fa2
+    style Integrations fill:#e8f5e9,stroke:#388e3c
+```
+
+### Why Vault?
+
+| Without Vault | With Vault |
+|---------------|------------|
+| Each agent remembers separately, repeating the same mistakes | One shared memory vault — learn once, benefit everywhere |
+| Old info fights with new decisions; agents don't know what to trust | Temporal boundaries + expiry — always surface the most current truth |
+| Sensitive info leaks everywhere; no audit trail | Governance metadata — who sees what, track every change, rollback anytime |
+| Memory is just a pile of chat logs, hard to find signal | Candidate → Review → Promote — only what's useful stays |
+
 The core workflow is:
 
 ```text
@@ -37,6 +87,16 @@ In plain language:
 
 > Vault is not about helping agents remember everything. It is about helping
 > teams govern what agents remember, trust, share, forget, and roll back.
+
+## Who Are You? Start Here 👇
+
+| Role | What You Care About | Starting Point |
+|------|---------------------|----------------|
+| 🧑‍💻 Agent Developer | How do I plug Vault into my agent? | → [MCP Integration Guide](docs/mcp_memory_workflow.md) |
+| 🤖 Power Agent User | How do I stop Claude/Codex from forgetting? | → [5-Minute Quickstart](docs/quickstart.md) · Copy the install prompt to your agent |
+| 👥 Team Collaboration | How do multiple agents share memory without chaos? | → [Three-Agent Shared Memory Demo](docs/demo/three-agent-shared-memory-runbook.md) |
+| 📝 Obsidian User | How can agents safely use my notes? | → [Obsidian Integration](docs/okf_integration.md) |
+| 🏗️ Architect / Tech Lead | Is this reliable? What's the architecture? | → [Design Decisions](docs/decision_records/) · [Benchmarks](docs/search_qa_benchmarking.md) |
 
 ## For Agent Builders: Ask Your Agent To Install It
 
@@ -158,6 +218,37 @@ Start here:
 - [Three-agent shared-memory runbook](docs/demo/three-agent-shared-memory-runbook.md)
 - [Demo pack](docs/demo/agent-governance-demo-pack.md)
 - [Strategy docs](docs/strategy/)
+
+## 3-Minute Demo (Coming Soon)
+
+> 🎬 *A 3-minute walkthrough GIF is coming soon.*
+>
+> In the meantime, here's what it will show:
+>
+> 1. **Install** — `pip install vault-for-llm[mcp]` and `vault quickstart`
+> 2. **Configure** — Answer 4 simple questions (language, vault type, integrations, report time)
+> 3. **Propose** — An agent suggests a memory with `vault_memory_propose`
+> 4. **Review** — The daily report surfaces candidates for human approval
+> 5. **Promote & Search** — Approved memory shows up in `vault_search` with bounded reads
+>
+> Prefer a text walkthrough? → [5-Minute Quickstart](docs/quickstart.md)
+
+## One-Click Install
+
+### macOS / Linux
+
+```bash
+curl -sSL https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.sh | bash
+```
+
+### Windows (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.ps1 | iex
+```
+
+After the installer finishes, run `vault quickstart` to complete setup.
+Source: [`scripts/install.sh`](scripts/install.sh) · [`scripts/install.ps1`](scripts/install.ps1)
 
 ## Developer Quickstart
 
@@ -402,6 +493,7 @@ deliberately.
 
 ## Documentation Map
 
+- [Core concepts in plain language](docs/core-concepts.md)
 - [Agent install runbook](docs/agent_install.md)
 - [CLI reference](docs/cli_reference.md)
 - [Agent integrations](docs/agent_integrations.md)
