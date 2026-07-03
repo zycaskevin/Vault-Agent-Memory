@@ -150,6 +150,27 @@ def test_submit_remote_candidate_request_can_sign_payload():
     assert len(params["p_hmac_signature"]) == 64
 
 
+def test_submit_remote_candidate_request_uses_primary_rotating_hmac_key(monkeypatch):
+    client = _FakeSupabaseClient()
+    monkeypatch.setenv("VAULT_SYNC_HMAC_SECRETS", "current:sync-new,old:sync-old")
+    monkeypatch.delenv("VAULT_SYNC_HMAC_SECRET", raising=False)
+
+    payload = submit_remote_candidate_request(
+        sb_client=client,
+        title="Rotating remote sync lesson",
+        content="Remote candidate sync should mark the active HMAC key id during rotation.",
+        from_agent="remote-agent",
+        trust=0.8,
+    )
+
+    assert payload["ok"] is True
+    params = client.rpc_calls[0][1]
+    assert params["p_hmac_key_id"] == "current"
+    assert params["p_hmac_algorithm"] == "hmac-sha256-v1"
+    assert len(params["p_hmac_signature"]) == 64
+    assert payload["request"]["hmac_key_id"] == "current"
+
+
 def test_pull_remote_candidate_requests_imports_into_local_candidate_queue(tmp_path):
     project = tmp_path / "project"
     project.mkdir()
@@ -256,6 +277,54 @@ def test_pull_remote_candidate_requests_requires_valid_hmac_before_import(tmp_pa
         rows = db.list_memory_candidates()
     assert len(rows) == 1
     assert rows[0]["title"] == "Signed candidate sync rule"
+
+
+def test_pull_remote_candidate_requests_accepts_rotating_hmac_keys(tmp_path, monkeypatch):
+    project = tmp_path / "project"
+    project.mkdir()
+    db = VaultDB(project / "vault.db").connect()
+    db.close()
+    monkeypatch.setenv("VAULT_SYNC_HMAC_SECRETS", "current:sync-new,old:sync-old")
+    monkeypatch.delenv("VAULT_SYNC_HMAC_SECRET", raising=False)
+    old_signed = build_remote_candidate_request(
+        title="Old signed candidate",
+        content="Decision: old active HMAC keys should verify during the rotation window.",
+        from_agent="remote-agent",
+        category="decision",
+        tags=["remote", "hmac"],
+        trust=0.82,
+        scope="shared",
+        sensitivity="low",
+    )
+    old_signed.update(sign_sync_payload(old_signed, "sync-old", key_id="old"))
+    unknown = dict(old_signed)
+    unknown.update(
+        {
+            "hmac_key_id": "retired",
+        }
+    )
+    client = _FakeSupabaseClient(
+        [
+            {"id": "req-old", "status": "submitted", "created_at": "2026-07-01T00:00:00Z", **old_signed},
+            {"id": "req-retired", "status": "submitted", "created_at": "2026-07-01T00:00:01Z", **unknown},
+        ]
+    )
+
+    payload = pull_remote_candidate_requests(project, sb_client=client, apply=True, require_hmac=True)
+
+    assert payload["integrity"]["active_key_count"] == 2
+    assert payload["integrity"]["key_ids"] == ["current", "old"]
+    assert payload["integrity"]["verified_count"] == 1
+    assert payload["integrity"]["invalid_count"] == 1
+    assert payload["imported_count"] == 1
+    old = next(item for item in payload["requests"] if item["id"] == "req-old")
+    retired = next(item for item in payload["requests"] if item["id"] == "req-retired")
+    assert old["integrity"]["hmac_key_id"] == "old"
+    assert retired["integrity"]["error"] == "unknown_hmac_key_id"
+    with VaultDB(project / "vault.db") as db:
+        rows = db.list_memory_candidates()
+    assert len(rows) == 1
+    assert rows[0]["title"] == "Old signed candidate"
 
 
 def test_pull_remote_candidate_requests_can_auto_promote_only_imported_low_risk_items(tmp_path):
@@ -415,3 +484,20 @@ def test_remote_candidate_cli_pull_preview_is_available(tmp_path, monkeypatch, c
     out = capsys.readouterr().out
     assert "remote candidate pull: preview" in out
     assert "Preview me" in out
+
+
+def test_remote_hmac_keys_cli_reports_rotation_without_secrets(tmp_path, monkeypatch, capsys):
+    from vault.cli import main
+
+    project = tmp_path / "project"
+    main(["init", "--project-dir", str(project)])
+    capsys.readouterr()
+    monkeypatch.setenv("VAULT_SYNC_HMAC_SECRETS", "current:sync-new,old:sync-old")
+
+    main(["remote", "hmac-keys", "--project-dir", str(project), "--json"])
+
+    payload = capsys.readouterr().out
+    assert '"active_key_count": 2' in payload
+    assert '"primary_key_id": "current"' in payload
+    assert "sync-new" not in payload
+    assert "sync-old" not in payload
