@@ -16,7 +16,13 @@ from typing import Any
 from .db import VaultDB
 from .memory import create_candidate
 from .multi_host import detect_candidate_conflicts, record_memory_revision
-from .sync_integrity import sign_sync_payload, sync_hmac_secret_from_env, verify_sync_payload
+from .sync_integrity import (
+    sign_sync_payload,
+    sync_hmac_primary_secret_from_env,
+    sync_hmac_secret_from_env,
+    sync_hmac_secrets_from_env,
+    verify_sync_payload,
+)
 
 REMOTE_CANDIDATE_TABLE = "vault_memory_write_requests"
 REMOTE_CANDIDATE_RPC = "vault_submit_memory_request"
@@ -161,7 +167,15 @@ def submit_remote_candidate_request(
             "error": "invalid_request",
             "message": "remote candidate requests require non-empty title and content",
         }
-    signature = sign_sync_payload(payload, hmac_secret if hmac_secret is not None else sync_hmac_secret_from_env())
+    if hmac_secret is not None:
+        signature = sign_sync_payload(payload, hmac_secret)
+    else:
+        primary_key = sync_hmac_primary_secret_from_env()
+        signature = sign_sync_payload(
+            payload,
+            primary_key.get("secret", ""),
+            key_id=primary_key.get("key_id", ""),
+        )
     if signature:
         payload.update(signature)
 
@@ -430,9 +444,16 @@ def _verify_request_integrity(
     hmac_secret: str | None = None,
     require_hmac: bool | None = None,
 ) -> dict[str, Any]:
-    secret = hmac_secret if hmac_secret is not None else sync_hmac_secret_from_env()
-    require = bool(secret) if require_hmac is None else bool(require_hmac)
-    return verify_sync_payload(row, secret or "", require_signature=require)
+    secret: str | list[dict[str, str]]
+    if hmac_secret is not None:
+        secret = hmac_secret
+        configured = bool(hmac_secret)
+    else:
+        keys = sync_hmac_secrets_from_env()
+        secret = keys if keys else sync_hmac_secret_from_env()
+        configured = bool(keys or secret)
+    require = configured if require_hmac is None else bool(require_hmac)
+    return verify_sync_payload(row, secret, require_signature=require)
 
 
 def _integrity_summary(
@@ -448,12 +469,16 @@ def _integrity_summary(
     verified = sum(1 for item in checks if item.get("status") == "verified")
     unsigned = sum(1 for item in checks if item.get("status") == "unsigned")
     invalid = sum(1 for item in checks if not item.get("ok", False))
+    keys = [] if hmac_secret is not None else sync_hmac_secrets_from_env()
     secret = hmac_secret if hmac_secret is not None else sync_hmac_secret_from_env()
-    require = bool(secret) if require_hmac is None else bool(require_hmac)
+    configured = bool(hmac_secret if hmac_secret is not None else (keys or secret))
+    require = configured if require_hmac is None else bool(require_hmac)
     return {
         "hmac_supported": True,
         "hmac_required": require,
-        "secret_configured": bool(secret),
+        "secret_configured": configured,
+        "active_key_count": 1 if hmac_secret is not None and hmac_secret else len(keys),
+        "key_ids": [] if hmac_secret is not None else [item["key_id"] for item in keys],
         "verified_count": verified,
         "unsigned_count": unsigned,
         "invalid_count": invalid,

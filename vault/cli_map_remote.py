@@ -3,15 +3,12 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
-import os
 import sqlite3
 import sys
 from pathlib import Path
 
-from .cli_context import _arg_value, _enforce_cli_privacy, _json_print, find_project_dir
-from .cli_search import temporal_search_kwargs
+from .cli_context import _arg_value, _json_print, find_project_dir
 
 
 def add_remote_parser(sub: argparse._SubParsersAction) -> None:
@@ -94,6 +91,9 @@ def add_remote_parser(sub: argparse._SubParsersAction) -> None:
         action="store_true",
         help="拉回後依 automation_policy.yaml 只自動 promote 低風險候選；需搭配 --apply",
     )
+    _add_remote_output_args(rp)
+
+    rp = remote_sub.add_parser("hmac-keys", help="檢查遠端候選同步 HMAC 金鑰輪替狀態；不輸出 secret")
     _add_remote_output_args(rp)
 
 
@@ -437,6 +437,21 @@ def cmd_remote(args):
                 print(f"  - {item.get('id', '')} {item.get('title', '')} [{item.get('status', '')}]")
         return
 
+    if args.remote_action == "hmac-keys":
+        from vault.sync_integrity import sync_hmac_key_report
+
+        payload = sync_hmac_key_report()
+        if args.json or args.pretty:
+            print(json.dumps(payload, ensure_ascii=False, indent=2 if args.pretty else None))
+            return
+        print(
+            f"remote HMAC keys: {payload.get('status', 'missing')} "
+            f"active={payload.get('active_key_count', 0)} "
+            f"primary={payload.get('primary_key_id', '') or 'none'}"
+        )
+        print(f"Next: {payload.get('next_action', '')}")
+        return
+
     from vault.mcp import (
         _vault_remote_doctor_payload,
         _vault_remote_map_show_payload,
@@ -510,7 +525,7 @@ def cmd_remote(args):
             limit=args.limit,
         )
     else:
-        print("用法: vault remote {search|map|read|smoke|doctor|submit-candidate|pull-candidates}")
+        print("用法: vault remote {search|map|read|smoke|doctor|submit-candidate|pull-candidates|hmac-keys}")
         return
 
     if args.json or args.pretty:

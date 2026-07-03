@@ -9,6 +9,7 @@ submitted through Supabase-backed candidate requests.
 
 When `VAULT_SYNC_HMAC_SECRET` is configured, outgoing candidate requests include:
 
+- `hmac_key_id`
 - `hmac_algorithm`
 - `payload_hash`
 - `hmac_signature`
@@ -45,6 +46,20 @@ The shared HMAC secret is separate from Supabase keys:
 HMAC is optional for existing deployments. If no HMAC secret is configured,
 remote candidate sync keeps the previous unsigned behavior.
 
+`VAULT_SYNC_HMAC_SECRET` remains supported as the legacy single-key path. New
+deployments that need key rotation should use `VAULT_SYNC_HMAC_SECRETS`, a
+comma-separated active key list:
+
+```bash
+export VAULT_SYNC_HMAC_SECRETS="current:replace-with-new-secret,old:replace-with-old-secret"
+vault remote hmac-keys --json
+```
+
+Outgoing requests are signed with the first key and include its `hmac_key_id`.
+Trusted pull hosts can verify any active key during the rotation window. After
+all submitters have moved to the new primary key, remove the old key from
+`VAULT_SYNC_HMAC_SECRETS`.
+
 Advanced Supabase setup templates include the new columns and RPC parameters so
 new deployments can carry signatures. Existing deployments can continue running
 unsigned until their SQL policy is updated.
@@ -52,5 +67,4 @@ unsigned until their SQL policy is updated.
 ## Follow-Up
 
 - Add an offline sync package format with HMAC metadata.
-- Add a compact `vault sync integrity` report for operators.
 - Add sync audit surfacing in the multi-agent dashboard.

@@ -77,6 +77,7 @@ scheduled jobs, or explicit maintenance sessions.
 | `vault remote submit-candidate --from-agent remote-agent --title "..." --content "..." --trust 0.8 --json` | Submit a remote candidate request through Supabase; does not write active knowledge |
 | `vault remote pull-candidates --apply --json` | Trusted sync host pulls submitted remote requests into local `memory_candidates` |
 | `vault remote pull-candidates --apply --auto-promote-low-risk --json` | Trusted sync host pulls remote requests and promotes only this pull's candidates that match `automation_policy.yaml` low-risk rules |
+| `vault remote hmac-keys --json` | Show active remote candidate HMAC key ids for rotation without printing secrets |
 | `vault sync revisions --json` | Inspect the local revision graph created by remote candidate imports and promotions |
 | `vault sync conflicts --json` | List open local sync conflicts, such as same-title remote candidates that differ from active reviewed knowledge |
 | `vault sync audit --json` | Inspect local sync audit events without reading private memory content |

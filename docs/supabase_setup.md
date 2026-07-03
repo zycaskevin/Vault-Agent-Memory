@@ -334,6 +334,19 @@ vault remote pull-candidates --limit 20 --json
 vault remote pull-candidates --limit 20 --apply --json
 ```
 
+Optional HMAC integrity for candidate requests:
+
+```bash
+export VAULT_SYNC_HMAC_SECRETS="current:replace-with-new-secret,old:replace-with-old-secret"
+vault remote hmac-keys --json
+vault remote pull-candidates --require-hmac --apply --json
+```
+
+`VAULT_SYNC_HMAC_SECRETS` signs new submissions with the first key and verifies
+all listed active keys during a rotation window. Remove the old key only after
+every submitter has moved to the new primary key. The legacy
+`VAULT_SYNC_HMAC_SECRET` single-key environment variable remains supported.
+
 `pull-candidates --apply` writes to local `memory_candidates`, not
 `knowledge`. The normal candidate gates decide whether the item is clean enough
 to review, and `vault promote <candidate_id> --confirm` is still the step that
