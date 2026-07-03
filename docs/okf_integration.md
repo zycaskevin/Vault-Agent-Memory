@@ -116,6 +116,16 @@ and `concepts/<type>/*.md`. By default it excludes `scope: private` and
 `--include-restricted` only when intentionally creating a private/internal
 bundle.
 
+For non-OKF export needs, use:
+
+- `vault export markdown --bundle ./memory-md` for a human-readable batch of
+  active memories, one Markdown file per memory plus `manifest.json`.
+- `vault export json --bundle ./memory-json` for a machine-readable
+  `knowledge.json` snapshot plus `manifest.json`.
+
+All three export modes are read-only against `vault.db`, support `--dry-run`,
+and exclude `scope: private` plus `sensitivity: restricted` by default.
+
 Recommended output:
 
 ```text

@@ -101,6 +101,8 @@ scheduled jobs, or explicit maintenance sessions.
 | `vault okf validate ./okf-bundle --json --pretty` | Validate an OKF-style Markdown knowledge bundle before import, export, or publication |
 | `vault export okf --bundle ./okf-bundle --dry-run --json --pretty` | Preview a read-only OKF-style export; private and restricted memories are excluded by default |
 | `vault export okf --bundle ./okf-bundle --include-private --include-restricted` | Explicitly include protected memories when creating a private/internal bundle |
+| `vault export markdown --bundle ./memory-md --dry-run --json --pretty` | Preview a batch Markdown export with one active memory per file plus `manifest.json` |
+| `vault export json --bundle ./memory-json --json --pretty` | Write `knowledge.json` and `manifest.json` for machine-readable backup or migration work |
 
 Prefer `vault remember` over `vault add` for autonomous agents or unreviewed
 memory.
