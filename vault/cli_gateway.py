@@ -55,6 +55,7 @@ def _add_serve_args(parser: Any, *, host_default: str) -> None:
     parser.add_argument("--host", default=host_default, help=f"綁定 host；預設 {host_default}")
     parser.add_argument("--port", type=int, default=DEFAULT_GATEWAY_PORT, help=f"綁定 port；預設 {DEFAULT_GATEWAY_PORT}")
     parser.add_argument("--max-workers", type=int, default=None, help="同時處理 request 的 worker 上限；也可用 VAULT_GATEWAY_MAX_WORKERS")
+    parser.add_argument("--shutdown-timeout-seconds", type=float, default=None, help="SIGINT/SIGTERM drain 等待秒數；也可用 VAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS")
     parser.add_argument("--auth-token", default=None, help="Gateway token；也可用 VAULT_GATEWAY_TOKEN")
     parser.add_argument("--no-auth", action="store_true", help="只允許 localhost 綁定時關閉 token")
     parser.add_argument("--tls-cert", default="", help="HTTPS certificate path；也可用 VAULT_GATEWAY_TLS_CERT")
