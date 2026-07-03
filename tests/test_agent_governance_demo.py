@@ -42,6 +42,20 @@ def test_agent_governance_demo_runs_full_lifecycle(tmp_path):
     checklist = Path(payload["artifacts"]["acceptance_checklist"])
     assert checklist.exists()
     assert "bounded read" in checklist.read_text(encoding="utf-8").lower()
+    evidence_json = Path(payload["artifacts"]["evidence_summary_json"])
+    evidence = json.loads(evidence_json.read_text(encoding="utf-8"))
+    assert evidence["ok"] is True
+    assert {check["id"] for check in evidence["checks"]} == {
+        "candidate_created",
+        "promoted_memory_created",
+        "search_found_promoted_memory",
+        "bounded_read_citation",
+        "rollback_verified",
+        "audit_event_recorded",
+    }
+    evidence_md = Path(payload["artifacts"]["evidence_summary_md"])
+    assert evidence_md.exists()
+    assert "status: `pass`" in evidence_md.read_text(encoding="utf-8").lower()
     assert Path(payload["artifacts"]["codex_startup"]).exists()
     assert Path(payload["artifacts"]["claude_code_startup"]).exists()
     assert Path(payload["artifacts"]["hermes_startup"]).exists()
