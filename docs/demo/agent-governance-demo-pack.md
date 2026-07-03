@@ -29,6 +29,8 @@ The command creates:
 - `reports/demo/demo-report.json`
 - `reports/demo/public-demo-script.md`
 - `reports/demo/acceptance-checklist.md`
+- `reports/demo/evidence-summary.md`
+- `reports/demo/evidence-summary.json`
 - `agent-config-snippets/codex-startup.md`
 - `agent-config-snippets/claude-code-startup.md`
 - `agent-config-snippets/hermes-startup.md`
@@ -39,8 +41,9 @@ Show these artifacts in order:
 
 1. `demo-report.md`: the lifecycle proof.
 2. `public-demo-script.md`: the external talk track.
-3. `acceptance-checklist.md`: the proof criteria.
-4. `agent-config-snippets/`: the shortest setup snippets for each agent.
+3. `evidence-summary.md`: the generated pass/fail evidence for the proof.
+4. `acceptance-checklist.md`: the proof criteria.
+5. `agent-config-snippets/`: the shortest setup snippets for each agent.
 
 Do not lead with embeddings, vector search, or benchmark numbers. Lead with the
 governed lifecycle.
@@ -71,6 +74,21 @@ The demo is ready to publish only if:
 - no private data, cloud service, or hidden runtime is required
 
 If the demo only proves search, it is not the right demo.
+
+## Evidence Summary
+
+`evidence-summary.json` is the machine-readable proof that the run completed the
+governed memory lifecycle. It checks:
+
+- candidate creation
+- promotion into active knowledge
+- search recall by another agent
+- bounded read citation
+- verified rollback backup
+- audit event recording
+
+Use `evidence-summary.md` in screenshots, release notes, or demo writeups when
+you need a concise human-readable proof.
 
 ## Follow-Up Integrations
 
