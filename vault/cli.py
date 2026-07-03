@@ -9,6 +9,8 @@ Vault-for-LLM — CLI 入口。
   vault compile           # 編譯 raw/ → db + compiled/
   vault search "查詢"     # 搜尋知識
   vault export obsidian   # 匯出成 Obsidian vault Markdown notes
+  vault export markdown   # 批次匯出 active memory Markdown bundle
+  vault export json       # 匯出 active memory JSON snapshot
   vault okf validate DIR  # 驗證 OKF-style Markdown bundle
   vault list              # 列出知識
   vault candidates        # 列出候選記憶
@@ -64,6 +66,7 @@ from .cli_content import (
     cmd_skill_search,
     cmd_skill_stats,
 )
+from .cli_export import cmd_export
 from .cli_flow import (
     cmd_agent,
     cmd_automation,
@@ -72,7 +75,6 @@ from .cli_flow import (
     cmd_capture,
     cmd_db,
     cmd_dream,
-    cmd_export,
     cmd_promote,
     cmd_remember,
     cmd_setup_agent,
@@ -756,6 +758,32 @@ def main(argv: list[str] | None = None):
 
     ep = export_sub.add_parser("okf", help="匯出 OKF-style Markdown knowledge bundle")
     ep.add_argument("--bundle", required=True, help="OKF bundle 輸出目錄")
+    ep.add_argument("--category", help="只匯出指定 category")
+    ep.add_argument("--tag", help="只匯出含指定 tag 的條目")
+    ep.add_argument("--layer", choices=["L0", "L1", "L2", "L3"], help="只匯出指定 layer")
+    ep.add_argument("--limit", type=int, help="最多匯出幾條")
+    ep.add_argument("--min-trust", type=float, default=0.0, help="最低 trust 門檻")
+    ep.add_argument("--include-private", action="store_true", help="包含 scope=private；預設排除")
+    ep.add_argument("--include-restricted", action="store_true", help="包含 sensitivity=restricted；預設排除")
+    ep.add_argument("--dry-run", action="store_true", help="只列出將寫入的檔案，不建立檔案")
+    ep.add_argument("--json", action="store_true", help="輸出 JSON")
+    ep.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+
+    ep = export_sub.add_parser("markdown", help="批次匯出 Markdown memory bundle")
+    ep.add_argument("--bundle", required=True, help="Markdown bundle 輸出目錄")
+    ep.add_argument("--category", help="只匯出指定 category")
+    ep.add_argument("--tag", help="只匯出含指定 tag 的條目")
+    ep.add_argument("--layer", choices=["L0", "L1", "L2", "L3"], help="只匯出指定 layer")
+    ep.add_argument("--limit", type=int, help="最多匯出幾條")
+    ep.add_argument("--min-trust", type=float, default=0.0, help="最低 trust 門檻")
+    ep.add_argument("--include-private", action="store_true", help="包含 scope=private；預設排除")
+    ep.add_argument("--include-restricted", action="store_true", help="包含 sensitivity=restricted；預設排除")
+    ep.add_argument("--dry-run", action="store_true", help="只列出將寫入的檔案，不建立檔案")
+    ep.add_argument("--json", action="store_true", help="輸出 JSON")
+    ep.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+
+    ep = export_sub.add_parser("json", help="匯出 active memory JSON snapshot")
+    ep.add_argument("--bundle", required=True, help="JSON snapshot 輸出目錄")
     ep.add_argument("--category", help="只匯出指定 category")
     ep.add_argument("--tag", help="只匯出含指定 tag 的條目")
     ep.add_argument("--layer", choices=["L0", "L1", "L2", "L3"], help="只匯出指定 layer")
