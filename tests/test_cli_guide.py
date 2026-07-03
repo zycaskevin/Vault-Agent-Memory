@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from vault.cli import main
 
 
@@ -63,6 +65,8 @@ def test_cli_guide_install_prints_copy_paste_agent_prompt(capsys):
     assert "Do not show advanced CLI flags unless I ask" in out
     assert "The agent should ask only" in out
     assert "independent vault or shared vault" in out
+    assert "5-minute quickstart" in out
+    assert "FAQ:" in out
 
 
 def test_cli_guide_install_json_has_consumer_contract(capsys):
@@ -77,3 +81,28 @@ def test_cli_guide_install_json_has_consumer_contract(capsys):
     assert contract["memory_mode"] == "governed-auto"
     assert len(contract["human_questions"]) == 4
     assert any("low-risk" in item for item in contract["agent_must_do"])
+    assert len(payload["quickstart_5_minute"]) == 5
+    assert len(payload["faq"]) == 10
+
+
+def test_cli_guide_faq_intent_is_direct(capsys):
+    main(["guide", "--intent", "faq", "--json"])
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["intent"] == "faq"
+    assert len(payload["faq"]) == 10
+    assert any("1000" in item["a"] for item in payload["faq"])
+    assert "docs/quickstart.md" in payload["docs"]
+
+
+def test_cli_search_rejects_overlong_query_before_db(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(SystemExit) as exc:
+        main(["search", "x" * 1001, "--json"])
+
+    assert exc.value.code == 2
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["error"] == "query_too_long"
+    assert payload["max_query_chars"] == 1000
+    assert "next_action" in payload
+    assert not (tmp_path / "vault.db").exists()

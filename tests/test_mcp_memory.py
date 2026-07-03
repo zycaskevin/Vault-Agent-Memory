@@ -47,9 +47,18 @@ def test_mcp_memory_tools_are_advertised():
     search_tool = next(tool for tool in TOOLS if tool["name"] == "vault_search")
     assert "semantic" in search_tool["inputSchema"]["properties"]["mode"]["enum"]
     assert search_tool["inputSchema"]["properties"]["max_sensitivity"]["default"] == "medium"
+    assert search_tool["inputSchema"]["properties"]["query"]["maxLength"] == 1000
     update_tool = next(tool for tool in TOOLS if tool["name"] == "vault_update_status")
     assert "doctor" in update_tool["inputSchema"]["properties"]
     assert "max_status_age_minutes" in update_tool["inputSchema"]["properties"]
+
+
+def test_mcp_search_rejects_overlong_query_before_db():
+    payload = _payload(handle_tool_call("vault_search", {"query": "x" * 1001}))
+
+    assert payload["error"] == "query_too_long"
+    assert payload["max_query_chars"] == 1000
+    assert "next_action" in payload
 
 
 def test_mcp_tool_profiles_reduce_visible_tool_schemas():

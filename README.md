@@ -80,7 +80,8 @@ vault guide --intent install
 
 `vault quickstart` is the small first-run wizard. It asks only for language,
 independent/shared memory, optional Obsidian/Supabase connections, and daily
-report time. Advanced integration flags stay under `vault setup-agent`.
+report time. See [docs/quickstart.md](docs/quickstart.md) for the 5-minute
+walkthrough and FAQ. Advanced integration flags stay under `vault setup-agent`.
 
 Agent-assisted quickstart uses `governed-auto` by default. Internally this is
 still the consumer setup path, but that does not mean Vault is a zero-learning
