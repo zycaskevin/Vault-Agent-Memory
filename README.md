@@ -381,7 +381,7 @@ More detail:
 | local SQLite, Markdown compile, keyword search | stable |
 | CLI setup, candidate memory, bounded reads | usable |
 | MCP tools | usable, profile selection recommended |
-| consumer setup and governed-auto daily loop | usable, improving |
+| agent-assisted setup and governed-auto daily loop | usable, improving |
 | Obsidian import/export/conflict inbox | usable, sync UX still improving |
 | Supabase sync and Gateway / Remote Server | advanced optional |
 | semantic search, embedding providers, rerank, benchmark adapters | evolving |
@@ -430,6 +430,15 @@ uv run pytest -q
 `pip install vault-for-llm` remains the public user install path. The uv workflow
 is for source development, CI smoke checks, and agents that need to rebuild the
 same local environment reliably.
+
+## Contributing
+
+Vault is ready for small, bounded contributions from Agent-assisted builders.
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), the
+[good first issue ideas](docs/contributing_good_first_issues.md), and the
+[Code of Conduct](CODE_OF_CONDUCT.md). Please do not include real secrets,
+private chats, customer records, medical data, or production vault exports in
+public issues or pull requests.
 
 ## License
 
