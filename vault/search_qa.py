@@ -17,6 +17,8 @@ from typing import Any
 
 from .db import VaultDB
 from .search import VaultSearch
+from .utils import as_list as _as_list
+from .utils import jsonable as _jsonable
 
 METRIC_KEYS: tuple[str, ...] = (
     "total_cases",
@@ -606,26 +608,6 @@ def _normalize_id(value: Any) -> str:
     return str(value).strip()
 
 
-def _as_list(value: Any) -> list[Any]:
-    if value is None:
-        return []
-    if isinstance(value, list):
-        return value
-    return [value]
-
-
 def _append_once(values: list[str], value: str) -> None:
     if value not in values:
         values.append(value)
-
-
-def _jsonable(value: Any) -> Any:
-    try:
-        json.dumps(value)
-        return value
-    except TypeError:
-        if isinstance(value, dict):
-            return {str(k): _jsonable(v) for k, v in value.items()}
-        if isinstance(value, (list, tuple)):
-            return [_jsonable(v) for v in value]
-        return str(value)
