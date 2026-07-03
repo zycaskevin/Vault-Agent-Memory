@@ -560,6 +560,8 @@ def main(argv: list[str] | None = None):
                         help="常見 Agent 權限預設；會建議 scope、MCP profile、共享/私有邊界")
         ap.add_argument("--audience", choices=["consumer", "builder"], default="builder",
                         help="安裝受眾；consumer 會產生日報導向的一般使用者說明與安全排程模板")
+        ap.add_argument("--memory-mode", choices=["governed-auto", "daily-review", "manual"], default=None,
+                        help="記憶自動化模式；consumer 預設 governed-auto，builder 預設 manual")
         ap.add_argument("--scope", choices=["shared", "private", "domain", "temporary"], help="Vault 資料庫範圍")
         ap.add_argument("--agent-project-dir", "--project", dest="agent_project_dir",
                         help="要初始化/使用的 Vault project directory")

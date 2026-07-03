@@ -94,7 +94,6 @@ from vault.agent_setup_venv import default_stable_venv_path, write_stable_venv_t
 from vault.agent_setup_roster import (
     VALID_AGENT_ROLES,
     VALID_VALIDATION_PACK_TARGETS,
-    _deep_merge_dict,
     _normalize_validation_pack_targets,
     _safe_slug,
     normalize_agent_roster,
@@ -110,6 +109,8 @@ from vault.agent_setup_memory import (
     write_memory_agents_guide,
 )
 from vault.agent_setup_obsidian import write_obsidian_human_gui_guide
+from vault.agent_setup_paths import default_agent_private_dir, safe_default_agent_private_project
+from vault.agent_setup_policy import normalize_memory_mode, write_automation_policy_template
 from vault.db import VaultDB
 from vault.import_obsidian import sync_obsidian_vault
 
@@ -176,12 +177,6 @@ def default_project_dir(scope: str, *, agent: str = "generic") -> Path:
     return home / ".vault-for-llm" / "agent-private"
 
 
-def default_agent_private_dir(agent: str = "generic") -> Path:
-    root = os.environ.get("VAULT_AGENT_PRIVATE_ROOT", "").strip()
-    base = Path(root).expanduser() if root else Path.home() / "Vaults" / "agents"
-    return base / _safe_slug(agent, default="generic") / "private-memory"
-
-
 def normalize_features(raw: str | list[str] | None) -> list[str]:
     if raw is None:
         features = list(DEFAULT_FEATURES)
@@ -237,54 +232,6 @@ def compile_project(project_dir: str | Path, *, allow_private: bool = False) -> 
         db.close()
 
 
-def write_automation_policy_template(
-    *,
-    project_dir: str | Path,
-    mode: str = "balanced",
-    auto_promote_low_risk: bool = False,
-) -> dict[str, Any]:
-    from vault.automation import POLICY_FILE, default_policy
-
-    project = Path(project_dir).expanduser().resolve()
-    path = project / POLICY_FILE
-    existed = path.exists()
-    if existed:
-        loaded = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-        if not isinstance(loaded, dict):
-            raise ValueError(f"{POLICY_FILE} must contain a YAML object")
-        policy = default_policy(str(loaded.get("mode") or mode))
-        policy = _deep_merge_dict(policy, loaded)
-    else:
-        policy = default_policy(mode)
-
-    policy["mode"] = _normalize_automation_mode(str(policy.get("mode") or mode))
-    if auto_promote_low_risk:
-        policy["auto_promote_low_risk_candidates"] = True
-        policy.setdefault("auto_promote_allowed_sources", ["session_capture"])
-        policy.setdefault("auto_promote_allowed_memory_types", ["session_lesson"])
-        policy.setdefault("auto_promote_allowed_scopes", ["project", "shared", "public"])
-        policy.setdefault("auto_promote_allowed_sensitivities", ["low"])
-        policy.setdefault("auto_promote_min_trust", 0.65)
-        policy.setdefault("auto_promote_max_per_run", 3)
-        policy.setdefault("auto_promote_requires_source_ref", True)
-
-    backup_path = ""
-    if existed:
-        stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-        backup = path.with_name(f"{path.name}.{stamp}.bak")
-        backup.write_text(path.read_text(encoding="utf-8"), encoding="utf-8")
-        backup_path = str(backup)
-    path.write_text(yaml.safe_dump(policy, sort_keys=False, allow_unicode=True), encoding="utf-8")
-    return {
-        "path": str(path),
-        "backup_path": backup_path,
-        "status": "updated" if existed else "created",
-        "mode": policy["mode"],
-        "auto_promote_low_risk_candidates": bool(policy.get("auto_promote_low_risk_candidates", False)),
-        "next_action": "Review automation_policy.yaml before enabling scheduled --apply runs.",
-    }
-
-
 def _normalize_memory_layout(layout: str | None) -> str:
     value = str(layout or "hybrid").strip().lower()
     if value not in VALID_MEMORY_LAYOUTS:
@@ -316,6 +263,7 @@ class AgentSetupConfig:
     agent: str = "generic"
     agent_preset: str = ""
     audience: str = "builder"
+    memory_mode: str = ""
     memory_layout: str = "hybrid"
     agent_private_dir: Path | None = None
     features: list[str] = field(default_factory=lambda: list(DEFAULT_FEATURES))
@@ -366,10 +314,17 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
     features = normalize_features(config.features)
     language = _normalize_setup_language(config.language)
     audience = _normalize_audience(config.audience)
+    memory_mode = normalize_memory_mode(config.memory_mode, audience=audience)
     memory_layout = _normalize_memory_layout(config.memory_layout)
     private_project_path: Path | None = None
+    path_fallbacks: list[dict[str, Any]] = []
     if memory_layout in {"hybrid", "private"}:
-        private_project_path = ensure_project(config.agent_private_dir or default_agent_private_dir(config.agent))
+        if config.agent_private_dir:
+            private_project_path = ensure_project(config.agent_private_dir)
+        else:
+            private_project_path, fallback = safe_default_agent_private_project(config.agent, project_path, ensure_project)
+            if fallback:
+                path_fallbacks.append(fallback)
     optional_dependency_install = None
     if config.install_optional_deps:
         optional_dependency_install = install_optional_dependencies(features)
@@ -395,6 +350,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         "agent": config.agent,
         "agent_preset": access_preset,
         "audience": audience,
+        "memory_mode": memory_mode,
         "memory_layout": memory_layout,
         "agent_private_dir": str(private_project_path) if private_project_path else "",
         "features": features,
@@ -426,6 +382,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         "update_status_templates": {},
         "agent_adapter_startup": {},
         "agent_registry": {},
+        "path_fallbacks": path_fallbacks,
         "human_next_steps": [],
         "agent_next_steps": [],
         "next_steps": [
@@ -434,18 +391,42 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         ]
         + feature_next_steps,
     }
-    result["agent_registry"] = register_agent(
-        agent=config.agent,
-        project_dir=project_path,
-        scope=config.scope,
-        features=features,
-        tool_profile=config.tool_profile,
-        source="setup-agent",
-        memory_layout=memory_layout,
-        private_project_dir=private_project_path,
-    )
-    result["next_steps"].insert(0, "Check local agent registry and update status: vault update-status")
     template_dir = config.template_dir or (project_path / "agent-install")
+    try:
+        result["agent_registry"] = register_agent(
+            agent=config.agent,
+            project_dir=project_path,
+            scope=config.scope,
+            features=features,
+            tool_profile=config.tool_profile,
+            source="setup-agent",
+            memory_layout=memory_layout,
+            private_project_dir=private_project_path,
+        )
+    except OSError as exc:
+        if os.environ.get("VAULT_AGENT_REGISTRY_DIR", "").strip():
+            raise
+        fallback_registry = Path(template_dir).expanduser().resolve() / "agent-registry.json"
+        result["agent_registry"] = register_agent(
+            agent=config.agent,
+            project_dir=project_path,
+            scope=config.scope,
+            features=features,
+            tool_profile=config.tool_profile,
+            source="setup-agent",
+            memory_layout=memory_layout,
+            private_project_dir=private_project_path,
+            path=fallback_registry,
+        )
+        fallback = {
+            "kind": "agent_registry",
+            "from": str(Path("~/.vault-for-llm/agent-registry.json").expanduser()),
+            "to": str(fallback_registry),
+            "reason": f"{exc.__class__.__name__}: {exc}",
+        }
+        path_fallbacks.append(fallback)
+        result["path_fallbacks"] = path_fallbacks
+    result["next_steps"].insert(0, "Check local agent registry and update status: vault update-status")
     if access_preset:
         access_path = Path(template_dir).expanduser().resolve() / "agent-access-preset.json"
         access_path.parent.mkdir(parents=True, exist_ok=True)
@@ -502,7 +483,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         project_dir=project_path,
     )
     result["next_steps"].insert(0, f"Run local smoke test: {result['local_smoke']['script']}")
-    if audience == "consumer":
+    if audience == "consumer" or memory_mode != "manual":
         result["consumer_daily_report"] = write_consumer_daily_report_guide(
             output_dir=template_dir,
             project_dir=project_path,
@@ -516,11 +497,12 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         result["next_steps"].append(
             f"Review consumer daily-report guide: {result['consumer_daily_report']['guide']}"
         )
-        result["human_next_steps"] = [
-            "Ask your agent to maintain Vault memory for you.",
-            "Read the daily report instead of learning commands.",
-            "Only decide the few cards marked keep, private, reject, or defer.",
-        ]
+        if audience == "consumer":
+            result["human_next_steps"] = [
+                "Ask your agent to maintain Vault memory for you.",
+                "Read the daily report instead of learning commands.",
+                "Only decide the few cards marked keep, private, reject, or defer.",
+            ]
         result["security_hardening"] = write_consumer_security_hardening_guide(
             output_dir=template_dir,
             agent=config.agent,
@@ -677,12 +659,23 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
 
     automation_schedule_targets = config.automation_schedule_targets
     automation_write_workspace = config.automation_write_workspace
-    if audience == "consumer" and _normalize_sync_targets(automation_schedule_targets) == set():
-        automation_schedule_targets = "cron"
+    automation_apply = config.automation_apply
+    automation_auto_promote_low_risk = config.automation_auto_promote_low_risk
+    if memory_mode == "governed-auto":
         automation_write_workspace = True
-    daily_report_time = str(config.daily_report_time or ("09:00" if audience == "consumer" else ""))
+        automation_apply = True
+        automation_auto_promote_low_risk = True
+        if _normalize_sync_targets(automation_schedule_targets) == set():
+            automation_schedule_targets = "cron"
+    elif memory_mode == "daily-review":
+        automation_write_workspace = True
+        if _normalize_sync_targets(automation_schedule_targets) == set():
+            automation_schedule_targets = "cron"
+    if memory_mode != "manual" and _normalize_sync_targets(automation_schedule_targets) == set():
+        automation_schedule_targets = "cron"
+    daily_report_time = str(config.daily_report_time or ("09:00" if memory_mode != "manual" else ""))
     automation_targets = _normalize_sync_targets(automation_schedule_targets)
-    if config.automation_auto_promote_low_risk:
+    if automation_auto_promote_low_risk:
         result["automation_policy"] = write_automation_policy_template(
             project_dir=project_path,
             mode=config.automation_mode,
@@ -699,7 +692,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
             interval_minutes=config.automation_interval_minutes,
             mode=config.automation_mode,
             command=config.automation_command,
-            apply=config.automation_apply,
+            apply=automation_apply,
             vault_executable=current_vault_executable(),
             write_workspace=automation_write_workspace,
             workspace_inbox_limit=config.automation_workspace_inbox_limit,
@@ -707,8 +700,8 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
             transcript_limit=config.automation_transcript_limit,
             capture_transcripts=config.automation_capture_transcripts,
             capture_transcript_limit=config.automation_capture_transcript_limit,
-            auto_promote_low_risk=config.automation_auto_promote_low_risk,
-            write_daily_report=audience == "consumer",
+            auto_promote_low_risk=automation_auto_promote_low_risk,
+            write_daily_report=memory_mode != "manual",
             daily_report_time=daily_report_time,
             language=language,
         )
@@ -718,7 +711,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         result["next_steps"].append(
             f"Next agent startup handoff: vault automation handoff --project-dir {project_path}"
         )
-        if config.automation_auto_promote_low_risk and not config.automation_apply:
+        if automation_auto_promote_low_risk and not automation_apply:
             result["next_steps"].append(
                 "Low-risk auto-promote policy is enabled, but generated schedules omit --apply; scheduled runs will preview only until --automation-apply is enabled."
             )
@@ -1029,6 +1022,7 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
         agent=agent,
         agent_preset=str(argv_config.get("agent_preset") or ""),
         audience=audience,
+        memory_mode=str(argv_config.get("memory_mode") or ""),
         memory_layout=memory_layout,
         agent_private_dir=Path(agent_private_dir).expanduser() if agent_private_dir else None,
         features=features,
@@ -1077,6 +1071,7 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
 
 def _interactive_consumer_setup(argv_config: dict[str, Any], *, agent: str, audience: str) -> AgentSetupConfig:
     """Small consumer wizard: vault layout, optional connectors, daily report time."""
+    memory_mode = normalize_memory_mode(str(argv_config.get("memory_mode") or ""), audience=audience)
     language = argv_config.get("language")
     if language is None:
         language = _ask("Language / 語言 / 语言 (zh-Hant/zh-CN/en)", "en")
@@ -1117,6 +1112,7 @@ def _interactive_consumer_setup(argv_config: dict[str, Any], *, agent: str, audi
         agent=agent,
         agent_preset=str(argv_config.get("agent_preset") or ""),
         audience=audience,
+        memory_mode=memory_mode,
         memory_layout=memory_layout,
         features=features,
         language=_normalize_setup_language(str(language)),
@@ -1137,8 +1133,9 @@ def _interactive_consumer_setup(argv_config: dict[str, Any], *, agent: str, audi
         automation_schedule_targets="cron",
         automation_mode="balanced",
         automation_command="cycle",
-        automation_apply=False,
+        automation_apply=memory_mode == "governed-auto",
         automation_write_workspace=True,
+        automation_auto_promote_low_risk=memory_mode == "governed-auto",
         daily_report_time=daily_report_time,
         template_dir=Path(argv_config["template_dir"]) if argv_config.get("template_dir") else None,
         stable_venv_path=(

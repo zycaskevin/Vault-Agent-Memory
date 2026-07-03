@@ -118,7 +118,8 @@ Use consumer mode. Ask me only:
 2. Independent vault or shared vault?
 3. Connect Obsidian, Supabase, both, or neither?
 4. What time should the daily memory report run?
-Then finish with a small smoke check and show me the daily report / GUI link.
+Use the default governed-auto memory mode. Then finish with a small smoke check
+and show me the daily report / GUI link.
 ```
 
 The agent should use the guided installer:
@@ -138,9 +139,11 @@ vault setup-agent
 ```
 
 Consumer mode writes an `agent-install/README-consumer-daily-report.md` guide
-and safe daily automation templates. The templates are report-first: they can
-prepare a daily memory report and review queue, but they do not silently promote,
-archive, or delete memory.
+and daily automation templates. The default consumer memory mode is
+`governed-auto`: low-risk, sourced candidates that pass privacy, duplicate,
+metadata, and quality gates can enter the active vault automatically. Strategy,
+private, sensitive, conflicting, or low-trust memories stay in the daily report
+for human review. Nothing is hard-deleted automatically.
 
 In interactive consumer mode, the installer keeps the human questions small:
 
@@ -155,6 +158,18 @@ without asking the user to learn security flags.
 
 Consumer daily reports and the local GUI can speak the selected language:
 `zh-Hant`, `zh-CN`, or `en`.
+
+`audience` controls the wording and installer questions. `memory_mode` controls
+the memory loop. Developers can use the same governed loop without consumer
+wording:
+
+```bash
+vault setup-agent --memory-mode governed-auto
+```
+
+Developers who want the older report-only behavior can choose
+`--memory-mode daily-review`. Advanced users who want no scheduled memory loop
+can choose `--memory-mode manual`.
 
 Daily human surface:
 
@@ -219,6 +234,7 @@ vault setup-agent \
   --automation-write-workspace \
   --automation-include-transcripts \
   --automation-auto-promote-low-risk \
+  --memory-mode governed-auto \
   --json
 ```
 

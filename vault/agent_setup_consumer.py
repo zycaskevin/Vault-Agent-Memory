@@ -40,9 +40,11 @@ vault daily-report --project-dir {shlex.quote(str(Path(project_dir).expanduser()
 安全邊界：
 
 - 日報是唯讀報告。
-- 不會自動收進正式記憶、封存或刪除。
+- 低風險、有來源、通過 gates 的記憶可以由 Agent 自動保留。
+- 產品策略、私人內容、敏感資料、衝突或低信任記憶會留在日報給你決定。
+- 不會自動刪除記憶；封存與冷存仍會留下紀錄。
 - 不會顯示原始候選記憶內容。
-- 你可以讓 Agent 代跑自動化，但最後 5% 的重要決策仍然留給你。
+- 最後 5% 的重要決策仍然留給你。
 
 安裝包也會產生：
 
@@ -75,9 +77,11 @@ vault daily-report --project-dir {shlex.quote(str(Path(project_dir).expanduser()
 安全边界：
 
 - 日报是只读报告。
-- 不会自动收进正式记忆、归档或删除。
+- 低风险、有来源、通过 gates 的记忆可以由 Agent 自动保留。
+- 产品策略、私人内容、敏感资料、冲突或低信任记忆会留在日报给你决定。
+- 不会自动删除记忆；归档与冷存仍会留下记录。
 - 不会显示原始候选记忆内容。
-- 你可以让 Agent 代跑自动化，但最后 5% 的重要决策仍然留给你。
+- 最后 5% 的重要决策仍然留给你。
 
 安装包也会产生：
 
@@ -110,9 +114,11 @@ The report shows only:
 Safety boundary:
 
 - The daily report is read-only.
-- It does not promote, archive, or delete memory.
+- Low-risk, sourced memories that pass gates can be kept automatically by the agent.
+- Strategy, private, sensitive, conflicting, or low-trust memories stay in the report for you.
+- Memory is not hard-deleted automatically; archive and cold-store actions remain traceable.
 - It does not show raw candidate content.
-- Agents can run the loop; the important 5% stays reviewable by you.
+- The important 5% stays reviewable by you.
 
 The install pack also writes:
 
