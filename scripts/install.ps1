@@ -1,5 +1,6 @@
 # Vault-for-LLM one-click installer for Windows (PowerShell)
 # Usage: irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.ps1 | iex
+# Requires the install script to exist on main; this lands with v0.7.30+.
 
 $ErrorActionPreference = "Stop"
 
@@ -18,29 +19,50 @@ Write-Color "[1/4] Checking Python version..." Yellow
 
 try {
     $pythonCmd = $null
-    if (Get-Command python -ErrorAction SilentlyContinue) {
-        $pythonCmd = "python"
-    } elseif (Get-Command python3 -ErrorAction SilentlyContinue) {
-        $pythonCmd = "python3"
-    } else {
-        throw "Python not found"
+    $pythonArgs = @()
+    $candidates = @(
+        @("python"),
+        @("python3"),
+        @("py", "-3.14"),
+        @("py", "-3.13"),
+        @("py", "-3.12"),
+        @("py", "-3.11"),
+        @("py", "-3.10")
+    )
+
+    foreach ($candidate in $candidates) {
+        $cmd = $candidate[0]
+        $args = @()
+        if ($candidate.Count -gt 1) {
+            $args = $candidate[1..($candidate.Count - 1)]
+        }
+        if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
+            continue
+        }
+
+        try {
+            $versionOutput = & $cmd @args -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
+            $versionParts = $versionOutput -split '\.'
+            $major = [int]$versionParts[0]
+            $minor = [int]$versionParts[1]
+            if ($major -gt 3 -or ($major -eq 3 -and $minor -ge 10)) {
+                $pythonCmd = $cmd
+                $pythonArgs = $args
+                break
+            }
+        } catch {
+            continue
+        }
     }
 
-    $versionOutput = & $pythonCmd -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
-    $versionParts = $versionOutput -split '\.'
-    $major = [int]$versionParts[0]
-    $minor = [int]$versionParts[1]
-
-    if ($major -lt 3 -or ($major -eq 3 -and $minor -lt 10)) {
-        Write-Color "❌ Python $versionOutput detected." Red
-        Write-Color "   Vault-for-LLM requires Python 3.10 or later." Red
-        Write-Color "   Download from: https://www.python.org/downloads/" Red
-        exit 1
+    if ($null -eq $pythonCmd) {
+        throw "Python 3.10+ not found"
     }
 
+    $versionOutput = & $pythonCmd @pythonArgs -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
     Write-Host "   ✅ Python $versionOutput found"
 } catch {
-    Write-Color "❌ Python is not installed or not in PATH." Red
+    Write-Color "❌ Python 3.10+ is not installed or not in PATH." Red
     Write-Color "   Please install Python 3.10+ from: https://www.python.org/downloads/" Red
     exit 1
 }
@@ -51,7 +73,7 @@ Write-Color "[2/4] Creating virtual environment..." Yellow
 if (Test-Path ".venv") {
     Write-Host "   ℹ️  .venv already exists, reusing it"
 } else {
-    & $pythonCmd -m venv .venv
+    & $pythonCmd @pythonArgs -m venv .venv
     Write-Host "   ✅ Virtual environment created at .venv/"
 }
 

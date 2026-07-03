@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Vault-for-LLM one-click installer for macOS/Linux
 # Usage: curl -sSL https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.sh | bash
+# Requires the install script to exist on main; this lands with v0.7.30+.
 
 set -e
 
@@ -18,24 +19,24 @@ echo ""
 # --- Step 1: Check Python 3.10+ ---
 echo -e "${YELLOW}[1/4] Checking Python version...${NC}"
 
-if ! command -v python3 &> /dev/null; then
-    echo "❌ Python 3 is not installed."
-    echo "   Please install Python 3.10 or later from https://www.python.org/downloads/"
+PYTHON_CMD=""
+for candidate in python3.14 python3.13 python3.12 python3.11 python3.10 python3; do
+    if command -v "$candidate" > /dev/null 2>&1 && "$candidate" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)' > /dev/null 2>&1; then
+        PYTHON_CMD="$candidate"
+        break
+    fi
+done
+
+if [ -z "$PYTHON_CMD" ]; then
+    echo "❌ Python 3.10+ is not installed or not in PATH."
+    echo "   Install Python 3.10 or later from https://www.python.org/downloads/"
+    echo "   macOS with Homebrew: brew install python"
     exit 1
 fi
 
-PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-PYTHON_MAJOR=$(python3 -c 'import sys; print(sys.version_info.major)')
-PYTHON_MINOR=$(python3 -c 'import sys; print(sys.version_info.minor)')
-
-if [ "$PYTHON_MAJOR" -lt 3 ] || ([ "$PYTHON_MAJOR" -eq 3 ] && [ "$PYTHON_MINOR" -lt 10 ]); then
-    echo "❌ Python $PYTHON_VERSION detected."
-    echo "   Vault-for-LLM requires Python 3.10 or later."
-    echo "   Please upgrade Python: https://www.python.org/downloads/"
-    exit 1
-fi
-
-echo -e "   ✅ Python $PYTHON_VERSION found"
+PYTHON_VERSION=$("$PYTHON_CMD" -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+PYTHON_PATH=$(command -v "$PYTHON_CMD")
+echo -e "   ✅ Python $PYTHON_VERSION found at $PYTHON_PATH"
 
 # --- Step 2: Create virtual environment ---
 echo -e "${YELLOW}[2/4] Creating virtual environment...${NC}"
@@ -43,7 +44,7 @@ echo -e "${YELLOW}[2/4] Creating virtual environment...${NC}"
 if [ -d ".venv" ]; then
     echo "   ℹ️  .venv already exists, reusing it"
 else
-    python3 -m venv .venv
+    "$PYTHON_CMD" -m venv .venv
     echo "   ✅ Virtual environment created at .venv/"
 fi
 

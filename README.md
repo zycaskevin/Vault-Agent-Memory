@@ -39,16 +39,16 @@ flowchart TB
 
     subgraph Vault["🔐 Vault — Governed Memory Layer"]
         direction TB
-        Pipeline["審核管線 Review Pipeline<br/>隱私 · 重複 · 質量 · 來源"]
-        Report["📋 每日報告 Daily Report<br/>低風險自動入庫 · 高風險等人審核"]
-        subgraph Layers["記憶分層 Memory Layers"]
-            L0["L0 身份 Identity"]
-            L1["L1 規則 Rules"]
-            L2["L2 上下文 Context"]
-            L3["L3 知識 Knowledge"]
+        Pipeline["Review Pipeline<br/>Privacy · Duplicates · Quality · Source"]
+        Report["Daily Report<br/>Auto-promote low-risk · Review high-risk"]
+        subgraph Layers["Memory Layers"]
+            L0["L0 Identity"]
+            L1["L1 Rules"]
+            L2["L2 Context"]
+            L3["L3 Knowledge"]
         end
-        Ledger["📒 任務賬本 Task Ledger"]
-        Storage["💾 SQLite / Markdown<br/>本地優先 · 零依賴"]
+        Ledger["Task Ledger<br/>Live workbench · Handoffs"]
+        Storage["SQLite / Markdown<br/>Local-first · Zero dependencies"]
     end
 
     subgraph Integrations["🔌 Integrations"]
@@ -57,11 +57,14 @@ flowchart TB
         GW[Gateway API]
     end
 
-    Agents -- "propose / search / read / update" --> Vault
+    Agents -->|propose| Pipeline
+    Agents -->|search / bounded read| Layers
+    Agents -->|update status| Ledger
     Pipeline --> Report
     Report --> Layers
+    Layers <--> Ledger
     Layers --> Storage
-    Vault --> Integrations
+    Integrations <-->|import / export / sync| Vault
 
     style Agents fill:#e1f5fe,stroke:#0288d1
     style Vault fill:#f3e5f5,stroke:#7b1fa2
@@ -95,7 +98,7 @@ In plain language:
 | 🧑‍💻 Agent Developer | How do I plug Vault into my agent? | → [MCP Integration Guide](docs/mcp_memory_workflow.md) |
 | 🤖 Power Agent User | How do I stop Claude/Codex from forgetting? | → [5-Minute Quickstart](docs/quickstart.md) · Copy the install prompt to your agent |
 | 👥 Team Collaboration | How do multiple agents share memory without chaos? | → [Three-Agent Shared Memory Demo](docs/demo/three-agent-shared-memory-runbook.md) |
-| 📝 Obsidian User | How can agents safely use my notes? | → [Obsidian Integration](docs/okf_integration.md) |
+| 📝 Obsidian User | How can agents safely use my notes? | → [Obsidian Integration](#obsidian) |
 | 🏗️ Architect / Tech Lead | Is this reliable? What's the architecture? | → [Design Decisions](docs/decision_records/) · [Benchmarks](docs/search_qa_benchmarking.md) |
 
 ## For Agent Builders: Ask Your Agent To Install It
@@ -248,6 +251,12 @@ irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/inst
 ```
 
 After the installer finishes, run `vault quickstart` to complete setup.
+
+These raw GitHub URLs require the install scripts to be present on `main` after
+this PR merges, or in v0.7.30+ if you prefer a released documentation version.
+Until then, use the scripts from this branch or the agent-assisted install
+prompt above.
+
 Source: [`scripts/install.sh`](scripts/install.sh) · [`scripts/install.ps1`](scripts/install.ps1)
 
 ## Developer Quickstart
