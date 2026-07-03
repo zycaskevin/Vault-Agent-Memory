@@ -1,4 +1,4 @@
-"""Consumer-mode setup guides for non-technical Agent users."""
+"""Agent-assisted setup guides for governed daily memory review."""
 
 from __future__ import annotations
 
@@ -15,14 +15,15 @@ def write_consumer_daily_report_guide(
     agent: str,
     language: str = "en",
 ) -> dict[str, str]:
-    """Write a plain-language guide for non-technical users."""
+    """Write a plain-language guide for agent-assisted builders."""
     out = Path(output_dir).expanduser()
     out.mkdir(parents=True, exist_ok=True)
     guide = out / "README-consumer-daily-report.md"
     if language == "zh-Hant":
-        content = f"""# Vault 一般使用者模式
+        content = f"""# Vault Agent-assisted 記憶模式
 
-這個安裝包是給 `{agent}` 這類 Agent 使用的。你不需要學 CLI。
+這個安裝包是給 `{agent}` 這類 Agent 使用的。你已經在用 Agent，
+但不需要為了 Vault 先學完整 CLI。
 
 每天你只需要看：
 
@@ -57,9 +58,10 @@ vault daily-report --project-dir {shlex.quote(str(Path(project_dir).expanduser()
 > 請幫我維護 Vault 記憶。平常你自己查詢、整理、提候選；每天只給我一份短版 daily report，需要我決定的項目不要超過 5 筆。
 """
     elif language == "zh-CN":
-        content = f"""# Vault 一般用户模式
+        content = f"""# Vault Agent-assisted 记忆模式
 
-这个安装包是给 `{agent}` 这类 Agent 使用的。你不需要学习 CLI。
+这个安装包是给 `{agent}` 这类 Agent 使用的。你已经在用 Agent，
+但不需要为了 Vault 先学习完整 CLI。
 
 每天你只需要看：
 
@@ -94,9 +96,10 @@ vault daily-report --project-dir {shlex.quote(str(Path(project_dir).expanduser()
 > 请帮我维护 Vault 记忆。平常你自己查询、整理、提候选；每天只给我一份短版 daily report，需要我决定的项目不要超过 5 条。
 """
     else:
-        content = f"""# Vault Consumer Mode
+        content = f"""# Vault Agent-Assisted Memory Mode
 
-This install pack is for agents such as `{agent}`. You do not need to learn the CLI.
+This install pack is for agents such as `{agent}`. You already work with agents,
+but you do not need to learn the full Vault CLI first.
 
 Each day, read:
 
@@ -162,7 +165,7 @@ def write_consumer_security_hardening_guide(
     if language == "zh-Hant":
         content = f"""# 本機安全預設
 
-Vault 的一般使用者模式預設會保守運作：
+Vault 的 agent-assisted 記憶模式預設會保守運作：
 
 - `vault gui` 預設需要 token。
 - `--no-auth` 只建議本機測試使用，不要給共享電腦或遠端入口。
@@ -180,7 +183,7 @@ Vault 的一般使用者模式預設會保守運作：
     elif language == "zh-CN":
         content = f"""# 本机安全默认值
 
-Vault 的一般用户模式默认会保守运行：
+Vault 的 agent-assisted 记忆模式默认会保守运行：
 
 - `vault gui` 默认需要 token。
 - `--no-auth` 只建议本机测试使用，不要给共享电脑或远端入口。
@@ -198,7 +201,7 @@ Vault 的一般用户模式默认会保守运行：
     else:
         content = f"""# Local Safety Defaults
 
-Vault consumer mode is conservative by default:
+Vault agent-assisted memory mode is conservative by default:
 
 - `vault gui` requires a token by default.
 - Use `--no-auth` only for localhost testing, not shared computers or remote entrypoints.
