@@ -5,7 +5,7 @@
 
 set -e
 
-VAULT_VERSION="0.7.30"
+VAULT_VERSION="0.7.31"
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
@@ -53,9 +53,10 @@ source .venv/bin/activate
 echo "   ✅ Virtual environment activated"
 
 # --- Step 3: Install vault-for-llm ---
-echo -e "${YELLOW}[3/4] Installing vault-for-llm[mcp]==$VAULT_VERSION ...${NC}"
+VAULT_PACKAGE_SPEC="${VAULT_PACKAGE_SPEC:-vault-for-llm[mcp]==$VAULT_VERSION}"
+echo -e "${YELLOW}[3/4] Installing $VAULT_PACKAGE_SPEC ...${NC}"
 pip install --upgrade pip > /dev/null 2>&1
-pip install "vault-for-llm[mcp]==$VAULT_VERSION"
+pip install "$VAULT_PACKAGE_SPEC"
 
 echo -e "   ✅ vault-for-llm installed successfully"
 

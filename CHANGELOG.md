@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## [0.7.31] - 2026-07-05
+
+### Added
+
+- Added the Central Memory Station operator surface: `vault start`, `vault memory-sync`, `vault memory-review`, `vault memory-lifecycle`, and `vault ops` for the governed multi-agent memory workflow.
+- Added the `scripts.central_memory_sync` worker and generated cron, LaunchAgent, and n8n schedule templates for 30-60 minute trusted-host synchronization.
+- Added Supabase Central Memory Station tables plus a self-hosted central candidate inbox so remote writes remain candidate-first before local review.
+- Added Remote Server and Gateway Central Memory Station endpoints for remote candidate status, submit, and pull operations.
+
+### Changed
+
+- Documented the practical Central Memory Station architecture: local vaults stay usable offline, the central store acts as the trusted exchange, and active memory remains review-governed rather than multi-master.
+- Updated public install examples and setup docs to `vault-for-llm==0.7.31`.
+
+### Validation
+
+- PR #334 Release Readiness CI passed across Python 3.10, 3.11, and 3.12, module-size, installer, README smoke, wheel, Search QA, secret, and history privacy gates.
+- Post-merge clean virtualenv smoke installed `vault-for-llm[mcp,supabase]` from the merged repository and verified `vault start`, `vault memory-sync`, `vault memory-review`, `vault memory-lifecycle`, `vault remote-server`, generated central sync templates, `scripts.central_memory_sync`, and `vault-mcp --help`.
+
+
 ## [0.7.30] - 2026-07-04
 
 ### Changed

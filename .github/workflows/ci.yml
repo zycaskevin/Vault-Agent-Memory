@@ -114,7 +114,7 @@ jobs:
           python-version: '3.12'
 
       - name: Run installer
-        run: bash scripts/install.sh
+        run: VAULT_PACKAGE_SPEC=".[mcp]" bash scripts/install.sh
 
       - name: Verify installed CLI
         run: .venv/bin/vault --version
@@ -136,7 +136,9 @@ jobs:
 
       - name: Run installer
         shell: pwsh
-        run: ./scripts/install.ps1
+        run: |
+          $env:VAULT_PACKAGE_SPEC = ".[mcp]"
+          ./scripts/install.ps1
 
       - name: Verify installed CLI
         shell: pwsh
