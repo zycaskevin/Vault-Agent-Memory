@@ -30,6 +30,11 @@ dependencies = [
     "sqlite-vec>=0.1.6,<1.0",
 ]
 
+[project.urls]
+Homepage = "https://zycaskevin.github.io/Vault-Agent-Memory/"
+Repository = "https://github.com/zycaskevin/Vault-Agent-Memory"
+Issues = "https://github.com/zycaskevin/Vault-Agent-Memory/issues"
+
 [project.optional-dependencies]
 semantic = [
     "onnxruntime>=1.16,<2.0",
