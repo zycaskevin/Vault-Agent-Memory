@@ -51,6 +51,22 @@ Use a higher value when trusted clients may run long bounded-read or candidate
 submission requests. Keep reverse proxy and supervisor timeouts longer than the
 Gateway drain timeout so the process can finish its own cleanup.
 
+## Central Candidate Inbox
+
+Self-hosted `vault remote-server` exposes a Central Memory Station candidate
+inbox without Supabase:
+
+- `GET /central-candidates/status`
+- `POST /central-candidates/submit`
+- `POST /central-candidates/pull`
+
+Submitted rows are stored in `vault-central.db` under
+`vault_memory_candidates_central`. Pulling candidates imports them into the
+local `memory_candidates` review queue; it still does not write active
+knowledge. Use token auth, TLS or a trusted reverse proxy, and audit
+`central_candidate_submit` / `central_candidate_pull` events before opening
+this endpoint to many devices.
+
 ## HTTP Safety Headers
 
 Gateway JSON responses include:

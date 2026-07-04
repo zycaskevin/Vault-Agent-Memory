@@ -442,11 +442,28 @@ vault remote-server serve --project-dir ~/Vaults/my-project --host 0.0.0.0
 Remote contributions should enter as review candidates. This is centralized
 sharing, not offline multi-master sync.
 
+For multi-agent or multi-device memory, use the Central Memory Station surface:
+
+```bash
+vault start
+vault memory-sync run-once --push-read-copy --push-central-store --pull-candidates --dry-run --json
+vault memory-sync run-once --central-backend self-host --pull-candidates --dry-run --json
+vault memory-review inbox --json
+vault memory-lifecycle status --json
+vault ops security --json
+```
+
+The detailed `remote`, `sync`, `dream`, `usage`, and `automation` commands stay
+available as advanced tools. The central surface is the smaller operator entry
+for Supabase or self-hosted deployments.
+
 Docs:
 
 - [Supabase setup](docs/supabase_setup.md)
 - [Supabase read policy](docs/supabase_read_policy.sql)
 - [Gateway security foundation](docs/decision_records/2026-07-02-gateway-security-foundation.md)
+- [Central Memory Station decision](docs/decision_records/2026-07-05-central-memory-station.md)
+- [Central Memory Station plan](docs/plans/2026-07-05-central-memory-station-development-plan.md)
 
 ## Memory Migration
 

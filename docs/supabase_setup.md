@@ -34,6 +34,18 @@ For most users, start here.
 python -m scripts.sync_to_supabase --db /path/to/project/vault.db --document-map --health
 ```
 
+For the Central Memory Station loop, use the consolidated worker:
+
+```bash
+vault memory-sync run-once --project-dir /path/to/project --push-read-copy --push-central-store --pull-candidates --dry-run --json
+vault memory-sync run-once --project-dir /path/to/project --push-read-copy --push-central-store --pull-candidates --apply --json
+```
+
+`setup-agent --features supabase --supabase-sync cron|launchagent|n8n|all`
+also writes `central-memory-sync.cron`, a macOS LaunchAgent, an n8n workflow,
+and `README-central-memory-sync.md`. Run the central schedule only on a trusted
+host that can hold service-role credentials.
+
 For near-realtime freshness on a trusted local machine:
 
 ```bash
@@ -89,12 +101,26 @@ Vault currently supports three separate sharing modes:
 |---|---|---|
 | Local shared vault | usable | Agents on the same machine can point to the same `vault.db` and use local governance filters. |
 | Supabase read copy | usable | Reviewed local knowledge can be pushed to Supabase for remote read-only access. |
-| Remote candidate inbox | usable-alpha | Remote hosts can submit candidate requests; a trusted host pulls them into local review. |
+| Remote candidate inbox | usable-alpha | Remote hosts can submit candidate requests; a trusted host pulls them into local review. New deployments can use `vault_memory_candidates_central`, while the older guarded RPC/table path remains supported. |
 
 The first multi-host safety surface is local revision/conflict/audit tracking.
 `vault sync revisions`, `vault sync conflicts`, and `vault sync audit` show what
 remote candidates arrived, what changed locally, and what needs a human or
 trusted agent decision.
+
+For the Central Memory Station path, submit one-off remote memories as
+candidates:
+
+```bash
+vault memory-sync push --central-store \
+  --title "..." \
+  --content "..." \
+  --reason "..."
+```
+
+Trusted sync hosts pull both the older `vault_memory_write_requests` inbox and
+the newer `vault_memory_candidates_central` inbox. With `--require-hmac`, only
+signed candidate payloads are imported.
 
 Reviewed conflicts can be closed in three ways:
 

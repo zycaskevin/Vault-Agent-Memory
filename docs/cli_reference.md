@@ -30,6 +30,30 @@ See also: [`docs/agent_first_usage.md`](agent_first_usage.md).
 | Continue a task | `vault task start/update/handoff` |
 | Check health | `vault doctor` / `vault security doctor` |
 
+## Central Memory Station Surface
+
+Use this surface when multiple agents, hosts, or devices share memory through a
+trusted central store. The older detailed commands remain available for scripts
+and debugging.
+
+| Intent | Command |
+|---|---|
+| Start or orient | `vault start` |
+| Check central sync state | `vault memory-sync status --json` |
+| Submit candidate memory to the Supabase central inbox | `vault memory-sync push --central-store --title "..." --content "..." --reason "..."` |
+| Submit candidate memory to a self-host inbox | `vault memory-sync push --central-backend self-host --title "..." --content "..."` |
+| Pull central candidates into the local review queue | `vault memory-sync pull --central-backend supabase --apply --json` |
+| Pull self-host central candidates into local review | `vault memory-sync pull --central-backend self-host --apply --json` |
+| Dry-run one scheduled-sync pass | `vault memory-sync run-once --push-read-copy --push-central-store --pull-candidates --dry-run --json` |
+| Run one trusted scheduled-sync pass | `vault memory-sync run-once --push-read-copy --push-central-store --pull-candidates --apply --json` |
+| Review candidates and conflicts | `vault memory-review inbox --json` |
+| Run conservative review automation | `vault memory-review run --mode conservative --json` |
+| Resolve a conflict explicitly | `vault memory-review resolve <conflict_id> --action keep_active --reason "..."` |
+| Inspect lifecycle pressure | `vault memory-lifecycle status --json` |
+| Run Dream as a report | `vault memory-lifecycle dream --mode report --json` |
+| Preview archive / cold-store work | `vault memory-lifecycle archive --json` / `vault memory-lifecycle cold-store --json` |
+| Run operations checks | `vault ops status --json` / `vault ops doctor` / `vault ops security --json` |
+
 ## Agent And Operator Workflow
 
 These commands are still useful, but they are mostly for agents, scripts,
@@ -202,6 +226,21 @@ only when scheduled jobs are allowed to read discovered transcript files and
 write review candidates.
 Supabase sync templates are opt-in with `--supabase-sync cron|launchagent|n8n|realtime|all`
 and use `python -m scripts.sync_to_supabase --db <project>/vault.db`.
+The consolidated Central Memory Station worker is `vault memory-sync run-once`
+or `python -m scripts.central_memory_sync`; it writes
+`reports/central-memory-sync-latest.json`, can push the reviewed read copy with
+`--push-read-copy`, can write Central Memory Station tables with
+`--push-central-store`, and can pull central candidates into local review with
+`--pull-candidates --apply`. Use `--central-backend self-host` when the
+candidate inbox is local `vault-central.db` behind Gateway / Remote Server
+instead of Supabase. For one-off Supabase candidate submissions,
+`vault memory-sync push --central-store ...` writes the new
+`vault_memory_candidates_central` inbox; omitting `--central-store` keeps the
+older guarded RPC path for compatibility.
+When `setup-agent` generates Supabase sync templates, it also writes
+`central-memory-sync.cron`, `com.zycaskevin.vault-for-llm.central-memory-sync.plist`,
+`n8n-central-memory-sync.workflow.json`, and `README-central-memory-sync.md` for
+the 30-60 minute Central Memory Station loop.
 Use `realtime` only when the local machine is trusted to hold a service-role
 key; it runs `python -m scripts.watch_supabase_sync` and pushes local changes
 after a short debounce.

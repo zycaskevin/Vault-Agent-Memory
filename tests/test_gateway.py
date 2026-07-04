@@ -21,7 +21,9 @@ from vault.gateway import (
     gateway_health,
     gateway_read_range,
     gateway_openapi,
+    gateway_pull_central_candidates,
     gateway_search,
+    gateway_submit_central_candidate,
     gateway_submit_candidate,
     make_gateway_handler,
     run_gateway,
@@ -120,7 +122,9 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         payload = json.loads(allowed.read().decode("utf-8"))
         assert payload["status"] == "ok"
         assert payload["gateway"]["candidate_first_writes"] is True
+        assert payload["gateway"]["central_candidate_inbox"] is True
         assert "/openapi.json" in payload["gateway"]["endpoints"]
+        assert "/central-candidates/submit" in payload["gateway"]["endpoints"]
         assert payload["gateway"]["graceful_shutdown_supported"] is True
         assert payload["gateway"]["default_shutdown_timeout_seconds"] == 10.0
         assert payload["gateway"]["remote_ready"]["active_multi_master_sync"] is False
@@ -133,6 +137,7 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         contract = json.loads(contract_response.read().decode("utf-8"))
         assert contract["info"]["title"] == "Vault Gateway"
         assert contract["x-vault-safety"]["candidate_first_writes"] is True
+        assert contract["x-vault-safety"]["central_candidate_inbox"] is True
         assert contract["x-vault-safety"]["writes_active_knowledge"] is False
         assert contract["x-vault-safety"]["max_search_query_chars"] == 1000
         assert contract["components"]["schemas"]["SearchRequest"]["properties"]["query"]["maxLength"] == 1000
@@ -254,10 +259,63 @@ def test_gateway_submit_candidate_is_candidate_first_and_policy_bound(tmp_path):
     assert active_count == 2
 
 
+def test_gateway_central_candidate_inbox_is_pull_into_review(tmp_path):
+    project, _public_id, _private_id = _project(tmp_path)
+
+    blocked = gateway_submit_central_candidate(
+        project,
+        title="Shared central candidate",
+        content="Shared central candidates need explicit launch policy.",
+        agent_id="phone-agent",
+        scope="shared",
+    )
+    assert blocked["error"] == "access_denied"
+
+    submitted = gateway_submit_central_candidate(
+        project,
+        title="Central project candidate",
+        content="Decision: self-hosted central candidates are pulled into local review before promotion.",
+        agent_id="phone-agent",
+        scope="project",
+    )
+    assert submitted["ok"] is True
+    assert submitted["status"] == "candidate"
+    assert submitted["central_memory_station"] is True
+    assert submitted["safety"]["writes_active_knowledge"] is False
+
+    preview = gateway_pull_central_candidates(project, agent_id="review-agent", apply=False)
+    assert preview["ok"] is True
+    assert preview["count"] == 1
+    assert preview["imported_count"] == 0
+    assert preview["requests"][0]["title"] == "Central project candidate"
+
+    applied = gateway_pull_central_candidates(project, agent_id="review-agent", apply=True)
+    assert applied["imported_count"] == 1
+    assert applied["requests"][-1]["status"] == "imported"
+    assert applied["safety"]["apply_writes_local_candidates_only"] is True
+
+    with VaultDB(project / "vault.db") as db:
+        candidates = db.list_memory_candidates(status=None)
+        active_count = db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
+    assert len(candidates) == 1
+    assert candidates[0]["source"] == "central_memory_candidate"
+    assert candidates[0]["status"] == "candidate"
+    assert active_count == 2
+
+
 def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     contract = gateway_openapi()
     assert contract["openapi"].startswith("3.")
-    assert {"/health", "/openapi.json", "/search", "/read-range", "/submit-candidate"} <= set(contract["paths"])
+    assert {
+        "/health",
+        "/openapi.json",
+        "/search",
+        "/read-range",
+        "/submit-candidate",
+        "/central-candidates/status",
+        "/central-candidates/submit",
+        "/central-candidates/pull",
+    } <= set(contract["paths"])
     assert contract["components"]["securitySchemes"]["bearerAuth"]["scheme"] == "bearer"
     safety = contract["x-vault-safety"]
     assert safety["agent_id_required_for_reads"] is True
@@ -265,6 +323,7 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     assert safety["search_returns_raw_content"] is False
     assert safety["writes_active_knowledge"] is False
     assert safety["candidate_first_writes"] is True
+    assert safety["central_candidate_inbox"] is True
     assert safety["tls_supported"] is True
     assert safety["bounded_worker_pool_supported"] is True
 
@@ -433,6 +492,63 @@ def test_gateway_http_search_submit_and_audit(tmp_path):
     parsed = [json.loads(line) for line in lines]
     assert all(row.get("client_ip") == "127.0.0.1" for row in parsed)
     assert all("endpoint" in row for row in parsed)
+
+
+def test_gateway_http_central_candidate_submit_pull_and_audit(tmp_path):
+    project, _public_id, _private_id = _project(tmp_path)
+    handler = make_gateway_handler(project, auth_token="secret")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        host, port = server.server_address
+        status, submitted = _post_json(
+            host,
+            port,
+            "/central-candidates/submit",
+            {
+                "agent_id": "phone-agent",
+                "title": "HTTP central candidate",
+                "content": "Decision: Gateway central candidates enter the central inbox before local review.",
+            },
+        )
+        assert status == 200
+        assert submitted["ok"] is True
+        assert submitted["status"] == "candidate"
+
+        status, preview = _post_json(
+            host,
+            port,
+            "/central-candidates/pull",
+            {"agent_id": "review-agent", "apply": False},
+        )
+        assert status == 200
+        assert preview["count"] == 1
+        assert preview["imported_count"] == 0
+
+        status, applied = _post_json(
+            host,
+            port,
+            "/central-candidates/pull",
+            {"agent_id": "review-agent", "apply": True},
+        )
+        assert status == 200
+        assert applied["imported_count"] == 1
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    with VaultDB(project / "vault.db") as db:
+        candidates = db.list_memory_candidates(status=None)
+        active_count = db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
+    assert len(candidates) == 1
+    assert candidates[0]["source"] == "central_memory_candidate"
+    assert active_count == 2
+
+    audit = project / "reports" / "gateway" / "audit.jsonl"
+    lines = audit.read_text(encoding="utf-8").splitlines()
+    assert any('"event": "central_candidate_submit"' in line for line in lines)
+    assert any('"event": "central_candidate_pull"' in line for line in lines)
 
 
 def test_gateway_ip_denylist_blocks_request_and_audits(tmp_path):

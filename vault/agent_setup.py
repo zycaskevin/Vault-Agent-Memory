@@ -56,6 +56,7 @@ from vault.agent_setup_templates import (
     write_supabase_sync_templates,
     write_sync_templates,
 )
+from vault.agent_setup_central_sync import configure_central_memory_sync_templates
 from vault.agent_setup_startup import (
     write_agent_adapter_startup_templates,
     write_mcp_startup_guide,
@@ -365,6 +366,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         "sync_templates": {},
         "supabase_setup": {},
         "supabase_sync_templates": {},
+        "central_memory_sync_templates": {},
         "remote_reader_templates": {},
         "agent_roster": {},
         "live_validation_pack": {},
@@ -622,6 +624,13 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
             project_dir=project_path,
             targets=sorted(supabase_targets),
             interval_minutes=config.supabase_sync_interval_minutes,
+        )
+        configure_central_memory_sync_templates(
+            result,
+            output_dir=template_dir,
+            project_dir=project_path,
+            targets=sorted(target for target in supabase_targets if target != "realtime"),
+            sync_interval_minutes=config.supabase_sync_interval_minutes,
         )
 
     remote_reader_targets = _normalize_remote_reader_targets(config.remote_reader_targets)
@@ -1013,7 +1022,8 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
     if not stable_venv_path and argv_config.get("write_stable_venv_script"):
         stable_venv_path = str(default_stable_venv_path())
     if stable_venv_path is None and python_environment_warnings():
-        if _ask_yes_no("Current Python environment looks temporary. Generate a stable venv bootstrap script?", True):
+        prompt = "Current Python environment looks temporary. Generate a stable venv bootstrap script?"
+        if _ask_yes_no(prompt, True):
             stable_venv_path = _ask("Stable venv path", str(default_stable_venv_path()))
 
     return AgentSetupConfig(
@@ -1038,20 +1048,14 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
         sync_targets=sync_targets,
         sync_interval_minutes=int(argv_config.get("sync_interval_minutes") or 15),
         supabase_sync_targets=supabase_sync_targets,
-        supabase_sync_interval_minutes=int(
-            argv_config.get("supabase_sync_interval_minutes")
-            or DEFAULT_SUPABASE_SYNC_INTERVAL_MINUTES
-        ),
+        supabase_sync_interval_minutes=int(argv_config.get("supabase_sync_interval_minutes") or DEFAULT_SUPABASE_SYNC_INTERVAL_MINUTES),
         supabase_setup_mode=str(supabase_setup_mode or "simple"),
         remote_reader_targets=remote_reader_targets,
         remote_reader_query=remote_reader_query,
         agent_roster=agent_roster or None,
         validation_pack_targets=validation_pack_targets,
         automation_schedule_targets=automation_schedule_targets,
-        automation_interval_minutes=int(
-            argv_config.get("automation_interval_minutes")
-            or DEFAULT_AUTOMATION_INTERVAL_MINUTES
-        ),
+        automation_interval_minutes=int(argv_config.get("automation_interval_minutes") or DEFAULT_AUTOMATION_INTERVAL_MINUTES),
         automation_mode=_normalize_automation_mode(str(automation_mode)),
         automation_command=_normalize_automation_command(str(automation_command)),
         automation_apply=automation_apply,

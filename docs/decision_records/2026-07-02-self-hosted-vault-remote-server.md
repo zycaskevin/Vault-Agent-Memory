@@ -19,6 +19,9 @@ It exposes the same narrow contract:
 - search
 - read-range
 - submit-candidate
+- central-candidates/status
+- central-candidates/submit
+- central-candidates/pull
 
 But its deployment posture is different from the local `gateway` helper:
 
@@ -26,6 +29,9 @@ But its deployment posture is different from the local `gateway` helper:
 - `serve` requires a stable token from `VAULT_GATEWAY_TOKEN` or `--auth-token`;
 - it reuses Gateway security defaults;
 - remote writes still create review candidates;
+- central candidate submissions are stored in local `vault-central.db` under
+  `vault_memory_candidates_central`;
+- trusted pulls import central candidates into local `memory_candidates`;
 - it does not write directly into active knowledge.
 
 ## Relationship To Supabase
@@ -57,6 +63,30 @@ It does not yet solve:
 
 Those belong to a later sync layer. The safe bridge for now is candidate-first
 remote contribution plus reviewed promotion.
+
+## Central Candidate Inbox
+
+The self-hosted path mirrors the Supabase Central Memory Station contract
+without requiring Supabase:
+
+```text
+Phone / robot / laptop
+  -> POST /central-candidates/submit
+  -> vault-central.db / vault_memory_candidates_central
+  -> POST /central-candidates/pull
+  -> local memory_candidates review queue
+```
+
+This is still candidate-first. `pull` writes only local review candidates; it
+does not promote active knowledge.
+
+The same inbox is available from the unified CLI:
+
+```bash
+vault memory-sync push --central-backend self-host --title "..." --content "..."
+vault memory-sync pull --central-backend self-host --apply --json
+vault memory-sync run-once --central-backend self-host --pull-candidates --apply --json
+```
 
 ## Consequences
 
