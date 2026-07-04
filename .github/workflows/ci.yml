@@ -8,7 +8,7 @@ on:
     tags:
       - 'v*'
     paths:
-      - 'README.md'
+      - 'README*.md'
       - 'CONTRIBUTING.md'
       - 'CHANGELOG.md'
       - 'LICENSE'
@@ -24,7 +24,7 @@ on:
       - 'benchmarks/**'
   pull_request:
     paths:
-      - 'README.md'
+      - 'README*.md'
       - 'CONTRIBUTING.md'
       - 'CHANGELOG.md'
       - 'LICENSE'
