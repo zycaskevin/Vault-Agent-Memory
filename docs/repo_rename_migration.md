@@ -2,7 +2,11 @@
 
 Target repository slug: `Vault-Agent-Memory`
 
-Current repository slug: `Vault-for-LLM`
+Current repository slug: `Vault-Agent-Memory`
+
+Previous repository slug: `Vault-for-LLM`
+
+Status: repository rename executed on 2026-07-04.
 
 Product display name: **Vault Agent Memory**
 
@@ -17,15 +21,14 @@ Package and runtime identifiers that must stay stable:
 
 - Confirm the display-name PR is merged and CI is green.
 - Confirm no release or publish workflow is running.
-- Confirm GitHub owner permissions for `zycaskevin/Vault-for-LLM`.
-- Confirm PyPI Trusted Publisher settings can be updated from old repo slug to
-  new repo slug.
+- Confirm GitHub owner permissions for `zycaskevin/Vault-Agent-Memory`.
+- Confirm PyPI Trusted Publisher settings can be updated to the new repo slug.
 - Confirm GitHub Pages behavior for the renamed repository.
 - Leave current raw installer URLs unchanged until after the GitHub repo rename.
 
 ## Rename Command
 
-Use the GitHub UI or:
+Completed command:
 
 ```bash
 gh repo rename Vault-Agent-Memory --repo zycaskevin/Vault-for-LLM
@@ -73,15 +76,32 @@ new canonical repository after the rename.
 Run installer smoke checks against the new canonical raw URLs:
 
 ```bash
-python scripts/install_smoke_matrix.py --script scripts/install.sh
-python scripts/install_smoke_matrix.py --script scripts/install.ps1
-python scripts/readme_command_smoke.py
-python scripts/check_release_parity.py
-python -m pytest -q
+uv run --extra dev python scripts/install_smoke_matrix.py --mode source
+uv run --extra dev python scripts/readme_command_smoke.py
+uv run --extra dev python scripts/check_release_parity.py
+uv run --extra dev pytest -q
 ```
 
-If local `python` is unavailable, use `python3` or the repository's `uv run`
-workflow.
+Windows PowerShell installer smoke runs in GitHub Actions because local
+developer machines may not have `pwsh`.
+
+## Post-Rename Verification On 2026-07-04
+
+- `gh repo view zycaskevin/Vault-Agent-Memory` returned the renamed public
+  repository with default branch `main`.
+- `https://github.com/zycaskevin/Vault-for-LLM` redirected to
+  `https://github.com/zycaskevin/Vault-Agent-Memory`.
+- New canonical raw installer URLs for `scripts/install.sh` and
+  `scripts/install.ps1` returned HTTP 200.
+- The old raw `scripts/install.sh` URL still returned HTTP 200.
+- `gh release view v0.7.29 -R zycaskevin/Vault-Agent-Memory` succeeded.
+- GitHub Pages API reported
+  `https://zycaskevin.github.io/Vault-Agent-Memory/`.
+- Local checks passed:
+  `git diff --check`, `scripts/check_release_parity.py`,
+  `scripts/readme_command_smoke.py`, and
+  `scripts/install_smoke_matrix.py --mode source`.
+- Local PowerShell smoke was not run because `pwsh` was unavailable.
 
 ## Verify Release Infrastructure
 

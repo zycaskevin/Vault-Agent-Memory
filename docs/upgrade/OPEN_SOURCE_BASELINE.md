@@ -4,8 +4,8 @@ This document records the public repository baseline before retrieval-ranking ch
 
 ## Repository metadata
 
-- Repository: `zycaskevin/Vault-for-LLM`
-- URL: `https://github.com/zycaskevin/Vault-for-LLM`
+- Repository: `zycaskevin/Vault-Agent-Memory`
+- URL: `https://github.com/zycaskevin/Vault-Agent-Memory`
 - Visibility: `PUBLIC`
 - Default branch: `main`
 - Baseline commit: `62706c49871e437fc79a63908655de7df3dfdfed`
@@ -16,7 +16,7 @@ This document records the public repository baseline before retrieval-ranking ch
 Metadata was verified with:
 
 ```bash
-gh repo view zycaskevin/Vault-for-LLM --json nameWithOwner,visibility,isPrivate,defaultBranchRef,url
+gh repo view zycaskevin/Vault-Agent-Memory --json nameWithOwner,visibility,isPrivate,defaultBranchRef,url
 ```
 
 ## Current public CLI/API surface checked for this baseline

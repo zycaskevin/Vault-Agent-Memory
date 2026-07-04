@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible Vault-for-LLM problem.
+description: Report a reproducible Vault Agent Memory problem.
 title: "[Bug]: "
 labels: ["bug", "needs-triage"]
 body:

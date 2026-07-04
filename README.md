@@ -243,13 +243,13 @@ Start here:
 ### macOS / Linux
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/zycaskevin/Vault-Agent-Memory/main/scripts/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.ps1 | iex
+irm https://raw.githubusercontent.com/zycaskevin/Vault-Agent-Memory/main/scripts/install.ps1 | iex
 ```
 
 After the installer finishes, run `vault quickstart` to complete setup.
@@ -521,8 +521,8 @@ deliberately.
 Common Python path:
 
 ```bash
-git clone https://github.com/zycaskevin/Vault-for-LLM.git
-cd Vault-for-LLM
+git clone https://github.com/zycaskevin/Vault-Agent-Memory.git
+cd Vault-Agent-Memory
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev,mcp]"
@@ -532,8 +532,8 @@ pytest -q
 Reproducible Agent/developer environment:
 
 ```bash
-git clone https://github.com/zycaskevin/Vault-for-LLM.git
-cd Vault-for-LLM
+git clone https://github.com/zycaskevin/Vault-Agent-Memory.git
+cd Vault-Agent-Memory
 uv sync --extra dev --extra mcp
 uv run pytest -q
 ```

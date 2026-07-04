@@ -1,5 +1,5 @@
-# Vault-for-LLM one-click installer for Windows (PowerShell)
-# Usage: irm https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.ps1 | iex
+# Vault Agent Memory one-click installer for Windows (PowerShell)
+# Usage: irm https://raw.githubusercontent.com/zycaskevin/Vault-Agent-Memory/main/scripts/install.ps1 | iex
 # Available from main. Installs the pinned release version below.
 
 $ErrorActionPreference = "Stop"
@@ -11,7 +11,7 @@ function Write-Color($Text, $Color = "White") {
 }
 
 Write-Color "`n╔══════════════════════════════════════════╗" Cyan
-Write-Color "║   Vault-for-LLM One-Click Installer     ║" Cyan
+Write-Color "║   Vault Agent Memory Installer           ║" Cyan
 Write-Color "╚══════════════════════════════════════════╝`n" Cyan
 
 # --- Step 1: Check Python 3.10+ ---

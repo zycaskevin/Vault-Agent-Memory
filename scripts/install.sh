@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Vault-for-LLM one-click installer for macOS/Linux
-# Usage: curl -sSL https://raw.githubusercontent.com/zycaskevin/Vault-for-LLM/main/scripts/install.sh | bash
+# Vault Agent Memory one-click installer for macOS/Linux
+# Usage: curl -sSL https://raw.githubusercontent.com/zycaskevin/Vault-Agent-Memory/main/scripts/install.sh | bash
 # Available from main. Installs the pinned release version below.
 
 set -e
@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}╔══════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║   Vault-for-LLM One-Click Installer     ║${NC}"
+echo -e "${BLUE}║   Vault Agent Memory Installer           ║${NC}"
 echo -e "${BLUE}╚══════════════════════════════════════════╝${NC}"
 echo ""
 
