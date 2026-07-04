@@ -4,7 +4,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$VAULT_VERSION = "0.7.30"
+$VAULT_VERSION = "0.7.31"
 
 function Write-Color($Text, $Color = "White") {
     Write-Host $Text -ForegroundColor $Color
@@ -83,10 +83,15 @@ $venvPip = ".venv\Scripts\pip.exe"
 Write-Host "   ✅ Virtual environment ready"
 
 # --- Step 3: Install vault-for-llm ---
-Write-Color "[3/4] Installing vault-for-llm[mcp]==$VAULT_VERSION ..." Yellow
+if ($env:VAULT_PACKAGE_SPEC) {
+    $VaultPackageSpec = $env:VAULT_PACKAGE_SPEC
+} else {
+    $VaultPackageSpec = "vault-for-llm[mcp]==$VAULT_VERSION"
+}
+Write-Color "[3/4] Installing $VaultPackageSpec ..." Yellow
 
 & $venvPip install --upgrade pip | Out-Null
-& $venvPip install "vault-for-llm[mcp]==$VAULT_VERSION"
+& $venvPip install $VaultPackageSpec
 
 Write-Host "   ✅ vault-for-llm installed successfully"
 

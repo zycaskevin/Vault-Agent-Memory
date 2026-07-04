@@ -1,6 +1,6 @@
 """Vault Agent Memory — Local-first memory governance for AI agents."""
 
-__version__ = "0.7.30"
+__version__ = "0.7.31"
 
 from .db import VaultDB as VaultDB
 from .search import VaultSearch as VaultSearch
