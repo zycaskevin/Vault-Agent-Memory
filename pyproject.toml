@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 authors = [
-    {name = "Vault-for-LLM Contributors"},
+    {name = "Vault Agent Memory Contributors"},
 ]
 keywords = ["agent-memory", "memory-governance", "mcp", "multi-agent", "sqlite", "local-first"]
 classifiers = [

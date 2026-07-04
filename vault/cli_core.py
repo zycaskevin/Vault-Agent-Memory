@@ -650,7 +650,7 @@ def cmd_doctor(args):
         _json_print(payload, pretty=_arg_value(args, "pretty", False) is True)
         return
 
-    print("🏥 Vault-for-LLM 環境診斷\n")
+    print("🏥 Vault Agent Memory 環境診斷\n")
     for name, status, ok in checks:
         print(f"  {name:25s} {status}")
 
@@ -666,7 +666,7 @@ def cmd_install_embedding(args):
     """安裝嵌入模型。"""
     from vault.embed import MODELS, ONNXEmbeddingProvider
 
-    print("📦 Vault-for-LLM 嵌入模型安裝\n")
+    print("📦 Vault Agent Memory 嵌入模型安裝\n")
     print("可選模型:")
     for key, info in MODELS.items():
         print(f"  {key}: {info['name']} ({info['language']}, {info['dim']}d, ~{info['size_mb']}MB)")
@@ -759,7 +759,7 @@ def cmd_stats(args):
         db.close()
         return
 
-    print("📊 Vault-for-LLM 統計\n")
+    print("📊 Vault Agent Memory 統計\n")
     from vault.diagnostics import stats_summary_lines
     for line in stats_summary_lines(stats):
         print(line)

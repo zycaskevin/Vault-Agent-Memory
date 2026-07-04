@@ -88,7 +88,7 @@ def cmd_graph(args):
             _json_print(payload, pretty=pretty_output)
             db.close()
             return
-        print("🕸️ Vault-for-LLM 圖譜\n")
+        print("🕸️ Vault Agent Memory 圖譜\n")
         print(f"  邊（總計）: {stats['edges_total']}")
         print(f"    自動推斷: {stats['edges_auto']}")
         print(f"    手動建立: {stats['edges_manual']}")

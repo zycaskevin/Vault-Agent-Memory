@@ -296,7 +296,7 @@ def _render_demo_markdown(payload: dict[str, Any]) -> str:
         [
             "# Agents Need Memory Governance, Not Just RAG",
             "",
-            "This demo proves Vault-for-LLM is a governed memory layer for agents.",
+            "This demo proves Vault Agent Memory is a governed memory layer for agents.",
             "It does not just retrieve notes. It controls how shared agent memory is proposed, reviewed, promoted, cited, backed up, and audited.",
             "",
             "## Lifecycle",
@@ -371,7 +371,7 @@ def _render_start_here(
             "",
             "## One-Sentence Close",
             "",
-            "Vault-for-LLM governs what agents remember, trust, share, forget, and roll back.",
+            "Vault Agent Memory governs what agents remember, trust, share, forget, and roll back.",
             "",
             "## Project",
             "",

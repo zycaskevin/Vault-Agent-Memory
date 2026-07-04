@@ -1,6 +1,6 @@
-# Vault-for-LLM Landing Demo
+# Vault Agent Memory Landing Demo
 
-This directory contains the first static landing/demo page for Vault-for-LLM.
+This directory contains the first static landing/demo page for Vault Agent Memory.
 
 Open locally:
 

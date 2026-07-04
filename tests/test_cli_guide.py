@@ -9,7 +9,7 @@ def test_cli_guide_defaults_to_human_surface(capsys):
     main(["guide"])
 
     out = capsys.readouterr().out
-    assert "Vault-for-LLM guide" in out
+    assert "Vault Agent Memory guide" in out
     assert "Intent shortcuts" in out
     assert "For humans, keep the surface small" in out
     assert "vault quickstart" in out
@@ -75,7 +75,7 @@ def test_cli_guide_install_json_has_consumer_contract(capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["ok"] is True
     assert payload["intent"] == "install"
-    assert payload["agent_install_prompt"].startswith("Install Vault-for-LLM")
+    assert payload["agent_install_prompt"].startswith("Install Vault Agent Memory")
     contract = payload["consumer_install_contract"]
     assert contract["audience"] == "consumer"
     assert contract["memory_mode"] == "governed-auto"

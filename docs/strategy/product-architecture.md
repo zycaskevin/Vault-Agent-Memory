@@ -1,6 +1,6 @@
 # Product Architecture
 
-Vault-for-LLM should grow in layers. Each layer should preserve the local-first
+Vault Agent Memory should grow in layers. Each layer should preserve the local-first
 trust boundary while adding more team and enterprise governance.
 
 ## Layer 1: Open-Source Local Memory Engine

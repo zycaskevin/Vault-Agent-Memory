@@ -166,7 +166,7 @@ def main(argv: list[str] | None = None):
 
     parser = argparse.ArgumentParser(
         prog="vault",
-        description="Vault-for-LLM — local-first knowledge vault for LLM agents",
+        description="Vault Agent Memory — local-first memory governance for AI agents",
         epilog="Global agent option: --project-dir PATH may be passed before or after the subcommand.",
     )
     from vault import __version__

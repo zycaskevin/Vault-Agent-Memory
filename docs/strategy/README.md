@@ -1,9 +1,9 @@
 # Strategy: Agent Memory Governance
 
-Vault-for-LLM should not be positioned as another RAG database, note app, or
+Vault Agent Memory should not be positioned as another RAG database, note app, or
 Obsidian plugin. The product bet is narrower and stronger:
 
-> Vault-for-LLM is the memory governance layer for multi-agent teams.
+> Vault Agent Memory is the memory governance layer for multi-agent teams.
 
 It helps operators decide what agents may remember, trust, share, forget, and
 roll back.

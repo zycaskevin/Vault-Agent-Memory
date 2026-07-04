@@ -1,7 +1,8 @@
 {
   "schema_version": "1.0",
   "project": "vault-for-llm",
-  "purpose": "Local-first project memory QA layer for LLM agents.",
+  "display_name": "Vault Agent Memory",
+  "purpose": "Local-first memory governance for AI agents.",
   "package": {
     "pip_name": "vault-for-llm",
     "cli": "vault",
@@ -74,7 +75,7 @@
     "ask whether to schedule automatic Obsidian sync",
     "verify search/read/propose"
   ],
-  "agent_install_prompt": "Install Vault-for-LLM for this project with vault-for-llm[mcp]. For normal first-run setup, run vault quickstart and ask only language, independent/shared memory, optional Obsidian/Supabase connection, and daily report time. Do not show setup-agent advanced flags unless the user asks for advanced templates, permissions, remote readers, validation packs, or developer dependencies. Finish with the generated smoke check and show where the daily report lives.",
+  "agent_install_prompt": "Install Vault Agent Memory for this project with vault-for-llm[mcp]. For normal first-run setup, run vault quickstart and ask only language, independent/shared memory, optional Obsidian/Supabase connection, and daily report time. Do not show setup-agent advanced flags unless the user asks for advanced templates, permissions, remote readers, validation packs, or developer dependencies. Finish with the generated smoke check and show where the daily report lives.",
   "agent_setup_wizard": {
     "quickstart_cli": "vault quickstart",
     "cli": "vault setup-agent",
@@ -119,7 +120,7 @@
       "id": "obsidian_import",
       "default": false,
       "prompt": "Do you already have an Obsidian vault to import into this Vault project? If yes, provide its path.",
-      "when_to_install": "Use when the user already keeps project notes in Obsidian and wants agents to search them through Vault-for-LLM.",
+      "when_to_install": "Use when the user already keeps project notes in Obsidian and wants agents to search them through Vault Agent Memory.",
       "install_commands": [
         "vault setup-agent --non-interactive --agent generic --scope private --agent-project-dir /path/to/project --features core,mcp,obsidian_import --obsidian-vault /path/to/ObsidianVault --obsidian-sync all",
         "vault import obsidian --vault /path/to/ObsidianVault --project-dir /path/to/project --dry-run"
@@ -298,7 +299,7 @@
   },
   "memory_governance": {
     "rule": "L0-L3 describe memory depth and usage, not access control.",
-    "vision": "Vault-for-LLM is the user-owned memory core; agent runtimes are hands; models are compute tools.",
+    "vision": "Vault Agent Memory is the user-owned memory core; agent runtimes are hands; models are compute tools.",
     "user_centered_design": "Vault can store project knowledge and reviewed user profile memory. Raw private interactions stay private; trusted agents may share short reviewed summaries.",
     "progressive_memory_disclosure": "Start with boot summaries and active context, then topic maps, search candidates, bounded source ranges, and raw/archive memory only when task and permissions justify it.",
     "access_metadata": [
