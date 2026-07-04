@@ -11,7 +11,7 @@ Keep the existing technical identifiers unchanged for compatibility:
 - Python package: `vault-for-llm`
 - CLI command: `vault`
 - MCP command: `vault-mcp`
-- repository slug: `Vault-for-LLM`
+- repository slug at the time of this display-name change: `Vault-for-LLM`
 
 Public entry surfaces should introduce the product as Vault Agent Memory and
 explain that it is installed through `vault-for-llm`.
@@ -32,6 +32,9 @@ Keeping the package and command names stable avoids unnecessary breakage for
 published PyPI installs, existing docs, MCP configs, automation templates, and
 agent install prompts.
 
+A later repository rename should follow
+[2026-07-04-repository-rename-vault-agent-memory.md](2026-07-04-repository-rename-vault-agent-memory.md).
+
 ## Writing Rules
 
 - Use "Vault Agent Memory" for product-facing headings, landing pages, README
@@ -47,7 +50,7 @@ agent install prompts.
 ## Non-Goals
 
 - This does not rename the PyPI package.
-- This does not rename the repository.
+- This does not rename the repository by itself.
 - This does not change import paths, CLI commands, MCP tool names, database
   names, or existing automation contracts.
 - This does not require rewriting old announcements or archived review notes.
