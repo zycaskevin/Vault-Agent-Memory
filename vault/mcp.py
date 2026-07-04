@@ -580,7 +580,7 @@ def main(argv: list[str] | None = None):
     """Entry point for the vault-mcp command."""
     parser = argparse.ArgumentParser(
         prog="vault-mcp",
-        description="Vault-for-LLM MCP server",
+        description="Vault Agent Memory MCP server",
     )
     parser.add_argument(
         "--project-dir",
