@@ -15,7 +15,7 @@ Scope: public README feature/capability claims for the v0.7.29 Agent Knowledge P
 
 | ID | README claim | Tier | Evidence / implementation | Verification status |
 |---|---|---|---|---|
-| C01 | Vault-for-LLM is local-first project memory for AI agents. | stable | Base storage is Markdown plus SQLite; `vault init/add/compile/search` works locally. | README command smoke passes. |
+| C01 | Vault Agent Memory is local-first project memory for AI agents. | stable | Base storage is Markdown plus SQLite; `vault init/add/compile/search` works locally. | README command smoke passes. |
 | C02 | Vault does not replace models, wikis, Obsidian, or hosted memory systems. | positioning | README and docs frame Vault as the governed layer between human notes and agent access. | Product positioning only. |
 | C03 | Agent-driven install is the recommended path. | usable | `vault setup-agent` and `vault install-agent` generate project setup, optional feature guidance, Agent Access Presets, stable venv scripts, sync templates, local agent registry entries, hybrid vault layout manifests, MCP startup guides, update-status install packs, update rollout health scripts, runtime update playbooks, common Agent adapter startup templates with fleet-aware handoff contracts, startup contract doctor checks, safe runtime-template apply commands, optional low-risk auto-promote policy files, and smoke-test next steps. | `tests/test_agent_setup.py` and `tests/test_agent_registry.py` pass; PyPI smoke is part of release closeout. |
 | C04 | Manual quickstart works from PyPI. | stable | `vault-for-llm[mcp]==0.7.29` installs and exposes `vault`. | Clean Python 3.11 PyPI install smoke is part of release closeout. |

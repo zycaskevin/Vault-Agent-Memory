@@ -1,4 +1,4 @@
-"""Read-only Obsidian export for Vault-for-LLM knowledge entries.
+"""Read-only Obsidian export for Vault Agent Memory knowledge entries.
 
 This module intentionally exports from ``vault.db`` to Markdown files only.
 It never writes back to ``raw/``, ``compiled/``, SQLite, or any remote sync target.

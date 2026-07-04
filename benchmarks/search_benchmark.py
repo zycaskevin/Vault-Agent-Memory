@@ -1,5 +1,5 @@
 """
-Vault-for-LLM 搜尋效能基準測試工具。
+Vault Agent Memory 搜尋效能基準測試工具。
 
 比較不同搜尋策略的效果與效能：
 - 關鍵詞搜尋 vs 混合搜尋 vs 語義搜尋
@@ -512,7 +512,7 @@ def print_search_qa_summary(snapshot: dict, *, label: str) -> None:
 # ── 主程序 ────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="Vault-for-LLM 搜尋基準測試")
+    parser = argparse.ArgumentParser(description="Vault Agent Memory 搜尋基準測試")
     parser.add_argument(
         "--db-path",
         type=str,

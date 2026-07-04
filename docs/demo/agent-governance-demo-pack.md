@@ -1,6 +1,6 @@
 # Agent Governance Demo Pack
 
-This pack is the public proof for Vault-for-LLM's positioning:
+This pack is the public proof for Vault Agent Memory's positioning:
 
 > Agents need memory governance, not just RAG.
 

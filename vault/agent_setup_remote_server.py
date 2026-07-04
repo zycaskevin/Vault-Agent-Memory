@@ -78,7 +78,7 @@ def write_remote_server_deploy_templates(
         "\n".join(
             [
                 "[Unit]",
-                "Description=Vault-for-LLM Remote Server",
+                "Description=Vault Agent Memory Remote Server",
                 "After=network-online.target",
                 "Wants=network-online.target",
                 "",

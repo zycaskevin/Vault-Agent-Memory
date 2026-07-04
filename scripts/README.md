@@ -63,7 +63,7 @@ python scripts/agent_onboarding_benchmark.py --output /tmp/vault-agent-onboardin
 
 ## Optional remote sync helpers
 
-These scripts are for users who intentionally configure Supabase as an optional sync/read target. Core Vault-for-LLM usage does **not** require Supabase.
+These scripts are for users who intentionally configure Supabase as an optional sync/read target. Core Vault Agent Memory usage does **not** require Supabase.
 
 | Script | Purpose | Required configuration |
 |---|---|---|

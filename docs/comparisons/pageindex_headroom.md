@@ -1,18 +1,18 @@
 # PageIndex And Headroom Comparison
 
-This note compares Vault-for-LLM with PageIndex-style document retrieval and
+This note compares Vault Agent Memory with PageIndex-style document retrieval and
 Headroom-style context compression. It is not a benchmark. It is a product and
 architecture positioning note for future work.
 
 ## Short Answer
 
-Vault-for-LLM should borrow ideas from both projects, but it should not become
+Vault Agent Memory should borrow ideas from both projects, but it should not become
 either of them.
 
 - PageIndex is useful inspiration for **document tree navigation**.
 - Headroom is useful inspiration for a **context budget and reversible
   compression layer**.
-- Vault-for-LLM should stay focused on **local-first project memory governance**:
+- Vault Agent Memory should stay focused on **local-first project memory governance**:
   candidate review, source of truth, bounded reads, Search QA, backup/restore,
   and agent-friendly install paths.
 
@@ -22,7 +22,7 @@ either of them.
 |---|---|---|---|
 | PageIndex | Long professional documents are hard to search accurately. | Build a hierarchical tree index and let an LLM navigate it through reasoning. | PDFs, filings, manuals, papers, contracts, long SOPs. |
 | Headroom | Agents waste context on verbose tool outputs, logs, files, and RAG chunks. | Compress before content reaches the LLM, while keeping originals retrievable. | Coding agents, log/debug sessions, large tool outputs, repeated context. |
-| Vault-for-LLM | Agents forget project decisions and may write messy or unsafe memory. | Governed Markdown/SQLite project memory with search, bounded reads, candidates, QA, and recovery. | Multi-agent project memory, repo docs, decisions, pitfalls, onboarding, operations. |
+| Vault Agent Memory | Agents forget project decisions and may write messy or unsafe memory. | Governed Markdown/SQLite project memory with search, bounded reads, candidates, QA, and recovery. | Multi-agent project memory, repo docs, decisions, pitfalls, onboarding, operations. |
 
 ## What Vault Should Borrow From PageIndex
 
@@ -115,7 +115,7 @@ Vault compact search results
 The external message should be:
 
 > PageIndex shows why structure-aware retrieval matters. Headroom shows why
-> context should be budgeted before it reaches the LLM. Vault-for-LLM applies
+> context should be budgeted before it reaches the LLM. Vault Agent Memory applies
 > both ideas to governed project memory: find the right source, read only the
 > bounded range, propose before storing, and keep the memory recoverable.
 

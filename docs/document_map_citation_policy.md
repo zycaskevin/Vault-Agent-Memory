@@ -1,6 +1,6 @@
 # Document Map citation policy
 
-Document Map is the citation-safe path for using Vault-for-LLM memory in agent answers. It separates **finding a likely memory** from **reading the bounded source text that can be cited**.
+Document Map is the citation-safe path for using Vault Agent Memory memory in agent answers. It separates **finding a likely memory** from **reading the bounded source text that can be cited**.
 
 ## Policy
 

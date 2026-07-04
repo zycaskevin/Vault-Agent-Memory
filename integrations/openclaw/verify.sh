@@ -8,7 +8,7 @@ WRAPPER="${VAULT_OPENCLAW_WRAPPER:-${SRC_DIR}/bin/vault-openclaw}"
 
 export VAULT_OPENCLAW_REPO="${VAULT_OPENCLAW_REPO:-${REPO_ROOT}}"
 
-echo "Checking Vault-for-LLM OpenClaw adapter..."
+echo "Checking Vault Agent Memory OpenClaw adapter..."
 echo "  wrapper: ${WRAPPER}"
 
 if [ ! -x "${WRAPPER}" ]; then
@@ -58,4 +58,4 @@ echo "[4/4] Source syntax smoke"
 python3 -m py_compile "${WRAPPER}"
 
 echo ""
-echo "OK: OpenClaw can call Vault-for-LLM."
+echo "OK: OpenClaw can call Vault Agent Memory."

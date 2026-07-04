@@ -1,5 +1,5 @@
 """
-Vault-for-LLM — 統一日誌模組。
+Vault Agent Memory — 統一日誌模組。
 
 所有模組用 logging.getLogger("vault-mcp") 輸出，
 不再直接 print()。CLI 可以控制 level，其他模組保持安靜。

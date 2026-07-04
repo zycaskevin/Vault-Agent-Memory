@@ -1,12 +1,12 @@
 # Optimization Notes
 
-This document collects public optimization directions for Vault-for-LLM. It is intentionally product- and project-neutral: no private deployment paths, remote admin surfaces, or internal agent wiring are required to use Vault.
+This document collects public optimization directions for Vault Agent Memory. It is intentionally product- and project-neutral: no private deployment paths, remote admin surfaces, or internal agent wiring are required to use Vault.
 
 ---
 
 ## Optimization goals
 
-Vault-for-LLM optimizes for agent memory that is:
+Vault Agent Memory optimizes for agent memory that is:
 
 1. **Local-first** — works with SQLite and Markdown without a cloud service.
 2. **Cheap to retrieve** — agents search and read only what they need.

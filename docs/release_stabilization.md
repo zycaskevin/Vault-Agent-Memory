@@ -1,6 +1,6 @@
 # Release Stabilization Checklist
 
-Vault-for-LLM should merge focused maintenance PRs before publishing the next
+Vault Agent Memory should merge focused maintenance PRs before publishing the next
 external package release. Use this checklist when deciding whether `main` is
 ready to become a new release.
 

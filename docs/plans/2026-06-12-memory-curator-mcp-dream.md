@@ -2,7 +2,7 @@
 
 > **For Hermes:** Use `profile-agent-task-protocol` + `writing-plans` before implementation. For coding execution, use subagent-driven-development task-by-task and verify every MCP tool with real calls.
 
-**Goal:** Let agents use Vault-for-LLM through MCP to safely remember knowledge, read knowledge with citations, and periodically curate memory through a scheduled “dream” workflow.
+**Goal:** Let agents use Vault Agent Memory through MCP to safely remember knowledge, read knowledge with citations, and periodically curate memory through a scheduled “dream” workflow.
 
 **Architecture:** Keep SQLite + Markdown `raw/` as the local source of truth. Add a policy-driven memory layer above existing `vault_add`, `vault_search`, `vault_map_show`, and `vault_read_range`: propose → gate → write candidate → promote. Add dream jobs as deterministic CLI/MCP workflows that produce reports first, then optionally apply safe changes with explicit policy flags.
 

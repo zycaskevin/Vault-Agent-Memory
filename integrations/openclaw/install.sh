@@ -266,7 +266,7 @@ export VAULT_OPENCLAW_PROJECT_DIR="${PROJECT_DIR}"
 "${SKILL_DIR}/bin/vault-openclaw" init >/dev/null
 
 cat <<EOF
-Vault-for-LLM OpenClaw adapter installed.
+Vault Agent Memory OpenClaw adapter installed.
 
 Vault memory scope:
   scope:       ${SCOPE:-explicit}

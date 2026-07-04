@@ -275,7 +275,7 @@ def _find_default_wheel() -> Path | None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Run Vault-for-LLM install smoke matrix")
+    parser = argparse.ArgumentParser(description="Run Vault Agent Memory install smoke matrix")
     parser.add_argument("--mode", choices=["source", "wheel", "both"], default="source")
     parser.add_argument("--wheel", type=Path, help="wheel file to install for wheel mode")
     parser.add_argument(

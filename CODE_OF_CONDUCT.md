@@ -1,6 +1,6 @@
 # Code of Conduct
 
-Vault-for-LLM is a project for Agent-assisted builders who care about memory
+Vault Agent Memory is a project for Agent-assisted builders who care about memory
 governance, privacy, and reliable automation. The community should be practical,
 welcoming, and safe for people with different levels of Agent experience.
 

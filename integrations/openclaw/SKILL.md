@@ -1,11 +1,11 @@
 ---
 slug: vault-for-llm
 version: "1.0.0"
-display_name: Vault-for-LLM Project Memory
-displayName: Vault-for-LLM Project Memory
+display_name: Vault Agent Memory
+displayName: Vault Agent Memory
 name: vault-for-llm
 description: >
-  Connect OpenClaw to Vault-for-LLM as a local-first governed project memory
+  Connect OpenClaw to Vault Agent Memory as a local-first governed project memory
   layer. Search first, then bounded-read cited source ranges; propose new
   memories as candidates instead of writing directly into active memory.
 metadata:
@@ -21,9 +21,9 @@ tags:
   - local-first
 ---
 
-# Vault-for-LLM Project Memory
+# Vault Agent Memory for OpenClaw
 
-Use this skill when OpenClaw needs durable project knowledge from Vault-for-LLM.
+Use this skill when OpenClaw needs durable project knowledge from Vault Agent Memory.
 
 Vault is not an always-on chat memory dump. Treat it as governed project memory:
 confirmed decisions, source-of-truth notes, pitfalls, SOPs, repo docs, and

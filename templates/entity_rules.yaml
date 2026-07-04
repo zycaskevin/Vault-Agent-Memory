@@ -1,5 +1,5 @@
 # entity_rules.yaml
-# Vault-for-LLM — public-safe starter entity inference rules
+# Vault Agent Memory — public-safe starter entity inference rules
 #
 # Copy this file into your project root as `entity_rules.yaml` and customize it
 # for your own domain. The repository template intentionally stays generic:

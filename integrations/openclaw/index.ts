@@ -53,7 +53,7 @@ function toolText(payload: unknown) {
 
 function toolError(err: unknown) {
   return {
-    content: [{ type: "text", text: `Vault-for-LLM error: ${String(err)}` }],
+    content: [{ type: "text", text: `Vault Agent Memory error: ${String(err)}` }],
     isError: true,
   };
 }
@@ -68,7 +68,7 @@ export default function register(api: OpenClawPluginApi) {
   api.registerTool({
     name: "vault_search",
     description:
-      "Search governed Vault-for-LLM project memory. Use before answering project-memory, decision, SOP, pitfall, or source-of-truth questions.",
+      "Search governed Vault Agent Memory project memory. Use before answering project-memory, decision, SOP, pitfall, or source-of-truth questions.",
     parameters: {
       type: "object",
       properties: {
@@ -105,7 +105,7 @@ export default function register(api: OpenClawPluginApi) {
   api.registerTool({
     name: "vault_read_range",
     description:
-      "Read a bounded source range from Vault-for-LLM after vault_search returns an id/node/line range. Use this before citing evidence.",
+      "Read a bounded source range from Vault Agent Memory after vault_search returns an id/node/line range. Use this before citing evidence.",
     parameters: {
       type: "object",
       properties: {
@@ -173,7 +173,7 @@ export default function register(api: OpenClawPluginApi) {
   api.registerTool({
     name: "vault_obsidian_import",
     description:
-      "Import an existing Obsidian vault into Vault-for-LLM. Run dry_run first; only use apply+compile after user confirmation.",
+      "Import an existing Obsidian vault into Vault Agent Memory. Run dry_run first; only use apply+compile after user confirmation.",
     parameters: {
       type: "object",
       properties: {
@@ -202,7 +202,7 @@ export default function register(api: OpenClawPluginApi) {
 
   api.registerTool({
     name: "vault_stats",
-    description: "Show Vault-for-LLM project memory status and counts.",
+    description: "Show Vault Agent Memory project memory status and counts.",
     parameters: { type: "object", properties: {} },
     async execute() {
       try {

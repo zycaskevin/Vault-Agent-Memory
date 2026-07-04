@@ -2,7 +2,7 @@
 
 This repository directory contains public-safe Search QA fixture files for local retrieval regression checks.
 
-These are source-checkout fixtures. They live under the repository's top-level `benchmarks/` directory and are not installed by the PyPI wheel. If you installed Vault-for-LLM from PyPI, run `vault search-qa` against your own QA files, or clone/download the repository to use these examples.
+These are source-checkout fixtures. They live under the repository's top-level `benchmarks/` directory and are not installed by the PyPI wheel. If you installed Vault Agent Memory from PyPI, run `vault search-qa` against your own QA files, or clone/download the repository to use these examples.
 
 - `basic.en.json` — English cases for Document Map / `read_range` guidance, citation-policy wording, and a no-result control.
 - `basic.zh-Hant.json` — Traditional Chinese / CJK cases covering the same retrieval-focused behaviors.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenClaw wrapper for Vault-for-LLM.
+"""OpenClaw wrapper for Vault Agent Memory.
 
 The wrapper lets OpenClaw call Vault through a stable command even when the
 `vault` and `vault-mcp` console scripts are not on the gateway PATH. It prefers

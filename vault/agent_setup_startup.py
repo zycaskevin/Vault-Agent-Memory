@@ -258,7 +258,7 @@ def write_update_status_templates(
     cron_path.write_text(
         "\n".join(
             [
-                "# Vault-for-LLM local Agent update status",
+                "# Vault Agent Memory local Agent update status",
                 f"*/{max(1, int(interval_minutes))} * * * * {shell_join(write_command)} >> $HOME/.vault-for-llm/update-status.log 2>&1",
                 "",
             ]
@@ -301,7 +301,7 @@ def write_update_status_templates(
             [
                 "# Agent Update Rollout",
                 "",
-                "Use this when one local runtime upgrades Vault-for-LLM and the other runtimes need to notice.",
+                "Use this when one local runtime upgrades Vault Agent Memory and the other runtimes need to notice.",
                 "",
                 "After an upgrade or reinstall, refresh the shared machine notice:",
                 "",
@@ -342,7 +342,7 @@ def write_update_status_templates(
             [
                 "# Agent Update Status",
                 "",
-                "This install pack lets multiple local Agent runtimes share one Vault-for-LLM update notice.",
+                "This install pack lets multiple local Agent runtimes share one Vault Agent Memory update notice.",
                 "",
                 "Shared status file:",
                 "",

@@ -1,5 +1,5 @@
 """
-Vault-for-LLM — 輕量知識圖譜模組。
+Vault Agent Memory — 輕量知識圖譜模組。
 
 功能：
 - 自動從 tags/title 內容推斷實體和關聯
@@ -71,7 +71,7 @@ def _load_entity_rules(project_dir: Optional[Path] = None) -> dict:
 
 
 class VaultGraph:
-    """Vault-for-LLM 圖譜引擎。"""
+    """Vault Agent Memory 圖譜引擎。"""
 
     def __init__(self, db: VaultDB, project_dir: Optional[Path] = None):
         self.db = db

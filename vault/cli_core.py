@@ -19,7 +19,7 @@ from .search_utils import validate_search_query
 
 
 def cmd_init(args):
-    """初始化 Vault-for-LLM 專案。"""
+    """初始化 Vault Agent Memory 專案。"""
     project_dir = Path(args.project_dir or ".")
     pretty_output = _arg_value(args, "pretty", False) is True
     json_output = _arg_value(args, "json", False) is True or pretty_output
@@ -48,7 +48,7 @@ def cmd_init(args):
     if gitignore.exists():
         gi_lines = gitignore.read_text().splitlines()
 
-    additions = ["# Vault-for-LLM", "*.db", "__pycache__/", ".cache/"]
+    additions = ["# Vault Agent Memory", "*.db", "__pycache__/", ".cache/"]
     for a in additions:
         if a not in gi_lines:
             gi_lines.append(a)

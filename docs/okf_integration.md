@@ -5,12 +5,12 @@ knowledge. An OKF bundle is a directory of concept files with YAML frontmatter,
 ordinary Markdown body content, optional `index.md` files, and a `log.md` update
 history.
 
-Vault-for-LLM should treat OKF as an exchange format, not as a replacement for
+Vault Agent Memory should treat OKF as an exchange format, not as a replacement for
 the local vault.
 
 ```text
 OKF bundle          portable agent knowledge files
-Vault-for-LLM       local governance, search, review, automation, and MCP layer
+Vault Agent Memory       local governance, search, review, automation, and MCP layer
 ```
 
 ## Why It Matters
@@ -186,7 +186,7 @@ Optional checks:
 
 Vault should say:
 
-> Vault-for-LLM can import and export OKF-style bundles, then add what a file
+> Vault Agent Memory can import and export OKF-style bundles, then add what a file
 > format does not provide: local search, candidate review, privacy gates,
 > temporal memory, MCP access, automation, and GUI governance.
 

@@ -1,6 +1,6 @@
 # SQLite backup, verify, and restore
 
-Vault-for-LLM stores local knowledge in `vault.db`. The `vault db` backup commands create and restore **local SQLite files only**; they do not upload data or contact external services.
+Vault Agent Memory stores local knowledge in `vault.db`. The `vault db` backup commands create and restore **local SQLite files only**; they do not upload data or contact external services.
 
 ## Create a backup
 

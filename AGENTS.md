@@ -1,11 +1,11 @@
-# Agent Instructions For Vault-for-LLM
+# Agent Instructions For Vault Agent Memory
 
 This repository is designed to be installed, configured, and modified by agent
 runtimes as well as by humans. If you are an agent working in this repo, treat
 this file and `agent_manifest.json` as the operational source of truth.
 
 If you can run shell commands for the user, do not stop at telling them how to
-install Vault-for-LLM manually. Ask the required scope/feature questions, run the
+install Vault Agent Memory manually. Ask the required scope/feature questions, run the
 install/configuration steps yourself, and finish with a smoke test.
 
 ## Common Install Architecture
@@ -82,7 +82,7 @@ python scripts/sync_to_supabase.py --document-map
 
 ## First Decision: Database Scope
 
-Before installing or connecting Vault-for-LLM for a user, decide where the
+Before installing or connecting Vault Agent Memory for a user, decide where the
 Vault project directory should live.
 
 ```text

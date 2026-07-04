@@ -89,7 +89,7 @@ def render_cron_template(*, command: list[str], interval_minutes: int = 15) -> s
     interval = max(1, int(interval_minutes))
     return "\n".join(
         [
-            "# Vault-for-LLM Obsidian sync",
+            "# Vault Agent Memory Obsidian sync",
             f"*/{interval} * * * * {shell_join(command)} >> $HOME/.vault-for-llm/obsidian-sync.log 2>&1",
             "",
         ]
@@ -101,7 +101,7 @@ def render_daily_cron_template(*, command: list[str], hour: int = 3, minute: int
     safe_minute = max(0, min(59, int(minute)))
     return "\n".join(
         [
-            "# Vault-for-LLM daily sync",
+            "# Vault Agent Memory daily sync",
             f"{safe_minute} {safe_hour} * * * {shell_join(command)} >> $HOME/.vault-for-llm/supabase-sync.log 2>&1",
             "",
         ]
@@ -1041,7 +1041,7 @@ def write_remote_reader_templates(
     env_path.write_text(
         "\n".join(
             [
-                "# Vault-for-LLM remote reader credentials",
+                "# Vault Agent Memory remote reader credentials",
                 "# Use an anon/authenticated key. Do not put SUPABASE_SERVICE_ROLE_KEY in hosted agents.",
                 "SUPABASE_URL=https://YOUR_PROJECT.supabase.co",
                 "SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY",

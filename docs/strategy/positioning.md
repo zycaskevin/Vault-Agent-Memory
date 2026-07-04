@@ -13,8 +13,9 @@ The user-facing sentence:
 > organizations safely manage what AI agents remember, trust, share, forget,
 > and roll back.
 
-`vault-for-llm` remains the Python package, repository slug, and compatibility
-install path. Use Vault Agent Memory as the product display name.
+`vault-for-llm` remains the Python package and compatibility install path. The
+canonical repository slug is `Vault-Agent-Memory`. Use Vault Agent Memory as the
+product display name.
 
 The sharper product claim:
 

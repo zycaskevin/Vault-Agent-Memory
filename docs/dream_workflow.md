@@ -1,6 +1,6 @@
 # Dream Workflow
 
-`vault dream` is the report-first memory curation workflow for Vault-for-LLM. It helps operators find stale, duplicated, weak, or poorly described knowledge without letting the agent silently rewrite the vault.
+`vault dream` is the report-first memory curation workflow for Vault Agent Memory. It helps operators find stale, duplicated, weak, or poorly described knowledge without letting the agent silently rewrite the vault.
 
 ## Design rule
 

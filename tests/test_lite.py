@@ -1,5 +1,5 @@
 """
-Vault-for-LLM 端到端測試。
+Vault Agent Memory 端到端測試。
 """
 
 import os
@@ -321,7 +321,7 @@ def test_vector_dimension_mismatch_falls_back_to_keyword():
 
     db.add_knowledge(
         "PyPI smoke test",
-        "Vault-for-LLM installed from wheel and can add, compile, and search local knowledge.",
+        "Vault Agent Memory installed from wheel and can add, compile, and search local knowledge.",
         category="test",
         trust=0.9,
     )

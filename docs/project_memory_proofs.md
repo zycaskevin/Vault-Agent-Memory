@@ -1,8 +1,8 @@
 # Project Memory Proof Demos
 
-Vault-for-LLM should not be judged as "another Markdown vector store." The useful claim is narrower:
+Vault Agent Memory should not be judged as "another Markdown vector store." The useful claim is narrower:
 
-> Vault-for-LLM helps agents use project memory as a governed handoff layer: search the right source, propose before storing, read bounded evidence, and verify retrieval behavior with local tests.
+> Vault Agent Memory helps agents use project memory as a governed handoff layer: search the right source, propose before storing, read bounded evidence, and verify retrieval behavior with local tests.
 
 This repository includes a public-safe proof script that turns that claim into local, repeatable numbers.
 
@@ -73,7 +73,7 @@ Expected demo result:
 }
 ```
 
-What this proves: Vault-for-LLM is not only a memory store. It can be used as a review gate between agent suggestions and formal project knowledge.
+What this proves: Vault Agent Memory is not only a memory store. It can be used as a review gate between agent suggestions and formal project knowledge.
 
 ## Proof 3: Wrong Source vs Bounded Read
 

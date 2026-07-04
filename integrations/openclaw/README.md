@@ -1,6 +1,6 @@
 # OpenClaw Adapter
 
-This adapter lets OpenClaw expose Vault-for-LLM as governed project memory.
+This adapter lets OpenClaw expose Vault Agent Memory as governed project memory.
 
 It provides two integration styles:
 
@@ -8,7 +8,7 @@ It provides two integration styles:
 2. An OpenClaw plugin extension that registers manual tools:
    `vault_search`, `vault_read_range`, `vault_memory_propose`, and `vault_stats`.
 
-Auto-recall is intentionally disabled by default. Vault-for-LLM is best used as
+Auto-recall is intentionally disabled by default. Vault Agent Memory is best used as
 project memory governance: search, bounded read, then cite. New memories should
 start as candidates.
 

@@ -1,6 +1,6 @@
 # SQLite schema migrations
 
-Vault-for-LLM keeps SQLite schema metadata in two compatible places:
+Vault Agent Memory keeps SQLite schema metadata in two compatible places:
 
 - `config.schema_version` remains the public compatibility value used by existing tools.
 - `schema_migrations(version, name, applied_at)` records explicit migration metadata.

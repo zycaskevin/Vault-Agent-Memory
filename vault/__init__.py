@@ -1,4 +1,4 @@
-"""Vault-for-LLM — Local-first knowledge system for LLM agents."""
+"""Vault Agent Memory — Local-first memory governance for AI agents."""
 
 __version__ = "0.7.29"
 

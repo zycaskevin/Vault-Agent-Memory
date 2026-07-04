@@ -1,5 +1,5 @@
 """
-Vault-for-LLM — SQLite + sqlite-vec 資料庫抽象層。
+Vault Agent Memory — SQLite + sqlite-vec 資料庫抽象層。
 
 設計原則：
 - 一個 .db 檔案搞定所有資料
@@ -104,7 +104,7 @@ except ImportError:
 
 
 class VaultDB:
-    """Vault-for-LLM 資料庫層。"""
+    """Vault Agent Memory 資料庫層。"""
 
     SCHEMA_VERSION = DB_SCHEMA_VERSION
     KNOWLEDGE_UPDATE_COLUMNS = DB_KNOWLEDGE_UPDATE_COLUMNS

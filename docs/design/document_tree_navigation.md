@@ -1,6 +1,6 @@
 # Document Tree Navigation Design
 
-This design adapts PageIndex-style tree navigation to Vault-for-LLM without
+This design adapts PageIndex-style tree navigation to Vault Agent Memory without
 turning Vault into a PDF RAG system.
 
 ## Goal

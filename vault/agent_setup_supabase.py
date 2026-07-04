@@ -6,9 +6,9 @@ from pathlib import Path
 
 VALID_SUPABASE_SETUP_MODES = {"none", "simple", "advanced"}
 VALID_SETUP_LANGUAGES = {"en", "zh-Hant", "zh-CN"}
-SUPABASE_SETUP_DOC_URL = "https://github.com/zycaskevin/Vault-for-LLM/blob/main/docs/supabase_setup.md"
+SUPABASE_SETUP_DOC_URL = "https://github.com/zycaskevin/Vault-Agent-Memory/blob/main/docs/supabase_setup.md"
 
-SUPABASE_READ_POLICY_SQL = """-- Vault-for-LLM advanced Supabase read policy
+SUPABASE_READ_POLICY_SQL = """-- Vault Agent Memory advanced Supabase read policy
 -- Paste this into the Supabase SQL editor after creating the minimal tables.
 -- Keep SUPABASE_SERVICE_ROLE_KEY only on trusted sync hosts. Hosted agents
 -- should call vault_search_readable with anon/authenticated credentials.

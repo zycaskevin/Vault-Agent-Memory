@@ -1289,7 +1289,7 @@ def test_agent_install_runtime_template_is_dry_run_then_apply(tmp_path, capsys):
     assert applied["changed"] is True
     assert applied["action"] == "create"
     body = target.read_text(encoding="utf-8")
-    assert "BEGIN Vault-for-LLM runtime startup: codex" in body
+    assert "BEGIN Vault Agent Memory runtime startup: codex" in body
     assert "Codex Startup Template" in body
 
     target.write_text(body.replace("Codex Startup Template", "Old Vault Template"), encoding="utf-8")

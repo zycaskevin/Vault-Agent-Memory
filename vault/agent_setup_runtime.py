@@ -27,7 +27,7 @@ def _runtime_template_filename(runtime: str) -> tuple[str, str]:
 
 def _runtime_template_markers(runtime: str) -> tuple[str, str]:
     normalized, _ = _runtime_template_filename(runtime)
-    label = f"Vault-for-LLM runtime startup: {normalized}"
+    label = f"Vault Agent Memory runtime startup: {normalized}"
     return f"<!-- BEGIN {label} -->", f"<!-- END {label} -->"
 
 

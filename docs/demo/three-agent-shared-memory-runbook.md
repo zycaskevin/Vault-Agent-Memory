@@ -190,6 +190,6 @@ The product is governed continuity across agent workflows.
 
 Use this sentence at the end of the demo:
 
-> Vault-for-LLM is a local-first memory governance layer for agent teams. It
+> Vault Agent Memory is a local-first memory governance layer for agent teams. It
 > helps agents remember together without turning shared memory into a garbage
 > pile.

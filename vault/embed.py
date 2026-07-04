@@ -1,5 +1,5 @@
 """
-Vault-for-LLM — 嵌入生成模組。
+Vault Agent Memory — 嵌入生成模組。
 
 支援多種嵌入來源：
 1. ONNX Runtime（本地模型，不需要 PyTorch 2GB+）
