@@ -5,10 +5,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from vault.db import VaultDB
 from vault.remote_candidates import (
+    CENTRAL_CANDIDATE_TABLE,
     REMOTE_CANDIDATE_RPC,
     REMOTE_CANDIDATE_TABLE,
     build_remote_candidate_request,
     pull_remote_candidate_requests,
+    submit_central_candidate_request,
     submit_remote_candidate_request,
 )
 from vault.sync_integrity import sign_sync_payload
@@ -36,6 +38,7 @@ class _FakeTableQuery:
         self.table_name = table_name
         self.filters = []
         self.update_payload = None
+        self.insert_payload = None
         self.limit_value = None
 
     def select(self, *_args, **_kwargs):
@@ -56,8 +59,19 @@ class _FakeTableQuery:
         self.update_payload = dict(payload)
         return self
 
+    def insert(self, payload):
+        self.insert_payload = dict(payload)
+        return self
+
     def execute(self):
         rows = self.client.tables.setdefault(self.table_name, [])
+        if self.insert_payload is not None:
+            row = dict(self.insert_payload)
+            row.setdefault("id", f"{self.table_name}-{len(rows) + 1}")
+            row.setdefault("created_at", "2026-07-01T00:00:00Z")
+            rows.append(row)
+            self.client.inserts.append(dict(row))
+            return _FakeResponse([dict(row)])
         if self.update_payload is not None:
             for row in rows:
                 if all(row.get(field) == value for field, value in self.filters):
@@ -79,6 +93,7 @@ class _FakeSupabaseClient:
         self.tables = {REMOTE_CANDIDATE_TABLE: rows or []}
         self.rpc_calls = []
         self.updates = []
+        self.inserts = []
 
     def rpc(self, name, params):
         return _FakeRpcQuery(self, name, params)
@@ -171,6 +186,34 @@ def test_submit_remote_candidate_request_uses_primary_rotating_hmac_key(monkeypa
     assert payload["request"]["hmac_key_id"] == "current"
 
 
+def test_submit_central_candidate_request_inserts_central_candidate_table():
+    client = _FakeSupabaseClient()
+
+    payload = submit_central_candidate_request(
+        sb_client=client,
+        hmac_secret="sync-secret",
+        title="Central candidate sync lesson",
+        content="Remote agents can submit candidate memories into the central candidate inbox.",
+        reason="keeps central memory candidate-first",
+        from_agent="remote-agent",
+        trust=0.8,
+        scope="shared",
+        sensitivity="low",
+    )
+
+    assert payload["ok"] is True
+    assert payload["status"] == "candidate"
+    assert payload["central_candidate_table"] == CENTRAL_CANDIDATE_TABLE
+    row = client.tables[CENTRAL_CANDIDATE_TABLE][0]
+    assert row["candidate_key"]
+    assert row["title"] == "Central candidate sync lesson"
+    assert row["status"] == "candidate"
+    assert row["hmac_algorithm"] == "hmac-sha256-v1"
+    assert len(row["payload_hash"]) == 64
+    assert len(row["hmac_signature"]) == 64
+    assert "content" not in payload["request"]
+
+
 def test_pull_remote_candidate_requests_imports_into_local_candidate_queue(tmp_path):
     project = tmp_path / "project"
     project.mkdir()
@@ -220,6 +263,95 @@ def test_pull_remote_candidate_requests_imports_into_local_candidate_queue(tmp_p
         assert db.conn.execute("SELECT COUNT(*) FROM knowledge").fetchone()[0] == 0
     finally:
         db.close()
+
+
+def test_pull_remote_candidate_requests_imports_from_central_candidate_table(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    db = VaultDB(project / "vault.db").connect()
+    db.close()
+    client = _FakeSupabaseClient([])
+    client.tables[CENTRAL_CANDIDATE_TABLE] = [
+        {
+            "id": "central-1",
+            "candidate_key": "central-key",
+            "status": "candidate",
+            "created_at": "2026-07-01T00:00:00Z",
+            "from_agent": "mobile-agent",
+            "title": "Central candidate inbox rule",
+            "content": "Central candidate rows should import into local review before promotion.",
+            "reason": "multi-host central inbox",
+            "category": "workflow",
+            "tags": ["central", "candidate"],
+            "trust": 0.72,
+            "scope": "shared",
+            "sensitivity": "low",
+            "owner_agent": "mobile-agent",
+            "allowed_agents": ["work-agent"],
+            "memory_type": "remote_candidate",
+            "source_ref": "",
+        }
+    ]
+
+    preview = pull_remote_candidate_requests(project, sb_client=client, apply=False)
+    assert preview["ok"] is True
+    assert preview["count"] == 1
+    assert preview["central_candidate_inbox"]["count"] == 1
+    assert preview["requests"][0]["source_table"] == CENTRAL_CANDIDATE_TABLE
+
+    applied = pull_remote_candidate_requests(project, sb_client=client, apply=True)
+    assert applied["imported_count"] == 1
+    assert applied["requests"][0]["status"] == "imported"
+    assert applied["requests"][0]["source_table"] == CENTRAL_CANDIDATE_TABLE
+    assert client.updates[-1]["status"] == "imported"
+    assert client.updates[-1]["local_candidate_id"].startswith("mem_")
+
+    db = VaultDB(project / "vault.db").connect()
+    try:
+        rows = db.list_memory_candidates()
+        assert len(rows) == 1
+        assert rows[0]["source"] == "central_memory_candidate"
+        assert rows[0]["source_ref"] == "central_candidate:central-key"
+        assert rows[0]["status"] == "candidate"
+    finally:
+        db.close()
+
+
+def test_pull_remote_candidate_requests_verifies_signed_central_candidate(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    db = VaultDB(project / "vault.db").connect()
+    db.close()
+    client = _FakeSupabaseClient([])
+    submitted = submit_central_candidate_request(
+        sb_client=client,
+        hmac_secret="sync-secret",
+        title="Signed central candidate",
+        content="Central candidate table rows should verify before trusted import.",
+        from_agent="remote-agent",
+        trust=0.8,
+        scope="shared",
+        sensitivity="low",
+    )
+    assert submitted["ok"] is True
+
+    payload = pull_remote_candidate_requests(
+        project,
+        sb_client=client,
+        apply=True,
+        hmac_secret="sync-secret",
+        require_hmac=True,
+    )
+
+    assert payload["integrity"]["hmac_required"] is True
+    assert payload["integrity"]["verified_count"] == 1
+    assert payload["integrity"]["invalid_count"] == 0
+    assert payload["imported_count"] == 1
+    assert payload["requests"][0]["integrity"]["status"] == "verified"
+    with VaultDB(project / "vault.db") as db:
+        rows = db.list_memory_candidates()
+    assert len(rows) == 1
+    assert rows[0]["source"] == "central_memory_candidate"
 
 
 def test_pull_remote_candidate_requests_requires_valid_hmac_before_import(tmp_path):

@@ -16,13 +16,19 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 from .access_policy import can_write_memory, normalize_write_policy
+from .central_candidate_store import central_candidate_inbox_status
 from .db import VaultDB
+from .gateway_central_candidates import (
+    gateway_pull_central_candidates,
+    gateway_submit_central_candidate,
+)
 from .gateway_security import GatewaySecurityPolicy, GatewaySecurityState
 from .gateway_server import (
     DEFAULT_GATEWAY_MAX_WORKERS,
     DEFAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS,
     BoundedThreadPoolHTTPServer,
 )
+from .gateway_remote_server import mark_remote_server_payload, remote_server_metadata
 from .gui_format import compact_knowledge
 from .mcp_read import _vault_read_range_payload
 from .memory import create_candidate
@@ -36,7 +42,7 @@ DEFAULT_GATEWAY_AUDIT_MAX_BYTES = 5 * 1024 * 1024
 DEFAULT_GATEWAY_AUDIT_BACKUPS = 5
 LOCALHOSTS = {"127.0.0.1", "localhost", "::1"}
 GATEWAY_CONTRACT_VERSION = "2026-07-02"
-GATEWAY_ENDPOINTS = ["/health", "/openapi.json", "/search", "/read-range", "/submit-candidate"]
+GATEWAY_ENDPOINTS = ["/health", "/openapi.json", "/search", "/read-range", "/submit-candidate", "/central-candidates/status", "/central-candidates/submit", "/central-candidates/pull"]
 
 
 def gateway_health(project_dir: str | Path) -> dict[str, Any]:
@@ -64,6 +70,7 @@ def gateway_health(project_dir: str | Path) -> dict[str, Any]:
             "adapter_boundary": True,
             "writes_active_knowledge": False,
             "candidate_first_writes": True,
+            "central_candidate_inbox": True,
             "default_read_max_sensitivity": "low",
             "default_include_private": False,
             "max_workers_supported": True,
@@ -81,6 +88,7 @@ def gateway_health(project_dir: str | Path) -> dict[str, Any]:
                 "same_machine_agents": True,
                 "cross_host_agents": "supported_when_bound_to_a_network_host_with_token_auth",
                 "supabase_adapter": "optional_separate_adapter",
+                "self_hosted_central_candidate_inbox": True,
                 "active_multi_master_sync": False,
             },
         },
@@ -156,6 +164,38 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                     "responses": {"200": {"description": "Candidate creation or gate rejection"}},
                 }
             },
+            "/central-candidates/status": {
+                "get": {
+                    "summary": "Inspect the self-hosted central candidate inbox.",
+                    "responses": {"200": {"description": "Central candidate inbox status"}},
+                }
+            },
+            "/central-candidates/submit": {
+                "post": {
+                    "summary": "Submit to the self-hosted central candidate inbox.",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/SubmitCandidateRequest"}
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Central candidate inbox write"}},
+                }
+            },
+            "/central-candidates/pull": {
+                "post": {
+                    "summary": "Pull self-hosted central candidates into local review.",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/PullCentralCandidatesRequest"}
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Local candidate import preview or apply result"}},
+                }
+            },
         },
         "components": {
             "securitySchemes": {
@@ -217,6 +257,16 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         "source_ref": {"type": "string"},
                     },
                 },
+                "PullCentralCandidatesRequest": {
+                    "type": "object",
+                    "required": ["agent_id"],
+                    "properties": {
+                        "agent_id": {"type": "string"},
+                        "limit": {"type": "integer", "default": 20, "minimum": 1, "maximum": 100},
+                        "apply": {"type": "boolean", "default": False},
+                        "require_hmac": {"type": "boolean", "default": False},
+                    },
+                },
             },
         },
         "x-vault-safety": {
@@ -226,6 +276,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
             "search_returns_raw_content": False,
             "writes_active_knowledge": False,
             "candidate_first_writes": True,
+            "central_candidate_inbox": True,
             "rate_limit_supported": True,
             "ip_policy_supported": True,
             "auth_lockout_supported": True,
@@ -476,6 +527,17 @@ def make_gateway_handler(
                 _append_audit(project, "openapi", _request_agent({}, parsed), "ok", **self._audit_context(parsed))
                 self._send_json(payload)
                 return
+            if parsed.path == "/central-candidates/status":
+                payload = central_candidate_inbox_status(project)
+                _append_audit(
+                    project,
+                    "central_candidates_status",
+                    _request_agent({}, parsed),
+                    "ok",
+                    **self._audit_context(parsed),
+                )
+                self._send_json(payload)
+                return
             self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
 
         def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
@@ -548,6 +610,61 @@ def make_gateway_handler(
                     payload.get("status", "ok"),
                     candidate_id=candidate.get("candidate_id", ""),
                     title=str(body.get("title", "")),
+                    **self._audit_context(parsed),
+                )
+                self._send_json(payload)
+                return
+            if parsed.path == "/central-candidates/submit":
+                payload = gateway_submit_central_candidate(
+                    project,
+                    title=str(body.get("title", "")),
+                    content=str(body.get("content", "")),
+                    agent_id=agent,
+                    reason=str(body.get("reason", "")),
+                    category=str(body.get("category", "general") or "general"),
+                    tags=str(body.get("tags", "") or ""),
+                    trust=_float_value(body.get("trust"), 0.5),
+                    scope=str(body.get("scope", "project") or "project"),
+                    sensitivity=str(body.get("sensitivity", "low") or "low"),
+                    owner_agent=str(body.get("owner_agent", "") or ""),
+                    allowed_agents=str(body.get("allowed_agents", "") or ""),
+                    memory_type=str(body.get("memory_type", "remote_candidate") or "remote_candidate"),
+                    source_ref=str(body.get("source_ref", "") or ""),
+                    idempotency_key=str(body.get("idempotency_key", "") or ""),
+                    allow_shared_candidates=allow_shared_candidates,
+                    allow_private_candidates=allow_private_candidates,
+                    allow_high_sensitivity_candidates=allow_high_sensitivity_candidates,
+                    allow_restricted_candidates=allow_restricted_candidates,
+                )
+                _append_audit(
+                    project,
+                    "central_candidate_submit",
+                    agent,
+                    payload.get("status", "ok"),
+                    candidate_key=payload.get("candidate_key", ""),
+                    title=str(body.get("title", "")),
+                    **self._audit_context(parsed),
+                )
+                self._send_json(payload)
+                return
+            if parsed.path == "/central-candidates/pull":
+                payload = gateway_pull_central_candidates(
+                    project,
+                    agent_id=agent,
+                    limit=_int_value(body.get("limit"), 20),
+                    apply=_bool_value(body.get("apply"), False),
+                    require_hmac=(
+                        True if _bool_value(body.get("require_hmac"), False) else None
+                    ),
+                )
+                _append_audit(
+                    project,
+                    "central_candidate_pull",
+                    agent,
+                    "ok" if payload.get("ok") else "error",
+                    count=payload.get("count", 0),
+                    imported_count=payload.get("imported_count", 0),
+                    apply=bool(payload.get("apply")),
                     **self._audit_context(parsed),
                 )
                 self._send_json(payload)
@@ -739,14 +856,14 @@ def cmd_gateway(args: Any) -> None:
     if action == "health":
         payload = gateway_health(find_project_dir())
         if profile == "remote_server":
-            _mark_remote_server_payload(payload)
+            mark_remote_server_payload(payload)
         payload.setdefault("ok", payload.get("status") == "ok")
         _json_print(payload, pretty=_arg_value(args, "pretty", False) is True)
         return
     if action == "openapi":
         payload = gateway_openapi(title="Vault Remote Server" if profile == "remote_server" else "Vault Gateway")
         if profile == "remote_server":
-            payload["x-vault-remote-server"] = _remote_server_metadata()
+            payload["x-vault-remote-server"] = remote_server_metadata()
         payload.setdefault("ok", True)
         _json_print(payload, pretty=_arg_value(args, "pretty", False) is True)
         return
@@ -995,27 +1112,6 @@ def _has_stable_gateway_token(args: Any) -> bool:
     if str(getattr(args, "auth_token", "") or "").strip():
         return True
     return bool(os.environ.get("VAULT_GATEWAY_TOKEN", "").strip())
-
-
-def _remote_server_metadata() -> dict[str, Any]:
-    return {
-        "mode": "self_hosted_remote_memory_entrypoint",
-        "uses_gateway_contract": True,
-        "replaces_supabase_for": ["multi_platform_reads", "candidate_first_remote_writes"],
-        "does_not_replace_yet": ["offline_multi_master_merge", "active_memory_bidirectional_sync"],
-        "stable_token_required": True,
-        "source_of_truth": "server_side_local_sqlite_vault",
-    }
-
-
-def _mark_remote_server_payload(payload: dict[str, Any]) -> None:
-    gateway = payload.get("gateway") if isinstance(payload.get("gateway"), dict) else {}
-    remote_ready = gateway.get("remote_ready") if isinstance(gateway.get("remote_ready"), dict) else {}
-    gateway["remote_server"] = _remote_server_metadata()
-    gateway["role"] = "self_hosted_vault_remote_server"
-    remote_ready["stable_token_required"] = True
-    gateway["remote_ready"] = remote_ready
-    payload["gateway"] = gateway
 
 
 def _append_audit(project_dir: Path, event: str, agent_id: str, status: str, **extra: Any) -> None:

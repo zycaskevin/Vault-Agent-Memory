@@ -404,14 +404,22 @@ def test_run_agent_setup_writes_supabase_sync_templates(tmp_path):
     assert result["supabase_setup"]["mode"] == "advanced"
     assert "read_policy_sql" in result["supabase_setup"]
     assert {"cron", "launchagent", "n8n", "realtime", "readme"}.issubset(result["supabase_sync_templates"])
+    assert {"cron", "launchagent", "n8n", "readme"}.issubset(result["central_memory_sync_templates"])
 
     guide = (tmp_path / "templates" / "README-supabase-setup.md").read_text(encoding="utf-8")
     policy = (tmp_path / "templates" / "supabase-read-policy.sql").read_text(encoding="utf-8")
     cron = (tmp_path / "templates" / "supabase-sync.cron").read_text(encoding="utf-8")
+    central_cron = (tmp_path / "templates" / "central-memory-sync.cron").read_text(encoding="utf-8")
     plist = (tmp_path / "templates" / "com.zycaskevin.vault-for-llm.supabase-sync.plist").read_text(
         encoding="utf-8"
     )
+    central_plist = (
+        tmp_path / "templates" / "com.zycaskevin.vault-for-llm.central-memory-sync.plist"
+    ).read_text(encoding="utf-8")
     workflow = json.loads((tmp_path / "templates" / "n8n-supabase-sync.workflow.json").read_text(encoding="utf-8"))
+    central_workflow = json.loads(
+        (tmp_path / "templates" / "n8n-central-memory-sync.workflow.json").read_text(encoding="utf-8")
+    )
     realtime = (tmp_path / "templates" / "supabase-realtime-sync.sh").read_text(encoding="utf-8")
 
     assert "Supabase 是可選功能" in guide
@@ -435,11 +443,22 @@ def test_run_agent_setup_writes_supabase_sync_templates(tmp_path):
     assert str(project / "vault.db") in cron
     assert "--document-map" in cron
     assert "--health" in cron
+    assert "scripts.central_memory_sync" in central_cron
+    assert "--push-read-copy" in central_cron
+    assert "--push-central-store" in central_cron
+    assert "--pull-candidates" in central_cron
+    assert "--apply" in central_cron
+    assert "--require-hmac" in central_cron
+    assert "0 * * * *" in central_cron
     assert "supabase-sync" in plist
     assert "supabase-sync.log" in plist
     assert "supabase-sync.err.log" in plist
     assert "obsidian-sync.log" not in plist
+    assert "central-memory-sync" in central_plist
     assert "scripts.sync_to_supabase" in workflow["nodes"][1]["parameters"]["command"]
+    assert central_workflow["name"] == "Vault Central Memory Station Sync"
+    assert central_workflow["nodes"][1]["name"] == "Vault Central Memory Sync"
+    assert "scripts.central_memory_sync" in central_workflow["nodes"][1]["parameters"]["command"]
     assert "scripts.watch_supabase_sync" in realtime
     assert "--sync-on-start" in realtime
     assert "--document-map" in realtime

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from vault.agent_registry import list_agents
+from vault.central_candidate_store import CENTRAL_CANDIDATE_DB, CENTRAL_CANDIDATE_TABLE
 
 
 REMOTE_READER_FILES = {
@@ -37,6 +38,7 @@ ACCESS_FILES = {
     "layout": "hybrid-vault-layout.json",
 }
 SYNC_REPORT_CANDIDATES = (
+    "reports/central-memory-sync-latest.json",
     "reports/supabase-sync-latest.json",
     "reports/remote-sync-latest.json",
     "agent-install/supabase-sync-latest.json",
@@ -59,6 +61,7 @@ def build_remote_status(
     access = _access_status(install_dir)
     registry = _registry_status(project, agent_id=agent_id)
     env = _supabase_env_status()
+    self_host = _self_host_status(project)
     report = _sync_report_status(project, max_age_minutes=max_sync_age_minutes)
 
     configured = bool(
@@ -96,12 +99,14 @@ def build_remote_status(
             "direction": "local_to_supabase_active_memory_plus_remote_to_local_candidates",
             "bidirectional": False,
             "candidate_requests": True,
+            "self_hosted_candidate_inbox": True,
             "realtime": near_realtime,
             "realtime_kind": "near_realtime_push" if near_realtime else "scheduled_or_manual",
             "message": "Local vault.db remains the source of truth; Supabase is a shared reviewed read copy plus a remote candidate request inbox. Active knowledge is still not multi-master sync.",
         },
         "local": local,
         "supabase": env,
+        "self_host": self_host,
         "setup": setup,
         "remote_reader": remote_reader,
         "sync": {
@@ -252,6 +257,45 @@ def _supabase_env_status() -> dict[str, Any]:
     }
 
 
+def _self_host_status(project: Path) -> dict[str, Any]:
+    db_path = project / CENTRAL_CANDIDATE_DB
+    payload: dict[str, Any] = {
+        "mode": "self_hosted_sqlite",
+        "db_path": str(db_path),
+        "db_exists": db_path.exists(),
+        "table": CENTRAL_CANDIDATE_TABLE,
+        "candidate_count": 0,
+        "pending_count": 0,
+        "imported_count": 0,
+        "error": "",
+    }
+    if not db_path.exists():
+        return payload
+    try:
+        conn = sqlite3.connect(f"{db_path.resolve().as_uri()}?mode=ro", uri=True)
+        try:
+            if not _table_exists(conn, CENTRAL_CANDIDATE_TABLE):
+                payload["error"] = "central_candidate_table_missing"
+                return payload
+            payload["candidate_count"] = _count(conn, CENTRAL_CANDIDATE_TABLE)
+            payload["pending_count"] = int(
+                conn.execute(
+                    f"SELECT COUNT(*) FROM {CENTRAL_CANDIDATE_TABLE} WHERE status IN ('candidate', 'submitted')"
+                ).fetchone()[0]
+            )
+            payload["imported_count"] = int(
+                conn.execute(
+                    f"SELECT COUNT(*) FROM {CENTRAL_CANDIDATE_TABLE} WHERE status IN ('imported', 'promoted_locally')"
+                ).fetchone()[0]
+            )
+        finally:
+            conn.close()
+    except sqlite3.Error as exc:
+        payload["error"] = "unable_to_read_self_host_central_inbox"
+        payload["message"] = str(exc)
+    return payload
+
+
 def _sync_report_status(project: Path, *, max_age_minutes: int) -> dict[str, Any]:
     candidates = [project / relative for relative in SYNC_REPORT_CANDIDATES]
     existing = next((path for path in candidates if path.exists()), None)
@@ -352,7 +396,7 @@ def _next_actions(
     if not configured:
         actions.append("Run `vault setup-agent --features core,mcp,supabase --supabase-setup simple --remote-reader shell` to generate a guided remote-reader setup.")
     if any(sync_templates["targets"].values()) and not report.get("exists"):
-        actions.append("After the first trusted sync, write a small JSON report to reports/supabase-sync-latest.json so agents can see remote freshness.")
+        actions.append("Run `vault memory-sync run-once --push-read-copy --dry-run` first, then run the trusted sync without --dry-run when credentials are ready.")
     if any(remote_reader["targets"].values()) and not env.get("anon_key_configured"):
         actions.append("Set SUPABASE_URL and SUPABASE_ANON_KEY/SUPABASE_PUBLISHABLE_KEY before running `vault remote smoke`.")
     if access.get("agent_count", 0) and not access.get("remote_readers"):

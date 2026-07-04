@@ -417,11 +417,26 @@ vault remote-server serve --project-dir ~/Vaults/my-project --host 0.0.0.0
 
 遠端寫入應該先進候選記憶，不要直接變成 active memory。這是集中共享，不是 offline multi-master sync。
 
+多 Agent、多主機、多裝置時，日常建議走 Central Memory Station 入口：
+
+```bash
+vault start
+vault memory-sync run-once --push-read-copy --push-central-store --pull-candidates --dry-run --json
+vault memory-sync run-once --central-backend self-host --pull-candidates --dry-run --json
+vault memory-review inbox --json
+vault memory-lifecycle status --json
+vault ops security --json
+```
+
+原本詳細的 `remote`、`sync`、`dream`、`usage`、`automation` 指令仍然保留給進階維護與自動化。
+
 設定指南：
 
 - [Supabase 設定](docs/supabase_setup.md)
 - [Supabase read policy SQL](docs/supabase_read_policy.sql)
 - [Gateway security foundation](docs/decision_records/2026-07-02-gateway-security-foundation.md)
+- [Central Memory Station decision](docs/decision_records/2026-07-05-central-memory-station.md)
+- [Central Memory Station plan](docs/plans/2026-07-05-central-memory-station-development-plan.md)
 
 ## 記憶遷移
 

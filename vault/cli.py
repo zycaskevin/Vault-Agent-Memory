@@ -98,6 +98,14 @@ from .cli_quality import (
     cmd_search_qa,
 )
 from .cli_sync import add_sync_parser, cmd_sync
+from .cli_memory_station import (
+    add_memory_station_parsers,
+    cmd_memory_lifecycle,
+    cmd_memory_review,
+    cmd_memory_sync,
+    cmd_ops,
+    cmd_start,
+)
 from .gui import DEFAULT_HOST, DEFAULT_PORT, cmd_gui
 from .gateway import cmd_gateway
 
@@ -1072,6 +1080,7 @@ def main(argv: list[str] | None = None):
     from vault.cli_automation import add_automation_parser
     from vault.cli_memory import add_memory_parser
 
+    add_memory_station_parsers(sub)
     add_automation_parser(sub)
     add_memory_parser(sub)
     add_okf_parser(sub)
@@ -1093,6 +1102,7 @@ def main(argv: list[str] | None = None):
 
     commands = {
         "init": cmd_init,
+        "start": lambda parsed: cmd_start(parsed, json_print=_json_print),
         "guide": cmd_guide,
         "daily-report": cmd_daily_report,
         "demo": cmd_demo,
@@ -1116,6 +1126,10 @@ def main(argv: list[str] | None = None):
         "task": cmd_task,
         "automation": cmd_automation,
         "memory": lambda parsed: __import__("vault.cli_memory", fromlist=["cmd_memory"]).cmd_memory(parsed, find_project_dir=find_project_dir, json_print=_json_print),
+        "memory-sync": lambda parsed: cmd_memory_sync(parsed, find_project_dir=find_project_dir, json_print=_json_print),
+        "memory-review": lambda parsed: cmd_memory_review(parsed, find_project_dir=find_project_dir, json_print=_json_print),
+        "memory-lifecycle": lambda parsed: cmd_memory_lifecycle(parsed, find_project_dir=find_project_dir, json_print=_json_print),
+        "ops": lambda parsed: cmd_ops(parsed, json_print=_json_print),
         "install-embedding": cmd_install_embedding,
         "update-status": cmd_update_status,
         "agent": cmd_agent,
