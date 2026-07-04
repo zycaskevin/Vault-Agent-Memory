@@ -4,7 +4,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$VAULT_VERSION = "0.7.29"
+$VAULT_VERSION = "0.7.30"
 
 function Write-Color($Text, $Color = "White") {
     Write-Host $Text -ForegroundColor $Color
