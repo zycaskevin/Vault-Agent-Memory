@@ -1,4 +1,4 @@
--- Vault-for-LLM advanced Supabase read policy
+-- Vault Agent Memory advanced Supabase read policy
 -- Paste this into the Supabase SQL editor after creating the minimal tables.
 -- Keep SUPABASE_SERVICE_ROLE_KEY only on trusted sync hosts. Hosted agents
 -- should call vault_search_readable with anon/authenticated credentials.

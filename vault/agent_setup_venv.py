@@ -102,7 +102,7 @@ def render_stable_venv_readme(*, venv_path: str | Path, script_path: str | Path)
         [
             "# Stable Python Virtualenv",
             "",
-            "This template creates a long-lived Python virtualenv for Vault-for-LLM.",
+            "This template creates a long-lived Python virtualenv for Vault Agent Memory.",
             "Use it for scheduled jobs, MCP commands, Supabase sync, and agent runtimes.",
             "",
             f"Recommended venv path: `{Path(venv_path).expanduser()}`",

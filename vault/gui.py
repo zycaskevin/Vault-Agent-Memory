@@ -1,4 +1,4 @@
-"""Local GUI console public API for Vault-for-LLM."""
+"""Local GUI console public API for Vault Agent Memory."""
 
 from __future__ import annotations
 

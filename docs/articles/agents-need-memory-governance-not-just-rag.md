@@ -55,9 +55,9 @@ failure modes:
 
 These are governance problems, not just retrieval problems.
 
-## Vault-for-LLM's Approach
+## Vault Agent Memory's Approach
 
-Vault-for-LLM is a local-first memory governance layer for agents. It keeps the
+Vault Agent Memory is a local-first memory governance layer for agents. It keeps the
 source of truth inspectable: Markdown, SQLite, bounded reads, backups, audit
 events, and candidate-first workflows.
 

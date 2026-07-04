@@ -1,6 +1,6 @@
 # Agent Onboarding Benchmark
 
-The project-memory proof demos show the workflow on controlled fixtures. The next step is to compare Vault-for-LLM against exported agent sessions from tools such as Hermes or Codex.
+The project-memory proof demos show the workflow on controlled fixtures. The next step is to compare Vault Agent Memory against exported agent sessions from tools such as Hermes or Codex.
 
 `scripts/agent_onboarding_benchmark.py` does that comparison locally:
 

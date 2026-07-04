@@ -1,6 +1,6 @@
 # Agent-First Usage
 
-Vault-for-LLM has many commands because agents, scheduled jobs, and maintenance
+Vault Agent Memory has many commands because agents, scheduled jobs, and maintenance
 workflows need precise tools. Humans should not have to memorize that surface.
 
 Use this rule:

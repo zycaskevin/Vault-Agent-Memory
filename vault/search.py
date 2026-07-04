@@ -1,5 +1,5 @@
 """
-Vault-for-LLM — 搜尋模組。
+Vault Agent Memory — 搜尋模組。
 
 關鍵字 + 向量混合搜尋，自動降級。
 - 有嵌入→語意搜尋（向量）
@@ -42,7 +42,7 @@ from .semantic import SemanticProviderError, provider_dimension, provider_id
 
 
 class VaultSearch(SearchQueryMixin, SearchCacheMixin, SearchResultMixin, SearchSemanticMixin):
-    """Vault-for-LLM 搜尋引擎。"""
+    """Vault Agent Memory 搜尋引擎。"""
 
     def __init__(
         self,

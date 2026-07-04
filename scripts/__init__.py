@@ -1,1 +1,1 @@
-# Vault-for-LLM scripts package
+# Vault Agent Memory scripts package

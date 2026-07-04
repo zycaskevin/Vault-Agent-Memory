@@ -1,7 +1,7 @@
 # Good First Issue Ideas
 
 This list helps new contributors find work that does not require understanding
-the whole Vault-for-LLM architecture.
+the whole Vault Agent Memory architecture.
 
 Before starting, read [CONTRIBUTING.md](../CONTRIBUTING.md). If a task changes
 schema, security defaults, Gateway behavior, sync behavior, or automation

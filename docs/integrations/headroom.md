@@ -1,6 +1,6 @@
 # Headroom Integration Notes
 
-Headroom and Vault-for-LLM solve adjacent problems.
+Headroom and Vault Agent Memory solve adjacent problems.
 
 - Vault decides **what project memory should be retrieved, trusted, cited, and
   stored**.

@@ -1,6 +1,6 @@
 # Document Map Guide
 
-Document Map is Vault-for-LLM's bounded-reading layer for long knowledge entries.
+Document Map is Vault Agent Memory's bounded-reading layer for long knowledge entries.
 
 Instead of asking an agent to read an entire long note, Vault can parse the note into sections and claims. Agents can first inspect the map, then read a specific line range with a stable citation.
 

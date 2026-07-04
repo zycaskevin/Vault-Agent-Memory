@@ -1,4 +1,4 @@
-"""SQLite backup, verification, and restore helpers for Vault-for-LLM.
+"""SQLite backup, verification, and restore helpers for Vault Agent Memory.
 
 The helpers in this module are intentionally local-file only. They use SQLite's
 online backup API so backups remain consistent when the source database is in

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run local proof demos for Vault-for-LLM's project memory value.
+"""Run local proof demos for Vault Agent Memory's project memory value.
 
 The proofs are intentionally small, deterministic, and public-safe. They are not
 research benchmarks. They demonstrate the workflow difference between "a pile
@@ -37,7 +37,7 @@ ONBOARDING_DOCS = [
         "content": "\n".join(
             [
                 "# Project Architecture Boundaries",
-                "Vault-for-LLM keeps the canonical project memory in local SQLite and Markdown.",
+                "Vault Agent Memory keeps the canonical project memory in local SQLite and Markdown.",
                 "The stable path must not require Docker, hosted services, or network access.",
                 "Optional semantic, Supabase, and rerank features are additive rather than required.",
             ]
@@ -541,7 +541,7 @@ def _count_active(db: VaultDB) -> int:
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run Vault-for-LLM project memory proof demos.")
+    parser = argparse.ArgumentParser(description="Run Vault Agent Memory project memory proof demos.")
     parser.add_argument("--output", type=Path, default=None, help="Optional JSON output path.")
     parser.add_argument("--work-dir", type=Path, default=None, help="Optional directory for generated demo DBs.")
     parser.add_argument("--compact", action="store_true", help="Print compact JSON instead of indented JSON.")

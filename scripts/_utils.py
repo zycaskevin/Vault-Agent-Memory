@@ -1,5 +1,5 @@
 """
-scripts/_utils.py — Vault-for-LLM 共用工具
+scripts/_utils.py — Vault Agent Memory 共用工具
 
 所有 scripts 應使用此模組的 find_db_path() 來定位 vault.db，
 避免各自用 os.path.dirname(__file__) 造成找錯目錄的問題。

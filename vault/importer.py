@@ -1,5 +1,5 @@
 """
-Vault-for-LLM — 智慧分塊匯入模組（v3）。
+Vault Agent Memory — 智慧分塊匯入模組（v3）。
 
 論文基礎：
 - Semantic Chunking：計算相鄰句子嵌入相似度，驟降處切斷

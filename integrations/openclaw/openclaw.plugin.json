@@ -1,7 +1,7 @@
 {
   "id": "vault-for-llm",
-  "name": "Vault-for-LLM Project Memory",
-  "description": "Governed project memory tools backed by a local Vault-for-LLM SQLite vault.",
+  "name": "Vault Agent Memory",
+  "description": "Governed project memory tools backed by a local Vault Agent Memory SQLite vault.",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

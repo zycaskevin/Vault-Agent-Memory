@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Vault-for-LLM MCP server with public ``vault_*`` tool names."""
+"""Vault Agent Memory MCP server with public ``vault_*`` tool names."""
 
 import argparse
 import json

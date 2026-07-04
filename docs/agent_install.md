@@ -634,7 +634,7 @@ It verifies `add`, machine-readable `search --json`, `remember`, and
 ```bash
 vault add "Vault install smoke" \
   --project-dir ~/Vaults/project-memory \
-  --content "Vault-for-LLM was installed and this smoke memory can be searched."
+  --content "Vault Agent Memory was installed and this smoke memory can be searched."
 
 vault compile --project-dir ~/Vaults/project-memory --no-embed
 

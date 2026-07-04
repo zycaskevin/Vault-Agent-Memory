@@ -18,7 +18,7 @@ def render_memory_agents_guide(
     safe_language = _normalize_setup_language(language)
     if safe_language == "zh-Hant":
         lines = [
-            "# Vault-for-LLM 記憶 Agent 設定",
+            "# Vault Agent Memory 記憶 Agent 設定",
             "",
             "這份文件給 Profile / Dream / Forgetting agent 使用。",
             "",
@@ -57,7 +57,7 @@ def render_memory_agents_guide(
         ]
     elif safe_language == "zh-CN":
         lines = [
-            "# Vault-for-LLM 记忆 Agent 设置",
+            "# Vault Agent Memory 记忆 Agent 设置",
             "",
             "这份文件给 Profile / Dream / Forgetting agent 使用。",
             "",
@@ -96,7 +96,7 @@ def render_memory_agents_guide(
         ]
     else:
         lines = [
-            "# Vault-for-LLM Memory Agents",
+            "# Vault Agent Memory Memory Agents",
             "",
             "Use this guide for Profile / Dream / Forgetting agents.",
             "",
@@ -173,7 +173,7 @@ def render_local_smoke_script(*, project_dir: str | Path, vault_executable: str 
             "SMOKE_ID=\"$(date +%Y%m%d%H%M%S)-$$\"",
             "TITLE=\"Vault local smoke ${SMOKE_ID}\"",
             "CANDIDATE_TITLE=\"Vault local smoke candidate ${SMOKE_ID}\"",
-            "CONTENT=\"Vault-for-LLM local smoke ${SMOKE_ID}: add/search-json/remember/candidates works.\"",
+            "CONTENT=\"Vault Agent Memory local smoke ${SMOKE_ID}: add/search-json/remember/candidates works.\"",
             "",
             "$VAULT add \"$TITLE\" \\",
             "  --project-dir \"$PROJECT_DIR\" \\",

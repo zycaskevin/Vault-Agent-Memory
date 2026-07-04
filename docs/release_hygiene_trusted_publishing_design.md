@@ -6,13 +6,13 @@
 
 **Last updated:** 2026-05-17 22:52 CST
 
-**Applies to:** Vault-for-LLM `0.4.3+` releases
+**Applies to:** Vault Agent Memory `0.4.3+` releases
 
 **Current released baseline:** `0.4.2` at `76be7a1a93272ba1c512410f6713cd53d4b1ed06`
 
 ## Goal
 
-Future Vault-for-LLM releases should be reproducible from a clean GitHub Actions checkout and published to PyPI with Trusted Publishing, not by pasting a PyPI token into a local terminal session.
+Future Vault Agent Memory releases should be reproducible from a clean GitHub Actions checkout and published to PyPI with Trusted Publishing, not by pasting a PyPI token into a local terminal session.
 
 In plain terms: GitHub should build the package, PyPI should trust exactly that GitHub workflow, and no long-lived PyPI token should sit in chat, shell history, repository files, or GitHub secrets.
 

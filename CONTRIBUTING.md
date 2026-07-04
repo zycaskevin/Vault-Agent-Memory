@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping improve Vault-for-LLM.
+Thanks for helping improve Vault Agent Memory.
 
 Vault is aimed at Agent-assisted builders: people using Codex, Claude Code,
 Hermes, OpenClaw, n8n, Coze, Obsidian, or similar tools who want governed

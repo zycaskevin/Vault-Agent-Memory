@@ -1,5 +1,5 @@
 """
-Vault-for-LLM — CLI 入口。
+Vault Agent Memory — CLI 入口。
 
 用法：
   vault init              # 初始化專案

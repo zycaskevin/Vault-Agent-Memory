@@ -1,5 +1,5 @@
 """
-Vault-for-LLM — LLM Provider 統一介面（策略模式）。
+Vault Agent Memory — LLM Provider 統一介面（策略模式）。
 
 讓 proposition_chunk、contextualize_chunks 等功能可以使用任何 LLM backend，
 不強制依賴 Ollama。

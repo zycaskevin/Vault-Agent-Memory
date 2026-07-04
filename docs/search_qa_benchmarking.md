@@ -19,7 +19,7 @@ They include English and Traditional Chinese / CJK cases for:
 
 The fixtures are intentionally small so CI and local development can run them without cloud services or private data.
 
-These are source-checkout fixtures under the repository's top-level `benchmarks/` directory. They are not installed by the PyPI wheel. If you installed Vault-for-LLM from PyPI, run `vault search-qa` against your own QA files, or clone/download the repository to use these examples.
+These are source-checkout fixtures under the repository's top-level `benchmarks/` directory. They are not installed by the PyPI wheel. If you installed Vault Agent Memory from PyPI, run `vault search-qa` against your own QA files, or clone/download the repository to use these examples.
 
 ## Create a small local demo DB
 

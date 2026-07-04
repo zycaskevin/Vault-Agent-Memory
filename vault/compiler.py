@@ -1,5 +1,5 @@
 """
-Vault-for-LLM — 本地編譯器。
+Vault Agent Memory — 本地編譯器。
 
 將 raw/ 目錄的 Markdown 知識編譯進 SQLite + sqlite-vec，
 同時產出 compiled/ 的 AAAK 壓縮版本。
@@ -400,7 +400,7 @@ def assign_layer(metadata: dict) -> str:
 
 
 class VaultCompiler:
-    """Vault-for-LLM 本地編譯器。"""
+    """Vault Agent Memory 本地編譯器。"""
 
     def __init__(
         self,

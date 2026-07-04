@@ -211,7 +211,7 @@ def ensure_project(project_dir: str | Path) -> Path:
 
     gitignore = project_path / ".gitignore"
     lines = gitignore.read_text(encoding="utf-8").splitlines() if gitignore.exists() else []
-    for line in ["# Vault-for-LLM", "*.db", "__pycache__/", ".cache/"]:
+    for line in ["# Vault Agent Memory", "*.db", "__pycache__/", ".cache/"]:
         if line not in lines:
             lines.append(line)
     gitignore.write_text("\n".join(lines) + "\n", encoding="utf-8")

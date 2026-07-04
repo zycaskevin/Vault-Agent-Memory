@@ -1,6 +1,6 @@
 # LLM Integration
 
-Vault-for-LLM is local-first. The core path does not require an LLM API key, a
+Vault Agent Memory is local-first. The core path does not require an LLM API key, a
 local model, or network access.
 
 LLM providers are optional helpers for workflows that benefit from judgment or

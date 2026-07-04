@@ -1,8 +1,8 @@
 # Vault Knowledge Schema
 
-This document defines the public knowledge format and operating rules for a Vault-for-LLM project.
+This document defines the public knowledge format and operating rules for a Vault Agent Memory project.
 
-Vault-for-LLM is local-first: Markdown files are the human-editable source material, and the local SQLite database is the compiled source of truth used by the CLI and MCP server. Optional remote systems such as Supabase are sync/read targets, not required infrastructure.
+Vault Agent Memory is local-first: Markdown files are the human-editable source material, and the local SQLite database is the compiled source of truth used by the CLI and MCP server. Optional remote systems such as Supabase are sync/read targets, not required infrastructure.
 
 ---
 
@@ -222,7 +222,7 @@ A remote store should not silently overwrite local source data. If bidirectional
 
 | Use | Avoid in public docs |
 |---|---|
-| Vault-for-LLM | internal project names |
+| Vault Agent Memory | internal project names |
 | `vault` CLI | non-Vault command names in examples |
 | local SQLite vault | private/internal main database |
 | optional Supabase sync | required cloud dependency |

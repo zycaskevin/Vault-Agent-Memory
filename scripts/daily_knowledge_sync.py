@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Vault-for-LLM 每日知識同步 — 整合所有同步步驟的入口腳本。
+Vault Agent Memory 每日知識同步 — 整合所有同步步驟的入口腳本。
 
 流程：
 1. 從 GitHub 拉取最新 raw/ 知識

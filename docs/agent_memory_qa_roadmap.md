@@ -1,16 +1,16 @@
-# Vault-for-LLM Agent Memory QA Roadmap
+# Vault Agent Memory Agent Memory QA Roadmap
 
 **Date:** 2026-05-17  
 **Status:** Planning / review artifact  
 **Scope:** Public open-source roadmap, not private deployment notes  
 
-> Goal: upgrade Vault-for-LLM from a local-first knowledge vault into a clear, credible **Agent Memory QA Layer**: a tool that helps LLM agents store, find, read, cite, and maintain project memory correctly.
+> Goal: upgrade Vault Agent Memory from a local-first knowledge vault into a clear, credible **Agent Memory QA Layer**: a tool that helps LLM agents store, find, read, cite, and maintain project memory correctly.
 
 ---
 
 ## 1. Executive summary
 
-Vault-for-LLM should not become a clone of capture-first agent memory runtimes. Its stronger public position is:
+Vault Agent Memory should not become a clone of capture-first agent memory runtimes. Its stronger public position is:
 
 > **Local-first Markdown + SQLite memory vault for LLM agents, with bounded reading, citation-safe retrieval, and measurable memory quality checks.**
 
@@ -24,7 +24,7 @@ The adjacent `agentmemory` project demonstrates strong patterns worth borrowing:
 - progressive disclosure,
 - repository benchmark fixtures.
 
-But Vault-for-LLM should borrow those as **patterns**, not copy its product shape. Vault should preserve:
+But Vault Agent Memory should borrow those as **patterns**, not copy its product shape. Vault should preserve:
 
 - Markdown as the human-readable source material,
 - SQLite as the local source of truth,
@@ -37,9 +37,9 @@ But Vault-for-LLM should borrow those as **patterns**, not copy its product shap
 
 ## 2. Product positioning
 
-### 2.1 What Vault-for-LLM is
+### 2.1 What Vault Agent Memory is
 
-Vault-for-LLM is a local memory toolkit for projects and AI coding agents:
+Vault Agent Memory is a local memory toolkit for projects and AI coding agents:
 
 ```text
 Markdown raw/ entries
@@ -59,9 +59,9 @@ It helps an agent answer:
 4. Is this knowledge stale, duplicated, incomplete, or low quality?
 5. Did a retrieval change improve or regress search quality?
 
-### 2.2 What Vault-for-LLM is not
+### 2.2 What Vault Agent Memory is not
 
-Vault-for-LLM should be explicit about non-goals:
+Vault Agent Memory should be explicit about non-goals:
 
 - Not a hosted enterprise memory platform.
 - Not a cloud-first service.
@@ -73,7 +73,7 @@ Vault-for-LLM should be explicit about non-goals:
 
 ### 2.3 Positioning against adjacent tools
 
-| Tool style | Primary strength | Vault-for-LLM response |
+| Tool style | Primary strength | Vault Agent Memory response |
 |---|---|---|
 | Capture-first agent memory runtime | Automatically records agent sessions and actions | Add opt-in capture/import, but keep review-before-commit |
 | Vector database / RAG stack | Fast similarity search | Keep retrieval, but emphasize bounded reading and memory QA |
@@ -90,7 +90,7 @@ Vault-for-LLM should be explicit about non-goals:
 
 ## 3. Borrow from agentmemory — carefully
 
-| agentmemory pattern | Borrow into Vault-for-LLM | Guardrail |
+| agentmemory pattern | Borrow into Vault Agent Memory | Guardrail |
 |---|---|---|
 | Auto-capture hooks | `vault capture import` / `vault import-session` from Claude/Codex logs | Opt-in only; captured entries start as drafts, not trusted knowledge |
 | Session timeline | Local `sessions` / `session_events` / `capture_queue` tables | Timeline data does not appear in normal search until promoted |

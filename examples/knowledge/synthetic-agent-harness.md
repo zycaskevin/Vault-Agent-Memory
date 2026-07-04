@@ -3,7 +3,7 @@ title: "Synthetic Agent Harness Example: Model + Body + Harness"
 category: "concept"
 tags: ["harness", "agent", "architecture", "LLM", "body", "model", "constraint", "verification", "sub-agent", "context-firewall"]
 trust: 0.7
-source: "synthetic public example for Vault-for-LLM documentation"
+source: "synthetic public example for Vault Agent Memory documentation"
 created: "2026-04-27"
 summary: "Synthetic, public-safe example note explaining an agent harness as Model + Body + Harness. It uses generic product names and placeholder hooks so the public repo does not ship private operational memory."
 ---

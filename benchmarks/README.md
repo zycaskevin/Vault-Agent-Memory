@@ -1,6 +1,6 @@
 # 基準測試 (Benchmarks)
 
-此目錄包含 Vault-for-LLM 搜尋效能與品質的基準測試工具。
+此目錄包含 Vault Agent Memory 搜尋效能與品質的基準測試工具。
 
 ## 可用的基準測試
 

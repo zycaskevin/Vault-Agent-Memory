@@ -121,7 +121,7 @@ def normalize_agent_roster(raw: str | list[dict[str, Any]] | None) -> list[dict[
 
 def render_agent_access_matrix(roster: list[dict[str, Any]]) -> str:
     lines = [
-        "# Vault-for-LLM Agent Access Matrix",
+        "# Vault Agent Memory Agent Access Matrix",
         "",
         "Use this file as the reviewed roster for multi-agent memory sharing.",
         "",
@@ -235,7 +235,7 @@ def write_agent_roster_templates(
     readme_path.write_text(
         "\n".join(
             [
-                "# Vault-for-LLM Multi-Agent Roster",
+                "# Vault Agent Memory Multi-Agent Roster",
                 "",
                 "Generated files:",
                 "",
@@ -423,7 +423,7 @@ def write_live_validation_pack(
     readme.write_text(
         "\n".join(
             [
-                "# Vault-for-LLM Live Validation Pack",
+                "# Vault Agent Memory Live Validation Pack",
                 "",
                 "Use this after the local setup, Supabase schema, read policy, and first sync are complete.",
                 "",
