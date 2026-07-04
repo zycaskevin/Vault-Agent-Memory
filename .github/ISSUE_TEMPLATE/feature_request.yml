@@ -1,5 +1,5 @@
 name: Feature request
-description: Propose a new Vault-for-LLM capability or integration.
+description: Propose a new Vault Agent Memory capability or integration.
 title: "[Feature]: "
 labels: ["enhancement", "needs-triage"]
 body:

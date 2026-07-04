@@ -227,7 +227,7 @@ In PyPI project settings for `vault-for-llm`, configure a Trusted Publisher with
 |---|---|
 | PyPI project | `vault-for-llm` |
 | GitHub owner | `zycaskevin` |
-| GitHub repository | `Vault-for-LLM` |
+| GitHub repository | `Vault-Agent-Memory` |
 | Workflow filename | `publish.yml` |
 | GitHub Environment | `pypi` |
 
@@ -269,7 +269,7 @@ Important: PyPI docs and GitHub docs both warn that this trust relationship is e
 
 | Risk | Impact | Mitigation |
 |---|---:|---|
-| Wrong PyPI Trusted Publisher owner/repo/workflow | High | Configure exactly `zycaskevin/Vault-for-LLM`, `publish.yml`, environment `pypi`; verify before first run. |
+| Wrong PyPI Trusted Publisher owner/repo/workflow | High | Configure exactly `zycaskevin/Vault-Agent-Memory`, `publish.yml`, environment `pypi`; verify before first run. |
 | Re-upload immutable version | High | Version parity check + PyPI existence preflight + release checklist. |
 | Workflow publishes from stale/local artifact | High | Build in clean GitHub checkout; artifact passed from build job only. |
 | Manual token leaks again | High | Trusted Publishing only; no `PYPI_API_TOKEN` secret; no `.pypirc`. |
@@ -332,7 +332,7 @@ Important: PyPI docs and GitHub docs both warn that this trust relationship is e
 **Manual steps:**
 
 - In GitHub, create/protect environment `pypi` with required reviewer approval.
-- In PyPI, add Trusted Publisher for `vault-for-llm` using owner `zycaskevin`, repo `Vault-for-LLM`, workflow `publish.yml`, environment `pypi`.
+- In PyPI, add Trusted Publisher for `vault-for-llm` using owner `zycaskevin`, repo `Vault-Agent-Memory`, workflow `publish.yml`, environment `pypi`.
 
 **Acceptance criteria:**
 
