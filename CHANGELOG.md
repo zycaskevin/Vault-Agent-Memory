@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## [0.7.30] - 2026-07-04
+
+### Changed
+
+- Completed the public product rename to **Vault Agent Memory** across active
+  README, guide, landing, OpenClaw, script, benchmark, and generated user-facing
+  surfaces while keeping `vault-for-llm` as the PyPI package name.
+- Renamed the canonical GitHub repository to `Vault-Agent-Memory` and updated
+  active repository links, GitHub Pages links, one-click installer URLs, issue
+  templates, release hygiene docs, and package project URLs.
+- Updated CLI and MCP help text so source and packaged installs describe the
+  product as Vault Agent Memory.
+- Updated OpenClaw skill and plugin display names while preserving the
+  compatibility id/path `vault-for-llm`.
+
+### Compatibility
+
+- The public install path remains `pip install vault-for-llm`.
+- Console scripts remain `vault` and `vault-mcp`.
+- Existing local paths such as `~/.vault-for-llm` and OpenClaw plugin ids remain
+  unchanged for compatibility.
+
+### Validation
+
+- Full local test suite after the branding sweep: `2415 passed, 10 skipped`.
+- PR #331 and the post-merge main Release Readiness CI passed across Python
+  3.10, 3.11, and 3.12, wheel build/smoke, README smoke, installer smoke,
+  Search QA, module-size, secret, and history privacy gates.
+- Post-rename repo checks confirmed the new GitHub repository, raw installer
+  URLs, GitHub Pages URL, and release lookup paths are reachable.
+
 ## [0.7.29] - 2026-07-03
 
 ### Added
