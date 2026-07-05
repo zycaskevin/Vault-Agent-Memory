@@ -22,7 +22,7 @@ from vault.automation import (
     load_policy,
 )
 from vault.db import VaultDB
-from vault.memory import create_candidate
+from vault.memory import create_candidate, promote_candidate, review_candidate
 from vault.multi_host import detect_candidate_conflicts, record_memory_revision
 from vault.task_ledger import start_task
 
@@ -2129,6 +2129,88 @@ def test_automation_inbox_prioritizes_privacy_blocked_candidates(tmp_path):
     assert token not in rendered
     assert payload["safety"]["read_only"] is True
     assert payload["safety"]["auto_promote"] is False
+
+
+def test_automation_inbox_hides_reviewed_rejected_candidates(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        keep = create_candidate(
+            db,
+            title="Decision: keep unresolved candidate visible",
+            content="Decision: unresolved candidates should remain visible until review feedback is recorded.",
+            reason="Exercise unresolved candidate queue behavior.",
+            source="session_capture",
+            source_ref="codex:session:unresolved",
+            memory_type="session_lesson",
+            category="decision",
+            tags="session-capture,decision",
+        )
+        rejected = create_candidate(
+            db,
+            title="Decision: keep unresolved candidate visible",
+            content="Decision: this duplicate candidate was reviewed and rejected by a human.",
+            reason="Exercise reviewed duplicate feedback behavior.",
+            source="session_capture",
+            source_ref="codex:session:duplicate",
+            memory_type="session_lesson",
+            category="decision",
+            tags="session-capture,decision",
+        )
+        review_candidate(
+            db,
+            rejected["candidate_id"],
+            outcome="rejected",
+            reason="Duplicate candidate already reviewed.",
+        )
+
+    payload = automation_inbox(project, limit=5)
+    queue_ids = [item["id"] for item in payload["review_queue"]]
+    digest_ids = [item["id"] for item in payload["review_digest"]["items"] if item.get("kind") == "candidate_review"]
+
+    assert payload["summary"]["pending_candidates"] == 1
+    assert payload["summary"]["rejected_candidates"] == 1
+    assert payload["summary"]["needs_review"] == 1
+    assert keep["candidate_id"] in queue_ids
+    assert rejected["candidate_id"] not in queue_ids
+    assert rejected["candidate_id"] not in digest_ids
+
+
+def test_automation_inbox_hides_promoted_candidates(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        keep = create_candidate(
+            db,
+            title="Decision: keep unpromoted candidate visible",
+            content="Decision: unresolved candidates should remain visible until promoted or rejected.",
+            reason="Exercise unresolved candidate queue behavior.",
+            source="session_capture",
+            source_ref="codex:session:unpromoted",
+            memory_type="session_lesson",
+            category="decision",
+            tags="session-capture,decision",
+        )
+        promoted = create_candidate(
+            db,
+            title="Decision: hide promoted candidate",
+            content="Decision: promoted candidates should leave the review queue.",
+            reason="Exercise promoted candidate queue behavior.",
+            source="session_capture",
+            source_ref="codex:session:promoted",
+            memory_type="session_lesson",
+            category="decision",
+            tags="session-capture,decision",
+        )
+        promote_candidate(db, promoted["candidate_id"], confirm=True, project_dir=project, compile=False)
+
+    payload = automation_inbox(project, limit=5)
+    queue_ids = [item["id"] for item in payload["review_queue"]]
+    digest_ids = [item["id"] for item in payload["review_digest"]["items"] if item.get("kind") == "candidate_review"]
+
+    assert payload["summary"]["pending_candidates"] == 1
+    assert payload["summary"]["needs_review"] == 1
+    assert keep["candidate_id"] in queue_ids
+    assert promoted["candidate_id"] not in queue_ids
+    assert promoted["candidate_id"] not in digest_ids
 
 
 def test_automation_inbox_can_include_redacted_content(tmp_path):

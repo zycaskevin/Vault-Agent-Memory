@@ -76,6 +76,10 @@ def automation_inbox(
     candidate_items.sort(key=lambda item: (-int(item["priority"]), item["created_at"], item["id"]), reverse=False)
     # The reverse=False ordering above keeps high priority first because the key
     # negates priority, then keeps older unresolved items ahead within a tie.
+    reviewable_candidate_items = [
+        item for item in candidate_items
+        if _candidate_needs_review(item)
+    ]
 
     latest_path = _resolve_report_path(project, project / "reports" / "automation", latest=True)
     latest_report = {}
@@ -97,7 +101,7 @@ def automation_inbox(
         transcript_discovery=transcript_discovery,
         review_budget=limit_i,
     )
-    review_digest = _inbox_review_digest(candidate_items, latest_report, limit=limit_i)
+    review_digest = _inbox_review_digest(reviewable_candidate_items, latest_report, limit=limit_i)
     summary["review_digest_items"] = len(review_digest["items"])
     summary["report_review_items"] = int(review_digest.get("report_item_count") or 0)
     summary["candidate_digest_items"] = int(review_digest.get("candidate_item_count") or 0)
@@ -109,7 +113,7 @@ def automation_inbox(
         "project_dir": str(project),
         "status": "completed",
         "summary": summary,
-        "review_queue": candidate_items[:limit_i],
+        "review_queue": reviewable_candidate_items[:limit_i],
         "review_digest": review_digest,
         "learning_policy": {
             "status": learning_policy.get("status", "missing"),
@@ -244,7 +248,7 @@ def _candidate_review_priority(
     priority = 0
     if privacy == "fail":
         priority += 100
-    if status in {"candidate", "rejected", "blocked"}:
+    if status == "candidate" or privacy == "fail":
         priority += 30
     if sensitivity in {"high", "restricted"} or scope == "private":
         priority += 20
@@ -269,6 +273,10 @@ def _candidate_recommended_action(
 ) -> str:
     if privacy == "fail":
         return "block_or_redact"
+    if status == "promoted":
+        return "already_promoted"
+    if status in {"rejected", "blocked"}:
+        return "feedback_recorded"
     if sensitivity in {"high", "restricted"}:
         return "manual_review"
     if duplicate and duplicate not in {"pass", "unique"}:
@@ -277,8 +285,6 @@ def _candidate_recommended_action(
         return "clarify_or_reject"
     if status == "candidate":
         return "review_for_promotion"
-    if status in {"rejected", "blocked"}:
-        return "feedback_recorded"
     return "inspect"
 
 
@@ -294,6 +300,10 @@ def _candidate_review_reason(
 ) -> str:
     if privacy == "fail":
         return "Privacy gate failed; keep this out of active memory unless redacted and re-submitted."
+    if status == "promoted":
+        return "Candidate was already promoted to active memory."
+    if status in {"rejected", "blocked"}:
+        return "Candidate outcome is already recorded; use it as automation feedback."
     if sensitivity in {"high", "restricted"}:
         return "Sensitive candidate; require explicit review before promotion."
     if duplicate and duplicate not in {"pass", "unique"}:
@@ -306,7 +316,15 @@ def _candidate_review_reason(
         return "Automation suggestion; use it as review guidance, not as a direct memory mutation."
     if status == "candidate":
         return "Pending candidate with passing gates."
-    return "Candidate outcome is already recorded; use it as automation feedback."
+    return "Inspect candidate before changing memory."
+
+
+def _candidate_needs_review(item: dict[str, Any]) -> bool:
+    status = str(item.get("status") or "")
+    action = str(item.get("recommended_action") or "")
+    if status == "candidate":
+        return True
+    return action not in {"feedback_recorded", "already_promoted"}
 
 
 def _empty_review_digest(limit: int) -> dict[str, Any]:
@@ -502,7 +520,7 @@ def _inbox_summary(
     ]
     needs_review = [
         item for item in items
-        if item.get("status") == "candidate" or item.get("recommended_action") not in {"feedback_recorded"}
+        if _candidate_needs_review(item)
     ]
     by_source: dict[str, int] = {}
     by_action: dict[str, int] = {}
