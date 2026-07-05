@@ -593,7 +593,8 @@ def _print_remote_status(payload: dict) -> None:
         "- Supabase env: "
         f"url={'yes' if supabase.get('url_configured') else 'no'}, "
         f"reader-key={'yes' if supabase.get('anon_key_configured') else 'no'}, "
-        f"service-role={'present' if supabase.get('service_role_key_present') else 'absent'}"
+        f"service-role={'present' if supabase.get('service_role_key_present') else 'absent'}, "
+        f"trusted-sync-host={'yes' if supabase.get('trusted_sync_host') else 'no'}"
     )
     reader_targets = [key for key, enabled in (remote_reader.get("targets") or {}).items() if enabled]
     sync_targets = [

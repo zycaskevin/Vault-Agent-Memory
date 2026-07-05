@@ -249,12 +249,24 @@ def _registry_status(project: Path, *, agent_id: str = "") -> dict[str, Any]:
 def _supabase_env_status() -> dict[str, Any]:
     anon = bool(os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_PUBLISHABLE_KEY"))
     service = bool(os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_SERVICE_KEY"))
+    trusted_sync_host = _truthy_env("VAULT_SUPABASE_TRUSTED_SYNC_HOST") or _truthy_env("VAULT_TRUSTED_SYNC_HOST")
     return {
         "url_configured": bool(os.environ.get("SUPABASE_URL")),
         "anon_key_configured": anon,
         "service_role_key_present": service,
+        "trusted_sync_host": trusted_sync_host,
+        "service_role_policy": (
+            "allowed_on_trusted_sync_host"
+            if service and trusted_sync_host
+            else "remote_readers_must_not_receive_service_role"
+        ),
         "key_guidance": "Use anon/publishable keys for remote readers; keep service-role keys only on trusted sync hosts.",
     }
+
+
+def _truthy_env(name: str) -> bool:
+    value = str(os.environ.get(name) or "").strip().lower()
+    return value in {"1", "true", "yes", "on", "trusted", "sync-host"}
 
 
 def _self_host_status(project: Path) -> dict[str, Any]:
@@ -370,7 +382,7 @@ def _warnings(
         warnings.append({"severity": "high", "code": "local_db_missing", "message": "Local vault.db is missing; run `vault init` or point --project-dir at the shared project vault."})
     if configured and not env.get("url_configured"):
         warnings.append({"severity": "medium", "code": "supabase_url_missing", "message": "Supabase sharing templates exist, but SUPABASE_URL is not set in this environment."})
-    if env.get("service_role_key_present"):
+    if env.get("service_role_key_present") and not env.get("trusted_sync_host"):
         warnings.append({"severity": "medium", "code": "service_role_key_present", "message": "A service-role key is present. Use it only on a trusted sync host, never inside remote-reader agents."})
     if any(sync_templates["targets"].values()) and not report.get("exists"):
         warnings.append({"severity": "medium", "code": "sync_report_missing", "message": "Sync templates exist, but no local sync report was found; remote freshness is unknown."})

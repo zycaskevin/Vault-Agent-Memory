@@ -46,13 +46,17 @@ Completed:
 - The live Codex private-memory vault regenerated a clean
   `reports/daily-loop/daily-loop-latest.*` through that refresh path; candidate
   counts stayed unchanged and no pending review queue remained.
+- Supabase service-role status now has an explicit trusted-host marker:
+  `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1`. Without the marker, remote status keeps
+  warning about service-role credentials; with it, trusted sync hosts can be
+  distinguished from remote-reader environments.
 
 Still required before the next release:
 
 1. Merge or otherwise land the automation inbox queue fix in the canonical
    upstream path.
-2. Validate Central Memory Station sync policy on a trusted host, keeping
-   service-role credentials out of remote-reader agents.
+2. Restart the live MCP session after env-marker updates so MCP status reads
+   the trusted-host marker from process startup.
 3. Reinstall or repoint the live runtime from the final release artifact rather
    than relying on a temporary editable checkout.
 4. Run release-quality checks across daily-loop, automation inbox, MCP tools,
@@ -70,7 +74,8 @@ The next release can proceed only when all of the following are true:
   noise.
 - `mcp__vault.vault_update_status` reports `ok=true` for the live Codex runtime.
 - Supabase read-only search works without exposing service-role keys to reader
-  agents.
+  agents, and trusted sync hosts explicitly set
+  `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1`.
 - A clean environment install can run the key CLI/MCP smoke paths.
 
 ## Non-Goals

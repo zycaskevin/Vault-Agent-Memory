@@ -25,10 +25,13 @@ For most users, start here.
 4. Copy the Project URL into `SUPABASE_URL`.
 5. Copy the `service_role` key into `SUPABASE_SERVICE_ROLE_KEY` only on the
    trusted machine that runs sync jobs.
-6. Put those values in the Vault project `.env`, or another reviewed
+6. On that same trusted sync host, set `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1`.
+   Remote-reader agents must not set this marker and must not receive the
+   service-role key.
+7. Put those values in the Vault project `.env`, or another reviewed
    environment source.
-7. Create the tables from the schema below in the Supabase SQL editor.
-8. Run the first sync:
+8. Create the tables from the schema below in the Supabase SQL editor.
+9. Run the first sync:
 
 ```bash
 python -m scripts.sync_to_supabase --db /path/to/project/vault.db --document-map --health
@@ -66,6 +69,9 @@ This is not bidirectional active-knowledge sync. Supabase remains a reviewed
 memory read copy, plus an optional candidate request inbox. Keep
 `SUPABASE_SERVICE_ROLE_KEY` only on the trusted sync host, never inside Coze,
 browser clients, mobile clients, or public workflow endpoints.
+When the trusted host intentionally has the service-role key, set
+`VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` so `vault remote status` can distinguish
+approved sync-host credentials from a leaked remote-reader environment.
 
 When remote hosts need to contribute memory, use candidate sync instead of
 direct active-memory writes:
@@ -356,6 +362,7 @@ Trusted local sync host:
 ```bash
 export SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 export SUPABASE_SERVICE_ROLE_KEY=YOUR_SERVICE_ROLE_KEY
+export VAULT_SUPABASE_TRUSTED_SYNC_HOST=1
 vault remote pull-candidates --limit 20 --json
 vault remote pull-candidates --limit 20 --apply --json
 ```

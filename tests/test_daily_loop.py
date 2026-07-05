@@ -92,6 +92,8 @@ def test_daily_loop_refresh_writes_report_without_new_candidates(tmp_path):
     assert payload["ok"] is True
     assert payload["action"] == "daily-loop-refresh"
     assert payload["safety"]["writes_candidates"] is False
+    assert payload["sync"]["source"] == "remote-status"
+    assert payload["sync"]["dry_run"] is False
     assert payload["memory_ingestion"]["pipeline"]["status"] == "skipped"
     assert payload["memory_ingestion"]["reflection"]["write_candidates"] is False
     assert payload["summary"]["pipeline_candidates_written"] == 0

@@ -11,6 +11,7 @@ def test_remote_status_reports_local_source_of_truth(tmp_path, capsys, monkeypat
     monkeypatch.delenv("SUPABASE_ANON_KEY", raising=False)
     monkeypatch.delenv("SUPABASE_PUBLISHABLE_KEY", raising=False)
     monkeypatch.delenv("SUPABASE_SERVICE_ROLE_KEY", raising=False)
+    monkeypatch.delenv("VAULT_SUPABASE_TRUSTED_SYNC_HOST", raising=False)
 
     project = tmp_path / "vault-project"
     main(["init", "--project-dir", str(project)])
@@ -91,6 +92,47 @@ def test_remote_status_detects_templates_roster_and_sync_report(tmp_path, monkey
     assert payload["agent_access"]["remote_readers"] == ["coze"]
     assert payload["agent_access"]["shared_writers"] == ["codex"]
     assert not any(item["code"] == "sync_report_missing" for item in payload["warnings"])
+
+
+def test_remote_status_warns_when_service_role_is_not_on_trusted_host(tmp_path, monkeypatch):
+    from vault.cli import main
+    from vault.remote_status import build_remote_status
+
+    monkeypatch.setenv("VAULT_AGENT_REGISTRY_DIR", str(tmp_path / "registry"))
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "anon-test-key")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "service-role-test-key")
+    monkeypatch.delenv("VAULT_SUPABASE_TRUSTED_SYNC_HOST", raising=False)
+    monkeypatch.delenv("VAULT_TRUSTED_SYNC_HOST", raising=False)
+    project = tmp_path / "vault-project"
+    main(["init", "--project-dir", str(project)])
+
+    payload = build_remote_status(project)
+
+    assert payload["supabase"]["service_role_key_present"] is True
+    assert payload["supabase"]["trusted_sync_host"] is False
+    assert payload["supabase"]["service_role_policy"] == "remote_readers_must_not_receive_service_role"
+    assert any(item["code"] == "service_role_key_present" for item in payload["warnings"])
+
+
+def test_remote_status_allows_service_role_on_declared_trusted_sync_host(tmp_path, monkeypatch):
+    from vault.cli import main
+    from vault.remote_status import build_remote_status
+
+    monkeypatch.setenv("VAULT_AGENT_REGISTRY_DIR", str(tmp_path / "registry"))
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "anon-test-key")
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "service-role-test-key")
+    monkeypatch.setenv("VAULT_SUPABASE_TRUSTED_SYNC_HOST", "1")
+    project = tmp_path / "vault-project"
+    main(["init", "--project-dir", str(project)])
+
+    payload = build_remote_status(project)
+
+    assert payload["supabase"]["service_role_key_present"] is True
+    assert payload["supabase"]["trusted_sync_host"] is True
+    assert payload["supabase"]["service_role_policy"] == "allowed_on_trusted_sync_host"
+    assert not any(item["code"] == "service_role_key_present" for item in payload["warnings"])
 
 
 def test_remote_status_prefers_central_memory_sync_report(tmp_path, monkeypatch):

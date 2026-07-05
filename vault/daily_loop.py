@@ -586,7 +586,7 @@ def _compact_remote_status(status: dict[str, Any]) -> dict[str, Any]:
     return {
         "ok": bool(status.get("ok", False)),
         "status": "warning" if warning_items else "completed",
-        "dry_run": True,
+        "dry_run": False,
         "report_path": str(report.get("path") or ""),
         "last_synced_at": str(report.get("generated_at") or report.get("updated_at") or ""),
         "errors": [
