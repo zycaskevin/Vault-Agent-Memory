@@ -137,9 +137,8 @@ def test_run_agent_setup_consumer_audience_writes_daily_report_guide_and_safe_sc
     assert {"cron", "readme"}.issubset(result["automation_schedule_templates"])
     cron = (tmp_path / "templates" / "memory-automation.cron").read_text(encoding="utf-8")
     readme = (tmp_path / "templates" / "README-memory-automation.md").read_text(encoding="utf-8")
-    assert "vault automation cycle" in cron
-    assert "--write-workspace" in cron
-    assert "vault daily-report" in cron
+    assert "vault daily-loop run" in cron
+    assert "--write-report" in cron
     assert current_vault_executable() in cron
     assert "--language zh-Hant" in cron
     assert "--apply" in cron
@@ -532,15 +531,12 @@ def test_run_agent_setup_writes_memory_automation_schedule_templates(tmp_path):
     readme = (tmp_path / "templates" / "README-memory-automation.md").read_text(encoding="utf-8")
 
     assert "0 3 * * * sh -lc" in cron
-    assert "vault memory pipeline" in cron
+    assert "vault daily-loop run" in cron
     assert "--write-report" in cron
-    assert "vault memory reflection" in cron
-    assert "vault automation cycle" in cron
-    assert "vault automation inbox" in cron
-    assert "vault automation review-summary" in cron
-    assert "vault automation learning-health" in cron
-    assert "--write-handoff" in cron
-    assert "--write-health" in cron
+    assert "vault memory pipeline" not in cron
+    assert "vault memory reflection" not in cron
+    assert "vault automation cycle" not in cron
+    assert "vault automation inbox" not in cron
     assert "--write-workspace" not in cron
     assert "--project-dir" in cron
     assert str(project) in cron
@@ -550,15 +546,8 @@ def test_run_agent_setup_writes_memory_automation_schedule_templates(tmp_path):
     assert "memory-automation.err.log" in plist
     assert workflow["name"] == "Vault Agent Memory Automation"
     assert workflow["nodes"][1]["name"] == "Vault Memory Automation"
-    assert "vault automation cycle" in workflow["nodes"][1]["parameters"]["command"]
-    assert "vault memory pipeline" in workflow["nodes"][1]["parameters"]["command"]
+    assert "vault daily-loop run" in workflow["nodes"][1]["parameters"]["command"]
     assert "--write-report" in workflow["nodes"][1]["parameters"]["command"]
-    assert "vault memory reflection" in workflow["nodes"][1]["parameters"]["command"]
-    assert "vault automation inbox" in workflow["nodes"][1]["parameters"]["command"]
-    assert "vault automation review-summary" in workflow["nodes"][1]["parameters"]["command"]
-    assert "vault automation learning-health" in workflow["nodes"][1]["parameters"]["command"]
-    assert "--write-handoff" in workflow["nodes"][1]["parameters"]["command"]
-    assert "--write-health" in workflow["nodes"][1]["parameters"]["command"]
     assert "vault automation plan" in readme
     assert "Next agent startup handoff" in readme
     assert "vault automation handoff" in readme
@@ -566,7 +555,8 @@ def test_run_agent_setup_writes_memory_automation_schedule_templates(tmp_path):
     assert "vault memory reflection" in readme
     assert "learning-health-latest.json" in readme
     assert "review-summary-latest.json" in readme
-    assert "scheduled command: `vault automation cycle`" in readme
+    assert "scheduled command: `vault daily-loop run`" in readme
+    assert "expanded automation command: `vault automation cycle`" in readme
     assert "next agent startup command: `vault automation handoff`" in readme
     assert "reports/automation/inbox-latest.json" in readme
     assert "reports/automation/review-summary-latest.json" in readme
@@ -835,23 +825,15 @@ def test_run_agent_setup_can_schedule_automation_cycle(tmp_path):
     readme = (tmp_path / "templates" / "README-memory-automation.md").read_text(encoding="utf-8")
 
     assert "0 3 * * * sh -lc" in cron
-    assert "vault memory pipeline" in cron
+    assert "vault daily-loop run" in cron
     assert "--write-report" in cron
-    assert "vault memory reflection" in cron
-    assert "vault automation cycle" in cron
-    assert "vault automation inbox" in cron
     assert "--apply" in cron
     assert "<string>sh</string>" in plist
-    assert "vault automation cycle" in plist
-    assert "vault memory pipeline" in plist
-    assert "vault memory reflection" in plist
-    assert "vault automation inbox" in plist
-    assert "vault automation cycle" in workflow["nodes"][1]["parameters"]["command"]
-    assert "vault memory pipeline" in workflow["nodes"][1]["parameters"]["command"]
+    assert "vault daily-loop run" in plist
+    assert "vault daily-loop run" in workflow["nodes"][1]["parameters"]["command"]
     assert "--write-report" in workflow["nodes"][1]["parameters"]["command"]
-    assert "vault memory reflection" in workflow["nodes"][1]["parameters"]["command"]
-    assert "vault automation inbox" in workflow["nodes"][1]["parameters"]["command"]
-    assert "scheduled command: `vault automation cycle`" in readme
+    assert "scheduled command: `vault daily-loop run`" in readme
+    assert "expanded automation command: `vault automation cycle`" in readme
     assert "`cycle` first writes a bounded learning policy" in readme
     assert "vault automation handoff" in readme
     assert result["automation_schedule_templates"]["readme"].endswith("README-memory-automation.md")
@@ -878,8 +860,7 @@ def test_run_agent_setup_memory_automation_apply_is_explicit(tmp_path):
 
     cron = Path(result["automation_schedule_templates"]["cron"]).read_text(encoding="utf-8")
     assert "*/30 * * * * sh -lc" in cron
-    assert "vault automation run" in cron
-    assert "vault automation inbox" in cron
+    assert "vault daily-loop run" in cron
     assert "--mode conservative" in cron
     assert "--apply" in cron
 
@@ -907,9 +888,12 @@ def test_run_agent_setup_can_include_transcript_hints_in_scheduled_handoff(tmp_p
     workflow = json.loads(Path(result["automation_schedule_templates"]["n8n"]).read_text(encoding="utf-8"))
     readme = Path(result["automation_schedule_templates"]["readme"]).read_text(encoding="utf-8")
 
-    assert "--include-transcripts --transcript-limit 7" in cron
-    assert "--include-transcripts --transcript-limit 7" in plist
-    assert "--include-transcripts --transcript-limit 7" in workflow["nodes"][1]["parameters"]["command"]
+    assert "--include-transcripts" in cron
+    assert "--transcript-limit 7" in cron
+    assert "--include-transcripts" in plist
+    assert "--transcript-limit 7" in plist
+    assert "--include-transcripts" in workflow["nodes"][1]["parameters"]["command"]
+    assert "--transcript-limit 7" in workflow["nodes"][1]["parameters"]["command"]
     assert "--include-transcripts --transcript-limit 7" in readme
     assert "uncaptured transcript hints in scheduled handoff: `true`" in readme
     assert "metadata-only and does not read transcript contents" in readme
@@ -940,11 +924,20 @@ def test_run_agent_setup_can_write_scheduled_cycle_workspace(tmp_path):
     workflow = json.loads(Path(result["automation_schedule_templates"]["n8n"]).read_text(encoding="utf-8"))
     readme = Path(result["automation_schedule_templates"]["readme"]).read_text(encoding="utf-8")
 
-    expected = "--write-workspace --inbox-limit 9 --include-transcripts --transcript-limit 7"
-    assert expected in cron
-    assert expected in plist
-    assert expected in workflow["nodes"][1]["parameters"]["command"]
-    assert expected in readme
+    assert "vault daily-loop run" in cron
+    assert "--limit 9" in cron
+    assert "--include-transcripts" in cron
+    assert "--transcript-limit 7" in cron
+    assert "--limit 9" in plist
+    assert "--include-transcripts" in plist
+    assert "--transcript-limit 7" in plist
+    assert "--limit 9" in workflow["nodes"][1]["parameters"]["command"]
+    assert "--include-transcripts" in workflow["nodes"][1]["parameters"]["command"]
+    assert "--transcript-limit 7" in workflow["nodes"][1]["parameters"]["command"]
+    assert "vault daily-loop run" in readme
+    assert "--limit 9" in readme
+    assert "--include-transcripts" in readme
+    assert "--transcript-limit 7" in readme
     assert "scheduled cycle workspace: `true`" in readme
     assert "cycle workspace path: `reports/automation/cycle-latest.json`" in readme
     assert "cycle workspace Markdown: `reports/automation/cycle-latest.md`" in readme
@@ -977,7 +970,7 @@ def test_run_agent_setup_can_enable_scheduled_transcript_capture(tmp_path):
     workflow = json.loads(Path(result["automation_schedule_templates"]["n8n"]).read_text(encoding="utf-8"))
     readme = Path(result["automation_schedule_templates"]["readme"]).read_text(encoding="utf-8")
 
-    expected = "vault memory pipeline"
+    expected = "vault daily-loop run"
     assert expected in cron
     assert expected in plist
     assert expected in workflow["nodes"][1]["parameters"]["command"]
@@ -1045,7 +1038,7 @@ def test_run_agent_setup_governed_auto_is_independent_from_audience(tmp_path):
     assert result["automation_policy"]["auto_promote_low_risk_candidates"] is True
     assert result["consumer_daily_report"]["guide"].endswith("README-consumer-daily-report.md")
     assert "--apply" in cron
-    assert "vault daily-report" in cron
+    assert "vault daily-loop run" in cron
     assert "--language en" in cron
 
 

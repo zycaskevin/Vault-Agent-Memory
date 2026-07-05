@@ -678,6 +678,41 @@ def daily_report_command(
     ]
 
 
+def daily_loop_command(
+    *,
+    project_dir: str | Path,
+    mode: str = "balanced",
+    apply: bool = False,
+    vault_executable: str = "vault",
+    limit: int = 5,
+    include_transcripts: bool = False,
+    transcript_limit: int = 5,
+    language: str = "en",
+) -> list[str]:
+    command = [
+        vault_executable,
+        "daily-loop",
+        "run",
+        "--project-dir",
+        str(Path(project_dir).expanduser()),
+        "--mode",
+        _normalize_automation_mode(mode),
+        "--limit",
+        str(max(1, min(int(limit or 5), 20))),
+        "--language",
+        _normalize_setup_language(language),
+        "--transcript-limit",
+        str(max(1, min(int(transcript_limit or 5), 20))),
+        "--write-report",
+        "--pretty",
+    ]
+    if apply:
+        command.append("--apply")
+    if include_transcripts:
+        command.append("--include-transcripts")
+    return command
+
+
 def automation_schedule_with_inbox_command(
     *,
     project_dir: str | Path,
@@ -694,57 +729,20 @@ def automation_schedule_with_inbox_command(
     write_daily_report: bool = False,
     language: str = "en",
 ) -> list[str]:
-    primary = automation_schedule_command(
+    daily_loop = daily_loop_command(
         project_dir=project_dir,
         mode=mode,
         apply=apply,
-        command=command,
         vault_executable=vault_executable,
-        write_workspace=write_workspace,
-        inbox_limit=inbox_limit,
+        limit=inbox_limit,
         include_transcripts=include_transcripts,
-        transcript_limit=transcript_limit,
-        capture_transcripts=False,
-        capture_transcript_limit=capture_transcript_limit,
+        transcript_limit=capture_transcript_limit if capture_transcripts else transcript_limit,
+        language=language,
     )
-    inbox = automation_inbox_handoff_command(
-        project_dir=project_dir,
-        vault_executable=vault_executable,
-        include_transcripts=include_transcripts,
-        transcript_limit=transcript_limit,
-    )
-    health = automation_learning_health_command(
-        project_dir=project_dir,
-        vault_executable=vault_executable,
-    )
-    review_summary = automation_review_summary_command(
-        project_dir=project_dir,
-        vault_executable=vault_executable,
-    )
-    pipeline = memory_pipeline_command(
-        project_dir=project_dir,
-        vault_executable=vault_executable,
-        transcript_limit=capture_transcript_limit,
-    )
-    reflection = memory_reflection_command(
-        project_dir=project_dir,
-        vault_executable=vault_executable,
-    )
-    daily = daily_report_command(project_dir=project_dir, vault_executable=vault_executable, language=language)
-    commands = [
-        shell_join(pipeline),
-        shell_join(reflection),
-        shell_join(primary),
-        shell_join(inbox),
-        shell_join(review_summary),
-        shell_join(health),
-    ]
-    if write_daily_report:
-        commands.append(shell_join(daily))
     return [
         "sh",
         "-lc",
-        " && ".join(commands),
+        shell_join(daily_loop),
     ]
 
 
@@ -774,7 +772,17 @@ def write_automation_schedule_templates(
     selected = _normalize_sync_targets(targets)
     normalized_mode = _normalize_automation_mode(mode)
     normalized_command = _normalize_automation_command(command)
-    command_args = automation_schedule_command(
+    command_args = daily_loop_command(
+        project_dir=project_dir,
+        mode=normalized_mode,
+        apply=apply,
+        vault_executable=vault_executable,
+        limit=workspace_inbox_limit,
+        include_transcripts=include_transcripts,
+        transcript_limit=capture_transcript_limit if capture_transcripts else transcript_limit,
+        language=language,
+    )
+    expanded_command_args = automation_schedule_command(
         project_dir=project_dir,
         mode=normalized_mode,
         apply=apply,
@@ -885,7 +893,13 @@ def write_automation_schedule_templates(
                 "",
                 f"```bash\n{shell_join(command_args)}\n```",
                 "",
-                "Scheduled templates run this command and then write an inbox handoff:",
+                "The daily loop writes the sync freshness report, cycle workspace, inbox handoff, review cards, learning-health dashboard, and human daily report.",
+                "",
+                "Expanded debug commands:",
+                "",
+                f"```bash\n{shell_join(expanded_command_args)}\n{shell_join(inbox_args)}\n{shell_join(review_summary_args)}\n{shell_join(health_args)}\n```",
+                "",
+                "Inbox handoff command:",
                 "",
                 f"```bash\n{shell_join(inbox_args)}\n```",
                 "",
@@ -920,7 +934,8 @@ def write_automation_schedule_templates(
                 "",
                 "Safety defaults:",
                 "",
-                f"- scheduled command: `vault automation {normalized_command}`",
+                "- scheduled command: `vault daily-loop run`",
+                f"- expanded automation command: `vault automation {normalized_command}`",
                 f"- mode: `{normalized_mode}`",
                 f"- apply reversible archival: `{str(bool(apply)).lower()}`",
                 "- `cycle` first writes a bounded learning policy from reviewed candidate outcomes, then runs automation",

@@ -85,6 +85,7 @@ from .cli_flow import (
 from .cli_guide import cmd_guide as _cmd_guide_impl
 from .cli_quickstart import cmd_quickstart
 from .cli_daily_report import cmd_daily_report as _cmd_daily_report_impl
+from .cli_daily_loop import add_daily_loop_parser, cmd_daily_loop as _cmd_daily_loop_impl
 from .cli_demo import add_demo_parser, cmd_demo as _cmd_demo_impl
 from .cli_gateway import add_gateway_parsers
 from .cli_map_remote import add_remote_parser, cmd_map, cmd_remote, _parse_map_line_range, _positive_int
@@ -1081,6 +1082,7 @@ def main(argv: list[str] | None = None):
     from vault.cli_memory import add_memory_parser
 
     add_memory_station_parsers(sub)
+    add_daily_loop_parser(sub)
     add_automation_parser(sub)
     add_memory_parser(sub)
     add_okf_parser(sub)
@@ -1105,6 +1107,7 @@ def main(argv: list[str] | None = None):
         "start": lambda parsed: cmd_start(parsed, json_print=_json_print),
         "guide": cmd_guide,
         "daily-report": cmd_daily_report,
+        "daily-loop": lambda parsed: _cmd_daily_loop_impl(parsed, find_project_dir=find_project_dir, json_print=_json_print),
         "demo": cmd_demo,
         "gateway": cmd_gateway,
         "remote-server": cmd_gateway,

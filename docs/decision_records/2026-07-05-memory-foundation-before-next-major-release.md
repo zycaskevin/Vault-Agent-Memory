@@ -40,19 +40,22 @@ Completed:
   only `codex` registered.
 - The automation inbox fix was committed locally as
   `d3982fa Fix automation inbox reviewed candidate queue`.
+- The Git-backed repo now has `vault daily-loop report --refresh --write-report`,
+  a read-only refresh path that rebuilds the latest daily-loop report without
+  capture, reflection, sync writes, or new candidate writes.
+- The live Codex private-memory vault regenerated a clean
+  `reports/daily-loop/daily-loop-latest.*` through that refresh path; candidate
+  counts stayed unchanged and no pending review queue remained.
 
 Still required before the next release:
 
 1. Merge or otherwise land the automation inbox queue fix in the canonical
    upstream path.
-2. Add a pure report/status refresh path that does not run capture or write new
-   candidates.
-3. Regenerate a clean daily-loop latest report using that pure refresh path.
-4. Validate Central Memory Station sync policy on a trusted host, keeping
+2. Validate Central Memory Station sync policy on a trusted host, keeping
    service-role credentials out of remote-reader agents.
-5. Reinstall or repoint the live runtime from the final release artifact rather
+3. Reinstall or repoint the live runtime from the final release artifact rather
    than relying on a temporary editable checkout.
-6. Run release-quality checks across daily-loop, automation inbox, MCP tools,
+4. Run release-quality checks across daily-loop, automation inbox, MCP tools,
    update-status, Supabase remote search, and clean install/import behavior.
 
 ## Release Gate
@@ -63,7 +66,8 @@ The next release can proceed only when all of the following are true:
   queue.
 - `vault daily-loop status` and MCP `vault_daily_loop_status` agree on the
   latest report state.
-- There is a report-only refresh path that does not create candidate noise.
+- `vault daily-loop report --refresh --write-report` does not create candidate
+  noise.
 - `mcp__vault.vault_update_status` reports `ok=true` for the live Codex runtime.
 - Supabase read-only search works without exposing service-role keys to reader
   agents.

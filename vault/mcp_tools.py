@@ -385,6 +385,42 @@ TOOLS = [
         }
     },
     {
+        "name": "vault_daily_loop_status",
+        "description": "Read daily-loop freshness, latest report metadata, and sync status. Read-only; does not run the loop or mutate memory.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agent_id": {
+                    "type": "string",
+                    "description": "Optional Agent/runtime id for focused sync status.",
+                    "default": "",
+                },
+                "max_sync_age_minutes": {
+                    "type": "integer",
+                    "description": "Freshness threshold for sync report age.",
+                    "default": 1440,
+                    "minimum": 1,
+                    "maximum": 43200,
+                },
+            },
+        }
+    },
+    {
+        "name": "vault_daily_loop_report",
+        "description": "Read the latest daily-loop human report. Read-only; returns missing status when no daily-loop report exists.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "language": {
+                    "type": "string",
+                    "enum": ["en", "zh-Hant", "zh-CN"],
+                    "description": "Preferred report language label.",
+                    "default": "en",
+                },
+            },
+        }
+    },
+    {
         "name": "vault_automation_inbox",
         "description": "Read the compact automation review inbox. Read-only by default; returns the shortest candidate/report queue without raw content unless requested.",
         "inputSchema": {
@@ -893,6 +929,8 @@ TOOL_PROFILES = {
         "vault_memory_propose",
         "vault_stats",
         "vault_update_status",
+        "vault_daily_loop_status",
+        "vault_daily_loop_report",
         "vault_automation_activity",
         "vault_automation_brief",
         "vault_automation_handoff",
@@ -903,6 +941,8 @@ TOOL_PROFILES = {
         "vault_memory_propose",
         "vault_stats",
         "vault_update_status",
+        "vault_daily_loop_status",
+        "vault_daily_loop_report",
         "vault_automation_activity",
         "vault_automation_brief",
         "vault_automation_handoff",
@@ -926,6 +966,8 @@ TOOL_PROFILES = {
         "vault_memory_propose",
         "vault_stats",
         "vault_update_status",
+        "vault_daily_loop_status",
+        "vault_daily_loop_report",
         "vault_automation_activity",
         "vault_automation_brief",
         "vault_automation_handoff",
@@ -940,6 +982,8 @@ TOOL_PROFILES = {
         "vault_memory_propose",
         "vault_stats",
         "vault_update_status",
+        "vault_daily_loop_status",
+        "vault_daily_loop_report",
         "vault_automation_activity",
         "vault_automation_brief",
         "vault_automation_handoff",

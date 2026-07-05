@@ -477,10 +477,11 @@ vault setup-agent \
 ```
 
 This writes cron, macOS LaunchAgent, n8n, and README templates under
-`agent-install/`. `cycle` is the default scheduled command: it writes bounded
-learning-policy hints from reviewed candidate outcomes before running safe
-automation. Add `--automation-command run` for a simpler maintenance-only
-schedule. Add `--automation-apply` only after the user reviews
+`agent-install/`. `vault daily-loop run` is the default scheduled command; it
+wraps memory pipeline, reflection, automation cycle, inbox handoff,
+review-summary, learning-health, and the human daily-loop report. Add
+`--automation-command run` for a simpler maintenance-only expanded automation
+step. Add `--automation-apply` only after the user reviews
 `automation_policy.yaml` and accepts reversible archive actions.
 Generated schedules also write `reports/automation/inbox-latest.json` after a
 successful run, so the next agent can start from the compact review inbox

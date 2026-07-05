@@ -39,6 +39,8 @@ and debugging.
 | Intent | Command |
 |---|---|
 | Start or orient | `vault start` |
+| Run the daily memory loop | `vault daily-loop run --write-report --json` |
+| Rebuild the latest daily-loop report without ingestion | `vault daily-loop report --refresh --write-report --json` |
 | Check central sync state | `vault memory-sync status --json` |
 | Submit candidate memory to the Supabase central inbox | `vault memory-sync push --central-store --title "..." --content "..." --reason "..."` |
 | Submit candidate memory to a self-host inbox | `vault memory-sync push --central-backend self-host --title "..." --content "..."` |
@@ -273,7 +275,7 @@ Allowed roles are `work`, `profile`, `care`, `dream`, `remote`,
 files are opt-in with `--validation-pack remote|n8n|coze|all`.
 Memory automation schedule files are opt-in with
 `--automation-schedule cron|launchagent|n8n|all`; generated jobs default to
-`vault automation cycle` and stay report-first unless `--automation-apply` is
+`vault daily-loop run` and stay report-first unless `--automation-apply` is
 explicitly set. Use `--automation-command run` for maintenance-only schedules.
 Add `--automation-write-workspace` when those scheduled cycle jobs should write
 `reports/automation/cycle-latest.json` and `reports/automation/cycle-latest.md`
@@ -409,6 +411,8 @@ content drift.
 | `vault candidate-review <id> --outcome rejected --reason "..."` | Record rejected/blocked candidate feedback without promoting memory |
 | `vault capture session <transcript> --write-candidates` | Capture decisions, pitfalls, workflows, and source-of-truth lines from JSONL/Markdown/text transcripts as gated candidates |
 | `vault memory reflection --write-candidates` | Run Dream plus lifecycle automation as a report-first reflection pass |
+| `vault daily-loop run --write-report` | Run the safe daily memory loop: sync dry-run/freshness, automation cycle handoff, inbox, review-summary, learning-health, and the human daily report |
+| `vault daily-loop report --refresh --write-report` | Rebuild `reports/daily-loop/daily-loop-latest.*` from read-only status surfaces without capture, reflection, sync writes, or new candidate writes |
 | `vault automation plan --write-policy` | Create a policy-based maintenance plan and starter `automation_policy.yaml` |
 | `vault automation run` / `vault automation run --apply` | Run report-first memory automation; reports include a dry-run diff and action ledger, and `--apply` only performs policy-allowed reversible actions or explicit low-risk auto-promote matches that are not downgraded by learned review feedback |
 | `vault automation cycle --apply` | Run one safe feedback-to-curation loop: evaluate reviewed candidate outcomes, write `learning_policy.json`, then run policy-based automation so Dream can consume the latest hints |

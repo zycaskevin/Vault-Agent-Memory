@@ -26,6 +26,8 @@ def test_mcp_memory_tools_are_advertised():
         "vault_automation_activity",
         "vault_automation_brief",
         "vault_automation_handoff",
+        "vault_daily_loop_status",
+        "vault_daily_loop_report",
         "vault_cold_store_expired",
         "vault_memory_pipeline",
         "vault_memory_temporal_status",
@@ -71,6 +73,8 @@ def test_mcp_tool_profiles_reduce_visible_tool_schemas():
         "vault_memory_propose",
         "vault_stats",
         "vault_update_status",
+        "vault_daily_loop_status",
+        "vault_daily_loop_report",
         "vault_automation_activity",
         "vault_automation_brief",
         "vault_automation_handoff",
@@ -79,6 +83,8 @@ def test_mcp_tool_profiles_reduce_visible_tool_schemas():
 
     review_names = [tool["name"] for tool in select_tools("review")]
     assert "vault_update_status" in review_names
+    assert "vault_daily_loop_status" in review_names
+    assert "vault_daily_loop_report" in review_names
     assert "vault_automation_activity" in review_names
     assert "vault_automation_brief" in review_names
     assert "vault_automation_handoff" in review_names
@@ -121,6 +127,8 @@ def test_mcp_tool_profiles_reduce_visible_tool_schemas():
     assert "vault_add" in full_names
     assert "vault_memory_review" in full_names
     assert "vault_update_status" in full_names
+    assert "vault_daily_loop_status" in full_names
+    assert "vault_daily_loop_report" in full_names
     assert "vault_automation_brief" in full_names
     assert "vault_automation_handoff" in full_names
     assert "vault_cold_store_expired" in full_names
@@ -1006,6 +1014,40 @@ def test_mcp_automation_brief_returns_intelligence_without_raw_content(tmp_path)
     assert brief["forgetting_strategy"]["used_expired_count"] == 1
     assert any(item["id"] == proposed["candidate_id"] for item in brief["human_review_5_percent"]["items"])
     assert "candidate content outside the payload" not in rendered
+
+
+def test_mcp_daily_loop_status_and_report_are_read_only(tmp_path):
+    from vault.daily_loop import refresh_daily_loop_report
+
+    _set_project_dir(tmp_path)
+    with VaultDB(tmp_path / "vault.db") as db:
+        create_candidate(
+            db,
+            title="MCP daily loop candidate",
+            content="Decision: MCP daily-loop report must stay read-only.",
+            reason="Exercise daily-loop MCP report.",
+            source="session_capture",
+            source_ref="mcp:daily-loop:1",
+            memory_type="session_lesson",
+            trust=0.75,
+            scope="project",
+            sensitivity="low",
+        )
+        before = db.conn.execute("SELECT count(*) AS count FROM memory_candidates").fetchone()["count"]
+
+    refresh_daily_loop_report(tmp_path, write_report=True, limit=5)
+    status = _payload(handle_tool_call("vault_daily_loop_status", {}))
+    report = _payload(handle_tool_call("vault_daily_loop_report", {"language": "en"}))
+
+    assert status["action"] == "daily-loop-status"
+    assert status["latest_report"]["exists"] is True
+    assert report["action"] == "daily-loop-report"
+    assert report["status"] == "completed"
+    assert report["summary"]["pending_candidates"] == 1
+    assert "pending candidates: 1" in report["text"]
+    with VaultDB(tmp_path / "vault.db") as db:
+        after = db.conn.execute("SELECT count(*) AS count FROM memory_candidates").fetchone()["count"]
+    assert after == before
 
 
 def test_mcp_cold_store_expired_defaults_to_dry_run_and_can_apply(tmp_path):

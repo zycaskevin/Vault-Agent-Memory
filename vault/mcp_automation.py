@@ -28,6 +28,31 @@ def handle_automation_tool_call(name: str, arguments: dict[str, Any], *, db_path
     arguments = arguments or {}
     project_dir = _project_dir(db_path)
 
+    if name == "vault_daily_loop_status":
+        from vault.daily_loop import build_daily_loop_status
+
+        payload = build_daily_loop_status(
+            project_dir,
+            agent_id=str(arguments.get("agent_id") or ""),
+            max_sync_age_minutes=_clamp_int(
+                arguments.get("max_sync_age_minutes", 24 * 60),
+                default=24 * 60,
+                minimum=1,
+                maximum=30 * 24 * 60,
+            ),
+        )
+        return _json_result(payload)
+
+    if name == "vault_daily_loop_report":
+        from vault.daily_loop import build_daily_loop_report
+
+        payload = build_daily_loop_report(
+            project_dir,
+            language=str(arguments.get("language") or "en"),
+            write_report=False,
+        )
+        return _json_result(payload)
+
     if name == "vault_automation_inbox":
         from vault.automation import automation_inbox
 

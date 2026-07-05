@@ -446,6 +446,8 @@ For multi-agent or multi-device memory, use the Central Memory Station surface:
 
 ```bash
 vault start
+vault daily-loop run --write-report --json
+vault daily-loop report --refresh --write-report --json
 vault memory-sync run-once --push-read-copy --push-central-store --pull-candidates --dry-run --json
 vault memory-sync run-once --central-backend self-host --pull-candidates --dry-run --json
 vault memory-review inbox --json
@@ -453,9 +455,14 @@ vault memory-lifecycle status --json
 vault ops security --json
 ```
 
-The detailed `remote`, `sync`, `dream`, `usage`, and `automation` commands stay
-available as advanced tools. The central surface is the smaller operator entry
-for Supabase or self-hosted deployments.
+`vault daily-loop run` is the daily orchestrator: it refreshes sync freshness,
+automation cycle handoff, inbox, review cards, learning health, and the human
+daily report in one report-first pass. Use
+`vault daily-loop report --refresh --write-report` when you only need to rebuild
+the latest daily-loop report from read-only status surfaces without capture or
+new candidate writes. The detailed `remote`, `sync`, `dream`, `usage`, and
+`automation` commands stay available as advanced tools. The central surface is
+the smaller operator entry for Supabase or self-hosted deployments.
 
 Docs:
 

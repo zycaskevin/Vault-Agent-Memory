@@ -570,7 +570,14 @@ This writes `agent-install/memory-automation.cron`,
 `agent-install/n8n-memory-automation.workflow.json`, and
 `agent-install/README-memory-automation.md`.
 
-Generated schedules now run the candidate-first memory closed loop:
+Generated schedules now run the candidate-first memory closed loop through one
+daily-loop entrypoint:
+
+```bash
+vault daily-loop run --write-report
+```
+
+That command expands the same safe stages:
 
 1. `vault memory pipeline --write-candidates --write-report`
 2. `vault memory reflection --write-candidates`
@@ -582,8 +589,8 @@ Generated schedules now run the candidate-first memory closed loop:
 The first two steps turn transcripts and reflection findings into review
 candidates. `vault automation cycle` then evaluates reviewed candidate outcomes,
 writes `reports/automation/learning_policy.json`, and runs normal policy-based
-automation. After a successful scheduled run, the generated cron, LaunchAgent,
-and n8n templates write `reports/automation/inbox-latest.json` as the
+automation. After a successful scheduled daily-loop run, the generated cron,
+LaunchAgent, and n8n templates write `reports/automation/inbox-latest.json` as the
 next-agent handoff, `reports/automation/pipeline-latest.json` as the
 memory-ingestion receipt, `reports/automation/review-summary-latest.json` as the
 5% human-review card deck, and `reports/automation/learning-health-latest.json`
@@ -626,7 +633,7 @@ write candidates.
 The scheduled command should stay explicit about the target vault:
 
 ```bash
-vault automation cycle --project-dir /path/to/project --pretty
+vault daily-loop run --project-dir /path/to/project --write-report --pretty
 vault automation inbox --project-dir /path/to/project --write-handoff --pretty
 vault automation inbox --project-dir /path/to/project --write-handoff --include-transcripts --pretty
 ```

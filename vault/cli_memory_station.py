@@ -210,6 +210,7 @@ def cmd_start(args: argparse.Namespace, *, json_print: JsonPrinter) -> None:
         "message": "Use these primary commands for the governed memory workflow.",
         "commands": [
             "vault start",
+            "vault daily-loop run --write-report",
             "vault remember",
             "vault search",
             "vault memory-sync status",

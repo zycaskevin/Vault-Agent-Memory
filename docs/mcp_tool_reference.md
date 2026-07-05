@@ -11,7 +11,7 @@ the model context and fewer ways for an agent to choose the wrong action.
 
 | Profile | Tools | Best For |
 |---|---|---|
-| `core` | `vault_search`, `vault_read_range`, `vault_memory_propose`, `vault_stats`, `vault_update_status`, `vault_automation_activity`, `vault_automation_brief`, `vault_automation_handoff` | Daily agent work: start from status/activity/brief/handoff, find memory, read bounded evidence, propose new memory. |
+| `core` | `vault_search`, `vault_read_range`, `vault_memory_propose`, `vault_stats`, `vault_update_status`, `vault_daily_loop_status`, `vault_daily_loop_report`, `vault_automation_activity`, `vault_automation_brief`, `vault_automation_handoff` | Daily agent work: start from status/activity/brief/handoff, find memory, read bounded evidence, propose new memory. |
 | `review` | Core plus `vault_memory_candidates`, `vault_memory_promote`, `vault_memory_review`, `vault_capture_discover`, `vault_capture_session`, `vault_automation_inbox`, `vault_task_start/status/update/handoff/complete`, `vault_sync_status`, Skill read/sync-inspection tools, `vault_dream_run` | A reviewer agent or operator session that discovers/captures, approves/rejects candidates, checks sync conflicts, inspects Skill versions, or maintains a resumable task working set. |
 | `remote` | Core plus `vault_remote_search`, `vault_remote_map_show`, `vault_remote_read_range` | Hosted or cross-host agents reading a Supabase-synced vault. |
 | `maintenance` | Review plus Skill registry writes, Skill sync marking, cold-store lifecycle, Obsidian import, freshness, convergence, and curation tools | Scheduled maintenance or explicit operator-led cleanup. |
@@ -160,6 +160,30 @@ tool, keeping the core profile small.
   "doctor": true,
   "agent_id": "codex",
   "max_status_age_minutes": 1440
+}
+```
+
+### `vault_daily_loop_status`
+
+Read daily-loop freshness, latest report metadata, and sync status. This is
+read-only and does not run the loop.
+
+```json
+{
+  "agent_id": "codex",
+  "max_sync_age_minutes": 1440
+}
+```
+
+### `vault_daily_loop_report`
+
+Read the latest human-facing daily-loop report. If no report exists, the tool
+returns `status=missing` and tells the agent to run the CLI loop with user or
+schedule approval.
+
+```json
+{
+  "language": "en"
 }
 ```
 
