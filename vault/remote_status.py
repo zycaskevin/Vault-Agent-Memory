@@ -310,7 +310,25 @@ def _self_host_status(project: Path) -> dict[str, Any]:
 
 def _sync_report_status(project: Path, *, max_age_minutes: int) -> dict[str, Any]:
     candidates = [project / relative for relative in SYNC_REPORT_CANDIDATES]
-    existing = next((path for path in candidates if path.exists()), None)
+    existing = None
+    existing_data: dict[str, Any] = {}
+    dry_run_fallback = None
+    dry_run_fallback_data: dict[str, Any] = {}
+    for path in candidates:
+        if not path.exists():
+            continue
+        data = _read_json_file(path)
+        if data.get("dry_run") is True and not str(data.get("last_synced_at") or data.get("synced_at") or ""):
+            if dry_run_fallback is None:
+                dry_run_fallback = path
+                dry_run_fallback_data = data
+            continue
+        existing = path
+        existing_data = data
+        break
+    if existing is None and dry_run_fallback is not None:
+        existing = dry_run_fallback
+        existing_data = dry_run_fallback_data
     payload: dict[str, Any] = {
         "path": str(existing) if existing else "",
         "exists": bool(existing),
@@ -322,11 +340,11 @@ def _sync_report_status(project: Path, *, max_age_minutes: int) -> dict[str, Any
     }
     if not existing:
         return payload
-    data = _read_json_file(existing)
+    data = existing_data
     last_synced_at = str(
         data.get("last_synced_at")
         or data.get("synced_at")
-        or data.get("completed_at")
+        or ("" if data.get("dry_run") is True else data.get("completed_at"))
         or data.get("checked_at")
         or ""
     )
@@ -334,6 +352,7 @@ def _sync_report_status(project: Path, *, max_age_minutes: int) -> dict[str, Any
     payload.update(
         {
             "status": str(data.get("status") or data.get("ok") or "reported"),
+            "dry_run": bool(data.get("dry_run", False)),
             "last_synced_at": last_synced_at,
             "age_minutes": age,
             "stale": None if age is None else age > max_age_minutes,
@@ -386,6 +405,8 @@ def _warnings(
         warnings.append({"severity": "medium", "code": "service_role_key_present", "message": "A service-role key is present. Use it only on a trusted sync host, never inside remote-reader agents."})
     if any(sync_templates["targets"].values()) and not report.get("exists"):
         warnings.append({"severity": "medium", "code": "sync_report_missing", "message": "Sync templates exist, but no local sync report was found; remote freshness is unknown."})
+    if any(sync_templates["targets"].values()) and report.get("dry_run") is True:
+        warnings.append({"severity": "medium", "code": "sync_report_dry_run", "message": "The latest sync report is a dry run; remote freshness is still unknown."})
     if report.get("stale") is True:
         warnings.append({"severity": "medium", "code": "sync_report_stale", "message": "The latest sync report is older than the allowed freshness window."})
     if any(remote_reader["targets"].values()) and not env.get("anon_key_configured"):
@@ -409,6 +430,8 @@ def _next_actions(
         actions.append("Run `vault setup-agent --features core,mcp,supabase --supabase-setup simple --remote-reader shell` to generate a guided remote-reader setup.")
     if any(sync_templates["targets"].values()) and not report.get("exists"):
         actions.append("Run `vault memory-sync run-once --push-read-copy --dry-run` first, then run the trusted sync without --dry-run when credentials are ready.")
+    if any(sync_templates["targets"].values()) and report.get("dry_run") is True:
+        actions.append("Run the trusted sync without --dry-run to refresh remote memory freshness.")
     if any(remote_reader["targets"].values()) and not env.get("anon_key_configured"):
         actions.append("Set SUPABASE_URL and SUPABASE_ANON_KEY/SUPABASE_PUBLISHABLE_KEY before running `vault remote smoke`.")
     if access.get("agent_count", 0) and not access.get("remote_readers"):

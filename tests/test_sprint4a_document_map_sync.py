@@ -38,6 +38,10 @@ class _FakeTableQuery:
         self.filters.append((field, value))
         return self
 
+    def ilike(self, field, value):
+        self.filters.append((field, value.strip("%")))
+        return self
+
     def update(self, payload):
         self.operation = "update"
         self.payload = dict(payload)
@@ -81,6 +85,7 @@ class _FakeSupabaseClient:
         self.next_id = 1000
         self.operations = []
         self.tables = {
+            sync_to_supabase.KNOWLEDGE_TABLE: [],
             sync_to_supabase.DOCUMENT_MAP_NODE_TABLE: [],
             sync_to_supabase.DOCUMENT_MAP_CLAIM_TABLE: [],
         }
@@ -187,11 +192,23 @@ def test_sync_document_map_upserts_nodes_and_claims_without_network(tmp_path, mo
     fake = _FakeSupabaseClient()
     first_node = VaultDB(tmp_path / "vault.db").connect()
     try:
+        knowledge = first_node.conn.execute(
+            "SELECT id, title, content_hash FROM knowledge WHERE id=?",
+            (knowledge_id,),
+        ).fetchone()
+        remote_knowledge_id = "11111111-1111-4111-8111-111111111111"
+        fake.tables[sync_to_supabase.KNOWLEDGE_TABLE].append(
+            {
+                "id": remote_knowledge_id,
+                "title": knowledge["title"],
+                "content_hash": knowledge["content_hash"],
+            }
+        )
         existing_node = first_node.conn.execute(
-            "SELECT knowledge_id, node_uid FROM knowledge_nodes ORDER BY line_start LIMIT 1"
+            "SELECT node_uid FROM knowledge_nodes ORDER BY line_start LIMIT 1"
         ).fetchone()
         fake.tables[sync_to_supabase.DOCUMENT_MAP_NODE_TABLE].append(
-            {"id": 10, "knowledge_id": existing_node["knowledge_id"], "node_uid": existing_node["node_uid"]}
+            {"id": 10, "knowledge_id": remote_knowledge_id, "node_uid": existing_node["node_uid"]}
         )
     finally:
         first_node.close()
@@ -215,6 +232,8 @@ def test_sync_document_map_upserts_nodes_and_claims_without_network(tmp_path, mo
     assert set(node_payloads[0]) == expected_node_keys
     assert set(claim_payloads[0]) == expected_claim_keys
     assert node_payloads[0]["knowledge_title"] == "Remote Map Resolver Entry"
+    assert node_payloads[0]["knowledge_id"] == remote_knowledge_id
+    assert claim_payloads[0]["knowledge_id"] == remote_knowledge_id
     assert claim_payloads[0]["knowledge_source"] == "raw/remote-map.md"
 
 

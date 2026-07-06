@@ -167,6 +167,80 @@ def test_remote_status_prefers_central_memory_sync_report(tmp_path, monkeypatch)
     assert payload["sync"]["last_report"]["status"] == "ok"
 
 
+def test_remote_status_ignores_dry_run_report_for_freshness(tmp_path, monkeypatch):
+    from vault.cli import main
+    from vault.remote_status import build_remote_status
+
+    monkeypatch.setenv("VAULT_AGENT_REGISTRY_DIR", str(tmp_path / "registry"))
+    project = tmp_path / "vault-project"
+    main(["init", "--project-dir", str(project)])
+
+    reports = project / "reports"
+    reports.mkdir()
+    central = reports / "central-memory-sync-latest.json"
+    central.write_text(
+        json.dumps(
+            {
+                "status": "ok",
+                "dry_run": True,
+                "mode": "central_memory_station_sync",
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "last_synced_at": "",
+            }
+        ),
+        encoding="utf-8",
+    )
+    remote = reports / "remote-sync-latest.json"
+    remote.write_text(
+        json.dumps(
+            {
+                "status": "ok",
+                "dry_run": False,
+                "last_synced_at": "2026-01-01T00:00:00+00:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = build_remote_status(project, max_sync_age_minutes=60)
+
+    assert payload["sync"]["last_report"]["path"] == str(remote)
+    assert payload["sync"]["last_report"]["dry_run"] is False
+    assert payload["sync"]["last_report"]["stale"] is True
+
+
+def test_remote_status_warns_when_only_dry_run_report_exists(tmp_path, monkeypatch):
+    from vault.cli import main
+    from vault.remote_status import build_remote_status
+
+    monkeypatch.setenv("VAULT_AGENT_REGISTRY_DIR", str(tmp_path / "registry"))
+    project = tmp_path / "vault-project"
+    main(["init", "--project-dir", str(project)])
+
+    install = project / "agent-install"
+    install.mkdir()
+    (install / "supabase-sync.cron").write_text("* * * * * vault sync\n", encoding="utf-8")
+    reports = project / "reports"
+    reports.mkdir()
+    (reports / "central-memory-sync-latest.json").write_text(
+        json.dumps(
+            {
+                "status": "ok",
+                "dry_run": True,
+                "completed_at": datetime.now(timezone.utc).isoformat(),
+                "last_synced_at": "",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = build_remote_status(project, max_sync_age_minutes=60)
+
+    assert payload["sync"]["last_report"]["dry_run"] is True
+    assert payload["sync"]["last_report"]["last_synced_at"] == ""
+    assert any(item["code"] == "sync_report_dry_run" for item in payload["warnings"])
+
+
 def test_remote_status_reports_self_host_central_candidate_inbox(tmp_path, monkeypatch):
     from vault.central_candidate_store import submit_central_candidate_local
     from vault.cli import main

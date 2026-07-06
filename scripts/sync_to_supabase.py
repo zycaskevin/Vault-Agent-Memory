@@ -201,6 +201,47 @@ def _upsert_vault_health_by_check_date(sb, payload: dict) -> str:
     return 'inserted'
 
 
+def _remote_knowledge_id_map(sb, local_rows) -> dict[int, str]:
+    """Map local integer knowledge ids to remote Supabase knowledge UUIDs.
+
+    Local SQLite keeps integer ids, while the public Supabase read-copy uses
+    uuid primary keys. Document Map tables reference the remote knowledge UUID,
+    so the sync must resolve each local row before upserting nodes/claims.
+    """
+    mapping: dict[int, str] = {}
+    for row in local_rows:
+        local_id = row["id"]
+        title = row["title"] or ""
+        content_hash = row["content_hash"] or ""
+        remote_id = ""
+
+        if content_hash:
+            result = (
+                sb.table(KNOWLEDGE_TABLE)
+                .select("id")
+                .eq("content_hash", content_hash)
+                .limit(1)
+                .execute()
+            )
+            if result.data:
+                remote_id = str(result.data[0]["id"])
+
+        if not remote_id and title:
+            result = (
+                sb.table(KNOWLEDGE_TABLE)
+                .select("id")
+                .ilike("title", title)
+                .limit(1)
+                .execute()
+            )
+            if result.data:
+                remote_id = str(result.data[0]["id"])
+
+        if remote_id:
+            mapping[int(local_id)] = remote_id
+    return mapping
+
+
 def _content_allowed_for_remote(text: str) -> bool:
     return scan_privacy(text or "").get("status") != "fail"
 
@@ -454,6 +495,11 @@ def sync_document_map(db_path=DB_PATH):
         if not _check_document_map_tables(sb):
             return None
 
+        knowledge_rows = db.conn.execute(
+            "SELECT id, title, content_hash FROM knowledge ORDER BY id"
+        ).fetchall()
+        remote_knowledge_ids = _remote_knowledge_id_map(sb, knowledge_rows)
+
         node_rows = db.conn.execute(
             "SELECT "
             + ", ".join(f"n.{col}" for col in DOCUMENT_MAP_NODE_COLUMNS)
@@ -480,13 +526,21 @@ def sync_document_map(db_path=DB_PATH):
             'nodes_inserted': 0,
             'nodes_updated': 0,
             'nodes_failed': 0,
+            'nodes_skipped': 0,
             'claims_inserted': 0,
             'claims_updated': 0,
             'claims_failed': 0,
+            'claims_skipped': 0,
         }
 
         for row in node_rows:
             payload = {key: row[key] for key in DOCUMENT_MAP_NODE_COLUMNS + DOCUMENT_MAP_CONTEXT_COLUMNS}
+            remote_knowledge_id = remote_knowledge_ids.get(int(row['knowledge_id']))
+            if not remote_knowledge_id:
+                stats['nodes_skipped'] += 1
+                print(f"  ⚠️ node {row['knowledge_id']}/{row['node_uid']}: remote knowledge id not found")
+                continue
+            payload['knowledge_id'] = remote_knowledge_id
             try:
                 action = _upsert_by_key(sb, DOCUMENT_MAP_NODE_TABLE, payload, ('knowledge_id', 'node_uid'))
                 stats[f"nodes_{action}"] += 1
@@ -496,6 +550,12 @@ def sync_document_map(db_path=DB_PATH):
 
         for row in claim_rows:
             payload = {key: row[key] for key in DOCUMENT_MAP_CLAIM_COLUMNS + DOCUMENT_MAP_CONTEXT_COLUMNS}
+            remote_knowledge_id = remote_knowledge_ids.get(int(row['knowledge_id']))
+            if not remote_knowledge_id:
+                stats['claims_skipped'] += 1
+                print(f"  ⚠️ claim {row['knowledge_id']}/{row['claim_uid']}: remote knowledge id not found")
+                continue
+            payload['knowledge_id'] = remote_knowledge_id
             try:
                 action = _upsert_by_key(sb, DOCUMENT_MAP_CLAIM_TABLE, payload, ('knowledge_id', 'claim_uid'))
                 stats[f"claims_{action}"] += 1
@@ -507,9 +567,11 @@ def sync_document_map(db_path=DB_PATH):
         print(f"   Nodes inserted: {stats['nodes_inserted']}")
         print(f"   Nodes updated: {stats['nodes_updated']}")
         print(f"   Nodes failed: {stats['nodes_failed']}")
+        print(f"   Nodes skipped: {stats['nodes_skipped']}")
         print(f"   Claims inserted: {stats['claims_inserted']}")
         print(f"   Claims updated: {stats['claims_updated']}")
         print(f"   Claims failed: {stats['claims_failed']}")
+        print(f"   Claims skipped: {stats['claims_skipped']}")
         return stats
     finally:
         db.close()
