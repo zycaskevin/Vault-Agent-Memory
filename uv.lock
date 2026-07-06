@@ -3043,7 +3043,7 @@ wheels = [
 
 [[package]]
 name = "vault-for-llm"
-version = "0.7.31"
+version = "0.8.0"
 source = { editable = "." }
 dependencies = [
     { name = "pyyaml" },

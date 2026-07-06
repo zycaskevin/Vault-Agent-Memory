@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## [0.8.0] - 2026-07-06
+
+### Added
+
+- Promoted the Central Memory Station foundation to the next major release
+  line for agent memory deployments.
+- Added daily-loop runtime reporting for scheduled memory automation,
+  human-review cards, candidate queue health, and remote sync status.
+- Added a pure daily-loop report refresh path so operators can rebuild the
+  latest status report without creating new candidates.
+- Added trusted-host Supabase sync handling for service-role sync workers.
+
+### Changed
+
+- Hardened Supabase Document Map sync so local SQLite knowledge IDs are
+  translated to remote Supabase UUIDs before node and claim upserts.
+- Updated remote status freshness checks so dry-run sync reports no longer
+  count as completed remote synchronization.
+- Updated public install examples, setup docs, installer defaults, and release
+  verification notes to `vault-for-llm==0.8.0`.
+
+### Validation
+
+- Live Codex private-memory runtime completed a trusted-host Supabase sync with
+  no remote status or daily-loop sync warnings.
+- Daily-loop status confirmed `pending_candidates=0`, `human_review_cards=0`,
+  and completed sync status after report refresh.
+- Fresh wheel install smoke verified `vault`, `vault-mcp`, local init/add/
+  compile/search, and report generation from a clean virtual environment.
+- Full local test suite passed: `2448 passed, 10 skipped`.
+
 ## [0.7.31] - 2026-07-05
 
 ### Added
