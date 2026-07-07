@@ -5,10 +5,57 @@ import subprocess
 import sys
 from pathlib import Path
 
-from benchmarks.external_memory_compare import answer_run, export_fixture, score_run
+from benchmarks.external_memory_compare import answer_run, export_fixture, run_mem0_comparison, score_run
 
 
 REPO_ROOT = Path(__file__).parent.parent
+
+
+class FakeMem0Memory:
+    def __init__(self):
+        self.documents = []
+        self.search_filters = []
+        self.closed = False
+
+    def reset(self):
+        self.documents = []
+
+    def add(self, messages, *, user_id=None, metadata=None, infer=True):
+        self.documents.append(
+            {
+                "messages": messages,
+                "user_id": user_id,
+                "metadata": metadata or {},
+                "infer": infer,
+            }
+        )
+
+    def search(self, query, *, top_k=20, filters=None, threshold=0.1, rerank=False, **kwargs):
+        self.search_filters.append(filters)
+        docs = self.documents
+        if filters:
+            docs = [
+                doc
+                for doc in docs
+                if all(
+                    doc["user_id"] == value if key == "user_id" else doc["metadata"].get(key) == value
+                    for key, value in filters.items()
+                )
+            ]
+        return {
+            "results": [
+                {
+                    "id": idx,
+                    "memory": doc["messages"],
+                    "metadata": doc["metadata"],
+                    "score": 1.0 / idx,
+                }
+                for idx, doc in enumerate(docs[:top_k], start=1)
+            ]
+        }
+
+    def close(self):
+        self.closed = True
 
 
 def test_external_memory_compare_scores_retrieval_answer_latency_and_engineering(tmp_path):
@@ -116,6 +163,63 @@ def test_external_memory_compare_exports_locomo_fixture(tmp_path):
     assert json.loads(fixture_path.read_text(encoding="utf-8"))["matching_rule"]["retrieval"].startswith(
         "A case is a hit"
     )
+
+
+def test_external_memory_compare_mem0_run_uses_fixture_and_case_scope(tmp_path):
+    fixture_path = tmp_path / "fixture.json"
+    run_path = tmp_path / "mem0-run.json"
+    score_path = tmp_path / "score.json"
+    fixture_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "artifact_type": "external_memory_comparison_fixture",
+                "benchmark": "toy",
+                "documents": [
+                    {
+                        "source": "toy/source/1",
+                        "title": "Right source",
+                        "content": "The brass key is in the north drawer.",
+                        "category": "case:a",
+                    },
+                    {
+                        "source": "toy/source/2",
+                        "title": "Other source",
+                        "content": "The brass key is not here.",
+                        "category": "case:b",
+                    },
+                ],
+                "cases": [
+                    {
+                        "id": "case-1",
+                        "query": "Where is the brass key?",
+                        "expected_sources": ["toy/source/1"],
+                        "expected_answer": "north drawer",
+                        "search_category": "case:a",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    fake = FakeMem0Memory()
+
+    run = run_mem0_comparison(
+        fixture_path=fixture_path,
+        output_path=run_path,
+        limit=5,
+        memory_factory=lambda: fake,
+    )
+    score = score_run(fixture_path=fixture_path, run_path=run_path, output_path=score_path)
+
+    assert run["system"] == "mem0"
+    assert fake.documents[0]["infer"] is False
+    assert fake.search_filters == [
+        {"user_id": "external-memory-comparison", "search_category": "case:a"}
+    ]
+    assert run["cases"][0]["results"][0]["source"] == "toy/source/1"
+    assert score["retrieval"]["hit_cases"] == 1
+    assert score["engineering"]["capabilities"]["audit"]["measured"] is True
 
 
 def test_external_memory_compare_answer_run_adds_final_answers(tmp_path):
