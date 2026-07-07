@@ -20,6 +20,7 @@ import os
 import re
 import statistics
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.parse
@@ -101,6 +102,9 @@ def run_vault_comparison(
     search_scope: str = "case",
     reuse_db: bool = False,
     progress_every: int = 0,
+    semantic_vector_kind: str = "claim",
+    allow_hash: bool = False,
+    hash_dim: int = 32,
 ) -> dict[str, Any]:
     report = run_external_memory_retrieval(
         benchmark=benchmark,
@@ -113,6 +117,9 @@ def run_vault_comparison(
         search_scope=search_scope,
         reuse_db=reuse_db,
         progress_every=progress_every,
+        semantic_vector_kind=semantic_vector_kind,
+        allow_hash=allow_hash,
+        hash_dim=hash_dim,
     )
     payload = {
         "schema_version": 1,
@@ -125,6 +132,9 @@ def run_vault_comparison(
         "retrieval_mode": mode,
         "granularity": granularity,
         "search_scope": search_scope,
+        "semantic_vector_kind": semantic_vector_kind,
+        "allow_hash": bool(allow_hash),
+        "hash_dim": int(hash_dim) if allow_hash else None,
         "documents_total": report.get("documents_indexed"),
         "index_latency_ms": report.get("index_latency_ms"),
         "cases_total": report["cases_total"],
@@ -141,6 +151,100 @@ def run_vault_comparison(
         "notes": [
             "Retrieval-only run artifact. It can be scored against an exported comparison fixture.",
             "No reader model was run, so final_qa metrics will be unavailable unless answers are added.",
+        ],
+    }
+    if output_path:
+        write_json(output_path, payload)
+    return payload
+
+
+def run_vault_mode_comparison(
+    *,
+    benchmark: str,
+    input_path: str | Path,
+    output_path: str | Path | None = None,
+    db_path: str | Path | None = None,
+    max_cases: int | None = None,
+    limit: int = 10,
+    modes: list[str] | tuple[str, ...] | str = ("keyword", "hybrid", "semantic"),
+    granularity: str = "session",
+    search_scope: str = "case",
+    reuse_db: bool = False,
+    progress_every: int = 0,
+    semantic_vector_kind: str = "claim",
+    allow_hash: bool = False,
+    hash_dim: int = 32,
+) -> dict[str, Any]:
+    mode_order = _normalize_retrieval_modes(modes)
+    generated_at = _utc_now()
+    with tempfile.TemporaryDirectory(prefix="vault-mode-compare-") as tmp:
+        tmp_dir = Path(tmp)
+        fixture_path = tmp_dir / "fixture.json"
+        fixture = export_fixture(
+            benchmark=benchmark,
+            input_path=input_path,
+            output_path=fixture_path,
+            max_cases=max_cases,
+            granularity=granularity,
+        )
+        shared_db = Path(db_path) if db_path else tmp_dir / "vault-mode-comparison.db"
+        runs: dict[str, dict[str, Any]] = {}
+        scores: dict[str, dict[str, Any]] = {}
+        for index, mode in enumerate(mode_order):
+            run_path = tmp_dir / f"vault-{mode}-run.json"
+            score_path = tmp_dir / f"vault-{mode}-score.json"
+            run = run_vault_comparison(
+                benchmark=benchmark,
+                input_path=input_path,
+                output_path=run_path,
+                db_path=shared_db,
+                max_cases=max_cases,
+                limit=limit,
+                mode=mode,
+                granularity=granularity,
+                search_scope=search_scope,
+                reuse_db=bool(reuse_db or index > 0),
+                progress_every=progress_every,
+                semantic_vector_kind=semantic_vector_kind,
+                allow_hash=allow_hash,
+                hash_dim=hash_dim,
+            )
+            score = score_run(fixture_path=fixture_path, run_path=run_path, output_path=score_path)
+            runs[mode] = run
+            scores[mode] = score
+    baseline_mode = mode_order[0]
+    payload = {
+        "schema_version": 1,
+        "artifact_type": "external_memory_vault_mode_comparison",
+        "generated_at": generated_at,
+        "system": "vault",
+        "system_version": _vault_version(),
+        "benchmark": benchmark,
+        "input_path": str(Path(input_path)),
+        "top_k": limit,
+        "mode_order": mode_order,
+        "baseline_mode": baseline_mode,
+        "granularity": granularity,
+        "search_scope": search_scope,
+        "semantic_vector_kind": semantic_vector_kind,
+        "allow_hash": bool(allow_hash),
+        "hash_dim": int(hash_dim) if allow_hash else None,
+        "documents_total": fixture.get("documents_total"),
+        "cases_total": fixture.get("cases_total"),
+        "aggregate_by_mode": {
+            mode: _external_mode_score_summary(score)
+            for mode, score in scores.items()
+        },
+        "comparisons_vs_baseline": _compare_external_mode_scores(
+            scores_by_mode=scores,
+            baseline_mode=baseline_mode,
+        ),
+        "runs_by_mode": runs,
+        "scores_by_mode": scores,
+        "notes": [
+            "Retrieval-only evidence matching; this is not final-answer QA or an official leaderboard score.",
+            "All modes use the same benchmark data, top-k, search scope, and exact source-id scorer.",
+            "Deterministic hash embeddings are plumbing test doubles when allow_hash is true.",
         ],
     }
     if output_path:
@@ -586,6 +690,90 @@ def _score_engineering(engineering: dict[str, Any]) -> dict[str, Any]:
         "supported_rate": round(supported / total, 6) if total else 0.0,
         "measured_rate": round(measured / total, 6) if total else 0.0,
     }
+
+
+def _normalize_retrieval_modes(modes: list[str] | tuple[str, ...] | str) -> list[str]:
+    valid = {"keyword", "semantic", "hybrid", "vector"}
+    raw = modes.split(",") if isinstance(modes, str) else modes
+    normalized: list[str] = []
+    for mode in raw:
+        text = str(mode).strip()
+        if not text:
+            continue
+        if text not in valid:
+            raise ValueError(f"unsupported retrieval mode: {text}")
+        if text not in normalized:
+            normalized.append(text)
+    if len(normalized) < 2:
+        raise ValueError("mode comparison requires at least two modes")
+    return normalized
+
+
+def _external_mode_score_summary(score: dict[str, Any]) -> dict[str, Any]:
+    retrieval = score.get("retrieval") or {}
+    latency = score.get("latency") or {}
+    index_latency = score.get("index_latency") or {}
+    return {
+        "retrieval": retrieval,
+        "latency": latency,
+        "index_latency": index_latency,
+        "engineering": {
+            "supported_count": (score.get("engineering") or {}).get("supported_count", 0),
+            "measured_count": (score.get("engineering") or {}).get("measured_count", 0),
+        },
+    }
+
+
+def _compare_external_mode_scores(
+    *,
+    scores_by_mode: dict[str, dict[str, Any]],
+    baseline_mode: str,
+) -> dict[str, Any]:
+    baseline = _external_mode_metric_values(scores_by_mode.get(baseline_mode, {}))
+    comparisons: dict[str, Any] = {}
+    for mode, score in scores_by_mode.items():
+        if mode == baseline_mode:
+            continue
+        current = _external_mode_metric_values(score)
+        comparisons[mode] = {
+            key: {
+                "baseline": baseline.get(key),
+                "current": current.get(key),
+                "delta": _numeric_delta(current.get(key), baseline.get(key)),
+            }
+            for key in sorted(set(baseline) | set(current))
+        }
+    return comparisons
+
+
+def _external_mode_metric_values(score: dict[str, Any]) -> dict[str, int | float | None]:
+    retrieval = score.get("retrieval") or {}
+    latency = score.get("latency") or {}
+    return {
+        "hit_rate": _coerce_float(retrieval.get("hit_rate")),
+        "top1_hits": _coerce_int(retrieval.get("top1_hits")),
+        "top3_hits": _coerce_int(retrieval.get("top3_hits")),
+        "top5_hits": _coerce_int(retrieval.get("top5_hits")),
+        "mean_reciprocal_rank": _coerce_float(retrieval.get("mean_reciprocal_rank")),
+        "mean_latency_ms": _coerce_float(latency.get("mean_ms")),
+        "p95_latency_ms": _coerce_float(latency.get("p95_ms")),
+    }
+
+
+def _numeric_delta(current: int | float | None, baseline: int | float | None) -> int | float | None:
+    if current is None or baseline is None:
+        return None
+    delta = current - baseline
+    if isinstance(current, int) and isinstance(baseline, int):
+        return int(delta)
+    return round(float(delta), 6)
+
+
+def _coerce_int(value: Any) -> int | None:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def _create_mem0_memory(
@@ -1052,11 +1240,30 @@ def _build_parser() -> argparse.ArgumentParser:
     vault_run.add_argument("--db-path")
     vault_run.add_argument("--max-cases", type=int)
     vault_run.add_argument("--limit", type=int, default=10)
-    vault_run.add_argument("--mode", default="keyword", choices=["keyword", "semantic", "hybrid"])
+    vault_run.add_argument("--mode", default="keyword", choices=["keyword", "semantic", "hybrid", "vector"])
     vault_run.add_argument("--granularity", default="session", choices=["session", "turn"])
     vault_run.add_argument("--search-scope", default="case", choices=["case", "global"])
     vault_run.add_argument("--reuse-db", action="store_true")
     vault_run.add_argument("--progress-every", type=int, default=0)
+    vault_run.add_argument("--semantic-vector-kind", default="claim", choices=["claim", "node"])
+    vault_run.add_argument("--allow-hash", action="store_true", help="Allow deterministic hash embeddings.")
+    vault_run.add_argument("--hash-dim", type=int, default=32)
+
+    vault_modes = subparsers.add_parser("vault-mode-compare", help="Run Vault across multiple retrieval modes.")
+    vault_modes.add_argument("--benchmark", choices=["locomo", "longmemeval"], required=True)
+    vault_modes.add_argument("--input", required=True)
+    vault_modes.add_argument("--output", required=True)
+    vault_modes.add_argument("--db-path")
+    vault_modes.add_argument("--max-cases", type=int)
+    vault_modes.add_argument("--limit", type=int, default=10)
+    vault_modes.add_argument("--modes", default="keyword,hybrid,semantic")
+    vault_modes.add_argument("--granularity", default="session", choices=["session", "turn"])
+    vault_modes.add_argument("--search-scope", default="case", choices=["case", "global"])
+    vault_modes.add_argument("--reuse-db", action="store_true")
+    vault_modes.add_argument("--progress-every", type=int, default=0)
+    vault_modes.add_argument("--semantic-vector-kind", default="claim", choices=["claim", "node"])
+    vault_modes.add_argument("--allow-hash", action="store_true", help="Allow deterministic hash embeddings.")
+    vault_modes.add_argument("--hash-dim", type=int, default=32)
 
     mem0_run = subparsers.add_parser("mem0-run", help="Run mem0 and emit a comparison run artifact.")
     mem0_run.add_argument("--fixture", required=True)
@@ -1123,6 +1330,26 @@ def main(argv: list[str] | None = None) -> int:
             search_scope=args.search_scope,
             reuse_db=args.reuse_db,
             progress_every=args.progress_every,
+            semantic_vector_kind=args.semantic_vector_kind,
+            allow_hash=args.allow_hash,
+            hash_dim=args.hash_dim,
+        )
+    elif args.command == "vault-mode-compare":
+        payload = run_vault_mode_comparison(
+            benchmark=args.benchmark,
+            input_path=args.input,
+            output_path=args.output,
+            db_path=args.db_path,
+            max_cases=args.max_cases,
+            limit=args.limit,
+            modes=args.modes,
+            granularity=args.granularity,
+            search_scope=args.search_scope,
+            reuse_db=args.reuse_db,
+            progress_every=args.progress_every,
+            semantic_vector_kind=args.semantic_vector_kind,
+            allow_hash=args.allow_hash,
+            hash_dim=args.hash_dim,
         )
     elif args.command == "mem0-run":
         payload = run_mem0_comparison(
@@ -1170,6 +1397,17 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _summary(payload: dict[str, Any]) -> dict[str, Any]:
+    if payload.get("artifact_type") == "external_memory_vault_mode_comparison":
+        return {
+            "artifact_type": payload["artifact_type"],
+            "system": payload["system"],
+            "benchmark": payload["benchmark"],
+            "top_k": payload["top_k"],
+            "mode_order": payload["mode_order"],
+            "baseline_mode": payload["baseline_mode"],
+            "aggregate_by_mode": payload["aggregate_by_mode"],
+            "comparisons_vs_baseline": payload["comparisons_vs_baseline"],
+        }
     if payload.get("artifact_type") == "external_memory_comparison_score":
         return {
             "artifact_type": payload["artifact_type"],
