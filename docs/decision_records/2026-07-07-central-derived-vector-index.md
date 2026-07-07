@@ -145,12 +145,17 @@ The first shipped surface is read-only:
 
 - `vault vector-index status --json`
 - `vault vector-index doctor --json`
+- `vault vector-index plan --json`
 
 These commands inspect the existing local `semantic_vectors` table as the first
 local derived vector index. They report provider/dimension breakdown, indexed
 row counts, stale content hashes, default-policy coverage, and shared remote-read
 risk rows such as private, high/restricted, archived, or otherwise non-default
 memory.
+
+The plan action returns metadata-only missing, stale, shared-risk, and orphan
+groups. It is a dry-run planning surface and does not include raw memory content
+or vector source text.
 
 They do not create a remote index, change ranking, expose vector search through
 Gateway / Remote Server, or allow hosted agents to write active memory.
