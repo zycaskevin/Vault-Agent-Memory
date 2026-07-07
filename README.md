@@ -10,6 +10,12 @@ notes app or vector database. It helps agents decide what should be remembered,
 who can use it, whether it is still current, and how to roll it back when it is
 wrong.
 
+The core multi-agent model is **single-host sharing, multi-host governed sync**:
+agents on one trusted machine can share the same local Vault, while agents on
+other machines or hosted runtimes can read approved memory and submit
+candidates. Only a trusted sync host promotes official memory, runs lifecycle
+jobs, and pushes reviewed read copies back out.
+
 The Python package and existing install path remain `vault-for-llm`.
 
 Vault is for people already building or working with agents. The main interface
@@ -27,6 +33,7 @@ Vault Agent Memory exists because agent memory fails in practical ways:
 - bug fixes stay buried in chat history
 - old notes outrank newer decisions
 - private observations leak into shared project memory
+- remote agents can pollute shared memory if every host can write active truth
 - teams cannot tell which memory was reviewed, trusted, or deprecated
 
 ```mermaid
@@ -81,6 +88,7 @@ flowchart TB
 | Old info fights with new decisions; agents don't know what to trust | Temporal boundaries + expiry — always surface the most current truth |
 | Sensitive info leaks everywhere; no audit trail | Governance metadata — who sees what, track every change, rollback anytime |
 | Memory is just a pile of chat logs, hard to find signal | Candidate → Review → Promote — only what's useful stays |
+| Cross-host agents write directly into one shared store | Remote agents submit candidates; a trusted sync host reviews and promotes |
 
 The core workflow is:
 
@@ -215,6 +223,10 @@ time, Letta may be the better fit. If you already use several agents and want a
 local, reviewable, auditable memory foundation between them, Vault is designed
 for that layer.
 
+That difference matters most across machines: Vault treats remote agents as
+approved-memory readers and candidate submitters, not as direct writers to the
+official shared memory.
+
 ## Benchmarks & Verification
 
 Vault does not currently claim a LoCoMo/LongMemEval-style leaderboard score.
@@ -237,6 +249,10 @@ contract:
 - **Integration smoke**: local MCP/CLI paths plus optional Supabase, Gateway,
   OpenClaw, and Coze read-only hosted-reader checks when those integrations are
   part of the release scope.
+- **Multi-host governed sync smoke**: when remote sharing changes, verify that
+  anon/scoped agents can submit candidates but cannot write active memory or
+  derived indexes, and that the trusted sync host can pull, review, promote,
+  report, and push approved read copies.
 
 See [Search QA benchmarking](docs/search_qa_benchmarking.md) and
 [External memory benchmarks](docs/external_memory_benchmarks.md) for the
@@ -489,6 +505,16 @@ vault remote-server serve --project-dir ~/Vaults/my-project --host 0.0.0.0
 Remote contributions should enter as review candidates. This is centralized
 sharing, not offline multi-master sync.
 
+The trust model is:
+
+- **same machine**: several local agents can share one Vault project through
+  local CLI, MCP, Obsidian, or Gateway surfaces;
+- **different machines or hosted agents**: use anon/scoped credentials to read
+  approved memory and submit candidates;
+- **trusted sync host**: the only place for service-role credentials, candidate
+  pull, review/promotion, Dream, archive, forgetting, reports, approved
+  read-copy sync, and future derived vector-index updates.
+
 For multi-agent or multi-device memory, use the Central Memory Station surface:
 
 ```bash
@@ -517,6 +543,7 @@ Docs:
 - [Supabase read policy](docs/supabase_read_policy.sql)
 - [Gateway security foundation](docs/decision_records/2026-07-02-gateway-security-foundation.md)
 - [Central Memory Station decision](docs/decision_records/2026-07-05-central-memory-station.md)
+- [Single-host sharing and multi-host governed sync](docs/decision_records/2026-07-08-single-host-multi-host-governed-sync.md)
 - [Central Memory Station plan](docs/plans/2026-07-05-central-memory-station-development-plan.md)
 
 ## Memory Migration

@@ -33,6 +33,19 @@ The first implementation keeps the existing safety boundary:
 - active memory is not edited as free-form multi-master state;
 - conflict handling is explicit and auditable.
 
+This is the single-host / multi-host split:
+
+- on one trusted machine, several agents can share the same local Vault project;
+- across machines or hosted runtimes, agents use anon or scoped credentials to
+  read approved memory and submit candidates;
+- only a trusted sync host with service-role/admin credentials pulls candidates,
+  reviews or promotes them, runs Dream / archive / forgetting, and pushes
+  reviewed read copies back out.
+
+See
+[Single-Host Sharing and Multi-Host Governed Sync](2026-07-08-single-host-multi-host-governed-sync.md)
+for the P0 trust boundary.
+
 The CLI should expose fewer primary commands while preserving the detailed
 commands as advanced aliases:
 
@@ -53,6 +66,10 @@ Think of the system as three boxes:
    synced, archived, and redistributed.
 3. Gateway: the door guard that decides who can read, suggest, approve, or run
    maintenance.
+
+Remote candidate inboxes are the suggestion box, not the official library
+shelf. Approved read copies and future derived vector indexes are searchable
+catalogs built from reviewed memory, not independent memory authorities.
 
 Supabase and self-hosted server should share the same behavior contract even if
 the deployment differs. Supabase is the default hosted path. Self-hosting is for

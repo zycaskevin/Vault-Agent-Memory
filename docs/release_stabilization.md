@@ -14,6 +14,7 @@ ready to become a new release.
 | Automation review UX | `automation brief`, `inbox`, and `handoff` show compact, deduped review cards and hide raw candidate content by default. |
 | Temporal memory | Search and docs explain how current, old, superseded, and valid-window facts are handled. |
 | Supabase safety | Remote-reader, RLS/RPC, and multi-Agent access examples are tested with least-privilege keys; remote map/read stays on guarded RPCs instead of direct table reads. |
+| Multi-host governed sync | Anon/scoped remote agents can submit candidates but cannot write active memory, revisions, lifecycle state, or derived vector indexes; the trusted sync host can pull, review, promote, report, and push approved read copies. |
 | Install smoke matrix | Source checkout and clean wheel install both validate CLI, MCP stdio, setup-agent, automation, migration, and key integrations. |
 
 ## Current Stabilization Evidence
@@ -113,6 +114,10 @@ Run these when the release touches the relevant area:
 - `vault setup-agent` generated artifact validation.
 - Obsidian import/export dry-run and one real import.
 - Supabase remote reader and RLS/RPC validation.
+- Multi-host governed-sync validation: anon/scoped candidate submission,
+  active-write denial, trusted-host candidate pull, promotion through local
+  gates, approved read-copy push, and confirmation that candidate content does
+  not enter normal remote search or shared vector search before promotion.
 - Semantic index smoke with hash provider and, when available, one real embedding provider.
 - Migration smoke against an older `vault.db` fixture.
 
