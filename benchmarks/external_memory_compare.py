@@ -142,6 +142,71 @@ def run_vault_comparison(
     return payload
 
 
+def run_mem0_comparison(
+    *,
+    fixture_path: str | Path,
+    output_path: str | Path | None = None,
+    limit: int = 10,
+    search_scope: str = "case",
+    vector_store_path: str | Path = "/tmp/mem0-comparison-qdrant",
+    collection_name: str = "external_memory_comparison",
+    embedder: str = "fastembed",
+    embedding_dims: int | None = None,
+    llm_provider: str = "ollama",
+    threshold: float = 0.0,
+    memory_factory: Any | None = None,
+) -> dict[str, Any]:
+    if search_scope not in {"case", "global"}:
+        raise ValueError(f"unsupported search scope: {search_scope}")
+    fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
+    memory = memory_factory() if memory_factory else _create_mem0_memory(
+        vector_store_path=vector_store_path,
+        collection_name=collection_name,
+        embedder=embedder,
+        embedding_dims=embedding_dims,
+        llm_provider=llm_provider,
+    )
+    try:
+        _reset_memory(memory)
+        _index_mem0_documents(memory, fixture.get("documents", []))
+        cases = [
+            _search_mem0_case(
+                memory=memory,
+                case=case,
+                limit=limit,
+                search_scope=search_scope,
+                threshold=threshold,
+            )
+            for case in fixture.get("cases", [])
+        ]
+    finally:
+        close = getattr(memory, "close", None)
+        if callable(close):
+            close()
+    payload = {
+        "schema_version": 1,
+        "artifact_type": "external_memory_comparison_run",
+        "generated_at": _utc_now(),
+        "system": "mem0",
+        "system_version": _module_version("mem0"),
+        "benchmark": fixture.get("benchmark"),
+        "top_k": limit,
+        "retrieval_mode": f"mem0:{embedder}",
+        "llm_provider": llm_provider,
+        "search_scope": search_scope,
+        "cases_total": len(cases),
+        "cases": cases,
+        "engineering": _mem0_engineering_profile(),
+        "notes": [
+            "mem0 adapter run artifact. Score with score-run against the same fixture.",
+            "Documents are inserted with infer=False so retrieval-only runs do not require an LLM extraction pass.",
+        ],
+    }
+    if output_path:
+        write_json(output_path, payload)
+    return payload
+
+
 def score_run(
     *,
     fixture_path: str | Path,
@@ -429,6 +494,126 @@ def _score_engineering(engineering: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _create_mem0_memory(
+    *,
+    vector_store_path: str | Path,
+    collection_name: str,
+    embedder: str,
+    embedding_dims: int | None,
+    llm_provider: str,
+):
+    try:
+        from mem0 import Memory
+    except ImportError as exc:
+        raise RuntimeError(
+            "mem0 adapter requires the optional mem0ai package. "
+            "Install it in an isolated environment before running mem0-run."
+        ) from exc
+
+    dims = embedding_dims or (1536 if embedder == "openai" else 1024)
+    config = {
+        "vector_store": {
+            "provider": "qdrant",
+            "config": {
+                "path": str(vector_store_path),
+                "collection_name": collection_name,
+                "embedding_model_dims": dims,
+            },
+        },
+        "embedder": {
+            "provider": embedder,
+            "config": {},
+        },
+        "llm": {
+            "provider": llm_provider,
+            "config": {},
+        },
+    }
+    return Memory.from_config(config)
+
+
+def _reset_memory(memory: Any) -> None:
+    reset = getattr(memory, "reset", None)
+    if callable(reset):
+        reset()
+        return
+    delete_all = getattr(memory, "delete_all", None)
+    if callable(delete_all):
+        delete_all()
+
+
+def _index_mem0_documents(memory: Any, documents: list[dict[str, Any]]) -> None:
+    for document in documents:
+        metadata = {
+            "source": document.get("source", ""),
+            "title": document.get("title", ""),
+            "search_category": document.get("category", ""),
+            "tags": document.get("tags", ""),
+        }
+        memory.add(
+            str(document.get("content") or ""),
+            user_id="external-memory-comparison",
+            metadata=metadata,
+            infer=False,
+        )
+
+
+def _search_mem0_case(
+    *,
+    memory: Any,
+    case: dict[str, Any],
+    limit: int,
+    search_scope: str,
+    threshold: float,
+) -> dict[str, Any]:
+    filters = {"user_id": "external-memory-comparison"}
+    if search_scope == "case":
+        filters["search_category"] = str(case.get("search_category") or "")
+    start = time.perf_counter()
+    raw = memory.search(
+        str(case.get("query") or ""),
+        top_k=limit,
+        filters=filters,
+        threshold=threshold,
+        rerank=False,
+    )
+    latency_ms = round((time.perf_counter() - start) * 1000, 3)
+    return {
+        "id": case.get("id"),
+        "query": case.get("query", ""),
+        "latency_ms": latency_ms,
+        "results": _normalize_mem0_results(raw),
+    }
+
+
+def _normalize_mem0_results(raw: Any) -> list[dict[str, Any]]:
+    if isinstance(raw, dict):
+        candidates = raw.get("results") or raw.get("memories") or []
+    elif isinstance(raw, list):
+        candidates = raw
+    else:
+        candidates = []
+    results: list[dict[str, Any]] = []
+    for index, item in enumerate(candidates, start=1):
+        if not isinstance(item, dict):
+            continue
+        metadata = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
+        source = str(item.get("source") or metadata.get("source") or "")
+        title = str(item.get("title") or metadata.get("title") or "")
+        content = str(item.get("memory") or item.get("content") or item.get("text") or "")
+        results.append(
+            {
+                "rank": index,
+                "id": item.get("id"),
+                "title": title,
+                "source": source,
+                "score": item.get("score"),
+                "content": content,
+            }
+        )
+    return results
+
+
 def _create_reader_provider(
     *,
     llm_provider: str,
@@ -513,6 +698,36 @@ def _vault_engineering_profile() -> dict[str, Any]:
     }
 
 
+def _mem0_engineering_profile() -> dict[str, Any]:
+    return {
+        "local_first": {
+            "supported": True,
+            "measured": True,
+            "evidence": "Adapter config uses a local Qdrant vector-store path by default.",
+        },
+        "multi_agent_shared_memory": {
+            "supported": True,
+            "measured": False,
+            "evidence": "mem0 supports user/agent/run ids; shared multi-agent install wiring is not measured here.",
+        },
+        "sync": {
+            "supported": False,
+            "measured": False,
+            "evidence": "No sync surface is exercised by this local adapter.",
+        },
+        "report": {
+            "supported": False,
+            "measured": False,
+            "evidence": "No daily report surface is exercised by this local adapter.",
+        },
+        "audit": {
+            "supported": True,
+            "measured": True,
+            "evidence": "Adapter preserves benchmark source ids in mem0 metadata and output results.",
+        },
+    }
+
+
 def _normalize_answer(value: str) -> str:
     normalized = value.lower()
     normalized = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", " ", normalized)
@@ -553,6 +768,15 @@ def _vault_version() -> str:
         return ""
 
 
+def _module_version(module_name: str) -> str:
+    try:
+        from importlib import metadata
+
+        return metadata.version(module_name)
+    except Exception:
+        return ""
+
+
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
@@ -580,6 +804,18 @@ def _build_parser() -> argparse.ArgumentParser:
     vault_run.add_argument("--search-scope", default="case", choices=["case", "global"])
     vault_run.add_argument("--reuse-db", action="store_true")
     vault_run.add_argument("--progress-every", type=int, default=0)
+
+    mem0_run = subparsers.add_parser("mem0-run", help="Run mem0 and emit a comparison run artifact.")
+    mem0_run.add_argument("--fixture", required=True)
+    mem0_run.add_argument("--output", required=True)
+    mem0_run.add_argument("--limit", type=int, default=10)
+    mem0_run.add_argument("--search-scope", default="case", choices=["case", "global"])
+    mem0_run.add_argument("--vector-store-path", default="/tmp/mem0-comparison-qdrant")
+    mem0_run.add_argument("--collection-name", default="external_memory_comparison")
+    mem0_run.add_argument("--embedder", default="fastembed", choices=["fastembed", "openai", "ollama"])
+    mem0_run.add_argument("--embedding-dims", type=int)
+    mem0_run.add_argument("--llm-provider", default="ollama", choices=["ollama", "openai", "anthropic"])
+    mem0_run.add_argument("--threshold", type=float, default=0.0)
 
     score = subparsers.add_parser("score-run", help="Score a comparison run artifact against a fixture.")
     score.add_argument("--fixture", required=True)
@@ -624,6 +860,19 @@ def main(argv: list[str] | None = None) -> int:
             search_scope=args.search_scope,
             reuse_db=args.reuse_db,
             progress_every=args.progress_every,
+        )
+    elif args.command == "mem0-run":
+        payload = run_mem0_comparison(
+            fixture_path=args.fixture,
+            output_path=args.output,
+            limit=args.limit,
+            search_scope=args.search_scope,
+            vector_store_path=args.vector_store_path,
+            collection_name=args.collection_name,
+            embedder=args.embedder,
+            embedding_dims=args.embedding_dims,
+            llm_provider=args.llm_provider,
+            threshold=args.threshold,
         )
     elif args.command == "score-run":
         payload = score_run(fixture_path=args.fixture, run_path=args.run, output_path=args.output)

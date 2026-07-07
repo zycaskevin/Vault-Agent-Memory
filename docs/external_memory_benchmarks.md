@@ -140,6 +140,29 @@ python benchmarks/external_memory_compare.py vault-run \
   --output /tmp/vault-longmemeval-run.json
 ```
 
+Run mem0 into the same run-artifact schema:
+
+```bash
+python benchmarks/external_memory_compare.py mem0-run \
+  --fixture /tmp/longmemeval-fixture.json \
+  --limit 10 \
+  --embedder fastembed \
+  --vector-store-path /tmp/mem0-longmemeval-qdrant \
+  --output /tmp/mem0-longmemeval-run.json
+```
+
+The mem0 adapter is optional and requires the `mem0ai` package. It inserts
+fixture documents with `infer=False` for retrieval-only comparison so an LLM
+memory-extraction pass is not mixed into evidence recall. The adapter preserves
+benchmark `source` ids in metadata and uses the same case/global search-scope
+contract as the Vault adapter. Pin the embedder and vector-store settings before
+publishing numbers. For the current mem0 SDK, `--embedder fastembed` requires
+the separate `fastembed` package and defaults to 1024 embedding dimensions for
+the SDK's default `thenlper/gte-large` model; override with `--embedding-dims`
+when using a different embedder model. Retrieval-only runs still initialize a
+mem0 LLM provider, so the local smoke path uses `--llm-provider ollama` and
+requires the `ollama` Python package even when `infer=False`.
+
 Generate final answers from the same retrieved evidence with a fixed reader:
 
 ```bash
@@ -264,6 +287,7 @@ custom memory-store adapters because the scorer is independent from Vault.
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|
 | Vault | LoCoMo | 1,982 | 10 | 0.609485 | 554 | 1,016 | 0.377273 | 6.898 ms | 14.445 ms | not run | 5 / 1 |
 | Vault | LongMemEval small | 500 | 10 | 0.988 | 361 | 462 | 0.812902 | 84.010 ms | 178.797 ms | not run | 5 / 1 |
+| mem0 | LoCoMo one-case smoke | 1 | 3 | 1.0 | 1 | 1 | 1.0 | 389.316 ms | 389.316 ms | not run | 3 / 2 |
 
 `Engineering supported/measured` counts the local-first, multi-agent shared
 memory, sync, report, and audit fields in the run artifact. The Vault comparison
@@ -271,6 +295,11 @@ run directly measures local-first retrieval. Shared-memory setup, sync,
 reporting, and audit workflows are declared as supported but should be measured
 with separate install/runtime probes before being used in public comparison
 claims.
+
+The mem0 row is an adapter smoke, not a benchmark baseline: it uses one LoCoMo
+QA case, local Qdrant, fastembed, and the mem0 SDK's retrieval path. Full mem0
+numbers should be run on the same full fixtures as Vault after pinning SDK,
+embedder, vector-store, and LLM-provider versions.
 
 ## References
 
