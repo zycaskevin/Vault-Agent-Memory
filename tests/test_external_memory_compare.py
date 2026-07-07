@@ -1,0 +1,212 @@
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+from benchmarks.external_memory_compare import export_fixture, score_run
+
+
+REPO_ROOT = Path(__file__).parent.parent
+
+
+def test_external_memory_compare_scores_retrieval_answer_latency_and_engineering(tmp_path):
+    fixture_path = tmp_path / "fixture.json"
+    run_path = tmp_path / "run.json"
+    score_path = tmp_path / "score.json"
+    fixture = {
+        "schema_version": 1,
+        "artifact_type": "external_memory_comparison_fixture",
+        "benchmark": "toy",
+        "cases": [
+            {
+                "id": "case-1",
+                "query": "Where is the blue ticket?",
+                "expected_sources": ["toy/source/1"],
+                "expected_answer": "blue drawer",
+            }
+        ],
+    }
+    run = {
+        "schema_version": 1,
+        "artifact_type": "external_memory_comparison_run",
+        "system": "example-memory",
+        "system_version": "1.2.3",
+        "benchmark": "toy",
+        "top_k": 3,
+        "cases": [
+            {
+                "id": "case-1",
+                "latency_ms": 12.5,
+                "answer": "The blue ticket is in the blue drawer.",
+                "results": [
+                    {"rank": 1, "source": "toy/source/other"},
+                    {"rank": 2, "source": "toy/source/1"},
+                ],
+            }
+        ],
+        "engineering": {
+            "local_first": {"supported": True, "measured": True, "evidence": "local sqlite"},
+            "multi_agent_shared_memory": True,
+            "sync": False,
+            "report": False,
+            "audit": True,
+        },
+    }
+    fixture_path.write_text(json.dumps(fixture), encoding="utf-8")
+    run_path.write_text(json.dumps(run), encoding="utf-8")
+
+    result = score_run(fixture_path=fixture_path, run_path=run_path, output_path=score_path)
+
+    assert result["system"] == "example-memory"
+    assert result["retrieval"]["hit_cases"] == 1
+    assert result["retrieval"]["top3_hits"] == 1
+    assert result["retrieval"]["mean_reciprocal_rank"] == 0.5
+    assert result["final_qa"]["available"] is True
+    assert result["final_qa"]["normalized_contains_expected_rate"] == 1.0
+    assert result["latency"]["mean_ms"] == 12.5
+    assert result["engineering"]["supported_count"] == 3
+    assert result["engineering"]["measured_count"] == 1
+    assert json.loads(score_path.read_text(encoding="utf-8"))["artifact_type"] == "external_memory_comparison_score"
+
+
+def test_external_memory_compare_exports_locomo_fixture(tmp_path):
+    data_path = tmp_path / "locomo.json"
+    fixture_path = tmp_path / "fixture.json"
+    data_path.write_text(
+        json.dumps(
+            [
+                {
+                    "sample_id": "sample-1",
+                    "conversation": {
+                        "speaker_a": "Angela",
+                        "session_1": [
+                            {
+                                "speaker": "speaker_a",
+                                "dia_id": "D1",
+                                "text": "I hid a silver key below the orchid pot.",
+                            }
+                        ],
+                    },
+                    "qa": [
+                        {
+                            "question": "Where is the silver key?",
+                            "answer": "Below the orchid pot.",
+                            "evidence": ["D1"],
+                        }
+                    ],
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    fixture = export_fixture(
+        benchmark="locomo",
+        input_path=data_path,
+        output_path=fixture_path,
+    )
+
+    assert fixture["documents_total"] == 1
+    assert fixture["cases_total"] == 1
+    assert fixture["cases"][0]["expected_sources"] == ["locomo/sample-1/dia/D1"]
+    assert fixture["cases"][0]["expected_answer"] == "Below the orchid pot."
+    assert json.loads(fixture_path.read_text(encoding="utf-8"))["matching_rule"]["retrieval"].startswith(
+        "A case is a hit"
+    )
+
+
+def test_external_memory_compare_cli_vault_run_and_score(tmp_path):
+    data_path = tmp_path / "longmemeval.json"
+    fixture_path = tmp_path / "fixture.json"
+    run_path = tmp_path / "vault-run.json"
+    score_path = tmp_path / "score.json"
+    data_path.write_text(
+        json.dumps(
+            [
+                {
+                    "question_id": "q1",
+                    "question": "Which cabinet stores the amber notebook?",
+                    "answer": "The west cabinet.",
+                    "haystack_session_ids": ["s1"],
+                    "haystack_sessions": [
+                        [
+                            {
+                                "role": "user",
+                                "content": "I stored the amber notebook in the west cabinet.",
+                                "has_answer": True,
+                            }
+                        ]
+                    ],
+                    "answer_session_ids": ["s1"],
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    fixture_result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "benchmarks" / "external_memory_compare.py"),
+            "export-fixture",
+            "--benchmark",
+            "longmemeval",
+            "--input",
+            str(data_path),
+            "--output",
+            str(fixture_path),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+    assert fixture_result.returncode == 0, fixture_result.stderr
+
+    run_result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "benchmarks" / "external_memory_compare.py"),
+            "vault-run",
+            "--benchmark",
+            "longmemeval",
+            "--input",
+            str(data_path),
+            "--output",
+            str(run_path),
+            "--limit",
+            "3",
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+    assert run_result.returncode == 0, run_result.stderr
+
+    score_result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "benchmarks" / "external_memory_compare.py"),
+            "score-run",
+            "--fixture",
+            str(fixture_path),
+            "--run",
+            str(run_path),
+            "--output",
+            str(score_path),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+    assert score_result.returncode == 0, score_result.stderr
+    score = json.loads(score_path.read_text(encoding="utf-8"))
+    assert score["system"] == "vault"
+    assert score["retrieval"]["hit_cases"] == 1
+    assert score["final_qa"]["available"] is False
+    assert score["latency"]["available"] is True
+    assert score["engineering"]["capabilities"]["local_first"]["measured"] is True

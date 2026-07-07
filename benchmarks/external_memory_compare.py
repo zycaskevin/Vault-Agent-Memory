@@ -1,0 +1,518 @@
+"""Comparison harness for external long-term memory systems.
+
+The harness keeps benchmark fairness outside any one memory implementation:
+
+1. Export a neutral fixture from LoCoMo or LongMemEval.
+2. Ask each system adapter to return the same run-artifact schema.
+3. Score retrieval evidence recall, final-answer fields, latency, and declared
+   engineering capabilities with one shared scorer.
+
+The final-answer scorer is intentionally lightweight and non-official. Official
+LoCoMo / LongMemEval QA scores still require the benchmark-specific reader and
+judge pipeline.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import statistics
+import sys
+from collections import Counter
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(REPO_ROOT))
+
+from benchmarks.external_memory_retrieval import (  # noqa: E402
+    ExternalCase,
+    ExternalDocument,
+    _load_locomo,
+    _load_longmemeval,
+    _percentile,
+    run_external_memory_retrieval,
+)
+from vault.search_qa import write_json  # noqa: E402
+
+
+ENGINEERING_CAPABILITIES = (
+    "local_first",
+    "multi_agent_shared_memory",
+    "sync",
+    "report",
+    "audit",
+)
+
+
+def export_fixture(
+    *,
+    benchmark: str,
+    input_path: str | Path,
+    output_path: str | Path | None = None,
+    max_cases: int | None = None,
+    granularity: str = "session",
+) -> dict[str, Any]:
+    documents, cases = _load_benchmark(
+        benchmark=benchmark,
+        input_path=input_path,
+        max_cases=max_cases,
+        granularity=granularity,
+    )
+    payload = {
+        "schema_version": 1,
+        "artifact_type": "external_memory_comparison_fixture",
+        "generated_at": _utc_now(),
+        "benchmark": benchmark,
+        "input_path": str(Path(input_path)),
+        "granularity": granularity,
+        "documents_total": len(documents),
+        "cases_total": len(cases),
+        "documents": [_document_to_payload(doc) for doc in documents],
+        "cases": [_case_to_payload(case) for case in cases],
+        "matching_rule": {
+            "retrieval": "A case is a hit when any returned result.source exactly equals any expected_sources value.",
+            "final_qa": "Non-official normalized exact/contains/token-F1 answer metrics.",
+        },
+    }
+    if output_path:
+        write_json(output_path, payload)
+    return payload
+
+
+def run_vault_comparison(
+    *,
+    benchmark: str,
+    input_path: str | Path,
+    output_path: str | Path | None = None,
+    db_path: str | Path | None = None,
+    max_cases: int | None = None,
+    limit: int = 10,
+    mode: str = "keyword",
+    granularity: str = "session",
+    search_scope: str = "case",
+    reuse_db: bool = False,
+    progress_every: int = 0,
+) -> dict[str, Any]:
+    report = run_external_memory_retrieval(
+        benchmark=benchmark,
+        input_path=input_path,
+        db_path=db_path,
+        max_cases=max_cases,
+        limit=limit,
+        mode=mode,
+        granularity=granularity,
+        search_scope=search_scope,
+        reuse_db=reuse_db,
+        progress_every=progress_every,
+    )
+    payload = {
+        "schema_version": 1,
+        "artifact_type": "external_memory_comparison_run",
+        "generated_at": _utc_now(),
+        "system": "vault",
+        "system_version": _vault_version(),
+        "benchmark": benchmark,
+        "top_k": limit,
+        "retrieval_mode": mode,
+        "granularity": granularity,
+        "search_scope": search_scope,
+        "cases_total": report["cases_total"],
+        "cases": [
+            {
+                "id": case["id"],
+                "query": case["query"],
+                "latency_ms": case["latency_ms"],
+                "results": case["results"],
+            }
+            for case in report["cases"]
+        ],
+        "engineering": _vault_engineering_profile(),
+        "notes": [
+            "Retrieval-only run artifact. It can be scored against an exported comparison fixture.",
+            "No reader model was run, so final_qa metrics will be unavailable unless answers are added.",
+        ],
+    }
+    if output_path:
+        write_json(output_path, payload)
+    return payload
+
+
+def score_run(
+    *,
+    fixture_path: str | Path,
+    run_path: str | Path,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
+    run = json.loads(Path(run_path).read_text(encoding="utf-8"))
+    fixture_cases = {str(case["id"]): case for case in fixture.get("cases", [])}
+    run_cases = {str(case.get("id")): case for case in run.get("cases", [])}
+    scored_cases: list[dict[str, Any]] = []
+    answer_cases: list[dict[str, Any]] = []
+
+    for case_id, fixture_case in fixture_cases.items():
+        run_case = run_cases.get(case_id, {})
+        retrieval = _score_retrieval_case(fixture_case, run_case)
+        final_qa = _score_answer_case(fixture_case, run_case)
+        payload = {
+            "id": case_id,
+            "retrieval": retrieval,
+            "latency_ms": _coerce_float(run_case.get("latency_ms")),
+        }
+        if final_qa is not None:
+            payload["final_qa"] = final_qa
+            answer_cases.append(final_qa)
+        scored_cases.append(payload)
+
+    result = {
+        "schema_version": 1,
+        "artifact_type": "external_memory_comparison_score",
+        "generated_at": _utc_now(),
+        "benchmark": fixture.get("benchmark"),
+        "system": run.get("system", "unknown"),
+        "system_version": run.get("system_version", ""),
+        "top_k": run.get("top_k"),
+        "cases_total": len(fixture_cases),
+        "cases_scored": len(scored_cases),
+        "retrieval": _aggregate_retrieval([case["retrieval"] for case in scored_cases]),
+        "final_qa": _aggregate_final_qa(answer_cases),
+        "latency": _aggregate_latency([case["latency_ms"] for case in scored_cases]),
+        "engineering": _score_engineering(run.get("engineering", {})),
+        "cases": scored_cases,
+        "notes": [
+            "Retrieval metrics use exact source-id evidence matching.",
+            "Final QA metrics are non-official normalized answer metrics and should not be reported as leaderboard scores.",
+        ],
+    }
+    if output_path:
+        write_json(output_path, result)
+    return result
+
+
+def _load_benchmark(
+    *,
+    benchmark: str,
+    input_path: str | Path,
+    max_cases: int | None,
+    granularity: str,
+) -> tuple[list[ExternalDocument], list[ExternalCase]]:
+    data = json.loads(Path(input_path).read_text(encoding="utf-8"))
+    if benchmark == "locomo":
+        return _load_locomo(data, max_cases=max_cases)
+    if benchmark == "longmemeval":
+        return _load_longmemeval(data, max_cases=max_cases, granularity=granularity)
+    raise ValueError(f"unsupported benchmark: {benchmark}")
+
+
+def _document_to_payload(doc: ExternalDocument) -> dict[str, Any]:
+    return {
+        "title": doc.title,
+        "content": doc.content,
+        "source": doc.source,
+        "category": doc.category,
+        "tags": doc.tags,
+    }
+
+
+def _case_to_payload(case: ExternalCase) -> dict[str, Any]:
+    return {
+        "id": case.case_id,
+        "query": case.query,
+        "expected_sources": list(case.expected_sources),
+        "expected_answer": str(case.metadata.get("answer") or ""),
+        "search_category": case.category,
+        "metadata": case.metadata,
+    }
+
+
+def _score_retrieval_case(fixture_case: dict[str, Any], run_case: dict[str, Any]) -> dict[str, Any]:
+    expected = {str(source) for source in fixture_case.get("expected_sources", [])}
+    ranked = run_case.get("results", [])
+    hit_rank = None
+    returned_sources: list[str] = []
+    for index, result in enumerate(ranked, start=1):
+        if not isinstance(result, dict):
+            continue
+        source = str(result.get("source") or "")
+        returned_sources.append(source)
+        if source in expected and hit_rank is None:
+            hit_rank = index
+    return {
+        "expected_sources": sorted(expected),
+        "returned_sources": returned_sources,
+        "hit": hit_rank is not None,
+        "hit_rank": hit_rank,
+        "reciprocal_rank": 0.0 if hit_rank is None else round(1.0 / hit_rank, 6),
+    }
+
+
+def _score_answer_case(fixture_case: dict[str, Any], run_case: dict[str, Any]) -> dict[str, Any] | None:
+    expected = str(fixture_case.get("expected_answer") or "")
+    predicted = str(run_case.get("answer") or "")
+    if not expected or not predicted:
+        return None
+    expected_norm = _normalize_answer(expected)
+    predicted_norm = _normalize_answer(predicted)
+    return {
+        "expected_answer": expected,
+        "predicted_answer": predicted,
+        "normalized_exact_match": expected_norm == predicted_norm,
+        "normalized_contains_expected": bool(expected_norm and expected_norm in predicted_norm),
+        "token_f1": _token_f1(expected_norm, predicted_norm),
+    }
+
+
+def _aggregate_retrieval(items: list[dict[str, Any]]) -> dict[str, Any]:
+    total = len(items)
+    hits = [item for item in items if item.get("hit")]
+    ranks = [int(item["hit_rank"]) for item in hits if item.get("hit_rank")]
+    return {
+        "total_cases": total,
+        "hit_cases": len(hits),
+        "hit_rate": round(len(hits) / total, 6) if total else 0.0,
+        "top1_hits": sum(1 for rank in ranks if rank == 1),
+        "top3_hits": sum(1 for rank in ranks if rank <= 3),
+        "top5_hits": sum(1 for rank in ranks if rank <= 5),
+        "mean_reciprocal_rank": round(
+            sum(float(item.get("reciprocal_rank", 0.0)) for item in items) / total,
+            6,
+        )
+        if total
+        else 0.0,
+    }
+
+
+def _aggregate_final_qa(items: list[dict[str, Any]]) -> dict[str, Any]:
+    total = len(items)
+    if not total:
+        return {
+            "available": False,
+            "answered_cases": 0,
+            "normalized_exact_match_rate": None,
+            "normalized_contains_expected_rate": None,
+            "mean_token_f1": None,
+        }
+    return {
+        "available": True,
+        "answered_cases": total,
+        "normalized_exact_match_rate": round(
+            sum(1 for item in items if item.get("normalized_exact_match")) / total,
+            6,
+        ),
+        "normalized_contains_expected_rate": round(
+            sum(1 for item in items if item.get("normalized_contains_expected")) / total,
+            6,
+        ),
+        "mean_token_f1": round(statistics.mean(float(item.get("token_f1", 0.0)) for item in items), 6),
+    }
+
+
+def _aggregate_latency(values: list[float | None]) -> dict[str, Any]:
+    latencies = [value for value in values if value is not None]
+    if not latencies:
+        return {"available": False, "mean_ms": None, "p50_ms": None, "p95_ms": None, "max_ms": None}
+    return {
+        "available": True,
+        "mean_ms": round(statistics.mean(latencies), 3),
+        "p50_ms": round(statistics.median(latencies), 3),
+        "p95_ms": round(_percentile(latencies, 0.95), 3),
+        "max_ms": round(max(latencies), 3),
+    }
+
+
+def _score_engineering(engineering: dict[str, Any]) -> dict[str, Any]:
+    capabilities: dict[str, Any] = {}
+    supported = 0
+    measured = 0
+    for capability in ENGINEERING_CAPABILITIES:
+        raw = engineering.get(capability, {})
+        if isinstance(raw, bool):
+            item = {"supported": raw, "measured": False, "evidence": ""}
+        elif isinstance(raw, dict):
+            item = {
+                "supported": bool(raw.get("supported")),
+                "measured": bool(raw.get("measured")),
+                "evidence": str(raw.get("evidence") or ""),
+            }
+        else:
+            item = {"supported": False, "measured": False, "evidence": ""}
+        supported += 1 if item["supported"] else 0
+        measured += 1 if item["measured"] else 0
+        capabilities[capability] = item
+    total = len(ENGINEERING_CAPABILITIES)
+    return {
+        "capabilities": capabilities,
+        "supported_count": supported,
+        "measured_count": measured,
+        "supported_rate": round(supported / total, 6) if total else 0.0,
+        "measured_rate": round(measured / total, 6) if total else 0.0,
+    }
+
+
+def _vault_engineering_profile() -> dict[str, Any]:
+    return {
+        "local_first": {
+            "supported": True,
+            "measured": True,
+            "evidence": "Vault comparison run indexes and searches a local SQLite database.",
+        },
+        "multi_agent_shared_memory": {
+            "supported": True,
+            "measured": False,
+            "evidence": "Vault supports shared-scope agent setup; run an install smoke to measure this end-to-end.",
+        },
+        "sync": {
+            "supported": True,
+            "measured": False,
+            "evidence": "Vault includes Supabase sync surfaces; this retrieval run does not exercise remote sync.",
+        },
+        "report": {
+            "supported": True,
+            "measured": False,
+            "evidence": "Vault includes daily-loop report surfaces; this retrieval run does not rebuild a daily report.",
+        },
+        "audit": {
+            "supported": True,
+            "measured": False,
+            "evidence": "Vault stores source ids and review/audit metadata; this run measures evidence source ids.",
+        },
+    }
+
+
+def _normalize_answer(value: str) -> str:
+    normalized = value.lower()
+    normalized = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", " ", normalized)
+    return " ".join(normalized.split())
+
+
+def _token_f1(expected: str, predicted: str) -> float:
+    expected_tokens = expected.split()
+    predicted_tokens = predicted.split()
+    if not expected_tokens and not predicted_tokens:
+        return 1.0
+    if not expected_tokens or not predicted_tokens:
+        return 0.0
+    common = Counter(expected_tokens) & Counter(predicted_tokens)
+    overlap = sum(common.values())
+    if overlap == 0:
+        return 0.0
+    precision = overlap / len(predicted_tokens)
+    recall = overlap / len(expected_tokens)
+    return round(2 * precision * recall / (precision + recall), 6)
+
+
+def _coerce_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _vault_version() -> str:
+    try:
+        import vault
+
+        return str(getattr(vault, "__version__", ""))
+    except Exception:
+        return ""
+
+
+def _utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description="Run fair comparison scoring for external memory systems.")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    fixture = subparsers.add_parser("export-fixture", help="Export a neutral benchmark fixture.")
+    fixture.add_argument("--benchmark", choices=["locomo", "longmemeval"], required=True)
+    fixture.add_argument("--input", required=True)
+    fixture.add_argument("--output", required=True)
+    fixture.add_argument("--max-cases", type=int)
+    fixture.add_argument("--granularity", default="session", choices=["session", "turn"])
+
+    vault_run = subparsers.add_parser("vault-run", help="Run Vault and emit a comparison run artifact.")
+    vault_run.add_argument("--benchmark", choices=["locomo", "longmemeval"], required=True)
+    vault_run.add_argument("--input", required=True)
+    vault_run.add_argument("--output", required=True)
+    vault_run.add_argument("--db-path")
+    vault_run.add_argument("--max-cases", type=int)
+    vault_run.add_argument("--limit", type=int, default=10)
+    vault_run.add_argument("--mode", default="keyword", choices=["keyword", "semantic", "hybrid"])
+    vault_run.add_argument("--granularity", default="session", choices=["session", "turn"])
+    vault_run.add_argument("--search-scope", default="case", choices=["case", "global"])
+    vault_run.add_argument("--reuse-db", action="store_true")
+    vault_run.add_argument("--progress-every", type=int, default=0)
+
+    score = subparsers.add_parser("score-run", help="Score a comparison run artifact against a fixture.")
+    score.add_argument("--fixture", required=True)
+    score.add_argument("--run", required=True)
+    score.add_argument("--output", required=True)
+
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _build_parser().parse_args(argv)
+    if args.command == "export-fixture":
+        payload = export_fixture(
+            benchmark=args.benchmark,
+            input_path=args.input,
+            output_path=args.output,
+            max_cases=args.max_cases,
+            granularity=args.granularity,
+        )
+    elif args.command == "vault-run":
+        payload = run_vault_comparison(
+            benchmark=args.benchmark,
+            input_path=args.input,
+            output_path=args.output,
+            db_path=args.db_path,
+            max_cases=args.max_cases,
+            limit=args.limit,
+            mode=args.mode,
+            granularity=args.granularity,
+            search_scope=args.search_scope,
+            reuse_db=args.reuse_db,
+            progress_every=args.progress_every,
+        )
+    elif args.command == "score-run":
+        payload = score_run(fixture_path=args.fixture, run_path=args.run, output_path=args.output)
+    else:
+        raise ValueError(f"unsupported command: {args.command}")
+    print(json.dumps(_summary(payload), ensure_ascii=False, indent=2, sort_keys=True))
+    return 0
+
+
+def _summary(payload: dict[str, Any]) -> dict[str, Any]:
+    if payload.get("artifact_type") == "external_memory_comparison_score":
+        return {
+            "artifact_type": payload["artifact_type"],
+            "system": payload["system"],
+            "benchmark": payload["benchmark"],
+            "retrieval": payload["retrieval"],
+            "final_qa": payload["final_qa"],
+            "latency": payload["latency"],
+            "engineering": {
+                "supported_count": payload["engineering"]["supported_count"],
+                "measured_count": payload["engineering"]["measured_count"],
+            },
+        }
+    return {
+        "artifact_type": payload.get("artifact_type"),
+        "benchmark": payload.get("benchmark"),
+        "cases_total": payload.get("cases_total"),
+        "documents_total": payload.get("documents_total"),
+        "system": payload.get("system"),
+    }
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

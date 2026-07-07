@@ -101,6 +101,88 @@ python benchmarks/external_memory_retrieval.py \
   --output /tmp/vault-longmemeval-turn-retrieval.json
 ```
 
+## Fair System Comparison Harness
+
+Use `benchmarks/external_memory_compare.py` when comparing Vault with other
+memory systems such as mem0, Letta, MemGPT-style agents, or custom RAG memory
+stores. The harness separates the benchmark data, system adapter, scorer, and
+engineering capability report so every system can be measured under the same
+rules.
+
+The comparison flow is:
+
+```text
+LoCoMo / LongMemEval JSON
+  -> neutral fixture
+  -> one run artifact per memory system
+  -> shared scorer
+  -> retrieval, final QA, latency, and engineering report
+```
+
+Export a neutral fixture:
+
+```bash
+python benchmarks/external_memory_compare.py export-fixture \
+  --benchmark longmemeval \
+  --input /path/to/longmemeval_s_cleaned.json \
+  --output /tmp/longmemeval-fixture.json
+```
+
+Run Vault into the shared run-artifact schema:
+
+```bash
+python benchmarks/external_memory_compare.py vault-run \
+  --benchmark longmemeval \
+  --input /path/to/longmemeval_s_cleaned.json \
+  --limit 10 \
+  --progress-every 50 \
+  --output /tmp/vault-longmemeval-run.json
+```
+
+Score any system run with the same evidence matching rule:
+
+```bash
+python benchmarks/external_memory_compare.py score-run \
+  --fixture /tmp/longmemeval-fixture.json \
+  --run /tmp/vault-longmemeval-run.json \
+  --output /tmp/vault-longmemeval-score.json
+```
+
+Adapters for other systems should emit this minimal run-artifact shape:
+
+```json
+{
+  "schema_version": 1,
+  "artifact_type": "external_memory_comparison_run",
+  "system": "example-memory",
+  "system_version": "1.0.0",
+  "benchmark": "longmemeval",
+  "top_k": 10,
+  "cases": [
+    {
+      "id": "question-id",
+      "latency_ms": 12.5,
+      "answer": "optional final answer",
+      "results": [
+        {"rank": 1, "source": "longmemeval/question-id/session/session-id"}
+      ]
+    }
+  ],
+  "engineering": {
+    "local_first": {"supported": true, "measured": true, "evidence": "local DB run"},
+    "multi_agent_shared_memory": {"supported": false, "measured": false, "evidence": ""},
+    "sync": {"supported": false, "measured": false, "evidence": ""},
+    "report": {"supported": false, "measured": false, "evidence": ""},
+    "audit": {"supported": true, "measured": true, "evidence": "source ids preserved"}
+  }
+}
+```
+
+The scorer uses exact `source` id matching for retrieval. Final QA is reported
+separately with non-official normalized exact-match, contains-expected, and
+token-F1 metrics when an adapter supplies `answer`. This keeps retrieval-only
+and answer-generation results from being mixed into one misleading score.
+
 ## Metrics
 
 The report includes:
@@ -113,10 +195,13 @@ The report includes:
 - `mean_reciprocal_rank`: reciprocal-rank average for first evidence hit.
 - `mean_latency_ms`, `p95_latency_ms`: local search latency for the retrieval
   run.
+- comparison scores additionally include final-QA answer metrics when supplied
+  and engineering capability fields for local-first, shared multi-agent memory,
+  sync, reporting, and auditability.
 
 ## Limits
 
-These adapters are designed for the first benchmark stage:
+The original retrieval adapter is designed for the first benchmark stage:
 
 ```text
 history -> Vault indexing -> search -> evidence recall
@@ -132,6 +217,10 @@ Official LoCoMo / LongMemEval answer scores require a fixed reader model,
 prompt, top-k policy, generation settings, and evaluator. LongMemEval's official
 QA evaluator uses OpenAI-model judging. Do not publish these retrieval numbers
 as LoCoMo / LongMemEval leaderboard scores.
+
+The comparison harness can carry final answers, but its answer metrics are
+diagnostic only. Use an official or fixed third-party judge before making public
+claims about answer quality.
 
 ## Initial Local Smoke Results
 
@@ -150,6 +239,24 @@ The first implementation searched a global LongMemEval DB and was interrupted
 after more than two minutes during per-case FTS search. That mode is now
 available only as `--search-scope global` for stress testing; use the default
 case-scoped mode for benchmark-shaped validation.
+
+## Initial Comparison Harness Results
+
+These results use the neutral fixture -> Vault run artifact -> shared scorer
+pipeline. They should be the baseline for future mem0, Letta, MemGPT-style, or
+custom memory-store adapters because the scorer is independent from Vault.
+
+| System | Benchmark | Cases | Top-k | Retrieval hit rate | Top-1 | Top-5 | MRR | Mean latency | p95 latency | Final QA | Engineering supported/measured |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|
+| Vault | LoCoMo | 1,982 | 10 | 0.609485 | 554 | 1,016 | 0.377273 | 6.898 ms | 14.445 ms | not run | 5 / 1 |
+| Vault | LongMemEval small | 500 | 10 | 0.988 | 361 | 462 | 0.812902 | 84.010 ms | 178.797 ms | not run | 5 / 1 |
+
+`Engineering supported/measured` counts the local-first, multi-agent shared
+memory, sync, report, and audit fields in the run artifact. The Vault comparison
+run directly measures local-first retrieval. Shared-memory setup, sync,
+reporting, and audit workflows are declared as supported but should be measured
+with separate install/runtime probes before being used in public comparison
+claims.
 
 ## References
 
