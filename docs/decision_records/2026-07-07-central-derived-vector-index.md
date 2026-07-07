@@ -139,6 +139,22 @@ The first implementation should provide:
 - tests for access-policy filtering after vector retrieval;
 - tests for invalidation after promote/reject/archive/sensitivity changes.
 
+## Current Implementation
+
+The first shipped surface is read-only:
+
+- `vault vector-index status --json`
+- `vault vector-index doctor --json`
+
+These commands inspect the existing local `semantic_vectors` table as the first
+local derived vector index. They report provider/dimension breakdown, indexed
+row counts, stale content hashes, default-policy coverage, and shared remote-read
+risk rows such as private, high/restricted, archived, or otherwise non-default
+memory.
+
+They do not create a remote index, change ranking, expose vector search through
+Gateway / Remote Server, or allow hosted agents to write active memory.
+
 ## Security Requirements
 
 Hosted or remote agents must not receive direct credentials to write the central
