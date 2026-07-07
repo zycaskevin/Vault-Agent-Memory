@@ -60,7 +60,9 @@ def run_external_memory_retrieval(
     search_scope: str = "case",
     reuse_db: bool = False,
     progress_every: int = 0,
-    semantic_vector_kind: str = "claim",
+    semantic_vector_kind: str = "node",
+    embed_provider: str = "",
+    embed_model: str = "mix",
     allow_hash: bool = False,
     hash_dim: int = 32,
 ) -> dict[str, Any]:
@@ -91,6 +93,8 @@ def run_external_memory_retrieval(
         embed_provider = _prepare_semantic_provider(
             db_path=actual_db_path,
             mode=mode,
+            embed_provider_name=embed_provider,
+            embed_model=embed_model,
             allow_hash=allow_hash,
             hash_dim=hash_dim,
         )
@@ -116,6 +120,8 @@ def run_external_memory_retrieval(
         "granularity": granularity,
         "search_scope": search_scope,
         "semantic_vector_kind": semantic_vector_kind,
+        "embed_provider": embed_provider or None,
+        "embed_model": embed_model if embed_provider else None,
         "allow_hash": bool(allow_hash),
         "hash_dim": int(hash_dim) if allow_hash else None,
         "db_path": str(actual_db_path),
@@ -355,17 +361,33 @@ def _prepare_semantic_provider(
     *,
     db_path: Path,
     mode: str,
+    embed_provider_name: str,
+    embed_model: str,
     allow_hash: bool,
     hash_dim: int,
 ):
-    if mode not in {"semantic", "hybrid"} or not allow_hash:
+    if mode not in {"semantic", "hybrid"}:
         return None
     from vault.semantic import DeterministicHashEmbeddingProvider, rebuild_semantic_index
 
-    provider = DeterministicHashEmbeddingProvider(dim=hash_dim)
+    if allow_hash:
+        provider = DeterministicHashEmbeddingProvider(dim=hash_dim)
+        require_semantic = False
+    elif embed_provider_name:
+        from vault.embed import create_embedding_provider
+
+        provider = create_embedding_provider(provider=embed_provider_name, model_key=embed_model)
+        require_semantic = True
+    else:
+        return None
     db = VaultDB(str(db_path)).connect()
     try:
-        rebuild_semantic_index(db, provider=provider, allow_hash=True)
+        rebuild_semantic_index(
+            db,
+            provider=provider,
+            require_semantic=require_semantic,
+            allow_hash=allow_hash,
+        )
     finally:
         db.close()
     return provider
@@ -528,7 +550,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-cases", type=int, help="Limit evidence-bearing cases for smoke runs.")
     parser.add_argument("--limit", type=int, default=10, help="Search top-k limit.")
     parser.add_argument("--mode", default="keyword", choices=["keyword", "semantic", "hybrid", "vector"])
-    parser.add_argument("--semantic-vector-kind", default="claim", choices=["claim", "node"])
+    parser.add_argument("--semantic-vector-kind", default="node", choices=["claim", "node"])
+    parser.add_argument(
+        "--embed-provider",
+        default="",
+        choices=["", "auto", "onnx", "ollama", "openai", "cohere", "voyage", "sentence-transformers"],
+    )
+    parser.add_argument("--embed-model", default="mix", help="Embedding model key/name for --embed-provider.")
     parser.add_argument("--allow-hash", action="store_true", help="Allow deterministic hash embeddings for plumbing tests.")
     parser.add_argument("--hash-dim", type=int, default=32, help="Hash provider dimension when --allow-hash is set.")
     parser.add_argument("--quiet", action="store_true", help="Print only the aggregate summary.")
@@ -575,6 +603,8 @@ def main(argv: list[str] | None = None) -> int:
         reuse_db=args.reuse_db,
         progress_every=args.progress_every,
         semantic_vector_kind=args.semantic_vector_kind,
+        embed_provider=args.embed_provider,
+        embed_model=args.embed_model,
         allow_hash=args.allow_hash,
         hash_dim=args.hash_dim,
     )

@@ -207,9 +207,18 @@ python benchmarks/external_memory_compare.py vault-mode-compare \
   --input /path/to/longmemeval_s_cleaned.json \
   --limit 10 \
   --modes keyword,hybrid,semantic \
+  --embed-provider onnx \
+  --embed-model mix \
+  --semantic-vector-kind node \
   --progress-every 50 \
   --output /tmp/vault-longmemeval-mode-comparison.json
 ```
+
+`--embed-provider onnx --embed-model mix` uses the local ONNX embedding provider
+with the repo's mixed-language default model. External benchmark documents are
+raw evidence records, so the harness defaults to `--semantic-vector-kind node`
+instead of claim vectors. Pin and record the provider, model, dimension, vector
+kind, and model cache/source before publishing semantic or hybrid numbers.
 
 For CI or local plumbing checks without downloading a real embedding model, add
 `--allow-hash --hash-dim 8`. Hash vectors only verify semantic/hybrid command
