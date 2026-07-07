@@ -15,7 +15,11 @@ agents can write to directly. That would weaken Vault's core contract:
 
 - local SQLite and Markdown are the source of truth;
 - active memory is governed, reviewed, auditable, and recoverable;
+- single-host agents may share one local Vault;
 - remote writes are candidates first;
+- multi-host agents use anon or scoped credentials for approved reads and
+  candidate submission;
+- service-role credentials are reserved for the trusted sync host;
 - Supabase and Remote Server are sharing/read surfaces, not active multi-master
   memory stores.
 
@@ -42,6 +46,8 @@ The vector index is not:
 - a second memory store;
 - a multi-master sync layer;
 - a place for hosted agents to write active memory;
+- a place for hosted agents to write candidate embeddings into the shared
+  active retrieval index;
 - a bypass around candidate review;
 - a substitute for SQLite / Markdown backup, restore, and audit.
 
@@ -125,6 +131,12 @@ Implement in stages:
 4. **Managed/team option**: only after the local and trusted-host paths prove
    useful, expose managed embedding/index operations for teams.
 
+The remote deployment model follows
+[Single-Host Sharing and Multi-Host Governed Sync](2026-07-08-single-host-multi-host-governed-sync.md):
+remote agents can read approved memory and submit candidates, while the trusted
+sync host owns promotion, lifecycle jobs, read-copy sync, and derived index
+updates.
+
 ## Engineering Requirements
 
 The first implementation should provide:
@@ -177,6 +189,10 @@ Gateway / Remote Server, or allow hosted agents to write active memory.
 
 Hosted or remote agents must not receive direct credentials to write the central
 vector index. They should call Gateway, Remote Server, or approved read RPCs.
+
+If a Supabase/pgvector-backed remote index is added, index upserts must be a
+trusted sync-host operation derived from reviewed memory. Candidate submission
+must not write the shared active vector index.
 
 Remote vector search must not expose:
 

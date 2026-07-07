@@ -7,6 +7,11 @@
 它讓 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 等不同 Agent，
 可以使用同一套專案記憶，而不是每次換工具就重新交代背景。
 
+它最重要的多 Agent 模型是：**單機共享，多機治理同步**。同一台可信主機上的
+Agent 可以共用一份本機 Vault；不同主機或 hosted Agent 只能讀取已核准記憶、
+提交候選記憶。正式記憶、做夢、封存、忘記、回滾與同步，仍由 trusted sync
+host 負責。
+
 Vault 不是給完全沒接觸 Agent 的大眾 app。它先服務已經在用
 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 這類工具的 builder。
 
@@ -27,6 +32,7 @@ Vault Agent Memory 解決的不是「把更多東西塞進 AI」。
 - 多個 Agent 可以共享工作知識，但私人記憶不亂流。
 - 新記憶先進候選區，安全、低風險的才自動進正式記憶。
 - 不確定、敏感、衝突的內容，每天整理成報告讓人確認。
+- 跨主機 Agent 可以投稿，但不能直接污染正式共享記憶。
 
 一句話：
 
@@ -84,6 +90,7 @@ flowchart TB
 | 舊資訊和新決策混在一起，Agent 不知道該信誰 | 有時間邊界與過期機制，優先浮出最新可信內容 |
 | 敏感資訊到處流，沒有審計與回滾 | 用治理 metadata 管 scope、sensitivity、owner、allowed agents |
 | 記憶只是聊天紀錄堆，訊號很難找 | 候選 → 審核 → 提升，只留下值得長期使用的記憶 |
+| 不同主機的 Agent 都能直接寫中央記憶 | 遠端 Agent 只能提交候選，由 trusted sync host 審核後提升 |
 
 核心流程：
 
@@ -205,6 +212,9 @@ Agent runtime。
 一個會長期存在、自己成長的單一 Agent，Letta 可能更合適。如果你已經在用多個
 Agent，想讓它們共用一份本機優先、可審核、可回滾的記憶地基，Vault 的定位就在這裡。
 
+這個差異在跨主機時最明顯：Vault 把遠端 Agent 視為「已核准記憶的讀者」和
+「候選記憶的投稿者」，不是正式中央記憶的直接寫入者。
+
 ## Benchmark 與驗證
 
 Vault 目前不宣稱自己有 LoCoMo / LongMemEval 類 leaderboard 分數。這類 benchmark
@@ -216,6 +226,9 @@ Vault 現在公開的是可重現的產品契約驗證：
 - **README command smoke**：確認 README 裡的公開命令沒有飄掉。
 - **Release gates**：pytest、release parity、public-boundary checks、package build checks、clean-install smoke。
 - **Integration smoke**：依 release scope 驗證 MCP/CLI、本機路徑，以及可選的 Supabase、Gateway、OpenClaw、Coze read-only hosted reader。
+- **Multi-host governed sync smoke**：遠端共享有變更時，驗證 anon/scoped Agent 可以提交候選，
+  但不能寫 active memory 或 derived index；trusted sync host 可以 pull、review、promote、
+  產報告，並推送 approved read copy。
 
 目前 evidence model 見 [Search QA benchmarking](docs/search_qa_benchmarking.md) 和
 [README claim matrix](docs/readme_claim_matrix.md)。
@@ -448,6 +461,13 @@ vault remote-server serve --project-dir ~/Vaults/my-project --host 0.0.0.0
 
 遠端寫入應該先進候選記憶，不要直接變成 active memory。這是集中共享，不是 offline multi-master sync。
 
+信任模型很簡單：
+
+- **同一台機器**：多個本機 Agent 可以透過 CLI、MCP、Obsidian 或 Gateway 共用同一份 Vault。
+- **不同主機或 hosted Agent**：使用 anon/scoped credentials 讀 approved memory、提交 candidates。
+- **trusted sync host**：唯一持有 service-role/admin credentials 的地方，負責拉候選、審核提升、
+  Dream、archive、forgetting、報告、approved read-copy sync，以及未來 derived vector-index 更新。
+
 多 Agent、多主機、多裝置時，日常建議走 Central Memory Station 入口：
 
 ```bash
@@ -467,6 +487,7 @@ vault ops security --json
 - [Supabase read policy SQL](docs/supabase_read_policy.sql)
 - [Gateway security foundation](docs/decision_records/2026-07-02-gateway-security-foundation.md)
 - [Central Memory Station decision](docs/decision_records/2026-07-05-central-memory-station.md)
+- [Single-host sharing and multi-host governed sync](docs/decision_records/2026-07-08-single-host-multi-host-governed-sync.md)
 - [Central Memory Station plan](docs/plans/2026-07-05-central-memory-station-development-plan.md)
 
 ## 記憶遷移

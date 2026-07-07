@@ -7,6 +7,15 @@ Its strongest category is:
 
 > Local-first, self-hostable, auditable Agent Memory Governance.
 
+The operating model that makes the category concrete:
+
+> Single-host sharing, multi-host governed sync.
+
+On one trusted machine, several agents can share one Vault. Across machines,
+remote agents can read approved memory and submit candidates, but only a
+trusted sync host promotes official memory and runs lifecycle jobs. That is the
+line between governed shared memory and a polluted multi-writer memory store.
+
 The user-facing sentence:
 
 > Vault Agent Memory is the memory governance layer for multi-agent teams. It lets

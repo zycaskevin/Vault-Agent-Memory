@@ -3,6 +3,23 @@
 Vault Agent Memory should grow in layers. Each layer should preserve the local-first
 trust boundary while adding more team and enterprise governance.
 
+## P0 Trust Boundary
+
+Vault's category distinction is:
+
+> Single-host sharing, multi-host governed sync.
+
+On one trusted machine, Codex, OpenClaw, Claude Code, Hermes, Coze connectors,
+and other local agents can share the same Vault project. Across machines or
+hosted runtimes, agents should use anon or scoped credentials to read approved
+memory and submit candidates. Only a trusted sync host with service-role/admin
+credentials reviews candidates, promotes official memory, runs Dream / archive /
+forgetting, and pushes reviewed read copies or derived indexes back out.
+
+This boundary should survive every adapter choice: Supabase, Gateway, Remote
+Server, Obsidian, local MCP, and future vector search are surfaces around the
+same governance model, not alternate sources of truth.
+
 ## Layer 1: Open-Source Local Memory Engine
 
 This layer should remain open source and simple enough to trust.
