@@ -197,6 +197,47 @@ The first public audience is agent-assisted builders: people using Codex,
 Claude Code, Hermes, OpenClaw, n8n, Coze, or similar systems who want one
 governed memory layer without studying every internal command.
 
+## How Vault Compares
+
+Vault is complementary to memory services and agent runtimes, not a drop-in
+replacement for all of them.
+
+| Tool category | Strong at | Vault's different focus |
+|---------------|-----------|-------------------------|
+| [Mem0](https://docs.mem0.ai/platform/overview) | Managed memory APIs, personalization, cloud/self-hosted deployments, and published memory benchmarks | Local-first governance, review gates, rollback, daily human review, and multi-agent adapter setup |
+| [Letta / MemGPT](https://docs.letta.com/letta-agent) | A stateful agent platform with a memory-first agent, dreaming, skills, and agent-managed memory | A shared governed memory layer that existing agents can use without becoming one specific agent runtime |
+| Vector databases / RAG stacks | Fast retrieval over embeddings and documents | The memory lifecycle around retrieval: candidate review, trust, sensitivity, temporal validity, source ranges, and audit trails |
+| Plain notes / Obsidian | Human-readable knowledge work | Agent-safe access, bounded reads, governance metadata, candidate promotion, and optional Obsidian sync |
+
+If you need a managed memory API for an app, Mem0 may be the faster starting
+point. If you want a single stateful agent that owns its memory and grows over
+time, Letta may be the better fit. If you already use several agents and want a
+local, reviewable, auditable memory foundation between them, Vault is designed
+for that layer.
+
+## Benchmarks & Verification
+
+Vault does not currently claim a LoCoMo/LongMemEval-style leaderboard score.
+Those benchmarks measure end-to-end memory QA and should only be published for
+Vault after running the same benchmark harness under comparable conditions.
+
+What Vault does publish today is reproducible verification for its own product
+contract:
+
+- **Search QA**: source-hit, MRR, no-result, and citation-boundary checks for
+  retrieval evidence, not final answer quality.
+- **README command smoke**: public README commands are exercised so install and
+  quickstart examples do not drift.
+- **Release gates**: pytest, release parity, public-boundary checks, package
+  build checks, and clean-install smoke before publishing.
+- **Integration smoke**: local MCP/CLI paths plus optional Supabase, Gateway,
+  OpenClaw, and Coze read-only hosted-reader checks when those integrations are
+  part of the release scope.
+
+See [Search QA benchmarking](docs/search_qa_benchmarking.md) and
+[README claim matrix](docs/readme_claim_matrix.md) for the current evidence
+model.
+
 ## Killer Demo: Shared Governed Memory
 
 Run the local demo:
