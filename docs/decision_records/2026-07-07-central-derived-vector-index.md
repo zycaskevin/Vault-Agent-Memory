@@ -146,6 +146,8 @@ The first shipped surface is read-only:
 - `vault vector-index status --json`
 - `vault vector-index doctor --json`
 - `vault vector-index plan --json`
+- `vault vector-index status --write-report --json`
+- `vault vector-index plan --write-report --json`
 
 These commands inspect the existing local `semantic_vectors` table as the first
 local derived vector index. They report provider/dimension breakdown, indexed
@@ -156,6 +158,10 @@ memory.
 The plan action returns metadata-only missing, stale, shared-risk, and orphan
 groups. It is a dry-run planning surface and does not include raw memory content
 or vector source text.
+
+The report option writes JSON and Markdown under `reports/vector-index/`, so
+cron jobs, release gates, and follow-up agents can inspect the same metadata-only
+status without relying on chat history.
 
 They do not create a remote index, change ranking, expose vector search through
 Gateway / Remote Server, or allow hosted agents to write active memory.

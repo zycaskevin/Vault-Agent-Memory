@@ -172,3 +172,24 @@ def test_vector_index_plan_groups_metadata_without_raw_content(tmp_path, capsys)
     assert "raw content should not appear" not in rendered
     assert "source text hidden" not in rendered
     assert "vault semantic rebuild --changed-only" in payload["recommended_commands"]
+
+
+def test_vector_index_plan_write_report_is_metadata_only(tmp_path, capsys):
+    project = _init_project(tmp_path)
+
+    main(["--project-dir", str(project), "vector-index", "plan", "--write-report", "--json", "--limit", "5"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["paths"]["json"] == "reports/vector-index/plan-latest.json"
+    assert payload["paths"]["markdown"] == "reports/vector-index/plan-latest.md"
+    json_report = project / payload["paths"]["json"]
+    markdown_report = project / payload["paths"]["markdown"]
+    assert json_report.exists()
+    assert markdown_report.exists()
+
+    rendered_json = json_report.read_text(encoding="utf-8")
+    rendered_markdown = markdown_report.read_text(encoding="utf-8")
+    assert "Shared reviewed memory." not in rendered_json
+    assert "Shared reviewed memory." not in rendered_markdown
+    assert "# Vault Vector Index Plan" in rendered_markdown
+    assert "metadata-only dry run" in rendered_markdown
