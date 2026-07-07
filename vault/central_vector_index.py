@@ -42,6 +42,157 @@ def _provider_breakdown(db: VaultDB) -> list[dict[str, Any]]:
     ]
 
 
+def _vector_filter_sql(
+    *,
+    alias: str = "sv",
+    provider_id: str | None = None,
+    dimension: int | None = None,
+    vector_kind: str | None = None,
+) -> tuple[str, list[Any]]:
+    filters: list[str] = []
+    params: list[Any] = []
+    if provider_id:
+        filters.append(f"{alias}.provider_id=?")
+        params.append(provider_id)
+    if dimension is not None:
+        filters.append(f"{alias}.dimension=?")
+        params.append(int(dimension))
+    if vector_kind:
+        filters.append(f"{alias}.vector_kind=?")
+        params.append(vector_kind)
+    return (" AND " + " AND ".join(filters), params) if filters else ("", [])
+
+
+def _plan_rows(db: VaultDB, sql: str, params: list[Any], *, limit: int) -> list[dict[str, Any]]:
+    rows = db.conn.execute(f"{sql} LIMIT ?", [*params, int(limit)]).fetchall()
+    return [dict(row) for row in rows]
+
+
+def central_vector_index_plan(
+    db_path: str | Path,
+    *,
+    limit: int = 20,
+    provider_id: str | None = None,
+    dimension: int | None = None,
+    vector_kind: str | None = None,
+) -> dict[str, Any]:
+    """Return a dry-run rebuild and cleanup plan for the derived vector index."""
+    db_path = Path(db_path)
+    vector_filter, vector_params = _vector_filter_sql(
+        provider_id=provider_id,
+        dimension=dimension,
+        vector_kind=vector_kind,
+    )
+    exists_filter, exists_params = _vector_filter_sql(
+        alias="existing",
+        provider_id=provider_id,
+        dimension=dimension,
+        vector_kind=vector_kind,
+    )
+    with VaultDB(db_path) as db:
+        missing_sql = f"""
+            SELECT k.id AS knowledge_id, k.title, k.source, k.layer, k.scope,
+                   k.sensitivity, k.status, k.updated_at,
+                   'missing_default_policy_vector' AS reason
+              FROM knowledge AS k
+             WHERE COALESCE(k.status, 'active') = 'active'
+               AND lower(COALESCE(k.scope, 'project')) != 'private'
+               AND lower(COALESCE(k.sensitivity, 'low')) NOT IN ('high', 'restricted')
+               AND NOT EXISTS (
+                   SELECT 1 FROM semantic_vectors AS existing
+                    WHERE existing.knowledge_id = k.id{exists_filter}
+               )
+             ORDER BY k.updated_at DESC, k.id DESC
+        """
+        missing_rows = _plan_rows(db, missing_sql, exists_params, limit=limit)
+
+        stale_sql = f"""
+            SELECT DISTINCT k.id AS knowledge_id, k.title, k.source, k.layer,
+                   k.scope, k.sensitivity, k.status, k.updated_at,
+                   'stale_content_hash' AS reason
+              FROM semantic_vectors AS sv
+              JOIN knowledge AS k ON k.id = sv.knowledge_id
+             WHERE COALESCE(sv.content_hash, '') != ''
+               AND COALESCE(k.content_hash, '') != ''
+               AND sv.content_hash != k.content_hash{vector_filter}
+             ORDER BY k.updated_at DESC, k.id DESC
+        """
+        stale_rows = _plan_rows(db, stale_sql, vector_params, limit=limit)
+
+        risk_sql = f"""
+            SELECT DISTINCT k.id AS knowledge_id, k.title, k.source, k.layer,
+                   k.scope, k.sensitivity, k.status, k.updated_at,
+                   CASE
+                     WHEN COALESCE(k.status, 'active') != 'active' THEN 'non_active_memory_indexed'
+                     WHEN lower(COALESCE(k.scope, 'project')) = 'private' THEN 'private_memory_indexed'
+                     WHEN lower(COALESCE(k.sensitivity, 'low')) IN ('high', 'restricted') THEN 'sensitive_memory_indexed'
+                     ELSE 'non_default_shared_read_vector'
+                   END AS reason
+              FROM semantic_vectors AS sv
+              JOIN knowledge AS k ON k.id = sv.knowledge_id
+             WHERE (
+                   COALESCE(k.status, 'active') != 'active'
+                OR lower(COALESCE(k.scope, 'project')) = 'private'
+                OR lower(COALESCE(k.sensitivity, 'low')) IN ('high', 'restricted')
+             ){vector_filter}
+             ORDER BY k.updated_at DESC, k.id DESC
+        """
+        risk_rows = _plan_rows(db, risk_sql, vector_params, limit=limit)
+
+        orphan_sql = f"""
+            SELECT sv.id AS vector_id, sv.knowledge_id, sv.provider_id,
+                   sv.dimension, sv.vector_kind, sv.item_uid, sv.updated_at,
+                   'orphan_vector' AS reason
+              FROM semantic_vectors AS sv
+         LEFT JOIN knowledge AS k ON k.id = sv.knowledge_id
+             WHERE k.id IS NULL{vector_filter}
+             ORDER BY sv.updated_at DESC, sv.id DESC
+        """
+        orphan_rows = _plan_rows(db, orphan_sql, vector_params, limit=limit)
+
+    repair_count = len(missing_rows) + len(stale_rows)
+    cleanup_count = len(risk_rows) + len(orphan_rows)
+    recommended_commands: list[str] = []
+    if repair_count:
+        recommended_commands.append("vault semantic rebuild --changed-only")
+    if cleanup_count:
+        recommended_commands.append("keep risky/orphan vectors local-only until cleanup support is implemented")
+    if not recommended_commands:
+        recommended_commands.append("run Search QA before changing hybrid/vector ranking")
+
+    return {
+        "schema_version": 1,
+        "artifact_type": "central_derived_vector_index_plan",
+        "dry_run": True,
+        "db_path": str(db_path),
+        "filters": {
+            "provider_id": provider_id,
+            "dimension": dimension,
+            "vector_kind": vector_kind,
+            "limit": int(limit),
+        },
+        "counts": {
+            "missing_default_policy_rows_sampled": len(missing_rows),
+            "stale_rows_sampled": len(stale_rows),
+            "shared_remote_risk_rows_sampled": len(risk_rows),
+            "orphan_vector_rows_sampled": len(orphan_rows),
+            "repair_rows_sampled": repair_count,
+            "cleanup_rows_sampled": cleanup_count,
+        },
+        "groups": {
+            "missing_default_policy": missing_rows,
+            "stale": stale_rows,
+            "shared_remote_risk": risk_rows,
+            "orphan_vectors": orphan_rows,
+        },
+        "recommended_commands": recommended_commands,
+        "notes": [
+            "This plan is metadata-only and does not include raw memory content.",
+            "Remote vector read remains disabled; cleanup is a prerequisite for shared remote exposure.",
+        ],
+    }
+
+
 def central_vector_index_status(db_path: str | Path) -> dict[str, Any]:
     """Return a JSON-safe local status report for the derived vector index.
 
@@ -186,6 +337,15 @@ def add_vector_index_parser(sub) -> None:
     parser = sub.add_parser("vector-index", help="中央衍生向量索引狀態與安全檢查")
     vector_sub = parser.add_subparsers(dest="vector_index_action")
 
+    def add_plan_filters(sp) -> None:
+        sp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/vault.db）")
+        sp.add_argument("--provider-id", help="只檢查指定 embedding provider")
+        sp.add_argument("--dimension", type=int, help="只檢查指定 embedding 維度")
+        sp.add_argument("--vector-kind", choices=["claim", "node"], help="只檢查指定 semantic vector kind")
+        sp.add_argument("--limit", type=int, default=20, help="每組最多回傳幾筆 metadata rows")
+        sp.add_argument("--json", action="store_true", help="輸出 JSON")
+        sp.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+
     sp = vector_sub.add_parser("status", help="檢查 local derived vector index 狀態")
     sp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/vault.db）")
     sp.add_argument("--json", action="store_true", help="輸出 JSON")
@@ -196,14 +356,37 @@ def add_vector_index_parser(sub) -> None:
     sp.add_argument("--json", action="store_true", help="輸出 JSON")
     sp.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
 
+    sp = vector_sub.add_parser("plan", help="產生 read-only rebuild/cleanup dry-run plan")
+    add_plan_filters(sp)
+
 
 def cmd_vector_index(args, *, find_project_dir, json_print) -> None:
     action = args.vector_index_action
-    if action not in {"status", "doctor"}:
-        print("error: vector-index requires action: status or doctor", file=sys.stderr)
+    if action not in {"status", "doctor", "plan"}:
+        print("error: vector-index requires action: status, doctor, or plan", file=sys.stderr)
         raise SystemExit(2)
 
     db_path = Path(args.db_path) if args.db_path else find_project_dir() / "vault.db"
+    if action == "plan":
+        payload = central_vector_index_plan(
+            db_path,
+            limit=args.limit,
+            provider_id=args.provider_id,
+            dimension=args.dimension,
+            vector_kind=args.vector_kind,
+        )
+        payload["action"] = action
+        if args.json:
+            json_print(payload, pretty=args.pretty)
+            return
+        print("Vector index plan: dry-run")
+        for key, value in payload["counts"].items():
+            print(f"  {key}: {value}")
+        print("  recommended_commands:")
+        for command in payload["recommended_commands"]:
+            print(f"    - {command}")
+        return
+
     payload = central_vector_index_status(db_path)
     payload["action"] = action
     if action == "doctor":

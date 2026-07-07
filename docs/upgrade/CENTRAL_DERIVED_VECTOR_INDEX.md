@@ -15,6 +15,12 @@ For a stricter health check:
 vault vector-index doctor --json
 ```
 
+To generate a metadata-only dry-run repair plan:
+
+```bash
+vault vector-index plan --json
+```
+
 The current implementation reads the existing local `semantic_vectors` table and
 reports:
 
@@ -27,6 +33,17 @@ reports:
   shared-read memory;
 - whether the index is safe for local vector search and whether it is ready for
   future shared remote vector read.
+
+The `plan` action groups metadata rows into:
+
+- missing default-policy vectors;
+- stale vectors;
+- shared remote-read risk vectors;
+- orphan vectors.
+
+It does not include raw memory content or vector source text. Treat it as a
+dry-run repair and cleanup plan before running rebuilds or designing remote
+vector read.
 
 Remote vector read remains disabled. The status surface exists so operators and
 tests can verify index posture before later Gateway, Remote Server, or
