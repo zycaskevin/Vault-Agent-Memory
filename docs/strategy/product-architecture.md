@@ -18,6 +18,8 @@ It includes:
 - backup, restore, and verification
 - basic audit metadata
 - optional local semantic search
+- optional central derived vector index as a rebuildable retrieval cache, not a
+  second source of truth
 
 Primary users:
 
@@ -48,6 +50,8 @@ Capabilities:
 - memory health reports
 - optional Supabase or Postgres-backed sharing
 - gateway or remote server deployment
+- trusted-host vector read index for shared retrieval, after access-policy and
+  stale-index safeguards are in place
 
 The core promise:
 
@@ -65,7 +69,7 @@ Possible hosted features:
 - hosted review dashboard
 - team API key management
 - managed backups
-- managed embeddings
+- managed embeddings and derived vector indexes
 - usage analytics
 - integration templates
 - memory health reports
