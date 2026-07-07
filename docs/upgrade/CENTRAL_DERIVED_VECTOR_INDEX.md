@@ -36,6 +36,16 @@ These write:
 - `reports/vector-index/plan-latest.json`
 - `reports/vector-index/plan-latest.md`
 
+The same metadata-only observability is included in the daily-loop report path:
+
+```bash
+vault daily-loop report --refresh --write-report
+```
+
+That refresh writes the daily-loop report and refreshes the vector-index status
+and dry-run plan artifacts without ingesting transcripts, creating candidates,
+rebuilding vectors, or cleaning up index rows.
+
 The current implementation reads the existing local `semantic_vectors` table and
 reports:
 

@@ -19,6 +19,11 @@ from .automation import (
     automation_learning_health,
     automation_review_summary,
 )
+from .central_vector_index import (
+    central_vector_index_plan,
+    central_vector_index_status,
+    write_vector_index_report,
+)
 from .central_sync import run_central_memory_sync
 from .daily_report import build_daily_report, normalize_report_language, render_daily_report_text
 from .memory_pipeline import run_memory_pipeline
@@ -188,8 +193,13 @@ def run_daily_loop(
         precomputed_review=review,
         write_report=True,
     )
+    vector_index = _build_vector_index_observability(
+        project,
+        limit=limit_i,
+        write_reports=bool(write_report),
+    )
     payload = {
-        "ok": _loop_ok(pipeline, reflection, sync, cycle, inbox, brief, review, learning, daily),
+        "ok": _loop_ok(pipeline, reflection, sync, cycle, inbox, brief, review, learning, daily, vector_index),
         "action": "daily-loop-run",
         "generated_at": generated_at,
         "project_dir": str(project),
@@ -199,9 +209,10 @@ def run_daily_loop(
         "apply": bool(apply),
         "central_backend": central_backend,
         "language": normalize_report_language(language),
-        "summary": _loop_summary(pipeline, reflection, sync, cycle, inbox, brief, review, learning, daily),
+        "summary": _loop_summary(pipeline, reflection, sync, cycle, inbox, brief, review, learning, daily, vector_index),
         "memory_ingestion": _compact_ingestion(pipeline, reflection),
         "sync": _compact_sync(sync),
+        "vector_index": vector_index,
         "candidate_review": _compact_inbox(inbox),
         "lifecycle": _compact_lifecycle(cycle, brief),
         "human_review": _compact_human_review(review, daily),
@@ -211,9 +222,9 @@ def run_daily_loop(
             "headline": daily.get("headline", ""),
             "paths": daily.get("paths", {}),
         },
-        "artifacts": _loop_artifacts(pipeline, reflection, sync, cycle, inbox, brief, review, learning, daily),
+        "artifacts": _loop_artifacts(pipeline, reflection, sync, cycle, inbox, brief, review, learning, daily, vector_index),
         "safety": _daily_loop_safety(apply=bool(apply)),
-        "next_actions": _next_actions(sync, cycle, inbox, review, learning, daily, apply=bool(apply)),
+        "next_actions": _next_actions(sync, cycle, inbox, review, learning, daily, vector_index, apply=bool(apply)),
         "paths": {
             "json": "",
             "markdown": "",
@@ -285,8 +296,13 @@ def refresh_daily_loop_report(
         write_report=False,
     )
     sync = _compact_remote_status(sync_status)
+    vector_index = _build_vector_index_observability(
+        project,
+        limit=limit_i,
+        write_reports=bool(write_report),
+    )
     payload = {
-        "ok": _loop_ok(sync_status, inbox, brief, review, learning, daily),
+        "ok": _loop_ok(sync_status, inbox, brief, review, learning, daily, vector_index),
         "action": "daily-loop-refresh",
         "generated_at": generated_at,
         "project_dir": str(project),
@@ -296,9 +312,10 @@ def refresh_daily_loop_report(
         "apply": False,
         "central_backend": "status-only",
         "language": normalize_report_language(language),
-        "summary": _refresh_summary(sync, inbox, brief, review, learning, daily),
+        "summary": _refresh_summary(sync, inbox, brief, review, learning, daily, vector_index),
         "memory_ingestion": _read_only_ingestion(),
         "sync": sync,
+        "vector_index": vector_index,
         "candidate_review": _compact_inbox(inbox),
         "lifecycle": _read_only_lifecycle(brief),
         "human_review": _compact_human_review(review, daily),
@@ -308,9 +325,9 @@ def refresh_daily_loop_report(
             "headline": daily.get("headline", ""),
             "paths": daily.get("paths", {}),
         },
-        "artifacts": _refresh_artifacts(inbox, brief, review, learning, daily),
+        "artifacts": _refresh_artifacts(inbox, brief, review, learning, daily, vector_index),
         "safety": _daily_loop_safety(apply=False, writes_candidates=False),
-        "next_actions": _next_actions(sync, {"status": "completed"}, inbox, review, learning, daily, apply=False),
+        "next_actions": _next_actions(sync, {"status": "completed"}, inbox, review, learning, daily, vector_index, apply=False),
         "paths": {
             "json": "",
             "markdown": "",
@@ -432,8 +449,20 @@ def _render_daily_loop_markdown(payload: dict[str, Any]) -> str:
         f"- pending candidates: `{summary.get('pending_candidates', 0)}`",
         f"- human review cards: `{summary.get('human_review_cards', 0)}`",
         f"- sync status: `{summary.get('sync_status', '')}`",
+        f"- vector index status: `{summary.get('vector_index_status', '')}`",
         f"- lifecycle status: `{summary.get('lifecycle_status', '')}`",
         f"- learning status: `{summary.get('learning_status', '')}`",
+        "",
+        "## Vector Index",
+        "",
+        f"- status: `{(payload.get('vector_index') or {}).get('status', '')}`",
+        f"- semantic vector rows: `{(payload.get('vector_index') or {}).get('semantic_vector_rows', 0)}`",
+        f"- missing default-policy rows: `{(payload.get('vector_index') or {}).get('missing_default_policy_rows', 0)}`",
+        f"- stale vector rows: `{(payload.get('vector_index') or {}).get('stale_vector_rows', 0)}`",
+        f"- shared remote-risk rows: `{(payload.get('vector_index') or {}).get('shared_remote_risk_vector_rows', 0)}`",
+        f"- repair rows sampled: `{((payload.get('vector_index') or {}).get('plan') or {}).get('repair_rows_sampled', 0)}`",
+        f"- cleanup rows sampled: `{((payload.get('vector_index') or {}).get('plan') or {}).get('cleanup_rows_sampled', 0)}`",
+        f"- remote vector read: `{str(bool((payload.get('vector_index') or {}).get('shared_remote_vector_read', False))).lower()}`",
         "",
         "## Human Review",
         "",
@@ -514,6 +543,7 @@ def _loop_summary(
     review: dict[str, Any],
     learning: dict[str, Any],
     daily: dict[str, Any],
+    vector_index: dict[str, Any],
 ) -> dict[str, Any]:
     inbox_summary = inbox.get("summary") or {}
     daily_summary = daily.get("summary") or {}
@@ -536,6 +566,9 @@ def _loop_summary(
         + int(((reflection.get("dream") or {}).get("summary") or {}).get("candidates_written") or 0),
         "daily_report_status": daily.get("status", ""),
         "brief_status": brief.get("status", ""),
+        "vector_index_status": vector_index.get("status", ""),
+        "vector_index_repair_rows_sampled": int((vector_index.get("plan") or {}).get("repair_rows_sampled") or 0),
+        "vector_index_cleanup_rows_sampled": int((vector_index.get("plan") or {}).get("cleanup_rows_sampled") or 0),
     }
 
 
@@ -682,6 +715,72 @@ def _compact_learning(learning: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _build_vector_index_observability(project: Path, *, limit: int, write_reports: bool) -> dict[str, Any]:
+    db_path = project / "vault.db"
+    status = central_vector_index_status(db_path)
+    status["action"] = "status"
+    plan = central_vector_index_plan(db_path, limit=limit)
+    plan["action"] = "plan"
+    status_paths = {"json": "", "markdown": ""}
+    plan_paths = {"json": "", "markdown": ""}
+    if write_reports:
+        status_paths = write_vector_index_report(project, status, action="status")
+        plan_paths = write_vector_index_report(project, plan, action="plan")
+        status["paths"] = status_paths
+        plan["paths"] = plan_paths
+    return _compact_vector_index(status, plan, status_paths=status_paths, plan_paths=plan_paths)
+
+
+def _compact_vector_index(
+    status: dict[str, Any],
+    plan: dict[str, Any],
+    *,
+    status_paths: dict[str, str],
+    plan_paths: dict[str, str],
+) -> dict[str, Any]:
+    counts = status.get("counts") or {}
+    readiness = status.get("readiness") or {}
+    plan_counts = plan.get("counts") or {}
+    return {
+        "ok": True,
+        "status": status.get("status", ""),
+        "source_of_truth": status.get("source_of_truth", ""),
+        "index_role": status.get("index_role", ""),
+        "local_only": bool(status.get("local_only", True)),
+        "remote_read_enabled": bool(status.get("remote_read_enabled", False)),
+        "remote_write_enabled": bool(status.get("remote_write_enabled", False)),
+        "local_vector_search": bool(readiness.get("local_vector_search", False)),
+        "shared_remote_vector_read": bool(readiness.get("shared_remote_vector_read", False)),
+        "semantic_vector_rows": int(counts.get("semantic_vector_rows") or 0),
+        "indexed_default_policy_rows": int(counts.get("indexed_default_policy_rows") or 0),
+        "missing_default_policy_rows": int(counts.get("missing_default_policy_rows") or 0),
+        "stale_vector_rows": int(counts.get("stale_vector_rows") or 0),
+        "orphan_vector_rows": int(counts.get("orphan_vector_rows") or 0),
+        "shared_remote_risk_vector_rows": int(counts.get("shared_remote_risk_vector_rows") or 0),
+        "provider_breakdown": status.get("provider_breakdown", []),
+        "plan": {
+            "dry_run": bool(plan.get("dry_run", True)),
+            "repair_rows_sampled": int(plan_counts.get("repair_rows_sampled") or 0),
+            "cleanup_rows_sampled": int(plan_counts.get("cleanup_rows_sampled") or 0),
+            "missing_default_policy_rows_sampled": int(plan_counts.get("missing_default_policy_rows_sampled") or 0),
+            "stale_rows_sampled": int(plan_counts.get("stale_rows_sampled") or 0),
+            "shared_remote_risk_rows_sampled": int(plan_counts.get("shared_remote_risk_rows_sampled") or 0),
+            "orphan_vector_rows_sampled": int(plan_counts.get("orphan_vector_rows_sampled") or 0),
+            "recommended_commands": plan.get("recommended_commands", []),
+        },
+        "paths": {
+            "status_json": status_paths.get("json", ""),
+            "status_markdown": status_paths.get("markdown", ""),
+            "plan_json": plan_paths.get("json", ""),
+            "plan_markdown": plan_paths.get("markdown", ""),
+        },
+        "notes": [
+            "Daily-loop includes vector-index metadata only.",
+            "Remote vector read remains disabled.",
+        ],
+    }
+
+
 def _loop_artifacts(
     pipeline: dict[str, Any],
     reflection: dict[str, Any],
@@ -692,7 +791,9 @@ def _loop_artifacts(
     review: dict[str, Any],
     learning: dict[str, Any],
     daily: dict[str, Any],
+    vector_index: dict[str, Any],
 ) -> dict[str, str]:
+    vector_paths = vector_index.get("paths") or {}
     return {
         "pipeline": str(pipeline.get("report_path") or ""),
         "pipeline_markdown": str(pipeline.get("report_markdown_path") or ""),
@@ -710,6 +811,10 @@ def _loop_artifacts(
         "learning_health_markdown": str(learning.get("health_markdown_path") or ""),
         "daily_report": str((daily.get("paths") or {}).get("json") or ""),
         "daily_report_markdown": str((daily.get("paths") or {}).get("markdown") or ""),
+        "vector_index_status": str(vector_paths.get("status_json") or ""),
+        "vector_index_status_markdown": str(vector_paths.get("status_markdown") or ""),
+        "vector_index_plan": str(vector_paths.get("plan_json") or ""),
+        "vector_index_plan_markdown": str(vector_paths.get("plan_markdown") or ""),
     }
 
 
@@ -719,7 +824,9 @@ def _refresh_artifacts(
     review: dict[str, Any],
     learning: dict[str, Any],
     daily: dict[str, Any],
+    vector_index: dict[str, Any],
 ) -> dict[str, str]:
+    vector_paths = vector_index.get("paths") or {}
     return {
         "pipeline": "",
         "pipeline_markdown": "",
@@ -737,6 +844,10 @@ def _refresh_artifacts(
         "learning_health_markdown": str(learning.get("health_markdown_path") or ""),
         "daily_report": str((daily.get("paths") or {}).get("json") or ""),
         "daily_report_markdown": str((daily.get("paths") or {}).get("markdown") or ""),
+        "vector_index_status": str(vector_paths.get("status_json") or ""),
+        "vector_index_status_markdown": str(vector_paths.get("status_markdown") or ""),
+        "vector_index_plan": str(vector_paths.get("plan_json") or ""),
+        "vector_index_plan_markdown": str(vector_paths.get("plan_markdown") or ""),
     }
 
 
@@ -747,6 +858,7 @@ def _refresh_summary(
     review: dict[str, Any],
     learning: dict[str, Any],
     daily: dict[str, Any],
+    vector_index: dict[str, Any],
 ) -> dict[str, Any]:
     inbox_summary = inbox.get("summary") or {}
     daily_summary = daily.get("summary") or {}
@@ -768,6 +880,9 @@ def _refresh_summary(
         "reflection_candidates_written": 0,
         "daily_report_status": daily.get("status", ""),
         "brief_status": brief.get("status", ""),
+        "vector_index_status": vector_index.get("status", ""),
+        "vector_index_repair_rows_sampled": int((vector_index.get("plan") or {}).get("repair_rows_sampled") or 0),
+        "vector_index_cleanup_rows_sampled": int((vector_index.get("plan") or {}).get("cleanup_rows_sampled") or 0),
     }
 
 
@@ -792,6 +907,7 @@ def _next_actions(
     review: dict[str, Any],
     learning: dict[str, Any],
     daily: dict[str, Any],
+    vector_index: dict[str, Any],
     *,
     apply: bool,
 ) -> list[str]:
@@ -806,6 +922,8 @@ def _next_actions(
         actions.append("Let an agent review the candidate inbox; no urgent human decision is required.")
     if learning.get("status") in {"cold", "blocked"}:
         actions.append("Collect more review-summary feedback before widening automation.")
+    if vector_index.get("status") == "stale" or int(vector_index.get("shared_remote_risk_vector_rows") or 0):
+        actions.append("Review vector-index status before enabling hybrid or shared remote vector retrieval.")
     if cycle.get("status") == "blocked":
         actions.append(cycle.get("next_action", "Initialize the vault before running the daily loop."))
     if not actions:

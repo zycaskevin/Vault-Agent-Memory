@@ -98,9 +98,27 @@ def test_daily_loop_refresh_writes_report_without_new_candidates(tmp_path):
     assert payload["memory_ingestion"]["reflection"]["write_candidates"] is False
     assert payload["summary"]["pipeline_candidates_written"] == 0
     assert payload["summary"]["reflection_candidates_written"] == 0
+    assert payload["summary"]["vector_index_status"] == "empty"
+    assert payload["vector_index"]["status"] == "empty"
+    assert payload["vector_index"]["remote_read_enabled"] is False
+    assert payload["vector_index"]["plan"]["dry_run"] is True
+    assert payload["vector_index"]["paths"]["status_json"] == "reports/vector-index/status-latest.json"
+    assert payload["vector_index"]["paths"]["plan_json"] == "reports/vector-index/plan-latest.json"
+    assert payload["artifacts"]["vector_index_status"] == "reports/vector-index/status-latest.json"
+    assert payload["artifacts"]["vector_index_plan"] == "reports/vector-index/plan-latest.json"
     assert any(card["id"] == candidate_id for card in payload["human_review"]["cards"])
     assert payload["paths"]["json"] == "reports/daily-loop/daily-loop-latest.json"
     assert (project / payload["paths"]["json"]).exists()
+    assert (project / "reports/vector-index/status-latest.json").exists()
+    assert (project / "reports/vector-index/plan-latest.md").exists()
+    assert (
+        "This reviewed memory should stay active"
+        not in (project / "reports/vector-index/plan-latest.json").read_text(encoding="utf-8")
+    )
+    assert (
+        "This reviewed memory should stay active"
+        not in (project / payload["paths"]["markdown"]).read_text(encoding="utf-8")
+    )
     with VaultDB(project / "vault.db") as db:
         after = db.conn.execute("SELECT count(*) AS count FROM memory_candidates").fetchone()["count"]
     assert after == before
@@ -116,6 +134,7 @@ def test_daily_loop_report_refresh_cli_is_read_only(tmp_path, capsys):
 
     assert payload["action"] == "daily-loop-refresh"
     assert payload["safety"]["writes_candidates"] is False
+    assert payload["vector_index"]["paths"]["plan_markdown"] == "reports/vector-index/plan-latest.md"
     assert payload["paths"]["markdown"] == "reports/daily-loop/daily-loop-latest.md"
     with VaultDB(project / "vault.db") as db:
         after = db.conn.execute("SELECT count(*) AS count FROM memory_candidates").fetchone()["count"]
