@@ -141,6 +141,25 @@ vault search-qa run \
   --output /tmp/searchqa-hybrid.json
 ```
 
+To compare retrieval modes with one QA set, one top-k, and one evidence
+matching rule, use `compare-modes`. The first mode is the baseline for deltas:
+
+```bash
+vault search-qa compare-modes \
+  --qa-file benchmarks/search_qa/semantic_hybrid.en.json \
+  --modes keyword,hybrid,semantic \
+  --allow-hash \
+  --hash-dim 8 \
+  --semantic-vector-kind claim \
+  --limit 5 \
+  --output /tmp/searchqa-mode-comparison.json
+```
+
+The comparison artifact includes per-mode snapshots, `aggregate_by_mode`, and
+`comparisons_vs_baseline`. It is still retrieval-only QA: it measures whether
+the expected evidence is retrieved under the same matching rules, not whether a
+final answer model wrote the correct response.
+
 Hash vectors are test doubles. They prove command wiring, snapshot shape, and
 stored-index fusion, but they do not measure real semantic retrieval quality.
 

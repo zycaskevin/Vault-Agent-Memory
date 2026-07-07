@@ -999,23 +999,31 @@ def main(argv: list[str] | None = None):
     p = sub.add_parser("search-qa", help="搜尋品質 QA 評估與 before/after 比較")
     qa_sub = p.add_subparsers(dest="search_qa_action", help="Search QA 子命令")
 
+    def add_search_qa_retrieval_options(sp):
+        sp.add_argument("--limit", "-n", type=int, default=10)
+        sp.add_argument("--min-score", type=float, default=None, help="minimum keyword match score")
+        sp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/vault.db）")
+        sp.add_argument("--semantic-vector-kind", choices=["claim", "node"], default="claim", help="semantic_vectors kind")
+        sp.add_argument("--allow-hash", action="store_true", help="明確允許測試用 deterministic hash provider")
+        sp.add_argument("--hash-dim", type=int, default=32, help="hash provider 維度（僅 --allow-hash）")
+
     qp = qa_sub.add_parser("run", help="執行 Search QA Set 並輸出 snapshot JSON")
     qp.add_argument("--qa-file", required=True, help="Search QA Set JSON 路徑")
     qp.add_argument("--output", "-o", help="snapshot JSON 輸出路徑")
     qp.add_argument("--mode", choices=["auto", "keyword", "vector", "semantic", "hybrid"], default="keyword")
-    qp.add_argument("--limit", "-n", type=int, default=10)
-    qp.add_argument("--min-score", type=float, default=None,
-                    help="minimum keyword match score before counting weak/no-result matches")
-    qp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/vault.db）")
-    qp.add_argument("--semantic-vector-kind", choices=["claim", "node"], default="claim",
-                    help="stored semantic_vectors kind for semantic/hybrid QA")
-    qp.add_argument("--allow-hash", action="store_true", help="明確允許測試用 deterministic hash provider")
-    qp.add_argument("--hash-dim", type=int, default=32, help="hash provider 維度（僅 --allow-hash）")
+    add_search_qa_retrieval_options(qp)
 
     qp = qa_sub.add_parser("compare", help="比較兩個 Search QA snapshot JSON")
     qp.add_argument("--before", required=True, help="before snapshot JSON")
     qp.add_argument("--after", required=True, help="after snapshot JSON")
     qp.add_argument("--output", "-o", help="comparison JSON 輸出路徑")
+
+    qp = qa_sub.add_parser("compare-modes", help="用同一份 QA Set 比較多個 retrieval modes")
+    qp.add_argument("--qa-file", required=True, help="Search QA Set JSON 路徑")
+    qp.add_argument("--output", "-o", help="mode comparison JSON 輸出路徑")
+    qp.add_argument("--modes", default="keyword,hybrid,semantic",
+                    help="逗號分隔 retrieval modes；第一個 mode 是 baseline")
+    add_search_qa_retrieval_options(qp)
 
     # semantic — operator semantic-index workflows
     p = sub.add_parser("semantic", help="語意索引工作流程（rebuild/warm/smoke）")
