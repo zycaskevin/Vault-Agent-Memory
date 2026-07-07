@@ -19,6 +19,8 @@ Vault indexes each dialog turn as one evidence document:
 locomo/<sample_id>/dia/<dialog_id>
 ```
 
+By default, retrieval is scoped to the source conversation for each QA case.
+
 Run a small retrieval smoke:
 
 ```bash
@@ -44,6 +46,11 @@ Vault indexes session-level evidence by default:
 longmemeval/<question_id>/session/<session_id>
 ```
 
+By default, retrieval is scoped to the haystack for the current question. This
+matches the benchmark setup where each question carries its own candidate
+history. Use `--search-scope global` only when intentionally stress-testing
+cross-question retrieval interference across the whole generated Vault DB.
+
 Run a small retrieval smoke on the cleaned small split:
 
 ```bash
@@ -54,6 +61,32 @@ python benchmarks/external_memory_retrieval.py \
   --limit 10 \
   --output /tmp/vault-longmemeval-retrieval.json \
   --generated-qa /tmp/vault-longmemeval-searchqa.json
+```
+
+For full-run iteration, keep a reusable benchmark DB and print progress:
+
+```bash
+python benchmarks/external_memory_retrieval.py \
+  --benchmark longmemeval \
+  --input /path/to/longmemeval_s_cleaned.json \
+  --db-path /tmp/vault-longmemeval-s.db \
+  --limit 10 \
+  --progress-every 50 \
+  --output /tmp/vault-longmemeval-s-retrieval.json \
+  --generated-qa /tmp/vault-longmemeval-s-searchqa.json
+```
+
+Rerun against the same DB without rebuilding:
+
+```bash
+python benchmarks/external_memory_retrieval.py \
+  --benchmark longmemeval \
+  --input /path/to/longmemeval_s_cleaned.json \
+  --db-path /tmp/vault-longmemeval-s.db \
+  --reuse-db \
+  --limit 10 \
+  --progress-every 50 \
+  --output /tmp/vault-longmemeval-s-retrieval.json
 ```
 
 Turn-level indexing is also available:
@@ -72,6 +105,8 @@ python benchmarks/external_memory_retrieval.py \
 
 The report includes:
 
+- `search_scope`: `case` searches only the case-specific evidence pool;
+  `global` searches the whole generated Vault DB.
 - `hit_rate`: fraction of evidence-bearing cases where any expected evidence
   source appeared in top-k results.
 - `top1_hits`, `top3_hits`, `top5_hits`: evidence hit counts by rank cutoff.
@@ -101,19 +136,20 @@ as LoCoMo / LongMemEval leaderboard scores.
 ## Initial Local Smoke Results
 
 These are local keyword retrieval baselines from a development machine on
-2026-07-07. They validate that the adapters run and expose evidence-recall
-behavior. They are not official benchmark scores.
+2026-07-07 with the default `--search-scope case`. They validate that the
+adapters run and expose evidence-recall behavior. They are not official
+benchmark scores.
 
-| Benchmark | Data | Cases | Limit | Hit rate | Top-1 | Top-5 | MRR | Mean latency |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| LoCoMo | `locomo10.json` | 1,982 | 10 | 0.566599 | 495 | 951 | 0.345966 | 12.158 ms |
-| LongMemEval | `longmemeval_s_cleaned.json` first 20 evidence cases | 20 | 10 | 0.85 | 6 | 14 | 0.490417 | 16.111 ms |
-| LongMemEval | `longmemeval_s_cleaned.json` first 100 evidence cases | 100 | 10 | 0.63 | 20 | 48 | 0.317889 | 68.794 ms |
+| Benchmark | Data | Cases | Scope | Limit | Hit rate | Top-1 | Top-5 | MRR | Mean latency |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| LoCoMo | `locomo10.json` | 1,982 | case | 10 | 0.609485 | 554 | 1,016 | 0.377273 | 5.868 ms |
+| LongMemEval | `longmemeval_s_cleaned.json` first 100 evidence cases | 100 | case | 10 | 0.99 | 75 | 96 | 0.837952 | 18.886 ms |
+| LongMemEval | `longmemeval_s_cleaned.json` full small split | 500 | case | 10 | 0.988 | 361 | 462 | 0.812902 | 95.453 ms |
 
-The naive full `longmemeval_s_cleaned.json` run was interrupted after more than
-two minutes during per-case FTS search. Before treating full LongMemEval as a
-release benchmark, add progress reporting and a more efficient full-run path
-such as sharding, cached DB reuse, or benchmark-specific retrieval batching.
+The first implementation searched a global LongMemEval DB and was interrupted
+after more than two minutes during per-case FTS search. That mode is now
+available only as `--search-scope global` for stress testing; use the default
+case-scoped mode for benchmark-shaped validation.
 
 ## References
 
