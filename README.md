@@ -220,6 +220,10 @@ for that layer.
 Vault does not currently claim a LoCoMo/LongMemEval-style leaderboard score.
 Those benchmarks measure end-to-end memory QA and should only be published for
 Vault after running the same benchmark harness under comparable conditions.
+Vault now has a neutral external-memory comparison harness for retrieval-only
+runs across Vault, mem0, Letta, and compatible run artifacts; treat current
+numbers as source-hit evidence recall unless a fixed reader and judge are
+explicitly included.
 
 What Vault does publish today is reproducible verification for its own product
 contract:
@@ -542,14 +546,15 @@ Current public claims should be read as retrieval evidence, not final answer
 quality:
 
 - project onboarding proof runs found source-backed memory across 28/28 tasks
-- LoCoMo retrieval probes showed high evidence recall with hierarchical
-  retrieval
+- LoCoMo / LongMemEval external-memory probes report retrieval-only source-hit
+  metrics under fixed top-k and source-id matching
 - official answerer/judge scores are separate and require model-provider runs
 
 More detail:
 
 - [Agent onboarding benchmark](docs/agent_onboarding_benchmark.md)
 - [Search QA benchmarking](docs/search_qa_benchmarking.md)
+- [External memory benchmarks](docs/external_memory_benchmarks.md)
 
 ## Maturity
 

@@ -1,6 +1,6 @@
 # README Claim Matrix
 
-Generated: 2026-07-06
+Generated: 2026-07-07
 Scope: public README feature/capability claims for the v0.8.0 Central Memory Station major release. Localized README files should mirror the same maturity and non-goal language.
 
 ## Maturity Tiers
@@ -46,7 +46,7 @@ Scope: public README feature/capability claims for the v0.8.0 Central Memory Sta
 | C29 | External memory from other tools can enter Vault as review candidates instead of active knowledge. | usable-alpha | `vault import memory` previews Markdown, JSON, CSV, transcript, OKF-like, and auto-detected inputs. `--write-candidates` writes to `memory_candidates` with metadata, filtering, and review gates; it does not promote active knowledge. | Memory migration tests, GUI preview tests, CLI help smoke, and full local pytest pass. |
 | C30 | Vault Remote Server can replace Supabase for centralized multi-platform memory access when agents can reach one trusted host. | usable-alpha | `vault remote-server health/openapi/serve` reuses the Gateway contract, defaults to a network bind, requires a stable token for serving, and keeps remote writes candidate-first. `vault setup-agent` writes inert LaunchAgent, systemd, Docker Compose, README deployment templates, remote client templates for Codex, Claude Code, Hermes, OpenClaw, Coze, and n8n, plus a remote client validation script under `agent-install/`. It does not provide offline active multi-master sync. | Gateway, setup-agent, and CLI JSON contract tests cover remote-server health/openapi payloads, stable-token enforcement, generated deployment templates, generated remote client templates, and validation script generation. |
 | C31 | Vault is positioned as a local-first governed memory layer that complements Mem0, Letta/MemGPT, vector databases, and notes apps rather than replacing every category. | positioning | README comparison table links to official Mem0 and Letta docs and frames Vault around governance, review, rollback, source ranges, and multi-agent adapter setup. | Product positioning only; no external performance claim. |
-| C32 | README benchmark language is limited to Vault's reproducible product-contract verification unless external memory QA benchmarks are run under comparable conditions. | positioning / usable docs | README points to Search QA, README command smoke, release gates, and integration smoke. It explicitly does not claim LoCoMo/LongMemEval leaderboard scores. | `docs/search_qa_benchmarking.md`, README smoke, release parity, and targeted integration tests provide current evidence. |
+| C32 | README benchmark language is limited to Vault's reproducible product-contract verification and retrieval-only external memory evidence recall unless final-QA benchmark runs are explicitly completed. | positioning / usable docs | README points to Search QA, README command smoke, release gates, integration smoke, and the external-memory comparison harness. It explicitly does not claim LoCoMo/LongMemEval leaderboard scores and separates source-hit retrieval from answer quality. | `docs/search_qa_benchmarking.md`, `docs/external_memory_benchmarks.md`, README smoke, release parity, external comparison tests, and targeted integration tests provide current evidence. |
 
 ## Public Boundary Notes
 

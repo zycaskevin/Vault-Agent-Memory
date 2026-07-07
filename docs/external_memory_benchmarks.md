@@ -5,6 +5,31 @@ These adapters measure whether Vault search retrieves the expected evidence
 source. They do **not** measure final-answer quality, reader-model reasoning, or
 official leaderboard scores.
 
+## Current Status
+
+What is ready to claim:
+
+- Vault has retrieval-only adapters for LoCoMo and LongMemEval-style evidence
+  recall.
+- The comparison harness can export one neutral fixture, run multiple memory
+  systems with the same top-k, and score all systems with the same exact
+  `source` id matching rule.
+- Vault full retrieval baselines have been run locally for LoCoMo `locomo10`
+  and LongMemEval small.
+- mem0 and Letta adapters exist for same-fixture comparison runs.
+- The harness can add a fixed-reader answer pass and score diagnostic final-QA
+  metrics separately from retrieval.
+
+What is not ready to claim:
+
+- These numbers are not official LoCoMo or LongMemEval leaderboard scores.
+- Current published local results do not prove final answer quality.
+- Current published local results do not prove that Vault beats mem0, Letta, or
+  MemGPT-style agents.
+- The mem0 row below is a 10-case adapter smoke, not a full mem0 baseline.
+- The Letta adapter has not yet produced a published live run result in this
+  document.
+
 ## Supported Adapters
 
 ### LoCoMo
@@ -109,6 +134,18 @@ stores. The harness separates the benchmark data, system adapter, scorer, and
 engineering capability report so every system can be measured under the same
 rules.
 
+### Which Command Should I Use?
+
+| Command | Use it for | Output |
+|---|---|---|
+| `benchmarks/external_memory_retrieval.py` | Quick Vault-only retrieval probes for LoCoMo or LongMemEval. | Vault retrieval report and optional Search QA file. |
+| `benchmarks/external_memory_compare.py export-fixture` | Create a neutral benchmark fixture shared by all systems. | Fixture JSON with documents, cases, expected sources, and answers. |
+| `benchmarks/external_memory_compare.py vault-run` | Run Vault against the same comparison fixture shape. | Vault run artifact. |
+| `benchmarks/external_memory_compare.py mem0-run` | Run mem0 against the neutral fixture. | mem0 run artifact. |
+| `benchmarks/external_memory_compare.py letta-run` | Run Letta archival memory against the neutral fixture. | Letta run artifact. |
+| `benchmarks/external_memory_compare.py answer-run` | Generate final answers from retrieved evidence with one fixed reader. | Answered run artifact. |
+| `benchmarks/external_memory_compare.py score-run` | Score retrieval, optional final QA, latency, and engineering fields. | Score JSON. |
+
 The comparison flow is:
 
 ```text
@@ -119,6 +156,26 @@ LoCoMo / LongMemEval JSON
   -> shared scorer
   -> retrieval, final QA, latency, and engineering report
 ```
+
+### Prerequisites
+
+Vault runs use the local repo checkout and the benchmark JSON files. No cloud
+service, embedding API, or hosted model is required for retrieval-only keyword
+runs.
+
+mem0 runs are optional and should be done in an isolated Python environment.
+Install and pin `mem0ai`, the selected embedder package, vector store, and LLM
+provider before publishing numbers. The local smoke used `fastembed` with the
+SDK's default `thenlper/gte-large` model dimensions and `ollama` as the mem0 LLM
+provider, even though retrieval insertion used `infer=False`.
+
+Letta runs require a Letta server or cloud project, `LETTA_API_KEY`, and a
+benchmark agent id. Use a fresh agent or unique `--run-id`; the adapter does not
+delete existing archival memory.
+
+Final-QA runs require a fixed reader model, prompt, decoding settings, and
+evaluator policy. The included answer scorer is diagnostic. Do not treat it as
+the official LoCoMo or LongMemEval judge.
 
 Export a neutral fixture:
 
@@ -238,6 +295,21 @@ from a fixed reader prompt without rerunning retrieval. This keeps
 retrieval-only and answer-generation results from being mixed into one
 misleading score.
 
+### Running a Fair Comparison
+
+1. Export one fixture from the benchmark data.
+2. Run every memory system against that exact fixture.
+3. Use the same `--limit` / top-k for every run.
+4. Keep the same `--search-scope` policy for every run.
+5. Score every run with `score-run`.
+6. Compare retrieval-only metrics before comparing final-QA metrics.
+7. Only compare final-QA metrics after every system uses the same fixed reader
+   and scorer.
+8. Report index latency separately from query latency.
+9. Report engineering fields separately from retrieval and answer quality.
+10. Publish dependency versions, model versions, vector-store settings, and
+    whether each run was a full run or smoke run.
+
 ## Metrics
 
 The report includes:
@@ -278,6 +350,36 @@ as LoCoMo / LongMemEval leaderboard scores.
 The comparison harness can carry final answers, but its answer metrics are
 diagnostic only. Use an official or fixed third-party judge before making public
 claims about answer quality.
+
+## Publication Policy
+
+Safe public wording:
+
+- "retrieval-only evidence recall"
+- "source-id hit rate under fixed top-k"
+- "local adapter smoke"
+- "diagnostic final-QA metrics"
+- "not an official leaderboard score"
+
+Do not publish wording like this unless the matching evidence exists:
+
+- "Vault's LoCoMo score"
+- "Vault's LongMemEval score"
+- "Vault beats mem0 / Letta / MemGPT"
+- "end-to-end memory QA benchmark"
+- "final answer quality benchmark"
+
+Before publishing comparison numbers, check:
+
+- every compared system used the same fixture;
+- every compared system used the same top-k;
+- every compared system used the same evidence matching rule;
+- smoke runs are labeled as smoke runs;
+- full runs are labeled as full runs;
+- final-QA metrics are separated from retrieval metrics;
+- dependency, model, vector-store, and API settings are recorded;
+- no private paths, API keys, local database files, or benchmark data copies are
+  committed.
 
 ## Initial Local Smoke Results
 
