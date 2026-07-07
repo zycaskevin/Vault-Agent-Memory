@@ -47,9 +47,14 @@ def test_central_memory_sync_dry_run_writes_report_without_remote_calls(tmp_path
     assert payload["operations"]["push_read_copy"]["status"] == "dry_run"
     assert payload["operations"]["push_central_store"]["status"] == "dry_run"
     assert payload["operations"]["pull_candidates"]["status"] == "dry_run"
+    assert payload["safety"]["multi_master_active_memory"] is False
+    assert payload["safety"]["remote_candidates_require_review"] is True
+    assert payload["safety"]["active_memory_writes"] is False
+    assert payload["operations"]["pull_candidates"]["safety"]["dry_run_read_only"] is True
     saved = json.loads(report.read_text(encoding="utf-8"))
     assert saved["mode"] == "central_memory_station_sync"
     assert saved["bidirectional_active_memory"] is False
+    assert saved["safety"]["service_role_scope"] == "trusted_sync_host_only"
 
 
 def test_central_memory_sync_runs_injected_push_and_pull(tmp_path):
@@ -95,6 +100,8 @@ def test_central_memory_sync_runs_injected_push_and_pull(tmp_path):
     assert payload["operations"]["push_read_copy"]["status"] == "ok"
     assert payload["operations"]["push_central_store"]["status"] == "ok"
     assert payload["operations"]["pull_candidates"]["status"] == "ok"
+    assert payload["safety"]["pull_candidates_apply_writes_local_candidates_only"] is True
+    assert payload["safety"]["active_memory_writes"] is False
     assert calls[0][0] == "knowledge"
     assert calls[0][2] is True
     assert any(call[0] == "central_store" and call[2]["agent_id"] == "sync-agent" for call in calls)
@@ -162,7 +169,13 @@ def test_multi_host_governed_sync_keeps_remote_submissions_candidate_first(tmp_p
     )
     assert preview["ok"] is True
     assert preview["bidirectional_active_memory"] is False
+    assert preview["safety"]["multi_master_active_memory"] is False
+    assert preview["safety"]["pull_candidates_preview_read_only"] is True
+    assert preview["safety"]["pull_candidates_apply_writes_local_candidates_only"] is False
     preview_pull = preview["operations"]["pull_candidates"]
+    assert preview_pull["safety"]["preview_read_only"] is True
+    assert preview_pull["safety"]["writes_local_candidates"] is False
+    assert preview_pull["safety"]["writes_active_memory"] is False
     assert preview_pull["count"] == 1
     assert preview_pull["imported_count"] == 0
     assert preview_pull["requests"][0]["from_agent"] == "coze-remote"
@@ -178,7 +191,11 @@ def test_multi_host_governed_sync_keeps_remote_submissions_candidate_first(tmp_p
     )
     assert applied["ok"] is True
     assert applied["bidirectional_active_memory"] is False
+    assert applied["safety"]["pull_candidates_apply_writes_local_candidates_only"] is True
+    assert applied["safety"]["active_memory_writes"] is False
     applied_pull = applied["operations"]["pull_candidates"]
+    assert applied_pull["safety"]["writes_local_candidates"] is True
+    assert applied_pull["safety"]["writes_active_memory"] is False
     assert applied_pull["imported_count"] == 1
     assert applied_pull["requests"][0]["status"] == "imported"
     assert applied_pull["auto_promote"]["enabled"] is False

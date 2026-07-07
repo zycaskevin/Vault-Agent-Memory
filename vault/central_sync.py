@@ -130,6 +130,12 @@ def run_central_memory_sync(
         "source_of_truth": "local_sqlite",
         "direction": "local_to_central_read_copy_and_central_candidates_to_local_review",
         "bidirectional_active_memory": False,
+        "safety": _central_sync_safety(
+            dry_run=dry_run,
+            apply=apply,
+            auto_promote_low_risk=auto_promote_low_risk,
+            include_content=include_content,
+        ),
         "project_dir": str(project),
         "db_path": str(db_path),
         "agent_id": agent_id,
@@ -227,6 +233,11 @@ def _pull_candidates(
         "apply": bool(apply),
         "auto_promote_low_risk": bool(auto_promote_low_risk),
         "require_hmac": require_hmac,
+        "safety": _pull_candidates_safety(
+            dry_run=dry_run,
+            apply=apply,
+            auto_promote_low_risk=auto_promote_low_risk,
+        ),
     }
     if dry_run:
         payload["status"] = "dry_run"
@@ -321,6 +332,47 @@ def _next_action(operations: dict[str, Any], errors: list[dict[str, str]], *, dr
     ):
         return "Enable --push-read-copy, --push-central-store, or --pull-candidates when you want this worker to move data."
     return "Schedule this worker every 30-60 minutes on a trusted sync host."
+
+
+def _central_sync_safety(
+    *,
+    dry_run: bool,
+    apply: bool,
+    auto_promote_low_risk: bool,
+    include_content: bool,
+) -> dict[str, Any]:
+    return {
+        "source_of_truth": "local_sqlite",
+        "multi_master_active_memory": False,
+        "remote_agents_write_active_memory": False,
+        "remote_candidates_require_review": True,
+        "pull_candidates_preview_read_only": True,
+        "pull_candidates_apply_writes_local_candidates_only": bool(apply),
+        "active_memory_writes": False,
+        "read_copy_pushes_reviewed_memory": True,
+        "service_role_scope": "trusted_sync_host_only",
+        "dry_run": bool(dry_run),
+        "include_content_in_read_copy": bool(include_content),
+        "auto_promote_low_risk_enabled": bool(auto_promote_low_risk),
+        "auto_promote_low_risk_policy_gated": bool(auto_promote_low_risk),
+    }
+
+
+def _pull_candidates_safety(
+    *,
+    dry_run: bool,
+    apply: bool,
+    auto_promote_low_risk: bool,
+) -> dict[str, Any]:
+    return {
+        "candidate_first": True,
+        "dry_run_read_only": bool(dry_run),
+        "preview_read_only": not bool(apply),
+        "writes_local_candidates": bool(apply) and not bool(dry_run),
+        "writes_active_memory": False,
+        "auto_promote_low_risk_enabled": bool(auto_promote_low_risk),
+        "auto_promote_low_risk_policy_gated": bool(auto_promote_low_risk),
+    }
 
 
 def _normalize_central_backend(value: str) -> str:
