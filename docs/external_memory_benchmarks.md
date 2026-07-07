@@ -115,6 +115,7 @@ The comparison flow is:
 LoCoMo / LongMemEval JSON
   -> neutral fixture
   -> one run artifact per memory system
+  -> optional fixed-reader answer run
   -> shared scorer
   -> retrieval, final QA, latency, and engineering report
 ```
@@ -139,12 +140,23 @@ python benchmarks/external_memory_compare.py vault-run \
   --output /tmp/vault-longmemeval-run.json
 ```
 
+Generate final answers from the same retrieved evidence with a fixed reader:
+
+```bash
+python benchmarks/external_memory_compare.py answer-run \
+  --fixture /tmp/longmemeval-fixture.json \
+  --run /tmp/vault-longmemeval-run.json \
+  --llm-provider ollama \
+  --llm-model qwen3:8b \
+  --output /tmp/vault-longmemeval-answered-run.json
+```
+
 Score any system run with the same evidence matching rule:
 
 ```bash
 python benchmarks/external_memory_compare.py score-run \
   --fixture /tmp/longmemeval-fixture.json \
-  --run /tmp/vault-longmemeval-run.json \
+  --run /tmp/vault-longmemeval-answered-run.json \
   --output /tmp/vault-longmemeval-score.json
 ```
 
@@ -180,8 +192,10 @@ Adapters for other systems should emit this minimal run-artifact shape:
 
 The scorer uses exact `source` id matching for retrieval. Final QA is reported
 separately with non-official normalized exact-match, contains-expected, and
-token-F1 metrics when an adapter supplies `answer`. This keeps retrieval-only
-and answer-generation results from being mixed into one misleading score.
+token-F1 metrics when a run supplies `answer`. Use `answer-run` to add answers
+from a fixed reader prompt without rerunning retrieval. This keeps
+retrieval-only and answer-generation results from being mixed into one
+misleading score.
 
 ## Metrics
 

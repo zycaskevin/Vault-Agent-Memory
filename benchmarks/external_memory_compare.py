@@ -19,6 +19,7 @@ import json
 import re
 import statistics
 import sys
+import time
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -181,6 +182,9 @@ def score_run(
         "retrieval": _aggregate_retrieval([case["retrieval"] for case in scored_cases]),
         "final_qa": _aggregate_final_qa(answer_cases),
         "latency": _aggregate_latency([case["latency_ms"] for case in scored_cases]),
+        "answer_latency": _aggregate_latency(
+            [_coerce_float(run_cases.get(case_id, {}).get("answer_latency_ms")) for case_id in fixture_cases]
+        ),
         "engineering": _score_engineering(run.get("engineering", {})),
         "cases": scored_cases,
         "notes": [
@@ -191,6 +195,78 @@ def score_run(
     if output_path:
         write_json(output_path, result)
     return result
+
+
+def answer_run(
+    *,
+    fixture_path: str | Path,
+    run_path: str | Path,
+    output_path: str | Path | None = None,
+    llm_provider: str = "mock",
+    llm_model: str | None = None,
+    mock_response: str | None = None,
+    max_cases: int | None = None,
+    evidence_limit: int | None = None,
+    max_tokens: int = 160,
+    temperature: float = 0.0,
+) -> dict[str, Any]:
+    fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
+    run = json.loads(Path(run_path).read_text(encoding="utf-8"))
+    documents_by_source = {
+        str(document.get("source")): document for document in fixture.get("documents", [])
+    }
+    fixture_cases = {str(case["id"]): case for case in fixture.get("cases", [])}
+    llm = _create_reader_provider(
+        llm_provider=llm_provider,
+        llm_model=llm_model,
+        mock_response=mock_response,
+    )
+
+    answered_cases: list[dict[str, Any]] = []
+    for index, run_case in enumerate(run.get("cases", []), start=1):
+        if max_cases and index > max_cases:
+            answered_cases.append(run_case)
+            continue
+        case_id = str(run_case.get("id"))
+        prompt = _build_reader_prompt(
+            fixture_case=fixture_cases.get(case_id, {}),
+            run_case=run_case,
+            documents_by_source=documents_by_source,
+            evidence_limit=evidence_limit,
+        )
+        start = time.perf_counter()
+        answer = llm.generate(
+            prompt,
+            max_tokens=max_tokens,
+            temperature=temperature,
+            system_prompt=(
+                "Answer the question using only the provided evidence. "
+                "If the evidence is insufficient, say you do not know."
+            ),
+        )
+        updated = dict(run_case)
+        updated["answer"] = answer
+        updated["answer_latency_ms"] = round((time.perf_counter() - start) * 1000, 3)
+        answered_cases.append(updated)
+
+    payload = dict(run)
+    payload["generated_at"] = _utc_now()
+    payload["cases"] = answered_cases
+    payload["final_qa_reader"] = {
+        "provider": llm_provider,
+        "provider_name": llm.name,
+        "model": llm_model or "",
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "evidence_limit": evidence_limit,
+        "answered_cases": min(len(run.get("cases", [])), max_cases or len(run.get("cases", []))),
+    }
+    payload["notes"] = list(payload.get("notes", [])) + [
+        "Final answers were generated from the run artifact's retrieved evidence using a fixed reader prompt.",
+    ]
+    if output_path:
+        write_json(output_path, payload)
+    return payload
 
 
 def _load_benchmark(
@@ -353,6 +429,60 @@ def _score_engineering(engineering: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _create_reader_provider(
+    *,
+    llm_provider: str,
+    llm_model: str | None,
+    mock_response: str | None,
+):
+    from vault.llm import create_llm_provider
+
+    kwargs: dict[str, Any] = {}
+    if llm_provider == "mock" and mock_response is not None:
+        kwargs["response"] = mock_response
+    return create_llm_provider(llm_provider, model=llm_model, **kwargs)
+
+
+def _build_reader_prompt(
+    *,
+    fixture_case: dict[str, Any],
+    run_case: dict[str, Any],
+    documents_by_source: dict[str, dict[str, Any]],
+    evidence_limit: int | None,
+) -> str:
+    results = run_case.get("results", [])
+    if evidence_limit is not None:
+        results = results[:evidence_limit]
+    evidence_blocks: list[str] = []
+    for result in results:
+        if not isinstance(result, dict):
+            continue
+        source = str(result.get("source") or "")
+        document = documents_by_source.get(source, {})
+        if not document:
+            continue
+        evidence_blocks.append(
+            "\n".join(
+                part
+                for part in (
+                    f"Source: {source}",
+                    f"Title: {document.get('title', '')}",
+                    str(document.get("content") or ""),
+                )
+                if part
+            )
+        )
+    evidence_text = "\n\n---\n\n".join(evidence_blocks) if evidence_blocks else "(no evidence retrieved)"
+    return "\n\n".join(
+        [
+            f"Question: {fixture_case.get('query') or run_case.get('query') or ''}",
+            "Evidence:",
+            evidence_text,
+            "Answer in one concise sentence.",
+        ]
+    )
+
+
 def _vault_engineering_profile() -> dict[str, Any]:
     return {
         "local_first": {
@@ -456,6 +586,18 @@ def _build_parser() -> argparse.ArgumentParser:
     score.add_argument("--run", required=True)
     score.add_argument("--output", required=True)
 
+    answer = subparsers.add_parser("answer-run", help="Generate final answers from a retrieval run artifact.")
+    answer.add_argument("--fixture", required=True)
+    answer.add_argument("--run", required=True)
+    answer.add_argument("--output", required=True)
+    answer.add_argument("--llm-provider", default="mock", choices=["auto", "ollama", "claude", "openai", "mock"])
+    answer.add_argument("--llm-model")
+    answer.add_argument("--mock-response")
+    answer.add_argument("--max-cases", type=int)
+    answer.add_argument("--evidence-limit", type=int)
+    answer.add_argument("--max-tokens", type=int, default=160)
+    answer.add_argument("--temperature", type=float, default=0.0)
+
     return parser
 
 
@@ -485,6 +627,19 @@ def main(argv: list[str] | None = None) -> int:
         )
     elif args.command == "score-run":
         payload = score_run(fixture_path=args.fixture, run_path=args.run, output_path=args.output)
+    elif args.command == "answer-run":
+        payload = answer_run(
+            fixture_path=args.fixture,
+            run_path=args.run,
+            output_path=args.output,
+            llm_provider=args.llm_provider,
+            llm_model=args.llm_model,
+            mock_response=args.mock_response,
+            max_cases=args.max_cases,
+            evidence_limit=args.evidence_limit,
+            max_tokens=args.max_tokens,
+            temperature=args.temperature,
+        )
     else:
         raise ValueError(f"unsupported command: {args.command}")
     print(json.dumps(_summary(payload), ensure_ascii=False, indent=2, sort_keys=True))
@@ -500,6 +655,7 @@ def _summary(payload: dict[str, Any]) -> dict[str, Any]:
             "retrieval": payload["retrieval"],
             "final_qa": payload["final_qa"],
             "latency": payload["latency"],
+            "answer_latency": payload["answer_latency"],
             "engineering": {
                 "supported_count": payload["engineering"]["supported_count"],
                 "measured_count": payload["engineering"]["measured_count"],
