@@ -107,6 +107,7 @@ from .cli_memory_station import (
     cmd_ops,
     cmd_start,
 )
+from .central_vector_index import add_vector_index_parser, cmd_vector_index
 from .gui import DEFAULT_HOST, DEFAULT_PORT, cmd_gui
 from .gateway import cmd_gateway
 
@@ -1091,6 +1092,7 @@ def main(argv: list[str] | None = None):
     add_semantic_lifecycle(sp)
     sp.add_argument("--repeat", type=int, default=1, help="迭代次數；0=forever（只限 supervisor 管理）")
     sp.add_argument("--interval", type=float, default=60.0, help="迭代間隔秒數；測試可用 0")
+    add_vector_index_parser(sub)
 
     # automation — policy-based memory maintenance
     from vault.cli_automation import add_automation_parser
@@ -1170,6 +1172,7 @@ def main(argv: list[str] | None = None):
         "dedup": cmd_dedup,
         "search-qa": cmd_search_qa,
         "semantic": cmd_semantic,
+        "vector-index": lambda parsed: cmd_vector_index(parsed, find_project_dir=find_project_dir, json_print=_json_print),
         "okf": cmd_okf,
         "gui": cmd_gui,
         "security": cmd_security,
