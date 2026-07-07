@@ -307,7 +307,8 @@ custom memory-store adapters because the scorer is independent from Vault.
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|
 | Vault | LoCoMo | 1,982 | 5,882 | 10 | 0.609485 | 554 | 1,016 | 0.377273 | 1,184.902 ms | 5.038 ms | 9.558 ms | not run | 5 / 1 |
 | Vault | LongMemEval small | 500 | 23,867 | 10 | 0.988 | 361 | 462 | 0.812902 | 19,184.801 ms | 61.404 ms | 132.398 ms | not run | 5 / 1 |
-| mem0 | LoCoMo one-case smoke | 1 | 419 | 3 | 1.0 | 1 | 1 | 1.0 | 153,818.062 ms | 395.045 ms | 395.045 ms | not run | 3 / 2 |
+| Vault | LoCoMo 10-case smoke | 10 | 419 | 10 | 0.5 | 2 | 4 | 0.270833 | 103.923 ms | 2.019 ms | 3.082 ms | not run | 5 / 1 |
+| mem0 | LoCoMo 10-case smoke | 10 | 419 | 10 | 0.6 | 4 | 5 | 0.466667 | 184,487.260 ms | 461.913 ms | 531.428 ms | not run | 3 / 2 |
 
 `Engineering supported/measured` counts the local-first, multi-agent shared
 memory, sync, report, and audit fields in the run artifact. The Vault comparison
@@ -316,10 +317,12 @@ reporting, and audit workflows are declared as supported but should be measured
 with separate install/runtime probes before being used in public comparison
 claims.
 
-The mem0 row is an adapter smoke, not a benchmark baseline: it uses one LoCoMo
-QA case, local Qdrant, fastembed, and the mem0 SDK's retrieval path. Full mem0
-numbers should be run on the same full fixtures as Vault after pinning SDK,
-embedder, vector-store, and LLM-provider versions.
+The 10-case rows are adapter smokes, not full benchmark baselines. They use the
+same first LoCoMo sample fixture with 419 dialog documents. mem0 retrieved one
+more evidence source than Vault in this small slice, but paid much higher local
+index and query latency through Qdrant + fastembed. Full mem0 numbers should be
+run on the same full fixtures as Vault after pinning SDK, embedder, vector-store,
+and LLM-provider versions.
 
 ## References
 
