@@ -527,6 +527,21 @@ def main(argv: list[str] | None = None):
     ap.add_argument("--json", action="store_true", help="輸出 JSON")
     ap.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
 
+    ap = agent_sub.add_parser("discover", help="只讀偵測本機 Agent 與可能的 Vault projects")
+    ap.add_argument("--json", action="store_true", help="輸出 JSON")
+    ap.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+
+    ap = agent_sub.add_parser("connect-runtime", help="安全預覽/套用本機 Agent runtime 到指定 Vault project")
+    ap.add_argument("--runtime", required=True, choices=["openclaw"], help="要接線的 runtime")
+    ap.add_argument("--agent-project-dir", "--project", dest="agent_project_dir", required=True,
+                    help="此 runtime 應連到的 Vault project directory")
+    ap.add_argument("--config", dest="config_path", help="runtime 設定檔；OpenClaw 預設 ~/.openclaw/openclaw.json")
+    ap.add_argument("--wrapper-path", help="OpenClaw vault-openclaw wrapper path；省略時保留既有值或使用預設")
+    ap.add_argument("--apply", action="store_true", help="實際寫入；預設只做 dry-run preview")
+    ap.add_argument("--no-backup", action="store_true", help="寫入既有設定檔時不要產生備份")
+    ap.add_argument("--json", action="store_true", help="輸出 JSON")
+    ap.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+
     ap = agent_sub.add_parser("status", help="顯示 Agent registry 與更新狀態")
     ap.add_argument("--latest-version", default="", help="手動提供最新版本，用於離線比較")
     ap.add_argument("--check-pypi", action="store_true", help="連線 PyPI 查詢最新版本")

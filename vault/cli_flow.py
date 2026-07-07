@@ -909,6 +909,54 @@ def cmd_agent(args):
             )
         return
 
+    if action == "discover":
+        from vault.agent_setup_discovery import discover_local_agent_memory
+
+        payload = discover_local_agent_memory()
+        if args.json or args.pretty:
+            _json_print(payload, pretty=args.pretty)
+            return
+        print(f"Discovered agents: {payload['agent_count']}")
+        print(f"Discovered Vault projects: {payload['project_count']}")
+        if payload.get("recommended_shared_project_dir"):
+            print(f"Recommended shared project: {payload['recommended_shared_project_dir']}")
+        for item in payload.get("projects", [])[:8]:
+            agents = ",".join(item.get("agents") or []) or "unregistered"
+            marker = "db" if item.get("db_exists") else "no-db"
+            print(f"  {item.get('project_dir')} ({marker}; agents={agents})")
+        return
+
+    if action == "connect-runtime":
+        from vault.agent_runtime_connect import connect_runtime
+
+        try:
+            payload = connect_runtime(
+                runtime=args.runtime,
+                project_dir=args.agent_project_dir,
+                config_path=getattr(args, "config_path", None),
+                wrapper_path=getattr(args, "wrapper_path", None),
+                apply=bool(args.apply),
+                backup=not bool(args.no_backup),
+            )
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            raise SystemExit(2) from exc
+        if args.json or args.pretty:
+            _json_print(payload, pretty=args.pretty)
+            return
+        print("Runtime connection applied" if payload["apply"] else "Runtime connection preview")
+        print(f"  runtime: {payload['runtime']}")
+        print(f"  config: {payload['config_path']}")
+        print(f"  project_dir: {payload['project_dir']}")
+        if payload.get("previous_project_dir"):
+            print(f"  previous_project_dir: {payload['previous_project_dir']}")
+        print(f"  changed: {payload['changed']}")
+        if payload.get("backup_path"):
+            print(f"  backup: {payload['backup_path']}")
+        for step in payload.get("next_actions", []):
+            print(f"  next: {step}")
+        return
+
     if action == "status":
         if args.read_status and args.write_status:
             raise SystemExit("--read-status cannot be combined with --write-status")

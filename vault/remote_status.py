@@ -17,6 +17,7 @@ REMOTE_READER_FILES = {
     "shell": "remote-reader-smoke.sh",
     "n8n": "n8n-remote-reader.workflow.json",
     "coze": "coze-supabase-vault-openapi.json",
+    "coze_gateway": "coze-vault-remote-openapi.json",
     "readme": "README-remote-reader.md",
 }
 SYNC_TEMPLATE_FILES = {
@@ -56,7 +57,7 @@ def build_remote_status(
     install_dir = project / "agent-install"
     local = _local_db_status(project / "vault.db")
     setup = _file_set_status(install_dir, SETUP_FILES)
-    remote_reader = _file_set_status(install_dir, REMOTE_READER_FILES)
+    remote_reader = _remote_reader_status(install_dir)
     sync_templates = _file_set_status(install_dir, SYNC_TEMPLATE_FILES)
     access = _access_status(install_dir)
     registry = _registry_status(project, agent_id=agent_id)
@@ -192,6 +193,62 @@ def _file_set_status(base_dir: Path, files: dict[str, str]) -> dict[str, Any]:
         "targets": targets,
         "paths": paths,
     }
+
+
+def _remote_reader_status(install_dir: Path) -> dict[str, Any]:
+    status = _file_set_status(install_dir, REMOTE_READER_FILES)
+    openapi_status: dict[str, Any] = {}
+    for key in ("coze", "coze_gateway"):
+        path_text = status["paths"].get(key)
+        if path_text:
+            openapi_status[key] = _openapi_server_status(Path(path_text))
+    status["openapi"] = openapi_status
+    status["placeholder_openapi_targets"] = sorted(
+        key for key, item in openapi_status.items() if item.get("placeholder_server_url")
+    )
+    return status
+
+
+def _openapi_server_status(path: Path) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "path": str(path),
+        "server_urls": [],
+        "placeholder_server_url": False,
+        "placeholder_urls": [],
+        "configured_server_url": False,
+        "error": "",
+    }
+    data = _read_json_file(path)
+    if not data:
+        payload["error"] = "invalid_or_empty_openapi_json"
+        return payload
+    servers = data.get("servers")
+    if not isinstance(servers, list):
+        payload["error"] = "openapi_servers_missing"
+        return payload
+    urls: list[str] = []
+    for item in servers:
+        if isinstance(item, dict) and item.get("url"):
+            urls.append(str(item.get("url") or ""))
+    placeholder_urls = [url for url in urls if _is_placeholder_openapi_url(url)]
+    payload["server_urls"] = urls
+    payload["placeholder_server_url"] = bool(placeholder_urls)
+    payload["placeholder_urls"] = placeholder_urls
+    payload["configured_server_url"] = bool(urls) and not placeholder_urls
+    return payload
+
+
+def _is_placeholder_openapi_url(url: str) -> bool:
+    lowered = url.strip().lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "your_project",
+            "vault.example.internal",
+            "example.internal",
+            "replace-with",
+        )
+    )
 
 
 def _access_status(install_dir: Path) -> dict[str, Any]:
@@ -411,6 +468,10 @@ def _warnings(
         warnings.append({"severity": "medium", "code": "sync_report_stale", "message": "The latest sync report is older than the allowed freshness window."})
     if any(remote_reader["targets"].values()) and not env.get("anon_key_configured"):
         warnings.append({"severity": "medium", "code": "remote_reader_key_missing", "message": "Remote-reader templates exist, but no anon/publishable key is set for read-only agents."})
+    placeholder_targets = remote_reader.get("placeholder_openapi_targets") or []
+    if placeholder_targets:
+        target_text = ", ".join(str(item) for item in placeholder_targets)
+        warnings.append({"severity": "high", "code": "remote_reader_openapi_placeholder_url", "message": f"OpenAPI remote-reader templates still use placeholder server URLs ({target_text}); replace them before treating hosted readers as connected."})
     if access.get("agent_count", 0) and not access.get("remote_readers"):
         warnings.append({"severity": "low", "code": "no_remote_reader_agent", "message": "Agent roster exists but no agent is marked as a remote reader."})
     return warnings
@@ -434,6 +495,8 @@ def _next_actions(
         actions.append("Run the trusted sync without --dry-run to refresh remote memory freshness.")
     if any(remote_reader["targets"].values()) and not env.get("anon_key_configured"):
         actions.append("Set SUPABASE_URL and SUPABASE_ANON_KEY/SUPABASE_PUBLISHABLE_KEY before running `vault remote smoke`.")
+    if remote_reader.get("placeholder_openapi_targets"):
+        actions.append("Replace placeholder Coze/OpenAPI server URLs with the real Supabase REST endpoint or self-hosted Gateway URL, then rerun `vault remote status --json`.")
     if access.get("agent_count", 0) and not access.get("remote_readers"):
         actions.append("Review agent-roster.json and mark hosted readers with remote_reader=true or use the remote-readonly-agent preset.")
     actions.append("Use `vault remote doctor --agent-id <agent>` only after credentials and Supabase SQL policy are configured.")

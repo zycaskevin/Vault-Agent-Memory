@@ -94,6 +94,40 @@ def test_remote_status_detects_templates_roster_and_sync_report(tmp_path, monkey
     assert not any(item["code"] == "sync_report_missing" for item in payload["warnings"])
 
 
+def test_remote_status_fails_closed_for_coze_openapi_placeholder_url(tmp_path, monkeypatch):
+    from vault.cli import main
+    from vault.remote_status import build_remote_status
+
+    monkeypatch.setenv("VAULT_AGENT_REGISTRY_DIR", str(tmp_path / "registry"))
+    monkeypatch.setenv("SUPABASE_URL", "https://example.supabase.co")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "anon-test-key")
+
+    project = tmp_path / "vault-project"
+    main(["init", "--project-dir", str(project)])
+    install = project / "agent-install"
+    install.mkdir()
+    (install / "coze-vault-remote-openapi.json").write_text(
+        json.dumps(
+            {
+                "openapi": "3.1.0",
+                "servers": [{"url": "https://vault.example.internal:8789"}],
+                "paths": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = build_remote_status(project)
+
+    assert payload["ok"] is False
+    assert payload["remote_reader"]["targets"]["coze_gateway"] is True
+    assert payload["remote_reader"]["placeholder_openapi_targets"] == ["coze_gateway"]
+    assert payload["remote_reader"]["openapi"]["coze_gateway"]["placeholder_server_url"] is True
+    assert payload["remote_reader"]["openapi"]["coze_gateway"]["configured_server_url"] is False
+    assert any(item["code"] == "remote_reader_openapi_placeholder_url" for item in payload["warnings"])
+    assert any("Replace placeholder Coze/OpenAPI server URLs" in item for item in payload["next_actions"])
+
+
 def test_remote_status_warns_when_service_role_is_not_on_trusted_host(tmp_path, monkeypatch):
     from vault.cli import main
     from vault.remote_status import build_remote_status

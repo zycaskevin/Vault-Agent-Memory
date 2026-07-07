@@ -1114,6 +1114,8 @@ def test_run_agent_setup_writes_agent_roster_and_validation_pack(tmp_path):
     assert "vault remote smoke" in validate_remote
     assert "--json" in validate_remote
     assert "pricing SOP" in validate_remote
+    assert "Fail closed" in validate_coze
+    assert "remote_reader_openapi_placeholder_url" in validate_coze
     assert "content_raw" in validate_coze
     assert any("agent access matrix" in step for step in result["next_steps"])
     assert any("live validation checklist" in step for step in result["next_steps"])
@@ -1802,6 +1804,10 @@ def test_setup_agent_cli_writes_default_stable_venv_script(tmp_path, capsys):
 def test_interactive_setup_asks_optional_feature_questions(tmp_path, monkeypatch):
     from vault.agent_setup import interactive_setup
 
+    monkeypatch.setattr(
+        "vault.agent_setup.discover_local_agent_memory",
+        lambda: {"ok": True, "projects": [], "recommended_shared_project_dir": ""},
+    )
     answers = iter(
             [
                 "profile-agent",
@@ -1934,6 +1940,11 @@ def test_interactive_consumer_setup_keeps_questions_short(tmp_path, monkeypatch)
 def test_interactive_setup_does_not_ask_optional_deps_for_core_mcp_only(tmp_path, monkeypatch):
     import vault.agent_setup as agent_setup
 
+    monkeypatch.setattr(
+        agent_setup,
+        "discover_local_agent_memory",
+        lambda: {"ok": True, "projects": [], "recommended_shared_project_dir": ""},
+    )
     answers = iter(
             [
                 "codex",
