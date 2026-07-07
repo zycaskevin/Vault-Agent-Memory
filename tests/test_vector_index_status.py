@@ -193,3 +193,62 @@ def test_vector_index_plan_write_report_is_metadata_only(tmp_path, capsys):
     assert "Shared reviewed memory." not in rendered_markdown
     assert "# Vault Vector Index Plan" in rendered_markdown
     assert "metadata-only dry run" in rendered_markdown
+
+
+def test_vector_index_repair_dry_run_does_not_write_vectors(tmp_path, capsys):
+    project = _init_project(tmp_path)
+
+    main(["--project-dir", str(project), "vector-index", "repair", "--json", "--limit", "5"])
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["artifact_type"] == "central_derived_vector_index_repair"
+    assert payload["dry_run"] is True
+    assert payload["apply"] is False
+    assert payload["before"]["status"] == "empty"
+    assert payload["before"]["repair_rows_sampled"] == 1
+    assert payload["rebuild"] is None
+    assert payload["after"] is None
+    assert payload["safety"]["semantic_vector_writes"] is False
+    assert "vault vector-index repair" in payload["next_actions"][1]
+    with VaultDB(project / "vault.db") as db:
+        count = db.conn.execute("SELECT count(*) AS count FROM semantic_vectors").fetchone()["count"]
+    assert count == 0
+
+
+def test_vector_index_repair_apply_hash_writes_metadata_report_without_raw_content(tmp_path, capsys):
+    project = _init_project(tmp_path)
+
+    main(
+        [
+            "--project-dir",
+            str(project),
+            "vector-index",
+            "repair",
+            "--apply",
+            "--allow-hash",
+            "--hash-dim",
+            "8",
+            "--write-report",
+            "--json",
+            "--limit",
+            "5",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert payload["dry_run"] is False
+    assert payload["apply"] is True
+    assert payload["rebuild"]["provider_id"] == "hash-deterministic-v1"
+    assert payload["rebuild"]["knowledge_rows"] == 1
+    assert payload["after"]["semantic_vector_rows"] >= 1
+    assert payload["after"]["stale_vector_rows"] == 0
+    assert payload["safety"]["writes_candidates"] is False
+    assert payload["safety"]["active_memory_writes"] is False
+    assert payload["safety"]["remote_vector_read"] is False
+    assert payload["paths"]["json"] == "reports/vector-index/repair-latest.json"
+    assert payload["paths"]["markdown"] == "reports/vector-index/repair-latest.md"
+    report_json = (project / payload["paths"]["json"]).read_text(encoding="utf-8")
+    report_md = (project / payload["paths"]["markdown"]).read_text(encoding="utf-8")
+    assert "Shared reviewed memory." not in report_json
+    assert "Shared reviewed memory." not in report_md
+    assert "# Vault Vector Index Repair" in report_md

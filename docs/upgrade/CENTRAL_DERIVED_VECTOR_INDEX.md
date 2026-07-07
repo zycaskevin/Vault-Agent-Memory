@@ -21,6 +21,25 @@ To generate a metadata-only dry-run repair plan:
 vault vector-index plan --json
 ```
 
+To inspect the safe repair wrapper without changing the index:
+
+```bash
+vault vector-index repair --json
+```
+
+To apply the wrapper, pass `--apply`. It uses the existing semantic rebuild
+workflow and defaults to a changed-only pass:
+
+```bash
+vault vector-index repair --apply --write-report --json
+```
+
+For local tests only, deterministic hash vectors can validate the wrapper:
+
+```bash
+vault vector-index repair --apply --allow-hash --hash-dim 8 --write-report --json
+```
+
 To persist the latest status or dry-run plan for cron, release audit, or the
 next agent handoff:
 

@@ -146,6 +146,8 @@ The first shipped surface is read-only:
 - `vault vector-index status --json`
 - `vault vector-index doctor --json`
 - `vault vector-index plan --json`
+- `vault vector-index repair --json`
+- `vault vector-index repair --apply --write-report --json`
 - `vault vector-index status --write-report --json`
 - `vault vector-index plan --write-report --json`
 
@@ -162,6 +164,11 @@ or vector source text.
 The report option writes JSON and Markdown under `reports/vector-index/`, so
 cron jobs, release gates, and follow-up agents can inspect the same metadata-only
 status without relying on chat history.
+
+The repair action is a gated wrapper around the existing semantic rebuild
+workflow. It defaults to dry-run, requires `--apply` before writing semantic
+vectors, writes no candidates or active memory, and does not clean risky/orphan
+rows or enable remote vector read.
 
 They do not create a remote index, change ranking, expose vector search through
 Gateway / Remote Server, or allow hosted agents to write active memory.
