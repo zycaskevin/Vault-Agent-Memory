@@ -81,6 +81,7 @@ from vault.agent_setup_consumer import (
     write_consumer_daily_report_guide,
     write_consumer_security_hardening_guide,
 )
+from vault.agent_setup_discovery import discover_local_agent_memory
 from vault.agent_setup_supabase import (
     SUPABASE_READ_POLICY_SQL,
     SUPABASE_SETUP_DOC_URL,
@@ -304,9 +305,11 @@ class AgentSetupConfig:
     allow_private: bool = False
     stable_venv_path: Path | None = None
     agent_access_overrides: dict[str, Any] = field(default_factory=dict)
+    discovery: dict[str, Any] = field(default_factory=dict)
 
 
 def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
+    discovery = config.discovery or discover_local_agent_memory()
     access_preset = apply_agent_access_overrides(
         agent_access_preset(config.agent_preset),
         config.agent_access_overrides,
@@ -384,6 +387,7 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         "update_status_templates": {},
         "agent_adapter_startup": {},
         "agent_registry": {},
+        "machine_discovery": discovery,
         "path_fallbacks": path_fallbacks,
         "human_next_steps": [],
         "agent_next_steps": [],
@@ -429,6 +433,16 @@ def run_agent_setup(config: AgentSetupConfig) -> dict[str, Any]:
         path_fallbacks.append(fallback)
         result["path_fallbacks"] = path_fallbacks
     result["next_steps"].insert(0, "Check local agent registry and update status: vault update-status")
+    discovery_projects = discovery.get("projects") if isinstance(discovery.get("projects"), list) else []
+    other_projects = [
+        item for item in discovery_projects
+        if str(item.get("project_dir") or "") and str(Path(item["project_dir"]).expanduser().resolve()) != str(project_path)
+    ]
+    if other_projects:
+        result["next_steps"].insert(
+            0,
+            "Machine discovery found other Vault projects; connect additional Agents to this same project-dir if shared memory is intended.",
+        )
     if access_preset:
         access_path = Path(template_dir).expanduser().resolve() / "agent-access-preset.json"
         access_path.parent.mkdir(parents=True, exist_ok=True)
@@ -883,6 +897,7 @@ def optional_feature_next_steps(
 
 
 def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
+    discovery = discover_local_agent_memory()
     agent = str(argv_config.get("agent") or _ask("Agent/runtime", "generic"))
     audience = _normalize_audience(str(argv_config.get("audience") or "builder"))
     if audience == "consumer":
@@ -894,7 +909,21 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
     )
     project_dir = argv_config.get("project_dir")
     if not project_dir:
-        project_dir = _ask("Vault project directory", str(default_project_dir(scope, agent=agent)))
+        default_dir = str(default_project_dir(scope, agent=agent))
+        projects = discovery.get("projects") if isinstance(discovery.get("projects"), list) else []
+        if projects:
+            print("Existing Vault projects detected:")
+            for idx, item in enumerate(projects[:5], start=1):
+                agents = ",".join(item.get("agents") or []) or "unregistered"
+                marker = "db" if item.get("db_exists") else "no-db"
+                print(f"  {idx}. {item.get('project_dir')} ({marker}; agents={agents})")
+            recommended = str(discovery.get("recommended_shared_project_dir") or default_dir)
+            if _ask_yes_no("Connect this Agent to an existing Vault project?", scope == "shared"):
+                project_dir = _ask("Existing/shared Vault project directory", recommended)
+            else:
+                project_dir = _ask("New Vault project directory", default_dir)
+        else:
+            project_dir = _ask("Vault project directory", default_dir)
     agent_private_dir = argv_config.get("agent_private_dir")
     if not agent_private_dir and _normalize_memory_layout(memory_layout) in {"hybrid", "private"}:
         agent_private_dir = _ask("Agent private vault directory", str(default_agent_private_dir(agent)))
@@ -1070,11 +1099,13 @@ def interactive_setup(argv_config: dict[str, Any]) -> AgentSetupConfig:
         allow_private=bool(argv_config.get("allow_private", False)),
         stable_venv_path=Path(stable_venv_path).expanduser() if stable_venv_path else None,
         agent_access_overrides=dict(argv_config.get("agent_access_overrides") or {}),
+        discovery=discovery,
     )
 
 
 def _interactive_consumer_setup(argv_config: dict[str, Any], *, agent: str, audience: str) -> AgentSetupConfig:
     """Small consumer wizard: vault layout, optional connectors, daily report time."""
+    discovery = discover_local_agent_memory()
     memory_mode = normalize_memory_mode(str(argv_config.get("memory_mode") or ""), audience=audience)
     language = argv_config.get("language")
     if language is None:
@@ -1148,6 +1179,7 @@ def _interactive_consumer_setup(argv_config: dict[str, Any], *, agent: str, audi
             else None
         ),
         agent_access_overrides=dict(argv_config.get("agent_access_overrides") or {}),
+        discovery=discovery,
     )
 
 
