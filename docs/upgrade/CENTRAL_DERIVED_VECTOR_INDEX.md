@@ -21,6 +21,21 @@ To generate a metadata-only dry-run repair plan:
 vault vector-index plan --json
 ```
 
+To persist the latest status or dry-run plan for cron, release audit, or the
+next agent handoff:
+
+```bash
+vault vector-index status --write-report --json
+vault vector-index plan --write-report --json
+```
+
+These write:
+
+- `reports/vector-index/status-latest.json`
+- `reports/vector-index/status-latest.md`
+- `reports/vector-index/plan-latest.json`
+- `reports/vector-index/plan-latest.md`
+
 The current implementation reads the existing local `semantic_vectors` table and
 reports:
 
@@ -44,6 +59,10 @@ The `plan` action groups metadata rows into:
 It does not include raw memory content or vector source text. Treat it as a
 dry-run repair and cleanup plan before running rebuilds or designing remote
 vector read.
+
+The report artifacts follow the same safety boundary: metadata, counts,
+recommended commands, and sampled row identifiers only. They are intended for
+scheduled observability and release review, not as a memory export.
 
 Remote vector read remains disabled. The status surface exists so operators and
 tests can verify index posture before later Gateway, Remote Server, or
