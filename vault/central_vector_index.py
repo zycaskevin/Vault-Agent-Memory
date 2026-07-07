@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import shlex
 import sys
 from pathlib import Path
 from typing import Any
@@ -133,9 +134,25 @@ def central_vector_index_plan(
                    'stale_content_hash' AS reason
               FROM semantic_vectors AS sv
               JOIN knowledge AS k ON k.id = sv.knowledge_id
+         LEFT JOIN knowledge_nodes AS n
+                ON sv.vector_kind = 'node'
+               AND n.knowledge_id = sv.knowledge_id
+               AND n.node_uid = sv.item_uid
+         LEFT JOIN knowledge_claims AS c
+                ON sv.vector_kind = 'claim'
+               AND c.knowledge_id = sv.knowledge_id
+               AND c.claim_uid = sv.item_uid
              WHERE COALESCE(sv.content_hash, '') != ''
-               AND COALESCE(k.content_hash, '') != ''
-               AND sv.content_hash != k.content_hash{vector_filter}
+               AND (
+                    (n.id IS NOT NULL AND sv.content_hash != COALESCE(n.content_hash, ''))
+                 OR (c.id IS NOT NULL AND sv.content_hash != COALESCE(c.content_hash, ''))
+                 OR (
+                        n.id IS NULL
+                    AND c.id IS NULL
+                    AND COALESCE(k.content_hash, '') != ''
+                    AND sv.content_hash != k.content_hash
+                    )
+               ){vector_filter}
              ORDER BY k.updated_at DESC, k.id DESC
         """
         stale_rows = _plan_rows(db, stale_sql, vector_params, limit=limit)
@@ -246,9 +263,25 @@ def central_vector_index_status(db_path: str | Path) -> dict[str, Any]:
             """SELECT count(*)
                  FROM semantic_vectors AS sv
                  JOIN knowledge AS k ON k.id = sv.knowledge_id
+            LEFT JOIN knowledge_nodes AS n
+                   ON sv.vector_kind = 'node'
+                  AND n.knowledge_id = sv.knowledge_id
+                  AND n.node_uid = sv.item_uid
+            LEFT JOIN knowledge_claims AS c
+                   ON sv.vector_kind = 'claim'
+                  AND c.knowledge_id = sv.knowledge_id
+                  AND c.claim_uid = sv.item_uid
                 WHERE COALESCE(sv.content_hash, '') != ''
-                  AND COALESCE(k.content_hash, '') != ''
-                  AND sv.content_hash != k.content_hash""",
+                  AND (
+                       (n.id IS NOT NULL AND sv.content_hash != COALESCE(n.content_hash, ''))
+                    OR (c.id IS NOT NULL AND sv.content_hash != COALESCE(c.content_hash, ''))
+                    OR (
+                           n.id IS NULL
+                       AND c.id IS NULL
+                       AND COALESCE(k.content_hash, '') != ''
+                       AND sv.content_hash != k.content_hash
+                       )
+                  )""",
         )
         orphan_vectors = _scalar(
             db,
@@ -356,6 +389,167 @@ def central_vector_index_status(db_path: str | Path) -> dict[str, Any]:
     }
 
 
+def central_vector_index_repair(
+    project: str | Path,
+    db_path: str | Path,
+    *,
+    apply: bool = False,
+    changed_only: bool = True,
+    limit: int = 20,
+    allow_hash: bool = False,
+    hash_dim: int = 8,
+    persist_cache: bool = True,
+) -> dict[str, Any]:
+    """Return a dry-run or applied repair wrapper for the derived vector index."""
+    project = Path(project)
+    db_path = Path(db_path)
+    before_status = central_vector_index_status(db_path)
+    before_plan = central_vector_index_plan(db_path, limit=limit)
+    payload: dict[str, Any] = {
+        "schema_version": 1,
+        "artifact_type": "central_derived_vector_index_repair",
+        "generated_at": _generated_at(),
+        "action": "repair",
+        "dry_run": not bool(apply),
+        "apply": bool(apply),
+        "db_path": str(db_path),
+        "source_of_truth": "local_sqlite_markdown",
+        "index_role": "derived_rebuildable_cache",
+        "remote_read_enabled": False,
+        "remote_write_enabled": False,
+        "options": {
+            "changed_only": bool(changed_only),
+            "limit": int(limit),
+            "allow_hash": bool(allow_hash),
+            "hash_dim": int(hash_dim),
+            "persist_cache": bool(persist_cache),
+        },
+        "before": _compact_repair_status(before_status, before_plan),
+        "rebuild": None,
+        "after": None,
+        "safety": {
+            "writes_candidates": False,
+            "active_memory_writes": False,
+            "semantic_vector_writes": bool(apply),
+            "embedding_cache_writes": bool(apply and persist_cache),
+            "remote_vector_read": False,
+            "remote_vector_write": False,
+            "raw_memory_content_included": False,
+        },
+        "next_actions": [],
+        "notes": [
+            "Repair uses the existing semantic rebuild workflow.",
+            "Remote vector read remains disabled after repair.",
+        ],
+    }
+    if not apply:
+        payload["next_actions"] = [
+            "Review the dry-run plan before applying vector-index repair.",
+            _repair_command(project, changed_only=changed_only, limit=limit, allow_hash=allow_hash, hash_dim=hash_dim),
+        ]
+        return payload
+
+    from .db import VaultDB
+    from .embed import create_embedding_provider
+    from .semantic import (
+        DeterministicHashEmbeddingProvider,
+        PersistentCachedEmbeddingProvider,
+        rebuild_semantic_index,
+        validate_embedding_provider,
+    )
+
+    with VaultDB(db_path) as db:
+        if allow_hash:
+            provider = DeterministicHashEmbeddingProvider(dim=hash_dim)
+        else:
+            provider_name = db.get_config("embedding_provider", "auto")
+            model_key = db.get_config("embedding_model", "mix")
+            provider = create_embedding_provider(provider=provider_name, model_key=model_key)
+        provider = validate_embedding_provider(provider, require_semantic=not allow_hash, allow_hash=allow_hash)
+        if persist_cache:
+            provider = PersistentCachedEmbeddingProvider(provider, db)
+        try:
+            stats = rebuild_semantic_index(
+                db,
+                provider,
+                require_semantic=not allow_hash,
+                allow_hash=allow_hash,
+                changed_only=changed_only,
+                limit=limit,
+            )
+            payload["rebuild"] = {
+                "provider_id": provider.provider_id,
+                "is_semantic": bool(provider.is_semantic),
+                "dimension": int(provider.dim),
+                "knowledge_rows": int(stats.knowledge_rows),
+                "node_vectors": int(stats.node_vectors),
+                "claim_vectors": int(stats.claim_vectors),
+                "changed_only": bool(getattr(stats, "changed_only", False)),
+                "candidate_rows": int(getattr(stats, "candidate_rows", stats.knowledge_rows)),
+                "skipped_rows": int(getattr(stats, "skipped_rows", 0)),
+            }
+            if persist_cache:
+                payload["rebuild"]["persistent_cache"] = {
+                    "memory_rows": int(getattr(provider, "cache_size", 0)),
+                    "persistent_hits": int(getattr(provider, "persistent_hits", 0)),
+                    "persistent_misses": int(getattr(provider, "persistent_misses", 0)),
+                    "writes": int(getattr(provider, "writes", 0)),
+                }
+        finally:
+            close = getattr(provider, "close", None)
+            if callable(close):
+                close()
+
+    after_status = central_vector_index_status(db_path)
+    after_plan = central_vector_index_plan(db_path, limit=limit)
+    payload["after"] = _compact_repair_status(after_status, after_plan)
+    payload["next_actions"] = [
+        "Run Search QA before changing hybrid/vector ranking.",
+        "Keep remote vector read disabled until access-policy tests cover the serving path.",
+    ]
+    return payload
+
+
+def _compact_repair_status(status: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
+    counts = status.get("counts") or {}
+    plan_counts = plan.get("counts") or {}
+    return {
+        "status": status.get("status", ""),
+        "semantic_vector_rows": int(counts.get("semantic_vector_rows") or 0),
+        "indexed_default_policy_rows": int(counts.get("indexed_default_policy_rows") or 0),
+        "missing_default_policy_rows": int(counts.get("missing_default_policy_rows") or 0),
+        "stale_vector_rows": int(counts.get("stale_vector_rows") or 0),
+        "orphan_vector_rows": int(counts.get("orphan_vector_rows") or 0),
+        "shared_remote_risk_vector_rows": int(counts.get("shared_remote_risk_vector_rows") or 0),
+        "local_vector_search": bool((status.get("readiness") or {}).get("local_vector_search", False)),
+        "shared_remote_vector_read": bool((status.get("readiness") or {}).get("shared_remote_vector_read", False)),
+        "repair_rows_sampled": int(plan_counts.get("repair_rows_sampled") or 0),
+        "cleanup_rows_sampled": int(plan_counts.get("cleanup_rows_sampled") or 0),
+        "recommended_commands": plan.get("recommended_commands", []),
+    }
+
+
+def _repair_command(
+    project: Path,
+    *,
+    changed_only: bool,
+    limit: int,
+    allow_hash: bool,
+    hash_dim: int,
+) -> str:
+    parts = [
+        "vault vector-index repair",
+        f"--project-dir {shlex.quote(str(project))}",
+        "--apply",
+        f"--limit {int(limit)}",
+    ]
+    if not changed_only:
+        parts.append("--full")
+    if allow_hash:
+        parts += ["--allow-hash", f"--hash-dim {int(hash_dim)}"]
+    return " ".join(parts)
+
+
 def _resolve_vector_index_report_path(project: Path, action: str, report_path: str | Path = "") -> Path:
     report_dir = project / "reports" / "vector-index"
     report_dir.mkdir(parents=True, exist_ok=True)
@@ -367,7 +561,7 @@ def _resolve_vector_index_report_path(project: Path, action: str, report_path: s
         if allowed != resolved and allowed not in resolved.parents:
             raise ValueError("vector-index report path must stay under reports/vector-index")
         return resolved
-    safe_action = action if action in {"status", "doctor", "plan"} else "status"
+    safe_action = action if action in {"status", "doctor", "plan", "repair"} else "status"
     return report_dir / f"{safe_action}-latest.json"
 
 
@@ -393,6 +587,8 @@ def write_vector_index_report(
 
 
 def render_vector_index_markdown(payload: dict[str, Any]) -> str:
+    if payload.get("artifact_type") == "central_derived_vector_index_repair":
+        return _render_vector_index_repair_markdown(payload)
     if payload.get("artifact_type") == "central_derived_vector_index_plan":
         return _render_vector_index_plan_markdown(payload)
     return _render_vector_index_status_markdown(payload)
@@ -535,6 +731,68 @@ def _plan_markdown_keys(group_key: str) -> list[str]:
     return ["knowledge_id", "title", "source", "layer", "scope", "sensitivity", "status", "updated_at", "reason"]
 
 
+def _render_vector_index_repair_markdown(payload: dict[str, Any]) -> str:
+    before = payload.get("before") or {}
+    after = payload.get("after") or {}
+    rebuild = payload.get("rebuild") or {}
+    lines = [
+        "# Vault Vector Index Repair",
+        "",
+        f"- generated_at: `{_md_text(payload.get('generated_at', ''))}`",
+        f"- dry_run: `{str(bool(payload.get('dry_run', True))).lower()}`",
+        f"- apply: `{str(bool(payload.get('apply', False))).lower()}`",
+        f"- remote_read_enabled: `{str(bool(payload.get('remote_read_enabled', False))).lower()}`",
+        f"- remote_write_enabled: `{str(bool(payload.get('remote_write_enabled', False))).lower()}`",
+        "",
+        "## Before",
+        "",
+        _repair_status_table(before),
+        "",
+    ]
+    if after:
+        lines += ["## After", "", _repair_status_table(after), ""]
+    if rebuild:
+        lines += [
+            "## Rebuild",
+            "",
+            f"- provider_id: `{_md_text(rebuild.get('provider_id', ''))}`",
+            f"- is_semantic: `{str(bool(rebuild.get('is_semantic', False))).lower()}`",
+            f"- dimension: `{int(rebuild.get('dimension') or 0)}`",
+            f"- knowledge_rows: `{int(rebuild.get('knowledge_rows') or 0)}`",
+            f"- node_vectors: `{int(rebuild.get('node_vectors') or 0)}`",
+            f"- claim_vectors: `{int(rebuild.get('claim_vectors') or 0)}`",
+            f"- changed_only: `{str(bool(rebuild.get('changed_only', False))).lower()}`",
+            "",
+        ]
+    lines += ["## Next Actions", ""]
+    for action in payload.get("next_actions") or []:
+        lines.append(f"- `{_md_text(action)}`" if action.startswith("vault ") else f"- {_md_text(action)}")
+    lines += [
+        "",
+        "## Safety",
+        "",
+        "- no active memory writes",
+        "- no candidate writes",
+        "- no raw memory content",
+        "- remote vector read remains disabled",
+    ]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _repair_status_table(payload: dict[str, Any]) -> str:
+    keys = [
+        "status",
+        "semantic_vector_rows",
+        "missing_default_policy_rows",
+        "stale_vector_rows",
+        "orphan_vector_rows",
+        "shared_remote_risk_vector_rows",
+        "repair_rows_sampled",
+        "cleanup_rows_sampled",
+    ]
+    return "\n".join([_md_row(["metric", "value"]), _md_row(["---", "---"]), *[_md_row([key, payload.get(key, "")]) for key in keys]])
+
+
 def add_vector_index_parser(sub) -> None:
     parser = sub.add_parser("vector-index", help="中央衍生向量索引狀態與安全檢查")
     vector_sub = parser.add_subparsers(dest="vector_index_action")
@@ -568,15 +826,62 @@ def add_vector_index_parser(sub) -> None:
     sp = vector_sub.add_parser("plan", help="產生 read-only rebuild/cleanup dry-run plan")
     add_plan_filters(sp)
 
+    sp = vector_sub.add_parser("repair", help="dry-run or apply safe semantic vector-index repair")
+    sp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/vault.db）")
+    sp.add_argument("--apply", action="store_true", help="apply semantic rebuild repair; default is dry-run")
+    sp.add_argument("--full", action="store_true", help="full rebuild instead of changed-only repair")
+    sp.add_argument("--limit", type=int, default=20, help="maximum rows to repair in one apply pass")
+    sp.add_argument("--allow-hash", action="store_true", help="allow deterministic hash vectors for local tests")
+    sp.add_argument("--hash-dim", type=int, default=8, help="deterministic hash vector dimension")
+    sp.add_argument("--no-persist-cache", action="store_true", help="disable persistent embedding cache during apply")
+    sp.add_argument("--json", action="store_true", help="輸出 JSON")
+    sp.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+    add_report_args(sp)
+
 
 def cmd_vector_index(args, *, find_project_dir, json_print) -> None:
     action = args.vector_index_action
-    if action not in {"status", "doctor", "plan"}:
-        print("error: vector-index requires action: status, doctor, or plan", file=sys.stderr)
+    if action not in {"status", "doctor", "plan", "repair"}:
+        print("error: vector-index requires action: status, doctor, plan, or repair", file=sys.stderr)
         raise SystemExit(2)
 
     project_dir = find_project_dir()
     db_path = Path(args.db_path) if args.db_path else project_dir / "vault.db"
+    if action == "repair":
+        payload = central_vector_index_repair(
+            project_dir,
+            db_path,
+            apply=bool(getattr(args, "apply", False)),
+            changed_only=not bool(getattr(args, "full", False)),
+            limit=getattr(args, "limit", 20),
+            allow_hash=bool(getattr(args, "allow_hash", False)),
+            hash_dim=getattr(args, "hash_dim", 8),
+            persist_cache=not bool(getattr(args, "no_persist_cache", False)),
+        )
+        if getattr(args, "write_report", False):
+            payload["paths"] = write_vector_index_report(
+                project_dir,
+                payload,
+                action=action,
+                report_path=getattr(args, "report_path", ""),
+            )
+        if args.json:
+            json_print(payload, pretty=args.pretty)
+            return
+        print(f"Vector index repair: {'apply' if payload['apply'] else 'dry-run'}")
+        before = payload.get("before") or {}
+        after = payload.get("after") or {}
+        print(f"  before_status: {before.get('status', '')}")
+        print(f"  repair_rows_sampled: {before.get('repair_rows_sampled', 0)}")
+        print(f"  cleanup_rows_sampled: {before.get('cleanup_rows_sampled', 0)}")
+        if after:
+            print(f"  after_status: {after.get('status', '')}")
+            print(f"  after_semantic_vector_rows: {after.get('semantic_vector_rows', 0)}")
+        if payload.get("paths"):
+            print(f"  report_json: {payload['paths']['json']}")
+            print(f"  report_markdown: {payload['paths']['markdown']}")
+        return
+
     if action == "plan":
         payload = central_vector_index_plan(
             db_path,
