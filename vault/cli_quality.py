@@ -109,9 +109,11 @@ def cmd_dedup(args):
 def cmd_search_qa(args):
     """Search QA snapshot run / before-after compare."""
     from vault.search_qa import (
+        compare_search_qa_modes,
         compare_search_qa_snapshots,
         evaluate_search_qa,
         format_search_qa_comparison,
+        format_search_qa_mode_comparison,
         format_search_qa_snapshot,
         write_json,
     )
@@ -157,5 +159,38 @@ def cmd_search_qa(args):
         print(format_search_qa_comparison(comparison))
         return
 
-    print("error: search-qa requires action: run or compare", file=sys.stderr)
+    if action == "compare-modes":
+        db_path = Path(args.db_path) if args.db_path else find_project_dir() / "vault.db"
+        modes = [mode.strip() for mode in args.modes.split(",") if mode.strip()]
+        embed_provider = None
+        needs_provider = any(mode in {"semantic", "hybrid", "vector"} for mode in modes) or (
+            "auto" in modes
+            and (
+                getattr(args, "allow_hash", False)
+                or _semantic_vectors_exist(db_path)
+            )
+        )
+        if needs_provider:
+            semantic_args = argparse.Namespace(
+                db_path=str(db_path),
+                allow_hash=getattr(args, "allow_hash", False),
+                hash_dim=getattr(args, "hash_dim", 32),
+            )
+            embed_provider = _create_semantic_provider(semantic_args, cached=True)
+        payload = compare_search_qa_modes(
+            db_path=db_path,
+            qa_file=args.qa_file,
+            modes=modes,
+            limit=args.limit,
+            embed_provider=embed_provider,
+            semantic_vector_kind=args.semantic_vector_kind,
+            allow_hash=args.allow_hash,
+            min_score=args.min_score,
+        )
+        if args.output:
+            write_json(args.output, payload)
+        print(format_search_qa_mode_comparison(payload))
+        return
+
+    print("error: search-qa requires action: run, compare, or compare-modes", file=sys.stderr)
     raise SystemExit(2)

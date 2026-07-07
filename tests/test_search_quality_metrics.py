@@ -12,10 +12,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from vault.db import VaultDB
 from vault.docmap import build_document_map_for_entry
 from vault.search_qa import (
+    compare_search_qa_modes,
     _matches_expected,
     compare_search_qa_snapshots,
     evaluate_search_qa,
     format_search_qa_comparison,
+    format_search_qa_mode_comparison,
     load_search_qa_set,
 )
 
@@ -504,6 +506,45 @@ def test_compare_search_qa_snapshots_computes_stable_deltas_and_text():
     assert "-1" in text
 
 
+def test_compare_search_qa_modes_uses_one_qa_set_and_topk(tmp_path):
+    from vault.semantic import DeterministicHashEmbeddingProvider, rebuild_semantic_index
+
+    db_path = _build_fixture_db(tmp_path)
+    qa_file = _write_qa_file(tmp_path)
+    db = VaultDB(db_path).connect()
+    try:
+        rebuild_semantic_index(db, provider=DeterministicHashEmbeddingProvider(dim=8), allow_hash=True)
+    finally:
+        db.close()
+
+    payload = compare_search_qa_modes(
+        db_path=db_path,
+        qa_file=qa_file,
+        modes=["keyword", "hybrid", "semantic"],
+        limit=3,
+        generated_at="2026-01-02T03:04:05+00:00",
+        embed_provider=DeterministicHashEmbeddingProvider(dim=8),
+        allow_hash=True,
+    )
+
+    assert payload["artifact_type"] == "search_qa_mode_comparison"
+    assert payload["mode_order"] == ["keyword", "hybrid", "semantic"]
+    assert payload["baseline_mode"] == "keyword"
+    assert set(payload["aggregate_by_mode"]) == {"keyword", "hybrid", "semantic"}
+    assert set(payload["comparisons_vs_baseline"]) == {"hybrid", "semantic"}
+    assert all(snapshot["limit"] == 3 for snapshot in payload["snapshots"].values())
+    assert all(snapshot["qa_file"] == str(qa_file) for snapshot in payload["snapshots"].values())
+    assert payload["snapshots"]["hybrid"]["mode"] == "hybrid"
+    assert payload["snapshots"]["semantic"]["mode"] == "semantic"
+    assert payload["snapshots"]["keyword"]["aggregate"]["top1_hits"] == 2
+    assert json.loads(json.dumps(payload)) == payload
+
+    text = format_search_qa_mode_comparison(payload)
+    assert "Search QA mode comparison" in text
+    assert "baseline_mode: keyword" in text
+    assert "delta hybrid" in text
+
+
 def test_search_qa_cli_run_and_compare_smoke(tmp_path):
     db_path = _build_fixture_db(tmp_path)
     qa_file = _write_qa_file(tmp_path)
@@ -564,6 +605,54 @@ def test_search_qa_cli_run_and_compare_smoke(tmp_path):
     comparison = json.loads(compare_path.read_text(encoding="utf-8"))
     assert comparison["metrics"]["top1_hits"]["delta"] == 1
     assert "top1_hits" in result.stdout
+
+
+def test_search_qa_cli_compare_modes_smoke(tmp_path):
+    from vault.semantic import DeterministicHashEmbeddingProvider, rebuild_semantic_index
+
+    db_path = _build_fixture_db(tmp_path)
+    qa_file = _write_qa_file(tmp_path)
+    output_path = tmp_path / "compare_modes.json"
+    db = VaultDB(db_path).connect()
+    try:
+        rebuild_semantic_index(db, provider=DeterministicHashEmbeddingProvider(dim=8), allow_hash=True)
+    finally:
+        db.close()
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "vault.cli",
+            "search-qa",
+            "compare-modes",
+            "--db-path",
+            str(db_path),
+            "--qa-file",
+            str(qa_file),
+            "--output",
+            str(output_path),
+            "--modes",
+            "keyword,hybrid,semantic",
+            "--allow-hash",
+            "--hash-dim",
+            "8",
+            "--limit",
+            "3",
+        ],
+        cwd=Path(__file__).parent.parent,
+        text=True,
+        capture_output=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert output_path.exists()
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["artifact_type"] == "search_qa_mode_comparison"
+    assert payload["mode_order"] == ["keyword", "hybrid", "semantic"]
+    assert payload["baseline_mode"] == "keyword"
+    assert set(payload["comparisons_vs_baseline"]) == {"hybrid", "semantic"}
+    assert "Search QA mode comparison" in result.stdout
+    assert "delta hybrid" in result.stdout
 
 
 def test_search_qa_cli_hybrid_allow_hash_uses_semantic_index(tmp_path):

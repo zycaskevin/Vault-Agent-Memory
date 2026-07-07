@@ -141,6 +141,71 @@ def compare_search_qa_snapshots(
     }
 
 
+def compare_search_qa_modes(
+    *,
+    db_path: str | Path,
+    qa_file: str | Path,
+    modes: list[str] | tuple[str, ...] = ("keyword", "hybrid", "semantic"),
+    limit: int = 10,
+    generated_at: str | None = None,
+    embed_provider: Any | None = None,
+    semantic_vector_kind: str = "claim",
+    allow_hash: bool = False,
+    min_score: float | None = None,
+) -> dict[str, Any]:
+    """Run the same QA set through multiple retrieval modes and compare them.
+
+    The same QA file, top-k limit, source-aware matching rules, semantic vector
+    kind, and min-score threshold are used for every mode.
+    """
+    mode_order = _normalize_modes(modes)
+    generated_at = generated_at or datetime.now(timezone.utc).isoformat()
+    snapshots = {
+        mode: evaluate_search_qa(
+            db_path=db_path,
+            qa_file=qa_file,
+            mode=mode,
+            limit=limit,
+            generated_at=generated_at,
+            embed_provider=embed_provider,
+            semantic_vector_kind=semantic_vector_kind,
+            allow_hash=allow_hash,
+            min_score=min_score,
+        )
+        for mode in mode_order
+    }
+    baseline_mode = mode_order[0]
+    comparisons = {
+        mode: compare_search_qa_snapshots(snapshots[baseline_mode], snapshot)
+        for mode, snapshot in snapshots.items()
+        if mode != baseline_mode
+    }
+    return {
+        "comparison_version": 1,
+        "artifact_type": "search_qa_mode_comparison",
+        "qa_file": str(Path(qa_file)),
+        "db_path": str(Path(db_path)),
+        "generated_at": generated_at,
+        "mode_order": mode_order,
+        "baseline_mode": baseline_mode,
+        "limit": max(1, int(limit)),
+        "min_score": min_score,
+        "semantic_vector_kind": semantic_vector_kind,
+        "allow_hash": bool(allow_hash),
+        "matching_rule": "same Search QA expected_ids/titles/source/claim/span/node rules for every mode",
+        "aggregate_by_mode": {
+            mode: snapshot.get("aggregate", {})
+            for mode, snapshot in snapshots.items()
+        },
+        "comparisons_vs_baseline": comparisons,
+        "snapshots": snapshots,
+        "notes": [
+            "This is retrieval-only evidence matching, not final-answer QA.",
+            "Use the same embedding provider/model/dimension as the stored semantic index for semantic and hybrid modes.",
+        ],
+    }
+
+
 def format_search_qa_comparison(comparison: dict[str, Any]) -> str:
     """Render a small human-readable before/after report."""
     lines = ["Search QA comparison"]
@@ -161,6 +226,44 @@ def format_search_qa_comparison(comparison: dict[str, Any]) -> str:
             f"- {key}: {metric.get('before', 0)} -> {metric.get('after', 0)} "
             f"({ _format_delta(delta) })"
         )
+    return "\n".join(lines)
+
+
+def format_search_qa_mode_comparison(payload: dict[str, Any]) -> str:
+    """Render a compact multi-mode comparison summary."""
+    lines = [
+        "Search QA mode comparison",
+        f"- baseline_mode: {payload.get('baseline_mode', '')}",
+        f"- modes: {', '.join(payload.get('mode_order') or [])}",
+        f"- limit: {payload.get('limit', 0)}",
+    ]
+    aggregates = payload.get("aggregate_by_mode") or {}
+    for mode in payload.get("mode_order") or []:
+        aggregate = aggregates.get(mode) or {}
+        lines.append(
+            f"- {mode}: top1={aggregate.get('top1_hits', 0)} "
+            f"topk={aggregate.get('topk_hits', 0)} "
+            f"mrr={aggregate.get('mean_reciprocal_rank', 0.0)} "
+            f"source_hit_rate={aggregate.get('source_hit_rate', 0.0)} "
+            f"mean_latency_ms={aggregate.get('mean_latency_ms', 0.0)}"
+        )
+    comparisons = payload.get("comparisons_vs_baseline") or {}
+    for mode in payload.get("mode_order") or []:
+        comparison = comparisons.get(mode)
+        if not comparison:
+            continue
+        metrics = comparison.get("metrics") or {}
+        lines.append(f"- delta {mode}:")
+        for key in (
+            "top1_hits",
+            "topk_hits",
+            "mean_reciprocal_rank",
+            "source_hit_rate",
+            "result_mode_violations",
+            "mean_latency_ms",
+        ):
+            if key in metrics:
+                lines.append(f"  - {key}: {metrics[key].get('delta', 0)}")
     return "\n".join(lines)
 
 
@@ -564,6 +667,22 @@ def _load_snapshot(snapshot: str | Path | dict[str, Any]) -> dict[str, Any]:
         return snapshot
     path = Path(snapshot)
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _normalize_modes(modes: list[str] | tuple[str, ...]) -> list[str]:
+    valid = {"auto", "keyword", "vector", "semantic", "hybrid"}
+    normalized: list[str] = []
+    for mode in modes:
+        text = str(mode).strip()
+        if not text:
+            continue
+        if text not in valid:
+            raise ValueError(f"unsupported Search QA mode: {text}")
+        if text not in normalized:
+            normalized.append(text)
+    if len(normalized) < 2:
+        raise ValueError("compare-modes requires at least two modes")
+    return normalized
 
 
 def _snapshot_ref(snapshot: dict[str, Any]) -> dict[str, Any]:
