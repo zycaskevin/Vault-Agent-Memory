@@ -235,8 +235,10 @@ contract:
   part of the release scope.
 
 See [Search QA benchmarking](docs/search_qa_benchmarking.md) and
-[README claim matrix](docs/readme_claim_matrix.md) for the current evidence
-model.
+[External memory benchmarks](docs/external_memory_benchmarks.md) for the
+current retrieval-only evidence model. The
+[README claim matrix](docs/readme_claim_matrix.md) tracks which public claims
+are positioning, product-contract checks, or implemented runtime capabilities.
 
 ## Killer Demo: Shared Governed Memory
 
