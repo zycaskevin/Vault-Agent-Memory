@@ -102,7 +102,9 @@ def run_vault_comparison(
     search_scope: str = "case",
     reuse_db: bool = False,
     progress_every: int = 0,
-    semantic_vector_kind: str = "claim",
+    semantic_vector_kind: str = "node",
+    embed_provider: str = "",
+    embed_model: str = "mix",
     allow_hash: bool = False,
     hash_dim: int = 32,
 ) -> dict[str, Any]:
@@ -118,6 +120,8 @@ def run_vault_comparison(
         reuse_db=reuse_db,
         progress_every=progress_every,
         semantic_vector_kind=semantic_vector_kind,
+        embed_provider=embed_provider,
+        embed_model=embed_model,
         allow_hash=allow_hash,
         hash_dim=hash_dim,
     )
@@ -133,6 +137,8 @@ def run_vault_comparison(
         "granularity": granularity,
         "search_scope": search_scope,
         "semantic_vector_kind": semantic_vector_kind,
+        "embed_provider": embed_provider or None,
+        "embed_model": embed_model if embed_provider else None,
         "allow_hash": bool(allow_hash),
         "hash_dim": int(hash_dim) if allow_hash else None,
         "documents_total": report.get("documents_indexed"),
@@ -171,7 +177,9 @@ def run_vault_mode_comparison(
     search_scope: str = "case",
     reuse_db: bool = False,
     progress_every: int = 0,
-    semantic_vector_kind: str = "claim",
+    semantic_vector_kind: str = "node",
+    embed_provider: str = "",
+    embed_model: str = "mix",
     allow_hash: bool = False,
     hash_dim: int = 32,
 ) -> dict[str, Any]:
@@ -206,6 +214,8 @@ def run_vault_mode_comparison(
                 reuse_db=bool(reuse_db or index > 0),
                 progress_every=progress_every,
                 semantic_vector_kind=semantic_vector_kind,
+                embed_provider=embed_provider,
+                embed_model=embed_model,
                 allow_hash=allow_hash,
                 hash_dim=hash_dim,
             )
@@ -227,6 +237,8 @@ def run_vault_mode_comparison(
         "granularity": granularity,
         "search_scope": search_scope,
         "semantic_vector_kind": semantic_vector_kind,
+        "embed_provider": embed_provider or None,
+        "embed_model": embed_model if embed_provider else None,
         "allow_hash": bool(allow_hash),
         "hash_dim": int(hash_dim) if allow_hash else None,
         "documents_total": fixture.get("documents_total"),
@@ -1245,7 +1257,13 @@ def _build_parser() -> argparse.ArgumentParser:
     vault_run.add_argument("--search-scope", default="case", choices=["case", "global"])
     vault_run.add_argument("--reuse-db", action="store_true")
     vault_run.add_argument("--progress-every", type=int, default=0)
-    vault_run.add_argument("--semantic-vector-kind", default="claim", choices=["claim", "node"])
+    vault_run.add_argument("--semantic-vector-kind", default="node", choices=["claim", "node"])
+    vault_run.add_argument(
+        "--embed-provider",
+        default="",
+        choices=["", "auto", "onnx", "ollama", "openai", "cohere", "voyage", "sentence-transformers"],
+    )
+    vault_run.add_argument("--embed-model", default="mix")
     vault_run.add_argument("--allow-hash", action="store_true", help="Allow deterministic hash embeddings.")
     vault_run.add_argument("--hash-dim", type=int, default=32)
 
@@ -1261,7 +1279,13 @@ def _build_parser() -> argparse.ArgumentParser:
     vault_modes.add_argument("--search-scope", default="case", choices=["case", "global"])
     vault_modes.add_argument("--reuse-db", action="store_true")
     vault_modes.add_argument("--progress-every", type=int, default=0)
-    vault_modes.add_argument("--semantic-vector-kind", default="claim", choices=["claim", "node"])
+    vault_modes.add_argument("--semantic-vector-kind", default="node", choices=["claim", "node"])
+    vault_modes.add_argument(
+        "--embed-provider",
+        default="",
+        choices=["", "auto", "onnx", "ollama", "openai", "cohere", "voyage", "sentence-transformers"],
+    )
+    vault_modes.add_argument("--embed-model", default="mix")
     vault_modes.add_argument("--allow-hash", action="store_true", help="Allow deterministic hash embeddings.")
     vault_modes.add_argument("--hash-dim", type=int, default=32)
 
@@ -1331,6 +1355,8 @@ def main(argv: list[str] | None = None) -> int:
             reuse_db=args.reuse_db,
             progress_every=args.progress_every,
             semantic_vector_kind=args.semantic_vector_kind,
+            embed_provider=args.embed_provider,
+            embed_model=args.embed_model,
             allow_hash=args.allow_hash,
             hash_dim=args.hash_dim,
         )
@@ -1348,6 +1374,8 @@ def main(argv: list[str] | None = None) -> int:
             reuse_db=args.reuse_db,
             progress_every=args.progress_every,
             semantic_vector_kind=args.semantic_vector_kind,
+            embed_provider=args.embed_provider,
+            embed_model=args.embed_model,
             allow_hash=args.allow_hash,
             hash_dim=args.hash_dim,
         )
