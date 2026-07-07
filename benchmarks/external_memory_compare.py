@@ -16,10 +16,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import statistics
 import sys
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -206,6 +210,75 @@ def run_mem0_comparison(
         "notes": [
             "mem0 adapter run artifact. Score with score-run against the same fixture.",
             "Documents are inserted with infer=False so retrieval-only runs do not require an LLM extraction pass.",
+        ],
+    }
+    if output_path:
+        write_json(output_path, payload)
+    return payload
+
+
+def run_letta_comparison(
+    *,
+    fixture_path: str | Path,
+    agent_id: str,
+    output_path: str | Path | None = None,
+    api_key: str | None = None,
+    base_url: str = "https://api.letta.com",
+    run_id: str | None = None,
+    limit: int = 10,
+    search_scope: str = "case",
+    transport: Any | None = None,
+) -> dict[str, Any]:
+    if search_scope not in {"case", "global"}:
+        raise ValueError(f"unsupported search scope: {search_scope}")
+    fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
+    actual_run_id = run_id or f"external-memory-{int(time.time())}"
+    api_key = api_key or os.environ.get("LETTA_API_KEY")
+    request = transport or _letta_json_request
+    index_start = time.perf_counter()
+    for document in fixture.get("documents", []):
+        _create_letta_passage(
+            request=request,
+            base_url=base_url,
+            api_key=api_key,
+            agent_id=agent_id,
+            document=document,
+            run_id=actual_run_id,
+        )
+    index_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
+    cases = [
+        _search_letta_case(
+            request=request,
+            base_url=base_url,
+            api_key=api_key,
+            agent_id=agent_id,
+            case=case,
+            run_id=actual_run_id,
+            limit=limit,
+            search_scope=search_scope,
+        )
+        for case in fixture.get("cases", [])
+    ]
+    payload = {
+        "schema_version": 1,
+        "artifact_type": "external_memory_comparison_run",
+        "generated_at": _utc_now(),
+        "system": "letta",
+        "system_version": "",
+        "benchmark": fixture.get("benchmark"),
+        "top_k": limit,
+        "retrieval_mode": "letta:archival-memory",
+        "search_scope": search_scope,
+        "agent_id": agent_id,
+        "run_id": actual_run_id,
+        "documents_total": len(fixture.get("documents", [])),
+        "index_latency_ms": index_latency_ms,
+        "cases_total": len(cases),
+        "cases": cases,
+        "engineering": _letta_engineering_profile(),
+        "notes": [
+            "Letta adapter run artifact using archival-memory create/search endpoints.",
+            "Documents are isolated with a generated run-id tag; this adapter does not delete existing Letta memory.",
         ],
     }
     if output_path:
@@ -635,6 +708,135 @@ def _normalize_mem0_results(raw: Any) -> list[dict[str, Any]]:
     return results
 
 
+def _create_letta_passage(
+    *,
+    request: Any,
+    base_url: str,
+    api_key: str | None,
+    agent_id: str,
+    document: dict[str, Any],
+    run_id: str,
+) -> None:
+    request(
+        method="POST",
+        url=f"{base_url.rstrip('/')}/v1/agents/{agent_id}/archival-memory",
+        api_key=api_key,
+        payload={
+            "text": str(document.get("content") or ""),
+            "tags": _letta_document_tags(document, run_id),
+        },
+    )
+
+
+def _search_letta_case(
+    *,
+    request: Any,
+    base_url: str,
+    api_key: str | None,
+    agent_id: str,
+    case: dict[str, Any],
+    run_id: str,
+    limit: int,
+    search_scope: str,
+) -> dict[str, Any]:
+    tags = [f"run:{run_id}"]
+    if search_scope == "case":
+        tags.append(f"category:{case.get('search_category', '')}")
+    params = {
+        "query": str(case.get("query") or ""),
+        "top_k": limit,
+        "tags": tags,
+        "tag_match_mode": "all",
+    }
+    start = time.perf_counter()
+    raw = request(
+        method="GET",
+        url=f"{base_url.rstrip('/')}/v1/agents/{agent_id}/archival-memory/search",
+        api_key=api_key,
+        params=params,
+    )
+    latency_ms = round((time.perf_counter() - start) * 1000, 3)
+    return {
+        "id": case.get("id"),
+        "query": case.get("query", ""),
+        "latency_ms": latency_ms,
+        "results": _normalize_letta_results(raw),
+    }
+
+
+def _letta_document_tags(document: dict[str, Any], run_id: str) -> list[str]:
+    tags = [
+        f"run:{run_id}",
+        f"source:{document.get('source', '')}",
+        f"category:{document.get('category', '')}",
+        "external-memory-comparison",
+    ]
+    raw_tags = str(document.get("tags") or "")
+    tags.extend(f"tag:{tag.strip()}" for tag in raw_tags.split(",") if tag.strip())
+    return tags
+
+
+def _normalize_letta_results(raw: Any) -> list[dict[str, Any]]:
+    candidates = raw.get("results", []) if isinstance(raw, dict) else []
+    results: list[dict[str, Any]] = []
+    for index, item in enumerate(candidates, start=1):
+        if not isinstance(item, dict):
+            continue
+        tags = item.get("tags") if isinstance(item.get("tags"), list) else []
+        source = _source_from_tags(tags)
+        results.append(
+            {
+                "rank": index,
+                "id": item.get("id"),
+                "title": "",
+                "source": source,
+                "score": item.get("score"),
+                "content": str(item.get("content") or item.get("text") or ""),
+            }
+        )
+    return results
+
+
+def _source_from_tags(tags: list[Any]) -> str:
+    for tag in tags:
+        text = str(tag)
+        if text.startswith("source:"):
+            return text.removeprefix("source:")
+    return ""
+
+
+def _letta_json_request(
+    *,
+    method: str,
+    url: str,
+    api_key: str | None,
+    payload: dict[str, Any] | None = None,
+    params: dict[str, Any] | None = None,
+) -> Any:
+    if not api_key:
+        raise RuntimeError("letta-run requires LETTA_API_KEY or --letta-api-key")
+    if params:
+        query = urllib.parse.urlencode(params, doseq=True)
+        url = f"{url}?{query}"
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    request = urllib.request.Request(
+        url,
+        data=data,
+        method=method,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {api_key}",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            body = response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"Letta API request failed: {exc.code} {detail}") from exc
+    return json.loads(body) if body else {}
+
+
 def _create_reader_provider(
     *,
     llm_provider: str,
@@ -749,6 +951,36 @@ def _mem0_engineering_profile() -> dict[str, Any]:
     }
 
 
+def _letta_engineering_profile() -> dict[str, Any]:
+    return {
+        "local_first": {
+            "supported": False,
+            "measured": False,
+            "evidence": "The adapter uses Letta HTTP archival-memory endpoints and does not measure local mode.",
+        },
+        "multi_agent_shared_memory": {
+            "supported": True,
+            "measured": False,
+            "evidence": "Letta supports memory concepts and agents; this adapter scopes one agent archival memory run.",
+        },
+        "sync": {
+            "supported": True,
+            "measured": False,
+            "evidence": "Remote Letta API persistence is used, but cross-agent sync is not measured.",
+        },
+        "report": {
+            "supported": False,
+            "measured": False,
+            "evidence": "No daily report surface is exercised by this adapter.",
+        },
+        "audit": {
+            "supported": True,
+            "measured": True,
+            "evidence": "Adapter preserves benchmark source ids as passage tags and output result sources.",
+        },
+    }
+
+
 def _normalize_answer(value: str) -> str:
     normalized = value.lower()
     normalized = re.sub(r"[^a-z0-9\u4e00-\u9fff]+", " ", normalized)
@@ -838,6 +1070,16 @@ def _build_parser() -> argparse.ArgumentParser:
     mem0_run.add_argument("--llm-provider", default="ollama", choices=["ollama", "openai", "anthropic"])
     mem0_run.add_argument("--threshold", type=float, default=0.0)
 
+    letta_run = subparsers.add_parser("letta-run", help="Run Letta archival memory and emit a comparison artifact.")
+    letta_run.add_argument("--fixture", required=True)
+    letta_run.add_argument("--output", required=True)
+    letta_run.add_argument("--agent-id", required=True)
+    letta_run.add_argument("--letta-api-key")
+    letta_run.add_argument("--base-url", default="https://api.letta.com")
+    letta_run.add_argument("--run-id")
+    letta_run.add_argument("--limit", type=int, default=10)
+    letta_run.add_argument("--search-scope", default="case", choices=["case", "global"])
+
     score = subparsers.add_parser("score-run", help="Score a comparison run artifact against a fixture.")
     score.add_argument("--fixture", required=True)
     score.add_argument("--run", required=True)
@@ -894,6 +1136,17 @@ def main(argv: list[str] | None = None) -> int:
             embedding_dims=args.embedding_dims,
             llm_provider=args.llm_provider,
             threshold=args.threshold,
+        )
+    elif args.command == "letta-run":
+        payload = run_letta_comparison(
+            fixture_path=args.fixture,
+            agent_id=args.agent_id,
+            output_path=args.output,
+            api_key=args.letta_api_key,
+            base_url=args.base_url,
+            run_id=args.run_id,
+            limit=args.limit,
+            search_scope=args.search_scope,
         )
     elif args.command == "score-run":
         payload = score_run(fixture_path=args.fixture, run_path=args.run, output_path=args.output)

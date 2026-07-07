@@ -5,7 +5,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from benchmarks.external_memory_compare import answer_run, export_fixture, run_mem0_comparison, score_run
+from benchmarks.external_memory_compare import (
+    answer_run,
+    export_fixture,
+    run_letta_comparison,
+    run_mem0_comparison,
+    score_run,
+)
 
 
 REPO_ROOT = Path(__file__).parent.parent
@@ -224,6 +230,87 @@ def test_external_memory_compare_mem0_run_uses_fixture_and_case_scope(tmp_path):
     assert score["retrieval"]["hit_cases"] == 1
     assert score["index_latency"]["available"] is True
     assert score["index_latency"]["item_count"] == 2
+    assert score["engineering"]["capabilities"]["audit"]["measured"] is True
+
+
+def test_external_memory_compare_letta_run_uses_tags_and_source_ids(tmp_path):
+    fixture_path = tmp_path / "fixture.json"
+    run_path = tmp_path / "letta-run.json"
+    score_path = tmp_path / "score.json"
+    fixture_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "artifact_type": "external_memory_comparison_fixture",
+                "benchmark": "toy",
+                "documents": [
+                    {
+                        "source": "toy/source/1",
+                        "title": "Right source",
+                        "content": "The brass key is in the north drawer.",
+                        "category": "case:a",
+                        "tags": "toy,source",
+                    }
+                ],
+                "cases": [
+                    {
+                        "id": "case-1",
+                        "query": "Where is the brass key?",
+                        "expected_sources": ["toy/source/1"],
+                        "expected_answer": "north drawer",
+                        "search_category": "case:a",
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    calls = []
+
+    def fake_transport(*, method, url, api_key, payload=None, params=None):
+        calls.append(
+            {
+                "method": method,
+                "url": url,
+                "api_key": api_key,
+                "payload": payload,
+                "params": params,
+            }
+        )
+        if method == "GET":
+            return {
+                "count": 1,
+                "results": [
+                    {
+                        "id": "passage-1",
+                        "content": "The brass key is in the north drawer.",
+                        "tags": ["run:run-1", "source:toy/source/1", "category:case:a"],
+                    }
+                ],
+            }
+        return {"id": "passage-1"}
+
+    run = run_letta_comparison(
+        fixture_path=fixture_path,
+        agent_id="agent-test",
+        output_path=run_path,
+        api_key="test-key",
+        base_url="https://example.letta",
+        run_id="run-1",
+        limit=5,
+        transport=fake_transport,
+    )
+    score = score_run(fixture_path=fixture_path, run_path=run_path, output_path=score_path)
+
+    assert run["system"] == "letta"
+    assert run["documents_total"] == 1
+    assert calls[0]["method"] == "POST"
+    assert "source:toy/source/1" in calls[0]["payload"]["tags"]
+    assert calls[1]["method"] == "GET"
+    assert calls[1]["params"]["tags"] == ["run:run-1", "category:case:a"]
+    assert calls[1]["params"]["tag_match_mode"] == "all"
+    assert run["cases"][0]["results"][0]["source"] == "toy/source/1"
+    assert score["retrieval"]["hit_cases"] == 1
     assert score["engineering"]["capabilities"]["audit"]["measured"] is True
 
 
