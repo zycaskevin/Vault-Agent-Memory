@@ -10,6 +10,7 @@ from benchmarks.external_memory_compare import (
     export_fixture,
     run_letta_comparison,
     run_mem0_comparison,
+    run_vault_mode_comparison,
     score_run,
 )
 
@@ -383,6 +384,56 @@ def test_external_memory_compare_answer_run_adds_final_answers(tmp_path):
     assert score["answer_latency"]["available"] is True
 
 
+def test_external_memory_compare_vault_mode_comparison_scores_modes(tmp_path):
+    data_path = tmp_path / "longmemeval.json"
+    output_path = tmp_path / "mode-compare.json"
+    data_path.write_text(
+        json.dumps(
+            [
+                {
+                    "question_id": "q1",
+                    "question": "Which cabinet stores the amber notebook?",
+                    "answer": "The west cabinet.",
+                    "haystack_session_ids": ["s1"],
+                    "haystack_sessions": [
+                        [
+                            {
+                                "role": "user",
+                                "content": "I stored the amber notebook in the west cabinet.",
+                                "has_answer": True,
+                            }
+                        ]
+                    ],
+                    "answer_session_ids": ["s1"],
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    payload = run_vault_mode_comparison(
+        benchmark="longmemeval",
+        input_path=data_path,
+        output_path=output_path,
+        limit=3,
+        modes=["keyword", "hybrid"],
+        allow_hash=True,
+        hash_dim=8,
+    )
+
+    assert payload["artifact_type"] == "external_memory_vault_mode_comparison"
+    assert payload["mode_order"] == ["keyword", "hybrid"]
+    assert payload["baseline_mode"] == "keyword"
+    assert set(payload["runs_by_mode"]) == {"keyword", "hybrid"}
+    assert set(payload["scores_by_mode"]) == {"keyword", "hybrid"}
+    assert payload["runs_by_mode"]["keyword"]["top_k"] == 3
+    assert payload["runs_by_mode"]["hybrid"]["top_k"] == 3
+    assert payload["scores_by_mode"]["keyword"]["retrieval"]["hit_cases"] == 1
+    assert payload["scores_by_mode"]["hybrid"]["retrieval"]["hit_cases"] == 1
+    assert "hybrid" in payload["comparisons_vs_baseline"]
+    assert output_path.exists()
+
+
 def test_external_memory_compare_cli_vault_run_and_score(tmp_path):
     data_path = tmp_path / "longmemeval.json"
     fixture_path = tmp_path / "fixture.json"
@@ -503,3 +554,62 @@ def test_external_memory_compare_cli_vault_run_and_score(tmp_path):
     assert score["latency"]["available"] is True
     assert score["answer_latency"]["available"] is True
     assert score["engineering"]["capabilities"]["local_first"]["measured"] is True
+
+
+def test_external_memory_compare_cli_vault_mode_compare_smoke(tmp_path):
+    data_path = tmp_path / "longmemeval.json"
+    output_path = tmp_path / "mode-compare.json"
+    data_path.write_text(
+        json.dumps(
+            [
+                {
+                    "question_id": "q1",
+                    "question": "Which cabinet stores the amber notebook?",
+                    "answer": "The west cabinet.",
+                    "haystack_session_ids": ["s1"],
+                    "haystack_sessions": [
+                        [
+                            {
+                                "role": "user",
+                                "content": "I stored the amber notebook in the west cabinet.",
+                                "has_answer": True,
+                            }
+                        ]
+                    ],
+                    "answer_session_ids": ["s1"],
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(REPO_ROOT / "benchmarks" / "external_memory_compare.py"),
+            "vault-mode-compare",
+            "--benchmark",
+            "longmemeval",
+            "--input",
+            str(data_path),
+            "--output",
+            str(output_path),
+            "--limit",
+            "3",
+            "--modes",
+            "keyword,hybrid",
+            "--allow-hash",
+            "--hash-dim",
+            "8",
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        timeout=30,
+    )
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(output_path.read_text(encoding="utf-8"))
+    assert payload["artifact_type"] == "external_memory_vault_mode_comparison"
+    assert payload["mode_order"] == ["keyword", "hybrid"]
+    assert "aggregate_by_mode" in result.stdout

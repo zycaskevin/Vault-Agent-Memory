@@ -60,6 +60,9 @@ def run_external_memory_retrieval(
     search_scope: str = "case",
     reuse_db: bool = False,
     progress_every: int = 0,
+    semantic_vector_kind: str = "claim",
+    allow_hash: bool = False,
+    hash_dim: int = 32,
 ) -> dict[str, Any]:
     if search_scope not in {"case", "global"}:
         raise ValueError(f"unsupported search scope: {search_scope}")
@@ -85,6 +88,12 @@ def run_external_memory_retrieval(
             index_start = time.perf_counter()
             _build_vault_db(actual_db_path, documents)
             index_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
+        embed_provider = _prepare_semantic_provider(
+            db_path=actual_db_path,
+            mode=mode,
+            allow_hash=allow_hash,
+            hash_dim=hash_dim,
+        )
         case_results = _evaluate_cases(
             db_path=actual_db_path,
             cases=cases,
@@ -92,6 +101,9 @@ def run_external_memory_retrieval(
             limit=limit,
             search_scope=search_scope,
             progress_every=progress_every,
+            embed_provider=embed_provider,
+            semantic_vector_kind=semantic_vector_kind,
+            allow_hash=allow_hash,
         )
 
     report = {
@@ -103,6 +115,9 @@ def run_external_memory_retrieval(
         "limit": limit,
         "granularity": granularity,
         "search_scope": search_scope,
+        "semantic_vector_kind": semantic_vector_kind,
+        "allow_hash": bool(allow_hash),
+        "hash_dim": int(hash_dim) if allow_hash else None,
         "db_path": str(actual_db_path),
         "db_reused": db_reused,
         "documents_indexed": len(documents),
@@ -336,6 +351,26 @@ def _build_vault_db(db_path: Path, documents: list[ExternalDocument]) -> None:
         db.close()
 
 
+def _prepare_semantic_provider(
+    *,
+    db_path: Path,
+    mode: str,
+    allow_hash: bool,
+    hash_dim: int,
+):
+    if mode not in {"semantic", "hybrid"} or not allow_hash:
+        return None
+    from vault.semantic import DeterministicHashEmbeddingProvider, rebuild_semantic_index
+
+    provider = DeterministicHashEmbeddingProvider(dim=hash_dim)
+    db = VaultDB(str(db_path)).connect()
+    try:
+        rebuild_semantic_index(db, provider=provider, allow_hash=True)
+    finally:
+        db.close()
+    return provider
+
+
 def _evaluate_cases(
     *,
     db_path: Path,
@@ -344,16 +379,27 @@ def _evaluate_cases(
     limit: int,
     search_scope: str,
     progress_every: int,
+    embed_provider: Any | None,
+    semantic_vector_kind: str,
+    allow_hash: bool,
 ) -> list[dict[str, Any]]:
     db = VaultDB(str(db_path)).connect()
     try:
-        search = VaultSearch(db)
+        search = VaultSearch(db, embed_provider=embed_provider)
         results: list[dict[str, Any]] = []
         total = len(cases)
         for index, case in enumerate(cases, start=1):
             start = time.perf_counter()
             category = case.category if search_scope == "case" else None
-            raw = search.search(case.query, mode=mode, limit=limit, category=category, use_rerank=False)
+            raw = search.search(
+                case.query,
+                mode=mode,
+                limit=limit,
+                category=category,
+                use_rerank=False,
+                semantic_vector_kind=semantic_vector_kind,
+                allow_hash=allow_hash,
+            )
             latency_ms = round((time.perf_counter() - start) * 1000, 3)
             expected = set(case.expected_sources)
             ranked = [
@@ -481,7 +527,10 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--generated-qa", help="Optional generated Search QA JSON path.")
     parser.add_argument("--max-cases", type=int, help="Limit evidence-bearing cases for smoke runs.")
     parser.add_argument("--limit", type=int, default=10, help="Search top-k limit.")
-    parser.add_argument("--mode", default="keyword", choices=["keyword", "semantic", "hybrid"])
+    parser.add_argument("--mode", default="keyword", choices=["keyword", "semantic", "hybrid", "vector"])
+    parser.add_argument("--semantic-vector-kind", default="claim", choices=["claim", "node"])
+    parser.add_argument("--allow-hash", action="store_true", help="Allow deterministic hash embeddings for plumbing tests.")
+    parser.add_argument("--hash-dim", type=int, default=32, help="Hash provider dimension when --allow-hash is set.")
     parser.add_argument("--quiet", action="store_true", help="Print only the aggregate summary.")
     parser.add_argument(
         "--search-scope",
@@ -525,6 +574,9 @@ def main(argv: list[str] | None = None) -> int:
         search_scope=args.search_scope,
         reuse_db=args.reuse_db,
         progress_every=args.progress_every,
+        semantic_vector_kind=args.semantic_vector_kind,
+        allow_hash=args.allow_hash,
+        hash_dim=args.hash_dim,
     )
     if args.quiet:
         print(json.dumps(report["aggregate"], ensure_ascii=False, indent=2, sort_keys=True))

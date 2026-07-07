@@ -141,6 +141,7 @@ rules.
 | `benchmarks/external_memory_retrieval.py` | Quick Vault-only retrieval probes for LoCoMo or LongMemEval. | Vault retrieval report and optional Search QA file. |
 | `benchmarks/external_memory_compare.py export-fixture` | Create a neutral benchmark fixture shared by all systems. | Fixture JSON with documents, cases, expected sources, and answers. |
 | `benchmarks/external_memory_compare.py vault-run` | Run Vault against the same comparison fixture shape. | Vault run artifact. |
+| `benchmarks/external_memory_compare.py vault-mode-compare` | Run Vault against the same data/top-k/scorer across multiple retrieval modes. | Vault mode-comparison artifact with per-mode runs, scores, and deltas. |
 | `benchmarks/external_memory_compare.py mem0-run` | Run mem0 against the neutral fixture. | mem0 run artifact. |
 | `benchmarks/external_memory_compare.py letta-run` | Run Letta archival memory against the neutral fixture. | Letta run artifact. |
 | `benchmarks/external_memory_compare.py answer-run` | Generate final answers from retrieved evidence with one fixed reader. | Answered run artifact. |
@@ -196,6 +197,24 @@ python benchmarks/external_memory_compare.py vault-run \
   --progress-every 50 \
   --output /tmp/vault-longmemeval-run.json
 ```
+
+Run Vault mode comparisons with one benchmark file, one top-k, one search scope,
+and one exact `source` id scorer:
+
+```bash
+python benchmarks/external_memory_compare.py vault-mode-compare \
+  --benchmark longmemeval \
+  --input /path/to/longmemeval_s_cleaned.json \
+  --limit 10 \
+  --modes keyword,hybrid,semantic \
+  --progress-every 50 \
+  --output /tmp/vault-longmemeval-mode-comparison.json
+```
+
+For CI or local plumbing checks without downloading a real embedding model, add
+`--allow-hash --hash-dim 8`. Hash vectors only verify semantic/hybrid command
+wiring and artifact shape; do not publish hash-vector numbers as semantic
+retrieval quality.
 
 Run mem0 into the same run-artifact schema:
 
