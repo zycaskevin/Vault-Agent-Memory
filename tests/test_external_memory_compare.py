@@ -112,6 +112,7 @@ def test_external_memory_compare_scores_retrieval_answer_latency_and_engineering
     assert result["retrieval"]["mean_reciprocal_rank"] == 0.5
     assert result["final_qa"]["available"] is True
     assert result["final_qa"]["normalized_contains_expected_rate"] == 1.0
+    assert result["index_latency"]["available"] is False
     assert result["latency"]["mean_ms"] == 12.5
     assert result["answer_latency"]["available"] is False
     assert result["engineering"]["supported_count"] == 3
@@ -213,12 +214,16 @@ def test_external_memory_compare_mem0_run_uses_fixture_and_case_scope(tmp_path):
     score = score_run(fixture_path=fixture_path, run_path=run_path, output_path=score_path)
 
     assert run["system"] == "mem0"
+    assert run["documents_total"] == 2
+    assert run["index_latency_ms"] >= 0
     assert fake.documents[0]["infer"] is False
     assert fake.search_filters == [
         {"user_id": "external-memory-comparison", "search_category": "case:a"}
     ]
     assert run["cases"][0]["results"][0]["source"] == "toy/source/1"
     assert score["retrieval"]["hit_cases"] == 1
+    assert score["index_latency"]["available"] is True
+    assert score["index_latency"]["item_count"] == 2
     assert score["engineering"]["capabilities"]["audit"]["measured"] is True
 
 
@@ -287,6 +292,7 @@ def test_external_memory_compare_answer_run_adds_final_answers(tmp_path):
     assert answered["final_qa_reader"]["provider"] == "mock"
     assert score["final_qa"]["available"] is True
     assert score["final_qa"]["normalized_exact_match_rate"] == 1.0
+    assert score["index_latency"]["available"] is False
     assert score["answer_latency"]["available"] is True
 
 
@@ -406,6 +412,7 @@ def test_external_memory_compare_cli_vault_run_and_score(tmp_path):
     assert score["retrieval"]["hit_cases"] == 1
     assert score["final_qa"]["available"] is True
     assert score["final_qa"]["normalized_exact_match_rate"] == 1.0
+    assert score["index_latency"]["available"] is True
     assert score["latency"]["available"] is True
     assert score["answer_latency"]["available"] is True
     assert score["engineering"]["capabilities"]["local_first"]["measured"] is True

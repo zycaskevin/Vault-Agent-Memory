@@ -121,6 +121,8 @@ def run_vault_comparison(
         "retrieval_mode": mode,
         "granularity": granularity,
         "search_scope": search_scope,
+        "documents_total": report.get("documents_indexed"),
+        "index_latency_ms": report.get("index_latency_ms"),
         "cases_total": report["cases_total"],
         "cases": [
             {
@@ -167,8 +169,10 @@ def run_mem0_comparison(
         llm_provider=llm_provider,
     )
     try:
+        index_start = time.perf_counter()
         _reset_memory(memory)
         _index_mem0_documents(memory, fixture.get("documents", []))
+        index_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
         cases = [
             _search_mem0_case(
                 memory=memory,
@@ -194,6 +198,8 @@ def run_mem0_comparison(
         "retrieval_mode": f"mem0:{embedder}",
         "llm_provider": llm_provider,
         "search_scope": search_scope,
+        "documents_total": len(fixture.get("documents", [])),
+        "index_latency_ms": index_latency_ms,
         "cases_total": len(cases),
         "cases": cases,
         "engineering": _mem0_engineering_profile(),
@@ -246,6 +252,7 @@ def score_run(
         "cases_scored": len(scored_cases),
         "retrieval": _aggregate_retrieval([case["retrieval"] for case in scored_cases]),
         "final_qa": _aggregate_final_qa(answer_cases),
+        "index_latency": _run_level_latency(run.get("index_latency_ms"), run.get("documents_total")),
         "latency": _aggregate_latency([case["latency_ms"] for case in scored_cases]),
         "answer_latency": _aggregate_latency(
             [_coerce_float(run_cases.get(case_id, {}).get("answer_latency_ms")) for case_id in fixture_cases]
@@ -462,6 +469,20 @@ def _aggregate_latency(values: list[float | None]) -> dict[str, Any]:
         "p50_ms": round(statistics.median(latencies), 3),
         "p95_ms": round(_percentile(latencies, 0.95), 3),
         "max_ms": round(max(latencies), 3),
+    }
+
+
+def _run_level_latency(value: Any, item_count: Any = None) -> dict[str, Any]:
+    latency = _coerce_float(value)
+    count = int(item_count) if isinstance(item_count, int) else None
+    if latency is None:
+        return {"available": False, "total_ms": None, "per_item_ms": None, "item_count": count}
+    per_item = round(latency / count, 6) if count else None
+    return {
+        "available": True,
+        "total_ms": round(latency, 3),
+        "per_item_ms": per_item,
+        "item_count": count,
     }
 
 
@@ -903,6 +924,7 @@ def _summary(payload: dict[str, Any]) -> dict[str, Any]:
             "benchmark": payload["benchmark"],
             "retrieval": payload["retrieval"],
             "final_qa": payload["final_qa"],
+            "index_latency": payload["index_latency"],
             "latency": payload["latency"],
             "answer_latency": payload["answer_latency"],
             "engineering": {

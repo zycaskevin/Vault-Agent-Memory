@@ -235,6 +235,8 @@ The report includes:
 - comparison scores additionally include final-QA answer metrics when supplied
   and engineering capability fields for local-first, shared multi-agent memory,
   sync, reporting, and auditability.
+- comparison run artifacts include `index_latency_ms` so build/index cost is
+  reported separately from per-query retrieval latency.
 
 ## Limits
 
@@ -283,11 +285,11 @@ These results use the neutral fixture -> Vault run artifact -> shared scorer
 pipeline. They should be the baseline for future mem0, Letta, MemGPT-style, or
 custom memory-store adapters because the scorer is independent from Vault.
 
-| System | Benchmark | Cases | Top-k | Retrieval hit rate | Top-1 | Top-5 | MRR | Mean latency | p95 latency | Final QA | Engineering supported/measured |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|
-| Vault | LoCoMo | 1,982 | 10 | 0.609485 | 554 | 1,016 | 0.377273 | 6.898 ms | 14.445 ms | not run | 5 / 1 |
-| Vault | LongMemEval small | 500 | 10 | 0.988 | 361 | 462 | 0.812902 | 84.010 ms | 178.797 ms | not run | 5 / 1 |
-| mem0 | LoCoMo one-case smoke | 1 | 3 | 1.0 | 1 | 1 | 1.0 | 389.316 ms | 389.316 ms | not run | 3 / 2 |
+| System | Benchmark | Cases | Docs | Top-k | Retrieval hit rate | Top-1 | Top-5 | MRR | Index latency | Mean query latency | p95 query latency | Final QA | Engineering supported/measured |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---:|
+| Vault | LoCoMo | 1,982 | 5,882 | 10 | 0.609485 | 554 | 1,016 | 0.377273 | 1,184.902 ms | 5.038 ms | 9.558 ms | not run | 5 / 1 |
+| Vault | LongMemEval small | 500 | 23,867 | 10 | 0.988 | 361 | 462 | 0.812902 | 19,184.801 ms | 61.404 ms | 132.398 ms | not run | 5 / 1 |
+| mem0 | LoCoMo one-case smoke | 1 | 419 | 3 | 1.0 | 1 | 1 | 1.0 | 153,818.062 ms | 395.045 ms | 395.045 ms | not run | 3 / 2 |
 
 `Engineering supported/measured` counts the local-first, multi-agent shared
 memory, sync, report, and audit fields in the run artifact. The Vault comparison

@@ -80,8 +80,11 @@ def run_external_memory_retrieval(
 
     with _maybe_temp_db(db_path) as actual_db_path:
         db_reused = bool(reuse_db and actual_db_path.exists())
+        index_latency_ms = 0.0
         if not db_reused:
+            index_start = time.perf_counter()
             _build_vault_db(actual_db_path, documents)
+            index_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
         case_results = _evaluate_cases(
             db_path=actual_db_path,
             cases=cases,
@@ -103,6 +106,7 @@ def run_external_memory_retrieval(
         "db_path": str(actual_db_path),
         "db_reused": db_reused,
         "documents_indexed": len(documents),
+        "index_latency_ms": index_latency_ms,
         "cases_total": len(cases),
         "aggregate": _aggregate(case_results),
         "cases": case_results,
