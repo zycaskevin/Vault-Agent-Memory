@@ -13,6 +13,13 @@ def _init_project(tmp_path):
     return project
 
 
+def _memory_counts(project):
+    with VaultDB(project / "vault.db") as db:
+        active_count = db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
+        candidate_count = len(db.list_memory_candidates(status=None))
+    return active_count, candidate_count
+
+
 def test_central_memory_sync_dry_run_writes_report_without_remote_calls(tmp_path):
     project = _init_project(tmp_path)
     report = tmp_path / "central-report.json"
@@ -126,6 +133,65 @@ def test_central_memory_sync_can_pull_self_host_candidates(tmp_path):
         rows = db.list_memory_candidates(status=None)
     assert len(rows) == 1
     assert rows[0]["source"] == "central_memory_candidate"
+
+
+def test_multi_host_governed_sync_keeps_remote_submissions_candidate_first(tmp_path):
+    project = _init_project(tmp_path)
+
+    submitted = submit_central_candidate_local(
+        project,
+        title="Remote host candidate",
+        content=(
+            "Decision: remote hosts should submit candidates because official "
+            "shared memory is promoted only by the trusted sync host."
+        ),
+        from_agent="coze-remote",
+        trust=0.8,
+        source_ref="remote://coze/session/1",
+    )
+    assert submitted["ok"] is True
+    assert submitted["status"] == "candidate"
+    assert _memory_counts(project) == (0, 0)
+
+    preview = run_central_memory_sync(
+        project,
+        agent_id="sync-agent",
+        pull_candidates=True,
+        central_backend="self-host",
+        apply=False,
+    )
+    assert preview["ok"] is True
+    assert preview["bidirectional_active_memory"] is False
+    preview_pull = preview["operations"]["pull_candidates"]
+    assert preview_pull["count"] == 1
+    assert preview_pull["imported_count"] == 0
+    assert preview_pull["requests"][0]["from_agent"] == "coze-remote"
+    assert _memory_counts(project) == (0, 0)
+
+    applied = run_central_memory_sync(
+        project,
+        agent_id="sync-agent",
+        pull_candidates=True,
+        central_backend="self-host",
+        apply=True,
+        auto_promote_low_risk=False,
+    )
+    assert applied["ok"] is True
+    assert applied["bidirectional_active_memory"] is False
+    applied_pull = applied["operations"]["pull_candidates"]
+    assert applied_pull["imported_count"] == 1
+    assert applied_pull["requests"][0]["status"] == "imported"
+    assert applied_pull["auto_promote"]["enabled"] is False
+
+    with VaultDB(project / "vault.db") as db:
+        candidates = db.list_memory_candidates(status=None)
+        active_count = db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
+
+    assert active_count == 0
+    assert len(candidates) == 1
+    assert candidates[0]["source"] == "central_memory_candidate"
+    assert candidates[0]["status"] == "candidate"
+    assert candidates[0]["memory_type"] == "remote_candidate"
 
 
 def test_memory_sync_run_once_cli_dry_run_writes_central_report(tmp_path, capsys):
