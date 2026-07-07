@@ -42,6 +42,7 @@ class ExternalCase:
     case_id: str
     query: str
     expected_sources: tuple[str, ...]
+    category: str
     metadata: dict[str, Any]
 
 
@@ -56,7 +57,15 @@ def run_external_memory_retrieval(
     limit: int = 10,
     mode: str = "keyword",
     granularity: str = "auto",
+    search_scope: str = "case",
+    reuse_db: bool = False,
+    progress_every: int = 0,
 ) -> dict[str, Any]:
+    if search_scope not in {"case", "global"}:
+        raise ValueError(f"unsupported search scope: {search_scope}")
+    if reuse_db and not db_path:
+        raise ValueError("--reuse-db requires --db-path")
+
     input_file = Path(input_path)
     data = json.loads(input_file.read_text(encoding="utf-8"))
     if benchmark == "locomo":
@@ -70,12 +79,16 @@ def run_external_memory_retrieval(
         raise ValueError("no evidence-bearing cases found")
 
     with _maybe_temp_db(db_path) as actual_db_path:
-        _build_vault_db(actual_db_path, documents)
+        db_reused = bool(reuse_db and actual_db_path.exists())
+        if not db_reused:
+            _build_vault_db(actual_db_path, documents)
         case_results = _evaluate_cases(
             db_path=actual_db_path,
             cases=cases,
             mode=mode,
             limit=limit,
+            search_scope=search_scope,
+            progress_every=progress_every,
         )
 
     report = {
@@ -86,6 +99,9 @@ def run_external_memory_retrieval(
         "mode": mode,
         "limit": limit,
         "granularity": granularity,
+        "search_scope": search_scope,
+        "db_path": str(actual_db_path),
+        "db_reused": db_reused,
         "documents_indexed": len(documents),
         "cases_total": len(cases),
         "aggregate": _aggregate(case_results),
@@ -115,6 +131,7 @@ def _load_locomo(data: Any, *, max_cases: int | None) -> tuple[list[ExternalDocu
         if not isinstance(sample, dict):
             continue
         sample_id = str(sample.get("sample_id") or sample.get("id") or f"sample-{len(documents)}")
+        search_category = f"locomo-dialog:{sample_id}"
         conversation = sample.get("conversation") if isinstance(sample.get("conversation"), dict) else {}
         speaker_a = str(conversation.get("speaker_a") or "speaker_a")
         speaker_b = str(conversation.get("speaker_b") or "speaker_b")
@@ -156,7 +173,7 @@ def _load_locomo(data: Any, *, max_cases: int | None) -> tuple[list[ExternalDocu
                         title=f"LoCoMo {sample_id} dialog {dia_id}",
                         content=content,
                         source=source,
-                        category="locomo-dialog",
+                        category=search_category,
                         tags=f"locomo,{sample_id},session-{session_id}",
                     )
                 )
@@ -174,6 +191,7 @@ def _load_locomo(data: Any, *, max_cases: int | None) -> tuple[list[ExternalDocu
                     case_id=f"{sample_id}:qa:{qa_idx}",
                     query=str(qa.get("question") or ""),
                     expected_sources=tuple(f"locomo/{sample_id}/dia/{item}" for item in evidence),
+                    category=search_category,
                     metadata={
                         "sample_id": sample_id,
                         "category": qa.get("category", ""),
@@ -201,6 +219,7 @@ def _load_longmemeval(
         if not isinstance(item, dict):
             continue
         question_id = str(item.get("question_id") or item.get("id") or f"question-{len(cases)}")
+        search_category = f"longmemeval-{'turn' if use_turns else 'session'}:{question_id}"
         question = str(item.get("question") or "")
         session_ids = [str(value) for value in _as_list(item.get("haystack_session_ids"))]
         session_dates = [str(value) for value in _as_list(item.get("haystack_dates"))]
@@ -224,7 +243,7 @@ def _load_longmemeval(
                             title=f"LongMemEval {question_id} session {session_id} turn {turn_idx}",
                             content=_format_turn(question_id, session_id, session_date, turn_idx, turn),
                             source=source,
-                            category="longmemeval-turn",
+                            category=search_category,
                             tags=f"longmemeval,{question_id},session-{session_id},turn",
                         )
                     )
@@ -239,7 +258,7 @@ def _load_longmemeval(
                         title=f"LongMemEval {question_id} session {session_id}",
                         content=content,
                         source=f"longmemeval/{question_id}/session/{session_id}",
-                        category="longmemeval-session",
+                        category=search_category,
                         tags=f"longmemeval,{question_id},session-{session_id}",
                     )
                 )
@@ -256,6 +275,7 @@ def _load_longmemeval(
                 case_id=question_id,
                 query=question,
                 expected_sources=expected_sources,
+                category=search_category,
                 metadata={
                     "question_type": item.get("question_type", ""),
                     "question_date": item.get("question_date", ""),
@@ -318,14 +338,18 @@ def _evaluate_cases(
     cases: list[ExternalCase],
     mode: str,
     limit: int,
+    search_scope: str,
+    progress_every: int,
 ) -> list[dict[str, Any]]:
     db = VaultDB(str(db_path)).connect()
     try:
         search = VaultSearch(db)
         results: list[dict[str, Any]] = []
-        for case in cases:
+        total = len(cases)
+        for index, case in enumerate(cases, start=1):
             start = time.perf_counter()
-            raw = search.search(case.query, mode=mode, limit=limit, use_rerank=False)
+            category = case.category if search_scope == "case" else None
+            raw = search.search(case.query, mode=mode, limit=limit, category=category, use_rerank=False)
             latency_ms = round((time.perf_counter() - start) * 1000, 3)
             expected = set(case.expected_sources)
             ranked = [
@@ -348,6 +372,7 @@ def _evaluate_cases(
                     "id": case.case_id,
                     "query": case.query,
                     "expected_sources": list(case.expected_sources),
+                    "search_category": category,
                     "hit": hit_rank is not None,
                     "hit_rank": hit_rank,
                     "reciprocal_rank": 0.0 if hit_rank is None else round(1.0 / hit_rank, 6),
@@ -356,6 +381,8 @@ def _evaluate_cases(
                     "metadata": case.metadata,
                 }
             )
+            if progress_every > 0 and (index % progress_every == 0 or index == total):
+                print(f"[external-memory] evaluated {index}/{total} cases", file=sys.stderr)
         return results
     finally:
         db.close()
@@ -407,6 +434,7 @@ def _write_generated_search_qa(
                 "id": case.case_id,
                 "query": case.query,
                 "expected_sources": list(case.expected_sources),
+                "search_category": case.category,
                 "metadata": case.metadata,
             }
             for case in cases
@@ -452,6 +480,23 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--mode", default="keyword", choices=["keyword", "semantic", "hybrid"])
     parser.add_argument("--quiet", action="store_true", help="Print only the aggregate summary.")
     parser.add_argument(
+        "--search-scope",
+        default="case",
+        choices=["case", "global"],
+        help="case searches only the case evidence pool; global searches the whole benchmark DB.",
+    )
+    parser.add_argument(
+        "--reuse-db",
+        action="store_true",
+        help="Reuse an existing --db-path instead of rebuilding it.",
+    )
+    parser.add_argument(
+        "--progress-every",
+        type=int,
+        default=0,
+        help="Print progress to stderr every N evaluated cases.",
+    )
+    parser.add_argument(
         "--granularity",
         default="auto",
         choices=["auto", "session", "turn"],
@@ -473,6 +518,9 @@ def main(argv: list[str] | None = None) -> int:
         limit=args.limit,
         mode=args.mode,
         granularity=granularity,
+        search_scope=args.search_scope,
+        reuse_db=args.reuse_db,
+        progress_every=args.progress_every,
     )
     if args.quiet:
         print(json.dumps(report["aggregate"], ensure_ascii=False, indent=2, sort_keys=True))
