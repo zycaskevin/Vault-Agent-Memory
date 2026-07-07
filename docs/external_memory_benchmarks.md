@@ -163,6 +163,24 @@ when using a different embedder model. Retrieval-only runs still initialize a
 mem0 LLM provider, so the local smoke path uses `--llm-provider ollama` and
 requires the `ollama` Python package even when `infer=False`.
 
+Run Letta archival memory into the same run-artifact schema:
+
+```bash
+python benchmarks/external_memory_compare.py letta-run \
+  --fixture /tmp/longmemeval-fixture.json \
+  --agent-id "$LETTA_AGENT_ID" \
+  --letta-api-key "$LETTA_API_KEY" \
+  --run-id vault-memory-benchmark-001 \
+  --limit 10 \
+  --output /tmp/letta-longmemeval-run.json
+```
+
+The Letta adapter uses the HTTP archival-memory create/search endpoints. It
+stores benchmark source ids as passage tags and searches with the generated
+`run:<id>` tag plus the case category tag when `--search-scope case` is used.
+The adapter intentionally does not delete existing Letta memory; use a fresh
+agent or unique `--run-id` for benchmark runs.
+
 Generate final answers from the same retrieved evidence with a fixed reader:
 
 ```bash
@@ -309,3 +327,5 @@ embedder, vector-store, and LLM-provider versions.
 - LoCoMo repository: <https://github.com/snap-research/LoCoMo>
 - LongMemEval repository: <https://github.com/xiaowu0162/LongMemEval>
 - LongMemEval paper: <https://arxiv.org/abs/2410.10813>
+- Letta archival-memory create API: <https://docs.letta.com/api/resources/agents/subresources/passages/methods/create>
+- Letta archival-memory search API: <https://docs.letta.com/api/resources/agents/subresources/passages/methods/search>
