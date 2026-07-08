@@ -37,10 +37,11 @@ def test_central_vector_index_migration_defines_pgvector_cache_contract():
     path = Path(__file__).resolve().parents[1] / "supabase/migrations/20260708_central_vector_index.sql"
     sql = path.read_text(encoding="utf-8")
 
-    assert "create extension if not exists vector with schema extensions" in sql
+    assert "create extension if not exists vector" in sql
+    assert "set search_path = public, extensions" in sql
     assert "create table if not exists public.vault_memory_embeddings" in sql
-    assert "embedding extensions.vector(1536) not null" in sql
-    assert "using hnsw (embedding extensions.vector_cosine_ops)" in sql
+    assert "embedding vector(1536) not null" in sql
+    assert "using hnsw (embedding vector_cosine_ops)" in sql
     assert "alter table public.vault_memory_embeddings enable row level security" in sql
     assert "create or replace function public.vault_central_vector_index_status()" in sql
     assert "grant execute on function public.vault_central_vector_index_status()" in sql

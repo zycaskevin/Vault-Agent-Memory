@@ -3,7 +3,9 @@
 -- Local SQLite/Markdown remains the memory source of truth.
 
 create extension if not exists pgcrypto;
-create extension if not exists vector with schema extensions;
+create extension if not exists vector;
+
+set search_path = public, extensions;
 
 create table if not exists public.vault_memory_embeddings (
     id uuid primary key default gen_random_uuid(),
@@ -15,7 +17,7 @@ create table if not exists public.vault_memory_embeddings (
     embedding_model text not null,
     embedding_dimension integer not null default 1536,
     vector_kind text not null default 'safe_summary',
-    embedding extensions.vector(1536) not null,
+    embedding vector(1536) not null,
 
     remote_search_text text not null default '',
     remote_search_text_hash text not null default '',
@@ -72,7 +74,7 @@ create index if not exists idx_vault_memory_embeddings_content_hash
     on public.vault_memory_embeddings (content_hash);
 create index if not exists idx_vault_memory_embeddings_vector
     on public.vault_memory_embeddings
-    using hnsw (embedding extensions.vector_cosine_ops);
+    using hnsw (embedding vector_cosine_ops);
 
 alter table public.vault_memory_embeddings enable row level security;
 
