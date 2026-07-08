@@ -187,7 +187,7 @@ metadata-only status RPC, policy-aware semantic preview RPC, and bounded
 snapshot preview RPC. A trusted sync host can push reviewed safe-summary
 embeddings with `vault memory-sync run-once --push-central-vectors`.
 
-Remote MCP now exposes the minimum read chain:
+Remote MCP and Gateway/Remote Server now expose the minimum read chain:
 
 1. `vault_remote_semantic_search` calls
    `vault_match_readable_memory_embeddings()` and returns safe preview rows with
@@ -195,6 +195,9 @@ Remote MCP now exposes the minimum read chain:
 2. `vault_remote_snapshot_read` calls
    `vault_get_readable_memory_snapshot()` and returns a bounded reviewed
    snapshot preview.
+3. `POST /remote-semantic-search` and `POST /remote-snapshot-read` expose the
+   same safe preview and bounded snapshot read chain for non-MCP agents through
+   the Gateway HTTP contract.
 
 This still does not allow hosted agents to write active memory. Candidates stay
 outside the central vector index, central vector writes remain trusted-sync-host
@@ -239,8 +242,6 @@ ship.
 
 ## Deferred
 
-- Gateway / Remote Server HTTP endpoints for the same semantic preview and
-  bounded snapshot read chain.
 - Candidate-review vector index.
 - Audit/archive vector index.
 - Managed embedding and hosted team index operations.

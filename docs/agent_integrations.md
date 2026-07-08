@@ -8,6 +8,8 @@ instead of locked inside one runtime's hidden memory.
 
 For a public proof of the multi-agent workflow, see
 [`docs/demo/three-agent-shared-memory-runbook.md`](demo/three-agent-shared-memory-runbook.md).
+For the plain-language architecture guide, see
+[`docs/developer_multi_agent_memory_guide.zh-Hant.md`](developer_multi_agent_memory_guide.zh-Hant.md).
 
 ## Agent-Facing Source Of Truth
 
@@ -131,13 +133,17 @@ Run the validation script from an Agent machine after setting
 `VAULT_REMOTE_URL` and `VAULT_GATEWAY_TOKEN`; add `--submit-candidate` only when
 you want to verify candidate-first remote writes.
 
-Gateway v0 exposes only:
+Gateway v0 exposes:
 
 - `GET /health`
 - `GET /openapi.json`
 - `POST /search`
 - `POST /read-range`
 - `POST /submit-candidate`
+- `POST /central-candidates/submit`
+- `POST /central-candidates/pull`
+- `POST /remote-semantic-search`
+- `POST /remote-snapshot-read`
 
 It is conservative by design. Reads require `agent_id`; private memory is hidden
 unless explicitly requested and allowed by policy; raw content is not returned
@@ -145,6 +151,12 @@ by search; writes become `memory_candidates`, not active knowledge. This makes
 Gateway a stable adapter boundary for Codex, Claude Code, OpenClaw, Hermes
 Agent, n8n, Coze bridges, and future devices without forcing each integration
 to carry the whole CLI/MCP surface.
+
+The remote semantic endpoints expose the central derived vector read layer to
+non-MCP agents. `/remote-semantic-search` returns safe preview rows and
+`read_handle`; `/remote-snapshot-read` resolves a handle into a bounded approved
+snapshot preview. They do not return embedding values, raw vector source text,
+or active-memory write access.
 
 Do not use `--no-auth` except for local throwaway tests. It is rejected for
 non-localhost binds.
