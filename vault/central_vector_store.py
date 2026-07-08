@@ -219,7 +219,7 @@ def build_memory_embedding_record(
         "scope": str(snapshot.get("scope") or "project"),
         "sensitivity": str(snapshot.get("sensitivity") or "low"),
         "owner_agent": str(snapshot.get("owner_agent") or ""),
-        "allowed_agents": [],
+        "allowed_agents": _parse_tags(snapshot.get("allowed_agents")),
         "source_table": CENTRAL_VECTOR_SOURCE_TABLE,
         "index_policy": CENTRAL_VECTOR_POLICY,
         "is_latest": True,

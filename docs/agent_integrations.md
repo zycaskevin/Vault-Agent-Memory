@@ -158,6 +158,21 @@ non-MCP agents. `/remote-semantic-search` returns safe preview rows and
 snapshot preview. They do not return embedding values, raw vector source text,
 or active-memory write access.
 
+Remote semantic HTTP access is opt-in and stricter than the base Gateway search
+contract. Enable it only on a trusted Gateway/Remote Server host with
+`VAULT_GATEWAY_REMOTE_SEMANTIC_ENABLED=1` or `--remote-semantic`, and configure
+per-agent token binding with `VAULT_GATEWAY_TOKEN_AGENT_MAP` or
+`--token-agent-map`. A shared Gateway token is not enough for these endpoints:
+the token must map to one fixed `agent_id`, and requests that claim a different
+`agent_id` are rejected. Requests must include `project_id` by default; use
+`allow_global_public=true` only for intentional public-only global search. The
+default `max_sensitivity` is `low`.
+
+`/remote-semantic-search` creates a query embedding before calling the central
+RPC. In the default setup, that means the query text is sent to the configured
+embedding provider. Do not place secrets, API keys, customer-private text, or
+unreviewed raw memory in semantic queries.
+
 Do not use `--no-auth` except for local throwaway tests. It is rejected for
 non-localhost binds.
 

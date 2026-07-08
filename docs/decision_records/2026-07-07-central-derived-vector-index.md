@@ -199,6 +199,15 @@ Remote MCP and Gateway/Remote Server now expose the minimum read chain:
    same safe preview and bounded snapshot read chain for non-MCP agents through
    the Gateway HTTP contract.
 
+The Gateway HTTP path is opt-in. It is disabled by default, requires
+`VAULT_GATEWAY_REMOTE_SEMANTIC_ENABLED=1` or `--remote-semantic`, and requires a
+per-agent token binding through `VAULT_GATEWAY_TOKEN_AGENT_MAP` or
+`--token-agent-map`. The token binding is the agent identity source of truth, so
+a request cannot claim a different `agent_id`. Gateway requests must include
+`project_id` unless they explicitly set `allow_global_public=true`, and the
+default `max_sensitivity` is `low`. Query text is provider-visible because the
+Gateway must create a query embedding before calling the central match RPC.
+
 This still does not allow hosted agents to write active memory. Candidates stay
 outside the central vector index, central vector writes remain trusted-sync-host
 only, and remote semantic results still expose neither embeddings nor
@@ -226,6 +235,15 @@ Remote vector search must not expose:
 - raw high/restricted memory;
 - unreviewed candidate content;
 - stale memory that has been archived, expired, or rejected.
+
+Remote HTTP semantic search must also enforce:
+
+- endpoint opt-in;
+- one Gateway token per agent identity;
+- project-scoped search by default;
+- no raw query text in audit logs;
+- clear documentation that query text is sent to the configured embedding
+  provider.
 
 When in doubt, the index should fail closed and fall back to keyword search.
 

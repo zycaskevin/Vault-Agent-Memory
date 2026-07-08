@@ -51,6 +51,37 @@ Use a higher value when trusted clients may run long bounded-read or candidate
 submission requests. Keep reverse proxy and supervisor timeouts longer than the
 Gateway drain timeout so the process can finish its own cleanup.
 
+## Remote Semantic Read
+
+`POST /remote-semantic-search` and `POST /remote-snapshot-read` expose the
+central semantic read chain for non-MCP agents. Keep them disabled unless the
+Gateway host is intentionally serving central approved-memory search:
+
+```bash
+export VAULT_GATEWAY_REMOTE_SEMANTIC_ENABLED=1
+export VAULT_GATEWAY_TOKEN_AGENT_MAP="token-for-codex=codex,token-for-openclaw=openclaw"
+vault remote-server serve --project-dir ~/Vaults/my-project --host 0.0.0.0
+```
+
+Security rules for these endpoints:
+
+- Use one token per agent identity. Do not share one semantic-read token across
+  Codex, OpenClaw, Coze, or other runtimes.
+- The token binding, not the JSON body, is the source of `agent_id` truth.
+  Requests that claim a different `agent_id` are rejected.
+- Pass `project_id` on every request. `allow_global_public=true` should be used
+  only for intentional public-only global search.
+- Keep the default `max_sensitivity=low` unless the deployment policy explicitly
+  allows more.
+- Semantic search sends the query text to the configured embedding provider to
+  create a query vector. Do not put secrets or unreviewed private text in query
+  strings.
+- Gateway audit logs record query length and outcome, not the raw query text.
+
+These endpoints still do not write active memory, candidates, snapshot rows, or
+vector rows. They only return safe preview rows and bounded approved snapshot
+previews.
+
 ## Central Candidate Inbox
 
 Self-hosted `vault remote-server` exposes a Central Memory Station candidate

@@ -100,6 +100,7 @@ def test_build_active_memory_snapshot_hides_content_by_default():
             "content_raw": "Raw local body",
             "summary": "Short summary",
             "tags": "sync,central",
+            "allowed_agents": '["codex", "reviewer"]',
         },
         project_key="project:abc",
     )
@@ -107,6 +108,7 @@ def test_build_active_memory_snapshot_hides_content_by_default():
     assert snapshot["memory_key"] == "project:abc:knowledge:7"
     assert snapshot["content"] == ""
     assert snapshot["tags"] == ["sync", "central"]
+    assert snapshot["allowed_agents"] == ["codex", "reviewer"]
     assert snapshot["content_hash"]
 
 
@@ -158,6 +160,7 @@ def test_sync_memory_embeddings_writes_safe_summary_vectors_only(tmp_path):
             tags="central,vector",
             scope="project",
             sensitivity="low",
+            allowed_agents=["remote-agent"],
         )
         db.add_knowledge(
             "Private vector rule",
@@ -196,6 +199,7 @@ def test_sync_memory_embeddings_writes_safe_summary_vectors_only(tmp_path):
     assert vector["is_latest"] is True
     assert vector["scope"] == "project"
     assert vector["sensitivity"] == "low"
+    assert vector["allowed_agents"] == ["remote-agent"]
     assert vector["remote_search_text_hash"]
     assert vector["embedding_hash"]
     assert "Raw body should not be embedded" not in vector["remote_search_text"]
