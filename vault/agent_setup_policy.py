@@ -63,6 +63,13 @@ def write_automation_policy_template(
         policy.setdefault("auto_promote_min_trust", 0.65)
         policy.setdefault("auto_promote_max_per_run", 3)
         policy.setdefault("auto_promote_requires_source_ref", True)
+        policy.setdefault("auto_close_low_risk_dream_noise", True)
+        policy.setdefault("auto_close_dream_noise_memory_types", ["dream_suggestion", "consolidation_suggestion"])
+        policy.setdefault("auto_close_dream_noise_tags", ["metadata", "dedup"])
+        policy.setdefault("auto_close_dream_noise_scopes", ["project", "shared", "public"])
+        policy.setdefault("auto_close_dream_noise_sensitivities", ["low"])
+        policy.setdefault("auto_close_dream_noise_max_trust", 0.5)
+        policy.setdefault("auto_close_dream_noise_max_per_run", 100)
 
     backup_path = ""
     if existed:

@@ -452,7 +452,6 @@ def _write_candidate_suggestions(db: VaultDB, suggestions: list[dict]) -> list[d
                WHERE source = ?
                  AND source_ref = ?
                  AND memory_type = ?
-                 AND status IN ('candidate', 'approved')
                ORDER BY created_at DESC
                LIMIT 1""",
             (source, suggestion.get("source_ref", ""), memory_type),

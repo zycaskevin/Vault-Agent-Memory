@@ -504,6 +504,7 @@ def _review_summary(
     forgetting: dict[str, Any] | None = None,
     cold_store: dict[str, Any] | None = None,
     auto_promote: dict[str, Any] | None = None,
+    auto_close_dream_noise: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     thresholds = policy.get("review_thresholds") or {}
     dream_summary = dream.get("summary", {}) if isinstance(dream, dict) else {}
@@ -520,12 +521,20 @@ def _review_summary(
     if candidate_count >= int(thresholds.get("pending_candidates", 1)):
         items.append({"kind": "pending_candidates", "count": candidate_count})
     duplicates = int(dream_summary.get("duplicates", 0) or 0)
+    closed_tags = (auto_close_dream_noise or {}).get("closed_tags") or {}
+    if bool((auto_close_dream_noise or {}).get("apply")):
+        duplicates = max(0, duplicates - int(closed_tags.get("dedup") or 0))
     if duplicates >= int(thresholds.get("duplicate_groups", 1)):
         items.append({"kind": "duplicate_groups", "count": duplicates})
     weak_metadata = int(dream_summary.get("metadata", 0) or 0)
+    if bool((auto_close_dream_noise or {}).get("apply")):
+        weak_metadata = max(0, weak_metadata - int(closed_tags.get("metadata") or 0))
     if weak_metadata >= int(thresholds.get("weak_metadata", 1)):
         items.append({"kind": "weak_metadata", "count": weak_metadata})
-    candidate_suggestions = int(dream_summary.get("candidate_suggestions", 0) or 0)
+    if bool((auto_close_dream_noise or {}).get("apply")):
+        candidate_suggestions = int((auto_close_dream_noise or {}).get("remaining_dream_candidate_count") or 0)
+    else:
+        candidate_suggestions = int(dream_summary.get("candidate_suggestions", 0) or 0)
     if candidate_suggestions:
         items.append({"kind": "dream_candidate_suggestions", "count": candidate_suggestions})
     forgetting_suggestions = int((forgetting or {}).get("candidate_suggestions", 0) or 0)

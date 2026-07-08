@@ -959,6 +959,7 @@ def write_automation_schedule_templates(
                 "- transcript capture reads selected transcript contents and writes candidates only; it never promotes active memory",
                 f"- low-risk auto-promote policy: `{str(bool(auto_promote_low_risk)).lower()}`",
                 "- low-risk auto-promote requires `automation_policy.yaml` plus `--apply`; private, sensitive, duplicate, weak, or sourceless candidates stay in review",
+                "- governed-auto closes low-risk Dream metadata/dedup queue noise as rejected feedback; it never promotes or deletes those suggestions",
                 "",
                 "Review `automation_policy.yaml` before enabling a scheduled job.",
                 "Keep the Python virtualenv and project directory in stable paths, not `/tmp`.",
