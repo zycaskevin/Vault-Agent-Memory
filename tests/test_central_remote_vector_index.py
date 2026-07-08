@@ -45,6 +45,7 @@ def test_central_vector_index_migration_defines_pgvector_cache_contract():
     assert "alter table public.vault_memory_embeddings enable row level security" in sql
     assert "create or replace function public.vault_central_vector_index_status()" in sql
     assert "grant execute on function public.vault_central_vector_index_status()" in sql
+    assert "drop function if exists public.vault_sensitivity_rank(text) cascade" in sql
     assert "create or replace function public.vault_match_readable_memory_embeddings" in sql
     assert "p_query_embedding vector(1536)" in sql
     assert "returns table (\n    memory_key text" in sql
