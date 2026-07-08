@@ -55,6 +55,17 @@ These write:
 - `reports/vector-index/plan-latest.json`
 - `reports/vector-index/plan-latest.md`
 
+To check whether the Supabase central vector schema has been applied:
+
+```bash
+vault vector-index central-status --json
+```
+
+With `--write-report`, this writes:
+
+- `reports/vector-index/central-status-latest.json`
+- `reports/vector-index/central-status-latest.md`
+
 The same metadata-only observability is included in the daily-loop report path:
 
 ```bash
@@ -93,9 +104,20 @@ The report artifacts follow the same safety boundary: metadata, counts,
 recommended commands, and sampled row identifiers only. They are intended for
 scheduled observability and release review, not as a memory export.
 
-Remote vector read remains disabled. The status surface exists so operators and
-tests can verify index posture before later Gateway, Remote Server, or
-Supabase/Postgres vector-read work.
+The Supabase central vector schema is installed by applying:
+
+```sql
+supabase/migrations/20260708_central_vector_index.sql
+```
+
+That migration creates `public.vault_memory_embeddings`, a pgvector/HNSW index,
+and a metadata-only `vault_central_vector_index_status()` RPC. It is a derived
+remote read cache for reviewed safe summaries. It does not let remote agents
+write vectors, does not index candidates, and does not expose semantic search.
+
+Remote vector read remains disabled. The local and central status surfaces exist
+so operators and tests can verify index posture before later Gateway, Remote
+Server, or Supabase/Postgres vector-read work.
 
 Rebuild vectors through the existing semantic workflow:
 

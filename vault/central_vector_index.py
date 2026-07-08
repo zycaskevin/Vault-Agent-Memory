@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import re
 import shlex
 import sys
 from pathlib import Path
@@ -13,6 +14,9 @@ from .db import VaultDB
 
 
 HIGH_RISK_SENSITIVITIES = {"high", "restricted"}
+REMOTE_VECTOR_TABLE = "vault_memory_embeddings"
+REMOTE_VECTOR_STATUS_RPC = "vault_central_vector_index_status"
+REMOTE_VECTOR_MIGRATION = "supabase/migrations/20260708_central_vector_index.sql"
 
 
 def _scalar(db: VaultDB, sql: str, params: tuple[Any, ...] = ()) -> int:
@@ -73,6 +77,140 @@ def _plan_rows(db: VaultDB, sql: str, params: list[Any], *, limit: int) -> list[
 
 def _generated_at() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _response_rows(response: Any) -> list[dict[str, Any]]:
+    return [dict(row) for row in (getattr(response, "data", None) or [])]
+
+
+def _get_remote_vector_client() -> Any | None:
+    from .mcp_remote import _get_supabase_client
+
+    return _get_supabase_client()
+
+
+def _safe_remote_error(exc: Exception) -> str:
+    try:
+        from .mcp_remote import _remote_doctor_safe_detail
+
+        return _remote_doctor_safe_detail(exc)
+    except Exception:
+        detail = str(exc or "")
+        detail = re.sub(r"(?i)(token|key|secret|password)=([^\s&]+)", r"\1=[REDACTED]", detail)
+        detail = re.sub(r"https://[^\s]+\.supabase\.co", "https://[SUPABASE_PROJECT].supabase.co", detail)
+        return detail[:300]
+
+
+def _remote_vector_schema_missing(detail: str) -> bool:
+    lowered = detail.lower()
+    return any(
+        marker in lowered
+        for marker in (
+            "pgrst202",
+            "could not find the function",
+            "function public.vault_central_vector_index_status",
+            "function vault_central_vector_index_status",
+            "does not exist",
+            "schema cache",
+            'relation "public.vault_memory_embeddings"',
+            f"relation {REMOTE_VECTOR_TABLE}",
+        )
+    )
+
+
+def central_remote_vector_index_status(sb_client: Any | None = None) -> dict[str, Any]:
+    """Return a metadata-only status for the Supabase central vector index."""
+    payload: dict[str, Any] = {
+        "schema_version": 1,
+        "artifact_type": "central_remote_vector_index_status",
+        "generated_at": _generated_at(),
+        "backend": "supabase",
+        "migration": REMOTE_VECTOR_MIGRATION,
+        "table": REMOTE_VECTOR_TABLE,
+        "status_rpc": REMOTE_VECTOR_STATUS_RPC,
+        "ok": False,
+        "status": "not_configured",
+        "installed": False,
+        "remote_read_enabled": False,
+        "remote_write_enabled": False,
+        "source_of_truth": "local_sqlite_markdown",
+        "index_role": "derived_remote_read_cache",
+        "counts": {
+            "vector_rows": 0,
+            "latest_vector_rows": 0,
+            "embedding_models": 0,
+            "project_count": 0,
+        },
+        "timestamps": {
+            "oldest_updated_at": "",
+            "newest_updated_at": "",
+        },
+        "safety": {
+            "candidate_first": True,
+            "active_memory_source_of_truth": "local_sqlite",
+            "trusted_sync_host_writes_only": True,
+            "direct_remote_agent_table_writes": False,
+            "returns_embedding_values": False,
+            "returns_raw_memory_content": False,
+        },
+        "next_actions": [],
+    }
+    client = sb_client if sb_client is not None else _get_remote_vector_client()
+    if client is None:
+        payload["next_actions"] = [
+            "Set SUPABASE_URL and SUPABASE_ANON_KEY/SUPABASE_KEY, then run `vault vector-index central-status --json`.",
+            f"Apply `{REMOTE_VECTOR_MIGRATION}` on the Supabase project.",
+        ]
+        return payload
+
+    try:
+        rows = _response_rows(client.rpc(REMOTE_VECTOR_STATUS_RPC, {}).execute())
+    except Exception as exc:
+        detail = _safe_remote_error(exc)
+        payload["error"] = detail
+        payload["status"] = "schema_missing" if _remote_vector_schema_missing(detail) else "unavailable"
+        payload["next_actions"] = [
+            f"Apply `{REMOTE_VECTOR_MIGRATION}` on the Supabase project.",
+            "Reload the Supabase/PostgREST schema cache after applying the migration.",
+        ]
+        return payload
+
+    row = rows[0] if rows else {}
+    installed = bool(row.get("installed"))
+    vector_rows = int(row.get("vector_rows") or 0)
+    latest_rows = int(row.get("latest_vector_rows") or 0)
+    payload.update(
+        {
+            "ok": installed,
+            "status": "installed_empty" if installed and vector_rows == 0 else ("installed" if installed else "schema_missing"),
+            "installed": installed,
+            "remote_read_enabled": bool(row.get("remote_read_enabled", False)),
+            "remote_write_enabled": bool(row.get("remote_write_enabled", False)),
+            "source_of_truth": row.get("source_of_truth") or payload["source_of_truth"],
+            "index_role": row.get("index_role") or payload["index_role"],
+            "counts": {
+                "vector_rows": vector_rows,
+                "latest_vector_rows": latest_rows,
+                "embedding_models": int(row.get("embedding_models") or 0),
+                "project_count": int(row.get("project_count") or 0),
+            },
+            "timestamps": {
+                "oldest_updated_at": row.get("oldest_updated_at") or "",
+                "newest_updated_at": row.get("newest_updated_at") or "",
+            },
+        }
+    )
+    if not installed:
+        payload["next_actions"] = [f"Apply `{REMOTE_VECTOR_MIGRATION}` on the Supabase project."]
+    elif vector_rows == 0:
+        payload["next_actions"] = [
+            "Central vector schema is installed. Next step: add trusted sync-host embedding push for reviewed safe summaries.",
+        ]
+    else:
+        payload["next_actions"] = [
+            "Central vector rows exist. Next step: add policy-aware semantic search RPC before exposing remote search.",
+        ]
+    return payload
 
 
 def _relative_to_project(project: Path, path: Path) -> str:
@@ -561,7 +699,7 @@ def _resolve_vector_index_report_path(project: Path, action: str, report_path: s
         if allowed != resolved and allowed not in resolved.parents:
             raise ValueError("vector-index report path must stay under reports/vector-index")
         return resolved
-    safe_action = action if action in {"status", "doctor", "plan", "repair"} else "status"
+    safe_action = action if action in {"status", "doctor", "plan", "repair", "central-status"} else "status"
     return report_dir / f"{safe_action}-latest.json"
 
 
@@ -595,6 +733,8 @@ def render_vector_index_markdown(payload: dict[str, Any]) -> str:
 
 
 def _render_vector_index_status_markdown(payload: dict[str, Any]) -> str:
+    if payload.get("artifact_type") == "central_remote_vector_index_status":
+        return _render_remote_vector_index_status_markdown(payload)
     counts = payload.get("counts") or {}
     readiness = payload.get("readiness") or {}
     lines = [
@@ -662,6 +802,56 @@ def _render_vector_index_status_markdown(payload: dict[str, Any]) -> str:
         "- no raw memory content",
         "- no vector source text",
         "- remote vector read remains disabled",
+    ]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _render_remote_vector_index_status_markdown(payload: dict[str, Any]) -> str:
+    counts = payload.get("counts") or {}
+    timestamps = payload.get("timestamps") or {}
+    lines = [
+        "# Vault Central Vector Index Status",
+        "",
+        f"- generated_at: `{_md_text(payload.get('generated_at', ''))}`",
+        f"- status: `{_md_text(payload.get('status', ''))}`",
+        f"- installed: `{str(bool(payload.get('installed', False))).lower()}`",
+        f"- backend: `{_md_text(payload.get('backend', ''))}`",
+        f"- table: `{_md_text(payload.get('table', ''))}`",
+        f"- status_rpc: `{_md_text(payload.get('status_rpc', ''))}`",
+        f"- migration: `{_md_text(payload.get('migration', ''))}`",
+        f"- source_of_truth: `{_md_text(payload.get('source_of_truth', ''))}`",
+        f"- index_role: `{_md_text(payload.get('index_role', ''))}`",
+        f"- remote_read_enabled: `{str(bool(payload.get('remote_read_enabled', False))).lower()}`",
+        f"- remote_write_enabled: `{str(bool(payload.get('remote_write_enabled', False))).lower()}`",
+        "",
+        "## Counts",
+        "",
+        _md_row(["metric", "value"]),
+        _md_row(["---", "---"]),
+    ]
+    for key in sorted(counts):
+        lines.append(_md_row([key, counts.get(key)]))
+    lines += [
+        "",
+        "## Timestamps",
+        "",
+        f"- oldest_updated_at: `{_md_text(timestamps.get('oldest_updated_at', ''))}`",
+        f"- newest_updated_at: `{_md_text(timestamps.get('newest_updated_at', ''))}`",
+        "",
+        "## Next Actions",
+        "",
+    ]
+    for action in payload.get("next_actions") or []:
+        lines.append(f"- {_md_text(action)}")
+    lines += [
+        "",
+        "## Safety",
+        "",
+        "- derived remote read cache only",
+        "- trusted sync host writes only",
+        "- no embedding values in status",
+        "- no raw memory content in status",
+        "- remote semantic search remains disabled",
     ]
     return "\n".join(lines).rstrip() + "\n"
 
@@ -826,6 +1016,11 @@ def add_vector_index_parser(sub) -> None:
     sp = vector_sub.add_parser("plan", help="產生 read-only rebuild/cleanup dry-run plan")
     add_plan_filters(sp)
 
+    sp = vector_sub.add_parser("central-status", help="檢查 Supabase 中央向量索引 schema 狀態")
+    sp.add_argument("--json", action="store_true", help="輸出 JSON")
+    sp.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+    add_report_args(sp)
+
     sp = vector_sub.add_parser("repair", help="dry-run or apply safe semantic vector-index repair")
     sp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/vault.db）")
     sp.add_argument("--apply", action="store_true", help="apply semantic rebuild repair; default is dry-run")
@@ -841,11 +1036,35 @@ def add_vector_index_parser(sub) -> None:
 
 def cmd_vector_index(args, *, find_project_dir, json_print) -> None:
     action = args.vector_index_action
-    if action not in {"status", "doctor", "plan", "repair"}:
-        print("error: vector-index requires action: status, doctor, plan, or repair", file=sys.stderr)
+    if action not in {"status", "doctor", "plan", "repair", "central-status"}:
+        print("error: vector-index requires action: status, doctor, plan, repair, or central-status", file=sys.stderr)
         raise SystemExit(2)
 
     project_dir = find_project_dir()
+    if action == "central-status":
+        payload = central_remote_vector_index_status()
+        payload["action"] = action
+        if getattr(args, "write_report", False):
+            payload["paths"] = write_vector_index_report(
+                project_dir,
+                payload,
+                action="central-status",
+                report_path=getattr(args, "report_path", ""),
+            )
+        if args.json:
+            json_print(payload, pretty=args.pretty)
+            return
+        print(f"Central vector index: {payload.get('status', '')}")
+        print(f"  installed: {'yes' if payload.get('installed') else 'no'}")
+        print(f"  table: {payload.get('table', '')}")
+        print(f"  status_rpc: {payload.get('status_rpc', '')}")
+        counts = payload.get("counts") or {}
+        print(f"  vector_rows: {counts.get('vector_rows', 0)}")
+        if payload.get("paths"):
+            print(f"  report_json: {payload['paths']['json']}")
+            print(f"  report_markdown: {payload['paths']['markdown']}")
+        return
+
     db_path = Path(args.db_path) if args.db_path else project_dir / "vault.db"
     if action == "repair":
         payload = central_vector_index_repair(
