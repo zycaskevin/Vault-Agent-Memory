@@ -68,8 +68,8 @@ Think of the system as three boxes:
    maintenance.
 
 Remote candidate inboxes are the suggestion box, not the official library
-shelf. Approved read copies and future derived vector indexes are searchable
-catalogs built from reviewed memory, not independent memory authorities.
+shelf. Approved read copies and derived vector indexes are searchable catalogs
+built from reviewed memory, not independent memory authorities.
 
 Supabase and self-hosted server should share the same behavior contract even if
 the deployment differs. Supabase is the default hosted path. Self-hosting is for
@@ -111,6 +111,9 @@ This decision starts the consolidation layer:
 - `vault_active_memory_snapshots`, `vault_memory_revisions`,
   `vault_memory_events`, and `vault_sync_cursors` writes through
   `--push-central-store`
+- `vault_memory_embeddings` writes through `--push-central-vectors`; this is a
+  trusted sync-host-only derived index of reviewed safe summaries, not a remote
+  active-memory write path
 - `vault memory-sync push --central-store` writes new candidate submissions
   directly to `vault_memory_candidates_central`
 - `vault memory-sync pull` reads both the older `vault_memory_write_requests`

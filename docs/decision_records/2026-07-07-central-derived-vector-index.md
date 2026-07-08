@@ -183,9 +183,10 @@ vectors, writes no candidates or active memory, and does not clean risky/orphan
 rows or enable remote vector read.
 
 The first Supabase central vector migration creates a remote pgvector schema and
-metadata-only status RPC. It does not push embeddings yet, change ranking,
-expose vector search through Gateway / Remote Server, or allow hosted agents to
-write active memory.
+metadata-only status RPC. A trusted sync host can push reviewed safe-summary
+embeddings with `vault memory-sync run-once --push-central-vectors`. This does
+not change ranking, expose vector search through Gateway / Remote Server, or
+allow hosted agents to write active memory.
 
 ## Security Requirements
 
@@ -219,7 +220,6 @@ ship.
 
 ## Deferred
 
-- Trusted sync-host embedding push into the Supabase pgvector table.
 - Policy-aware remote semantic search RPC.
 - Candidate-review vector index.
 - Audit/archive vector index.

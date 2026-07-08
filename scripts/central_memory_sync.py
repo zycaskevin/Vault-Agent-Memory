@@ -23,6 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--max-sync-age-minutes", type=int, default=24 * 60)
     parser.add_argument("--push-read-copy", action="store_true", help="push reviewed local memory to the central read copy")
     parser.add_argument("--push-central-store", action="store_true", help="push reviewed local memory into Central Memory Station tables")
+    parser.add_argument("--push-central-vectors", action="store_true", help="push reviewed safe-summary embeddings into the central vector index")
     parser.add_argument("--pull-candidates", action="store_true", help="pull central candidate memory into local review")
     parser.add_argument(
         "--central-backend",
@@ -59,6 +60,7 @@ def main(argv: list[str] | None = None) -> int:
         max_sync_age_minutes=args.max_sync_age_minutes,
         push_read_copy=bool(args.push_read_copy),
         push_central_store=bool(args.push_central_store),
+        push_central_vectors=bool(args.push_central_vectors),
         pull_candidates=bool(args.pull_candidates),
         central_backend=args.central_backend,
         candidate_limit=args.limit,

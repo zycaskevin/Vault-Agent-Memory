@@ -15,6 +15,7 @@ SyncDocumentMap = Callable[..., Any]
 SyncHealth = Callable[..., Any]
 PullCandidates = Callable[..., dict[str, Any]]
 SyncCentralStore = Callable[..., dict[str, Any]]
+SyncCentralVectors = Callable[..., dict[str, Any]]
 
 
 def utc_now() -> str:
@@ -32,6 +33,7 @@ def run_central_memory_sync(
     max_sync_age_minutes: int = 24 * 60,
     push_read_copy: bool = False,
     push_central_store: bool = False,
+    push_central_vectors: bool = False,
     pull_candidates: bool = False,
     central_backend: str = "supabase",
     candidate_limit: int = 20,
@@ -47,6 +49,7 @@ def run_central_memory_sync(
     sync_document_map: SyncDocumentMap | None = None,
     sync_health: SyncHealth | None = None,
     sync_central_store: SyncCentralStore | None = None,
+    sync_central_vectors: SyncCentralVectors | None = None,
     pull_remote_candidates: PullCandidates | None = None,
 ) -> dict[str, Any]:
     """Run one Central Memory Station sync pass.
@@ -100,6 +103,22 @@ def run_central_memory_sync(
             "reason": "Pass --push-central-store to write Central Memory Station tables.",
         }
 
+    if push_central_vectors:
+        operations["push_central_vectors"] = _push_central_vectors(
+            project,
+            db_path,
+            agent_id=agent_id,
+            dry_run=dry_run,
+            sync_central_vectors=sync_central_vectors,
+            errors=errors,
+        )
+    else:
+        operations["push_central_vectors"] = {
+            "enabled": False,
+            "status": "skipped",
+            "reason": "Pass --push-central-vectors to write reviewed safe-summary embeddings.",
+        }
+
     if pull_candidates:
         operations["pull_candidates"] = _pull_candidates(
             project,
@@ -135,6 +154,7 @@ def run_central_memory_sync(
             apply=apply,
             auto_promote_low_risk=auto_promote_low_risk,
             include_content=include_content,
+            push_central_vectors=push_central_vectors,
         ),
         "project_dir": str(project),
         "db_path": str(db_path),
@@ -321,6 +341,54 @@ def _push_central_store(
     return payload
 
 
+def _push_central_vectors(
+    project: Path,
+    db_path: Path,
+    *,
+    agent_id: str,
+    dry_run: bool,
+    sync_central_vectors: SyncCentralVectors | None,
+    errors: list[dict[str, str]],
+) -> dict[str, Any]:
+    payload: dict[str, Any] = {
+        "enabled": True,
+        "dry_run": bool(dry_run),
+        "table": "vault_memory_embeddings",
+        "source_table": "vault_active_memory_snapshots",
+        "vector_kind": "safe_summary",
+        "safety": {
+            "trusted_sync_host_writes_only": True,
+            "index_candidates": False,
+            "index_private": False,
+            "index_high_or_restricted": False,
+            "uses_raw_content": False,
+        },
+    }
+    if dry_run:
+        payload["status"] = "dry_run"
+        payload["reason"] = "Dry run does not contact the central vector table or embedding provider."
+        return payload
+    try:
+        if sync_central_vectors is None:
+            from .central_vector_store import sync_memory_embeddings
+
+            sync_central_vectors = sync_memory_embeddings
+        result = sync_central_vectors(
+            project,
+            db_path=db_path,
+            agent_id=agent_id,
+        )
+        payload.update(result)
+        payload["status"] = "ok" if result.get("ok", False) else "failed"
+        if not result.get("ok", False):
+            errors.append({"operation": "push_central_vectors", "error": str(result.get("error") or "failed")})
+    except Exception as exc:  # pragma: no cover - exercised through injected tests
+        payload["status"] = "failed"
+        payload["error"] = str(exc)
+        errors.append({"operation": "push_central_vectors", "error": str(exc)})
+    return payload
+
+
 def _next_action(operations: dict[str, Any], errors: list[dict[str, str]], *, dry_run: bool) -> str:
     if errors:
         return "Fix failed sync operations, then rerun memory-sync run-once."
@@ -328,7 +396,7 @@ def _next_action(operations: dict[str, Any], errors: list[dict[str, str]], *, dr
         return "Dry run complete. Rerun without --dry-run when the central store credentials and policy are ready."
     if not any(
         operations.get(name, {}).get("enabled")
-        for name in ("push_read_copy", "push_central_store", "pull_candidates")
+        for name in ("push_read_copy", "push_central_store", "push_central_vectors", "pull_candidates")
     ):
         return "Enable --push-read-copy, --push-central-store, or --pull-candidates when you want this worker to move data."
     return "Schedule this worker every 30-60 minutes on a trusted sync host."
@@ -340,6 +408,7 @@ def _central_sync_safety(
     apply: bool,
     auto_promote_low_risk: bool,
     include_content: bool,
+    push_central_vectors: bool,
 ) -> dict[str, Any]:
     return {
         "source_of_truth": "local_sqlite",
@@ -350,6 +419,9 @@ def _central_sync_safety(
         "pull_candidates_apply_writes_local_candidates_only": bool(apply),
         "active_memory_writes": False,
         "read_copy_pushes_reviewed_memory": True,
+        "central_vector_writes": bool(push_central_vectors) and not bool(dry_run),
+        "central_vectors_index_candidates": False,
+        "central_vectors_use_raw_content": False,
         "service_role_scope": "trusted_sync_host_only",
         "dry_run": bool(dry_run),
         "include_content_in_read_copy": bool(include_content),

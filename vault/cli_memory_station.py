@@ -94,6 +94,7 @@ def _add_memory_sync_parser(sub: argparse._SubParsersAction) -> None:
     sp.add_argument("--limit", "-n", type=int, default=20)
     sp.add_argument("--push-read-copy", action="store_true", help="推送本機已審核記憶到中央 read copy")
     sp.add_argument("--push-central-store", action="store_true", help="推送本機已審核記憶到 Central Memory Station tables")
+    sp.add_argument("--push-central-vectors", action="store_true", help="推送已審核 safe summary embeddings 到中央向量索引")
     sp.add_argument("--pull-candidates", action="store_true", help="同時執行 memory-sync pull preview")
     sp.add_argument(
         "--central-backend",
@@ -268,6 +269,7 @@ def cmd_memory_sync(
             max_sync_age_minutes=getattr(args, "max_sync_age_minutes", 24 * 60),
             push_read_copy=bool(getattr(args, "push_read_copy", False)),
             push_central_store=bool(getattr(args, "push_central_store", False)),
+            push_central_vectors=bool(getattr(args, "push_central_vectors", False)),
             pull_candidates=bool(getattr(args, "pull_candidates", False)),
             central_backend=getattr(args, "central_backend", "supabase") or "supabase",
             candidate_limit=getattr(args, "limit", 20),
