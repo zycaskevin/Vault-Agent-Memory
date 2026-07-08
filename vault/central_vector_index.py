@@ -217,7 +217,7 @@ def central_remote_vector_index_status(sb_client: Any | None = None) -> dict[str
         ]
     else:
         payload["next_actions"] = [
-            "Central vector rows exist. Next step: add policy-aware semantic search RPC before exposing remote search.",
+            "Central vector rows exist and the policy-aware semantic preview RPC is available. Next step: wire a bounded MCP/Gateway semantic search tool.",
         ]
     return payload
 
