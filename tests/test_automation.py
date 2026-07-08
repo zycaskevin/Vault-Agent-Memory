@@ -79,6 +79,35 @@ def _create_low_risk_session_candidate(db: VaultDB, *, title: str = "Reusable se
     return result["candidate_id"]
 
 
+def _create_dream_noise_candidate(
+    db: VaultDB,
+    *,
+    title: str = "Dream metadata queue noise",
+    sensitivity: str = "low",
+    tags: str = "dream,review,metadata",
+) -> str:
+    result = create_candidate(
+        db,
+        title=title,
+        content=(
+            "Dream found weak metadata for knowledge #1. This is a queue hygiene "
+            "suggestion, not a durable active memory."
+        ),
+        reason="metadata check found: missing_tags",
+        source="dream",
+        source_ref="knowledge:1",
+        memory_type="dream_suggestion",
+        category="dream-review",
+        tags=tags,
+        trust=0.45,
+        scope="project",
+        sensitivity=sensitivity,
+        owner_agent="vault-dream",
+    )
+    assert result["status"] == "candidate_created"
+    return result["candidate_id"]
+
+
 def _create_remote_sync_conflict(db: VaultDB) -> tuple[int, str]:
     knowledge_id = db.add_knowledge(
         "Shared deployment policy",
@@ -332,19 +361,56 @@ def test_automation_run_balanced_writes_dream_candidates_by_policy(tmp_path):
     payload = automation_run(project, mode="balanced", apply=True, limit=10, write_reports=False)
 
     assert payload["policy"]["dream_write_candidates"] is True
+    assert payload["policy"]["auto_close_low_risk_dream_noise"] is True
     assert payload["dream"]["summary"]["candidate_suggestions"] >= 1
     assert payload["dream"]["summary"]["candidates_written"] >= 1
+    assert payload["auto_close_dream_noise"]["closed_count"] >= 1
     assert payload["dry_run_diff"]["promote_candidates"] is False
-    assert {
-        "kind": "dream_candidate_suggestions",
-        "count": payload["dream"]["summary"]["candidate_suggestions"],
-    } in payload["human_review"]["items"]
     with VaultDB(project / "vault.db") as db:
         assert db.conn.execute("SELECT COUNT(*) AS n FROM knowledge").fetchone()["n"] == before
-        candidates = db.list_memory_candidates()
+        candidates = db.list_memory_candidates(status=None)
     assert len(candidates) == payload["dream"]["summary"]["candidates_written"]
     assert {item["source"] for item in candidates} == {"dream"}
     assert {item["memory_type"] for item in candidates} == {"dream_suggestion"}
+    assert any(item["status"] == "rejected" for item in candidates)
+
+
+def test_automation_run_auto_closes_low_risk_dream_noise_and_records_feedback(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        candidate_id = _create_dream_noise_candidate(db)
+        before_active = db.conn.execute("SELECT COUNT(*) AS n FROM knowledge WHERE status = 'active'").fetchone()["n"]
+
+    payload = automation_run(project, mode="balanced", apply=True, limit=10, write_reports=False)
+
+    assert payload["auto_close_dream_noise"]["enabled"] is True
+    assert payload["auto_close_dream_noise"]["status"] == "completed"
+    assert payload["auto_close_dream_noise"]["closed_count"] == 1
+    assert payload["auto_close_dream_noise"]["closed_tags"] == {"metadata": 1}
+    assert payload["auto_close_dream_noise"]["remaining_dream_candidate_count"] == 0
+    assert payload["candidate_count_after"] == 0
+    assert payload["human_review"]["required"] is False
+    with VaultDB(project / "vault.db") as db:
+        assert db.get_memory_candidate(candidate_id)["status"] == "rejected"
+        feedback = db.list_memory_feedback(limit=10, source="dream", memory_type="dream_suggestion", outcome="rejected")
+        assert any(item["candidate_id"] == candidate_id for item in feedback)
+        assert db.conn.execute("SELECT COUNT(*) AS n FROM knowledge WHERE status = 'active'").fetchone()["n"] == before_active
+
+
+def test_automation_run_does_not_auto_close_high_sensitivity_dream_candidates(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        candidate_id = _create_dream_noise_candidate(db, title="High sensitivity Dream review", sensitivity="high")
+
+    payload = automation_run(project, mode="balanced", apply=True, limit=10, write_reports=False)
+
+    assert payload["auto_close_dream_noise"]["closed_count"] == 0
+    assert any(
+        item["candidate_id"] == candidate_id and "sensitivity_not_allowed:high" in item["reason"]
+        for item in payload["auto_close_dream_noise"]["items"]
+    )
+    with VaultDB(project / "vault.db") as db:
+        assert db.get_memory_candidate(candidate_id)["status"] == "candidate"
 
 
 def test_automation_report_summarizes_dream_learning_policy(tmp_path):
@@ -409,12 +475,14 @@ def test_automation_run_balanced_skips_existing_dream_candidates(tmp_path):
     latest = automation_report(project, latest=True, detail=False)
 
     assert first["dream"]["summary"]["candidates_written"] >= 1
+    assert first["auto_close_dream_noise"]["closed_count"] >= 1
     assert second["dream"]["summary"]["candidates_written"] == 0
     assert second["dream"]["summary"]["candidates_skipped_existing"] >= first["dream"]["summary"]["candidates_written"]
     assert latest["report"]["dream_candidates_written"] == 0
     assert latest["report"]["dream_candidates_skipped_existing"] == second["dream"]["summary"]["candidates_skipped_existing"]
     with VaultDB(project / "vault.db") as db:
-        assert len(db.list_memory_candidates()) == first["dream"]["summary"]["candidates_written"]
+        assert len(db.list_memory_candidates(status="candidate")) == 0
+        assert len(db.list_memory_candidates(status=None)) == first["dream"]["summary"]["candidates_written"]
 
 
 def test_automation_run_conservative_does_not_write_dream_candidates(tmp_path):
@@ -1436,6 +1504,8 @@ def test_automation_cycle_writes_compact_workspace_with_transcript_hints(tmp_pat
     assert workspace["summary"]["auto_promote_enabled"] is False
     assert workspace["summary"]["auto_promote_promoted_count"] == 0
     assert workspace["summary"]["active_tasks"] == 1
+    assert workspace["summary"]["candidate_queue_items"] == 0
+    assert workspace["summary"]["needs_review"] == 0
     assert workspace["task_ledger"]["tasks"][0]["id"] == "task-cycle"
     assert workspace["candidate_review"]["content_hidden"] is True
     assert workspace["transcripts_to_capture"]["summary"]["count"] == 1
@@ -1443,8 +1513,9 @@ def test_automation_cycle_writes_compact_workspace_with_transcript_hints(tmp_pat
     assert workspace["transcripts_to_capture"]["items"][0]["capture_path"] == "sessions/codex-session.md"
     assert workspace["curation_policy"]["rules"]
     assert workspace["priority_brief"]
-    assert workspace["priority_brief"][0]["priority"] == "P1"
-    assert "Review candidate memory queue" in workspace["priority_brief"][0]["title"]
+    assert workspace["priority_brief"][0]["priority"] == "P2"
+    assert "Resume active Task Ledger items" in workspace["priority_brief"][0]["title"]
+    assert all("Review candidate memory queue" not in item["title"] for item in workspace["priority_brief"])
     assert workspace["suggested_next_tasks"]
     assert workspace["suggested_next_tasks"][0]["command"] == "vault task handoff task-cycle"
     assert workspace["suggested_next_tasks"][0]["requires_human_approval"] is False
@@ -1465,7 +1536,8 @@ def test_automation_cycle_writes_compact_workspace_with_transcript_hints(tmp_pat
     assert "## Safety" in markdown
     assert "## Suggested Next Tasks" in markdown
     assert "## Agent Start Prompt" in markdown
-    assert "Review candidate memory queue" in markdown
+    assert "Review candidate memory queue" not in markdown
+    assert "Resume active Task Ledger items" in markdown
     assert "You are continuing a Vault Agent Memory automation cycle." in markdown
     assert "sessions/codex-session.md" in markdown
     assert token not in markdown

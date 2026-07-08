@@ -145,9 +145,9 @@ def test_run_agent_setup_consumer_audience_writes_daily_report_guide_and_safe_sc
     assert "0 9 * * * sh -lc" in cron
     assert "daily-report-latest" in readme
     assert result["automation_policy"]["auto_promote_low_risk_candidates"] is True
-    assert "auto_promote_low_risk_candidates: true" in (project / "automation_policy.yaml").read_text(
-        encoding="utf-8"
-    )
+    policy_text = (project / "automation_policy.yaml").read_text(encoding="utf-8")
+    assert "auto_promote_low_risk_candidates: true" in policy_text
+    assert "auto_close_low_risk_dream_noise: true" in policy_text
     assert result["security_hardening"]["readme"].endswith("README-local-safety.md")
     security_env = (tmp_path / "templates" / "local-safety.env.example").read_text(encoding="utf-8")
     assert "VAULT_MCP_REQUIRE_AGENT_SIGNATURE=1" in security_env
@@ -1007,6 +1007,8 @@ def test_run_agent_setup_can_write_low_risk_auto_promote_policy(tmp_path):
     assert result["automation_policy"]["status"] == "created"
     assert result["automation_policy"]["auto_promote_low_risk_candidates"] is True
     assert "auto_promote_low_risk_candidates: true" in policy
+    assert "auto_close_low_risk_dream_noise: true" in policy
+    assert "auto_close_dream_noise_tags:" in policy
     assert "- session_capture" in policy
     assert "- session_lesson" in policy
     assert "- low" in policy
@@ -1033,9 +1035,11 @@ def test_run_agent_setup_governed_auto_is_independent_from_audience(tmp_path):
     )
 
     cron = Path(result["automation_schedule_templates"]["cron"]).read_text(encoding="utf-8")
+    policy = Path(result["automation_policy"]["path"]).read_text(encoding="utf-8")
     assert result["audience"] == "builder"
     assert result["memory_mode"] == "governed-auto"
     assert result["automation_policy"]["auto_promote_low_risk_candidates"] is True
+    assert "auto_close_low_risk_dream_noise: true" in policy
     assert result["consumer_daily_report"]["guide"].endswith("README-consumer-daily-report.md")
     assert "--apply" in cron
     assert "vault daily-loop run" in cron

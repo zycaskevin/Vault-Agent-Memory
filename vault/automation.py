@@ -96,6 +96,7 @@ from .automation_lifecycle import (
     _usage_review,
     _write_forgetting_candidates,
 )
+from .automation_convergence import auto_close_low_risk_dream_noise_candidates
 
 
 def automation_plan(
@@ -221,6 +222,12 @@ def automation_run(
         backup=False,
     )
     with VaultDB(db_path) as db:
+        auto_close_dream_noise = auto_close_low_risk_dream_noise_candidates(
+            db,
+            project=project,
+            policy=policy,
+            apply=apply,
+        )
         auto_promote = _auto_promote_low_risk_candidates(
             db,
             project=project,
@@ -262,6 +269,12 @@ def automation_run(
             "auto_promote_allowed_scopes": _policy_list(policy, "auto_promote_allowed_scopes"),
             "auto_promote_allowed_sensitivities": _policy_list(policy, "auto_promote_allowed_sensitivities"),
             "auto_promote_min_trust": _policy_float(policy, "auto_promote_min_trust", 0.65),
+            "auto_close_low_risk_dream_noise": bool(policy.get("auto_close_low_risk_dream_noise", False)),
+            "auto_close_dream_noise_memory_types": _policy_list(policy, "auto_close_dream_noise_memory_types"),
+            "auto_close_dream_noise_tags": _policy_list(policy, "auto_close_dream_noise_tags"),
+            "auto_close_dream_noise_scopes": _policy_list(policy, "auto_close_dream_noise_scopes"),
+            "auto_close_dream_noise_sensitivities": _policy_list(policy, "auto_close_dream_noise_sensitivities"),
+            "auto_close_dream_noise_max_trust": _policy_float(policy, "auto_close_dream_noise_max_trust", 0.5),
         },
         "usage_before": before_usage,
         "usage_after": after_usage,
@@ -275,6 +288,7 @@ def automation_run(
         "dry_run_diff": dry_run_diff,
         "forgetting": forgetting,
         "forgetting_results": forgetting_results,
+        "auto_close_dream_noise": auto_close_dream_noise,
         "auto_promote": auto_promote,
         "dream": dream,
         "human_review": _review_summary(
@@ -286,6 +300,7 @@ def automation_run(
             forgetting,
             cold_store_result,
             auto_promote,
+            auto_close_dream_noise,
         ),
         "next_action": "Review human_review and report_path; adjust automation_policy.yaml before stronger autonomy.",
     }

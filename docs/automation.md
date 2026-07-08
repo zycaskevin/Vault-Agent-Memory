@@ -415,6 +415,21 @@ auto_promote_allowed_sensitivities:
 auto_promote_min_trust: 0.65
 auto_promote_max_per_run: 3
 auto_promote_requires_source_ref: true
+auto_close_low_risk_dream_noise: true
+auto_close_dream_noise_memory_types:
+  - dream_suggestion
+  - consolidation_suggestion
+auto_close_dream_noise_tags:
+  - metadata
+  - dedup
+auto_close_dream_noise_scopes:
+  - project
+  - shared
+  - public
+auto_close_dream_noise_sensitivities:
+  - low
+auto_close_dream_noise_max_trust: 0.5
+auto_close_dream_noise_max_per_run: 100
 write_reports: true
 dream_checks:
   - freshness
@@ -438,8 +453,17 @@ content, promote private memories, change sharing permissions, or delete rows.
 suggestions only when `vault automation run --apply` is used. This is enabled
 in `balanced` and `autonomous` starter policies, disabled in `conservative`,
 and still never promotes candidates into active knowledge. Repeated apply runs
-skip an existing Dream candidate with the same `source_ref`, so scheduled jobs
-do not keep adding duplicate review items.
+skip any existing Dream candidate with the same `source_ref` and memory type,
+including rejected or blocked rows, so scheduled jobs do not keep adding
+duplicate review items.
+
+`auto_close_low_risk_dream_noise` gives governed-auto installs a convergence
+path for routine Dream queue noise. When `--apply` is used, Vault can mark
+low-trust, low-sensitivity Dream metadata/dedup suggestions as `rejected` and
+write review feedback. It does not promote candidates, hard-delete rows, alter
+active knowledge, or close private/high/restricted candidates. Freshness,
+orphan-repair, sensitive, or otherwise non-matching candidates remain visible
+for review.
 
 `forgetting_write_candidates` works the same way for lifecycle review. When
 `--apply` is used, automation can create candidate-only suggestions for expired
