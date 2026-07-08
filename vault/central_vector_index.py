@@ -155,7 +155,16 @@ def central_remote_vector_index_status(sb_client: Any | None = None) -> dict[str
         },
         "next_actions": [],
     }
-    client = sb_client if sb_client is not None else _get_remote_vector_client()
+    try:
+        client = sb_client if sb_client is not None else _get_remote_vector_client()
+    except Exception as exc:
+        payload["error"] = _safe_remote_error(exc)
+        payload["status"] = "unavailable"
+        payload["next_actions"] = [
+            "Install or repair the Supabase Python client, then rerun `vault vector-index central-status --json`.",
+            f"Apply `{REMOTE_VECTOR_MIGRATION}` on the Supabase project if it is not installed yet.",
+        ]
+        return payload
     if client is None:
         payload["next_actions"] = [
             "Set SUPABASE_URL and SUPABASE_ANON_KEY/SUPABASE_KEY, then run `vault vector-index central-status --json`.",

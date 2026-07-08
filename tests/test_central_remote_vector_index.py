@@ -92,6 +92,22 @@ def test_central_remote_vector_index_status_reports_missing_schema():
     assert "20260708_central_vector_index.sql" in payload["next_actions"][0]
 
 
+def test_central_remote_vector_index_status_handles_client_import_error(monkeypatch):
+    import vault.central_vector_index as central_vector_index
+
+    def fail_client():
+        raise ImportError("cannot import name 'create_client' from 'supabase'")
+
+    monkeypatch.setattr(central_vector_index, "_get_remote_vector_client", fail_client)
+
+    payload = central_remote_vector_index_status()
+
+    assert payload["ok"] is False
+    assert payload["status"] == "unavailable"
+    assert "create_client" in payload["error"]
+    assert "Supabase Python client" in payload["next_actions"][0]
+
+
 def test_vector_index_central_status_cli_json(monkeypatch, tmp_path, capsys):
     project = tmp_path / "project"
     project.mkdir()
