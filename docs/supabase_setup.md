@@ -44,6 +44,18 @@ vault memory-sync run-once --project-dir /path/to/project --push-read-copy --pus
 vault memory-sync run-once --project-dir /path/to/project --push-read-copy --push-central-store --pull-candidates --apply --json
 ```
 
+After applying the central vector migration, a trusted sync host can also push
+reviewed safe-summary embeddings into `vault_memory_embeddings`:
+
+```bash
+vault memory-sync run-once --project-dir /path/to/project --push-central-store --push-central-vectors --json
+```
+
+This requires a 1536-dimensional embedding provider, defaults to OpenAI
+`text-embedding-3-small`, indexes only reviewed low/medium public/shared/project
+safe summaries, requires `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` when using env
+credentials, and still does not expose remote semantic search.
+
 `setup-agent --features supabase --supabase-sync cron|launchagent|n8n|all`
 also writes `central-memory-sync.cron`, a macOS LaunchAgent, an n8n workflow,
 and `README-central-memory-sync.md`. Run the central schedule only on a trusted

@@ -115,6 +115,19 @@ and a metadata-only `vault_central_vector_index_status()` RPC. It is a derived
 remote read cache for reviewed safe summaries. It does not let remote agents
 write vectors, does not index candidates, and does not expose semantic search.
 
+After the active snapshot read copy is synced, a trusted sync host can push
+reviewed safe-summary embeddings:
+
+```bash
+vault memory-sync run-once --push-central-store --push-central-vectors --json
+```
+
+The writer requires a 1536-dimensional provider, defaults to OpenAI
+`text-embedding-3-small`, skips private/high/restricted memory, skips
+candidates, requires `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` when using env
+credentials, and builds `remote_search_text` from title, summary, category, and
+tags instead of raw memory content.
+
 Remote vector read remains disabled. The local and central status surfaces exist
 so operators and tests can verify index posture before later Gateway, Remote
 Server, or Supabase/Postgres vector-read work.

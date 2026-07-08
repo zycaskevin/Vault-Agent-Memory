@@ -204,7 +204,7 @@ def central_remote_vector_index_status(sb_client: Any | None = None) -> dict[str
         payload["next_actions"] = [f"Apply `{REMOTE_VECTOR_MIGRATION}` on the Supabase project."]
     elif vector_rows == 0:
         payload["next_actions"] = [
-            "Central vector schema is installed. Next step: add trusted sync-host embedding push for reviewed safe summaries.",
+            "Central vector schema is installed. Run `vault memory-sync run-once --push-central-store --push-central-vectors --json` on a trusted sync host.",
         ]
     else:
         payload["next_actions"] = [

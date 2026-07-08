@@ -68,7 +68,7 @@ These scripts are for users who intentionally configure Supabase as an optional 
 | Script | Purpose | Required configuration |
 |---|---|---|
 | `sync_to_supabase.py` | Sync local knowledge, skills, Document Map, or health snapshots. | `SUPABASE_URL` plus `SUPABASE_SERVICE_KEY` or `SUPABASE_ANON_KEY` |
-| `central_memory_sync.py` | Run one Central Memory Station pass: push reviewed read copy, pull candidate memory, and write sync freshness report. | Supabase credentials only when not using `--dry-run` |
+| `central_memory_sync.py` | Run one Central Memory Station pass: push reviewed read copy, optionally push central safe-summary vectors, pull candidate memory, and write sync freshness report. | Supabase credentials only when not using `--dry-run`; `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` and embedding provider only with `--push-central-vectors` |
 | `sync_graph_to_supabase.py` | Sync inferred graph entities/edges to optional remote tables. | Supabase credentials and table env vars as needed |
 | `fix_ek_links.py` | Repair missing remote graph entity-knowledge links. | Supabase credentials and table env vars as needed |
 | `daily_knowledge_sync.py` | Maintenance wrapper for local compile/dedup/trust/review steps. | `vault` CLI on `PATH`; optional `VAULT_DIR` |
@@ -79,6 +79,7 @@ Examples:
 python scripts/sync_to_supabase.py --document-map
 python scripts/sync_to_supabase.py --include-content  # opt in to full content sync
 python -m scripts.central_memory_sync --db /path/to/project/vault.db --push-read-copy --push-central-store --pull-candidates --dry-run --json
+python -m scripts.central_memory_sync --db /path/to/project/vault.db --push-central-store --push-central-vectors --json
 python scripts/sync_graph_to_supabase.py
 VAULT_DIR=/path/to/project python scripts/daily_knowledge_sync.py
 ```

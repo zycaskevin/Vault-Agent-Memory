@@ -513,7 +513,7 @@ The trust model is:
   approved memory and submit candidates;
 - **trusted sync host**: the only place for service-role credentials, candidate
   pull, review/promotion, Dream, archive, forgetting, reports, approved
-  read-copy sync, and future derived vector-index updates.
+  read-copy sync, and derived vector-index updates.
 
 For multi-agent or multi-device memory, use the Central Memory Station surface:
 

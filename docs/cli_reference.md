@@ -232,8 +232,10 @@ The consolidated Central Memory Station worker is `vault memory-sync run-once`
 or `python -m scripts.central_memory_sync`; it writes
 `reports/central-memory-sync-latest.json`, can push the reviewed read copy with
 `--push-read-copy`, can write Central Memory Station tables with
-`--push-central-store`, and can pull central candidates into local review with
-`--pull-candidates --apply`. Use `--central-backend self-host` when the
+`--push-central-store`, can write reviewed safe-summary embeddings into the
+central pgvector table with `--push-central-vectors`, and can pull central
+candidates into local review with `--pull-candidates --apply`. Use
+`--central-backend self-host` when the
 candidate inbox is local `vault-central.db` behind Gateway / Remote Server
 instead of Supabase. For one-off Supabase candidate submissions,
 `vault memory-sync push --central-store ...` writes the new

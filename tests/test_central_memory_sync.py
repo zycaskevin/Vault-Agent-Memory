@@ -31,6 +31,7 @@ def test_central_memory_sync_dry_run_writes_report_without_remote_calls(tmp_path
         project,
         push_read_copy=True,
         push_central_store=True,
+        push_central_vectors=True,
         pull_candidates=True,
         apply=True,
         dry_run=True,
@@ -39,6 +40,7 @@ def test_central_memory_sync_dry_run_writes_report_without_remote_calls(tmp_path
         sync_document_map=fail_sync,
         sync_health=fail_sync,
         sync_central_store=fail_sync,
+        sync_central_vectors=fail_sync,
         pull_remote_candidates=fail_sync,
     )
 
@@ -46,6 +48,7 @@ def test_central_memory_sync_dry_run_writes_report_without_remote_calls(tmp_path
     assert payload["dry_run"] is True
     assert payload["operations"]["push_read_copy"]["status"] == "dry_run"
     assert payload["operations"]["push_central_store"]["status"] == "dry_run"
+    assert payload["operations"]["push_central_vectors"]["status"] == "dry_run"
     assert payload["operations"]["pull_candidates"]["status"] == "dry_run"
     assert payload["safety"]["multi_master_active_memory"] is False
     assert payload["safety"]["remote_candidates_require_review"] is True
@@ -76,6 +79,10 @@ def test_central_memory_sync_runs_injected_push_and_pull(tmp_path):
         calls.append(("central_store", str(project_dir), kwargs))
         return {"ok": True, "count": 1, "inserted_count": 1}
 
+    def sync_central_vectors(project_dir, **kwargs):
+        calls.append(("central_vectors", str(project_dir), kwargs))
+        return {"ok": True, "count": 1, "inserted_count": 1, "table": "vault_memory_embeddings"}
+
     def pull_candidates(project_dir, **kwargs):
         calls.append(("pull", str(project_dir), kwargs))
         return {"ok": True, "count": 1, "imported_count": 1, "requests": []}
@@ -85,6 +92,7 @@ def test_central_memory_sync_runs_injected_push_and_pull(tmp_path):
         agent_id="sync-agent",
         push_read_copy=True,
         push_central_store=True,
+        push_central_vectors=True,
         pull_candidates=True,
         candidate_limit=7,
         apply=True,
@@ -93,18 +101,23 @@ def test_central_memory_sync_runs_injected_push_and_pull(tmp_path):
         sync_document_map=sync_document_map,
         sync_health=sync_health,
         sync_central_store=sync_central_store,
+        sync_central_vectors=sync_central_vectors,
         pull_remote_candidates=pull_candidates,
     )
 
     assert payload["ok"] is True
     assert payload["operations"]["push_read_copy"]["status"] == "ok"
     assert payload["operations"]["push_central_store"]["status"] == "ok"
+    assert payload["operations"]["push_central_vectors"]["status"] == "ok"
     assert payload["operations"]["pull_candidates"]["status"] == "ok"
     assert payload["safety"]["pull_candidates_apply_writes_local_candidates_only"] is True
     assert payload["safety"]["active_memory_writes"] is False
+    assert payload["safety"]["central_vector_writes"] is True
+    assert payload["safety"]["central_vectors_index_candidates"] is False
     assert calls[0][0] == "knowledge"
     assert calls[0][2] is True
     assert any(call[0] == "central_store" and call[2]["agent_id"] == "sync-agent" for call in calls)
+    assert any(call[0] == "central_vectors" and call[2]["agent_id"] == "sync-agent" for call in calls)
     pull = calls[-1]
     assert pull[0] == "pull"
     assert pull[2]["agent_id"] == "sync-agent"
@@ -223,6 +236,7 @@ def test_memory_sync_run_once_cli_dry_run_writes_central_report(tmp_path, capsys
             str(project),
             "--push-read-copy",
             "--push-central-store",
+            "--push-central-vectors",
             "--pull-candidates",
             "--apply",
             "--dry-run",
@@ -237,5 +251,6 @@ def test_memory_sync_run_once_cli_dry_run_writes_central_report(tmp_path, capsys
     assert payload["central_memory_station"] is True
     assert payload["operations"]["push_read_copy"]["status"] == "dry_run"
     assert payload["operations"]["push_central_store"]["status"] == "dry_run"
+    assert payload["operations"]["push_central_vectors"]["status"] == "dry_run"
     assert payload["operations"]["pull_candidates"]["effective_apply"] is False
     assert report.exists()
