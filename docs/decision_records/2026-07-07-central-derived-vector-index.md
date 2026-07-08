@@ -182,11 +182,30 @@ workflow. It defaults to dry-run, requires `--apply` before writing semantic
 vectors, writes no candidates or active memory, and does not clean risky/orphan
 rows or enable remote vector read.
 
-The first Supabase central vector migration creates a remote pgvector schema and
-metadata-only status RPC. A trusted sync host can push reviewed safe-summary
-embeddings with `vault memory-sync run-once --push-central-vectors`. This does
-not change ranking, expose vector search through Gateway / Remote Server, or
-allow hosted agents to write active memory.
+The first Supabase central vector migration creates a remote pgvector schema,
+metadata-only status RPC, policy-aware semantic preview RPC, and bounded
+snapshot preview RPC. A trusted sync host can push reviewed safe-summary
+embeddings with `vault memory-sync run-once --push-central-vectors`.
+
+Remote MCP now exposes the minimum read chain:
+
+1. `vault_remote_semantic_search` calls
+   `vault_match_readable_memory_embeddings()` and returns safe preview rows with
+   `read_handle`.
+2. `vault_remote_snapshot_read` calls
+   `vault_get_readable_memory_snapshot()` and returns a bounded reviewed
+   snapshot preview.
+
+This still does not allow hosted agents to write active memory. Candidates stay
+outside the central vector index, central vector writes remain trusted-sync-host
+only, and remote semantic results still expose neither embeddings nor
+`remote_search_text`.
+
+Live validation on 2026-07-08 confirmed that the central read chain works for
+the Codex private-memory read copy: three latest vector rows produced safe
+semantic previews, each preview had a `read_handle`, and each handle resolved to
+a `bounded_central_snapshot_preview`. The validation intentionally reported only
+metadata and preview character counts, not memory content.
 
 ## Security Requirements
 
@@ -220,9 +239,11 @@ ship.
 
 ## Deferred
 
-- Policy-aware remote semantic search RPC.
+- Gateway / Remote Server HTTP endpoints for the same semantic preview and
+  bounded snapshot read chain.
 - Candidate-review vector index.
 - Audit/archive vector index.
-- Remote vector read API schema.
 - Managed embedding and hosted team index operations.
 - Cross-device index replication.
+- Richer central snapshot schema, including an explicit `project_id` column
+  instead of deriving the project boundary from the `memory_key` prefix.
