@@ -120,6 +120,8 @@ comment on function public.vault_central_vector_index_status() is
 
 grant execute on function public.vault_central_vector_index_status() to anon, authenticated, service_role;
 
+drop function if exists public.vault_sensitivity_rank(text) cascade;
+
 create or replace function public.vault_sensitivity_rank(p_sensitivity text)
 returns integer
 language sql
