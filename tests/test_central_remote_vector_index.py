@@ -61,6 +61,8 @@ def test_central_vector_index_migration_defines_pgvector_cache_contract():
     assert "left(" in sql
     assert "least(greatest(coalesce(p_max_chars, 2000), 1), 8000)" in sql
     assert "grant execute on function public.vault_get_readable_memory_snapshot" in sql
+    assert "split_part(s.memory_key" not in sql
+    assert "left(s.memory_key, length(p_project_id) + 1) = p_project_id || ':'" in sql
     assert "p_project_id is not null" in sql
     assert "lower(e.scope) = 'public'" in sql
     assert "lower(e.scope) in ('shared', 'project')" in sql

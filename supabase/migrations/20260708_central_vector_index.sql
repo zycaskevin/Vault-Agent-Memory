@@ -268,12 +268,12 @@ as $$
               or (
                   lower(s.scope) in ('shared', 'project')
                   and p_project_id is not null
-                  and split_part(s.memory_key, ':', 1) = p_project_id
+                  and left(s.memory_key, length(p_project_id) + 1) = p_project_id || ':'
               )
               or (
                   nullif(p_agent_id, '') is not null
                   and p_project_id is not null
-                  and split_part(s.memory_key, ':', 1) = p_project_id
+                  and left(s.memory_key, length(p_project_id) + 1) = p_project_id || ':'
                   and s.owner_agent = p_agent_id
               )
           )
