@@ -21,7 +21,7 @@ Instead, governed automation now has a separate convergence rule:
 
 - `auto_close_low_risk_dream_noise`
 - default enabled for `balanced` and `autonomous`, disabled for `conservative`
-- handles only low-trust Dream metadata/dedup suggestions
+- handles only low-trust Dream metadata/dedup review notices
 - rejects matching candidates and records review feedback
 - never deletes candidate rows
 - never writes or deletes active knowledge
@@ -36,7 +36,8 @@ create another copy.
 
 When only low-risk Dream metadata/dedup noise exists, a governed-auto apply run
 can converge the pending candidate queue to zero without a user-facing review
-alert. Real human-review candidates remain in the queue.
+alert. Freshness, convergence, orphan-repair, consolidation, sensitive, and
+other real human-review candidates remain in the queue.
 
 This is not a promotion path. Duplicate or low-trust Dream suggestions are
 closed as rejected feedback, not silently added to active memory.

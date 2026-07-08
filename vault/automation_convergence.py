@@ -53,7 +53,7 @@ def _dream_noise_reason(row: dict[str, Any], policy: dict[str, Any]) -> tuple[bo
     signals = tags | {category}
     if "dedup" in source_ref or "duplicate" in title or "consolidat" in title:
         signals.add("dedup")
-    if "knowledge:" in source_ref or "metadata" in title:
+    if "metadata" in title:
         signals.add("metadata")
     matched = sorted(signals & allowed_tags)
     if not matched:

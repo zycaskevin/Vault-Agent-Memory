@@ -67,11 +67,13 @@ vault candidates
 vault promote <candidate_id> --confirm
 ```
 
-In governed automation, routine low-risk Dream metadata/dedup suggestions have a
-bounded convergence path: `vault automation run --apply` can mark those
-low-trust, low-sensitivity suggestions as rejected and record feedback so the
-queue does not grow forever. This does not hard-delete data, promote Dream
-suggestions, or close private/high/restricted candidates.
+In governed automation, routine low-risk Dream metadata/dedup review notices
+have a bounded convergence path: `vault automation run --apply` can mark those
+low-trust, low-sensitivity notices as rejected and record feedback so the queue
+does not grow forever. This does not hard-delete data, promote Dream
+suggestions, or close private/high/restricted candidates. Freshness,
+convergence, orphan-repair, and consolidation suggestions remain visible for
+review.
 
 ## MCP usage
 

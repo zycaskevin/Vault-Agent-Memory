@@ -85,6 +85,10 @@ def _create_dream_noise_candidate(
     title: str = "Dream metadata queue noise",
     sensitivity: str = "low",
     tags: str = "dream,review,metadata",
+    source_ref: str = "knowledge:1",
+    memory_type: str = "dream_suggestion",
+    category: str = "dream-review",
+    reason: str = "metadata check found: missing_tags",
 ) -> str:
     result = create_candidate(
         db,
@@ -93,11 +97,11 @@ def _create_dream_noise_candidate(
             "Dream found weak metadata for knowledge #1. This is a queue hygiene "
             "suggestion, not a durable active memory."
         ),
-        reason="metadata check found: missing_tags",
+        reason=reason,
         source="dream",
-        source_ref="knowledge:1",
-        memory_type="dream_suggestion",
-        category="dream-review",
+        source_ref=source_ref,
+        memory_type=memory_type,
+        category=category,
         tags=tags,
         trust=0.45,
         scope="project",
@@ -407,6 +411,57 @@ def test_automation_run_does_not_auto_close_high_sensitivity_dream_candidates(tm
     assert payload["auto_close_dream_noise"]["closed_count"] == 0
     assert any(
         item["candidate_id"] == candidate_id and "sensitivity_not_allowed:high" in item["reason"]
+        for item in payload["auto_close_dream_noise"]["items"]
+    )
+    with VaultDB(project / "vault.db") as db:
+        assert db.get_memory_candidate(candidate_id)["status"] == "candidate"
+
+
+def test_automation_run_does_not_auto_close_freshness_or_convergence_reviews(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        freshness_id = _create_dream_noise_candidate(
+            db,
+            title="Verify stale memory: Deployment checklist",
+            source_ref="knowledge:2",
+            tags="dream,review,freshness",
+            reason="freshness check found stale or unverified knowledge",
+        )
+        convergence_id = _create_dream_noise_candidate(
+            db,
+            title="Clarify weak knowledge: Release policy",
+            source_ref="knowledge:3",
+            tags="dream,review,convergence",
+            reason="convergence check found weak or insufficient knowledge",
+        )
+
+    payload = automation_run(project, mode="balanced", apply=True, limit=10, write_reports=False)
+
+    assert payload["auto_close_dream_noise"]["closed_count"] == 0
+    assert payload["auto_close_dream_noise"]["remaining_dream_candidate_count"] == 2
+    with VaultDB(project / "vault.db") as db:
+        assert db.get_memory_candidate(freshness_id)["status"] == "candidate"
+        assert db.get_memory_candidate(convergence_id)["status"] == "candidate"
+
+
+def test_automation_run_does_not_auto_close_consolidation_suggestions_by_default(tmp_path):
+    project = _init_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        candidate_id = _create_dream_noise_candidate(
+            db,
+            title="Consolidate duplicate memory group: 1, 2",
+            source_ref="consolidate:title:deployment",
+            memory_type="consolidation_suggestion",
+            category="consolidation-review",
+            tags="dream,review,dedup,consolidation",
+            reason="dedup check found a group that may deserve a merged reviewed memory",
+        )
+
+    payload = automation_run(project, mode="balanced", apply=True, limit=10, write_reports=False)
+
+    assert payload["auto_close_dream_noise"]["closed_count"] == 0
+    assert any(
+        item["candidate_id"] == candidate_id and "memory_type_not_allowed:consolidation_suggestion" in item["reason"]
         for item in payload["auto_close_dream_noise"]["items"]
     )
     with VaultDB(project / "vault.db") as db:
