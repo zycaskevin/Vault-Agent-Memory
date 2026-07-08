@@ -62,7 +62,11 @@ def sync_memory_embeddings(
             "message": "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on a trusted sync host.",
         }
 
-    provider = provider or _create_central_vector_provider(provider_name=provider_name, model_key=model_key)
+    if provider is None:
+        provider_check = _central_vector_provider_preflight(provider_name=provider_name, model_key=model_key)
+        if provider_check is not None:
+            return provider_check
+        provider = _create_central_vector_provider(provider_name=provider_name, model_key=model_key)
     dimension = int(getattr(provider, "dim", 0) or 0)
     provider_id = str(getattr(provider, "provider_id", provider.__class__.__name__))
     if dimension != CENTRAL_VECTOR_DIMENSION:
@@ -329,3 +333,21 @@ def _create_central_vector_provider(*, provider_name: str, model_key: str) -> Se
     from .embed import create_embedding_provider
 
     return create_embedding_provider(provider=provider_name or "openai", model_key=model_key or "text-embedding-3-small")
+
+
+def _central_vector_provider_preflight(*, provider_name: str, model_key: str) -> dict[str, Any] | None:
+    provider = (provider_name or "openai").strip().lower()
+    model = model_key or "text-embedding-3-small"
+    if provider == "openai" and not os.getenv("OPENAI_API_KEY", "").strip():
+        return {
+            "ok": False,
+            "error": "embedding_provider_credentials_missing",
+            "provider_name": "openai",
+            "model_key": model,
+            "required_env_var": "OPENAI_API_KEY",
+            "message": (
+                "Set OPENAI_API_KEY on the trusted sync host before pushing central "
+                "vector embeddings."
+            ),
+        }
+    return None

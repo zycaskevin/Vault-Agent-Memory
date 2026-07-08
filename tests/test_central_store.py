@@ -222,6 +222,27 @@ def test_sync_memory_embeddings_requires_trusted_marker_for_env_client(tmp_path,
     assert payload["error"] == "trusted_sync_host_marker_missing"
 
 
+def test_sync_memory_embeddings_preflights_openai_credentials(tmp_path, monkeypatch):
+    project = tmp_path / "project"
+    project.mkdir()
+    with VaultDB(project / "vault.db") as db:
+        db.add_knowledge(
+            "Central vector OpenAI key",
+            "Raw body.",
+            summary="Safe summary.",
+        )
+
+    fake = _FakeSupabaseClient()
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    payload = sync_memory_embeddings(project, sb_client=fake)
+
+    assert payload["ok"] is False
+    assert payload["error"] == "embedding_provider_credentials_missing"
+    assert payload["required_env_var"] == "OPENAI_API_KEY"
+    assert fake.operations == []
+
+
 def test_sync_memory_embeddings_supersedes_old_revision(tmp_path):
     project = tmp_path / "project"
     project.mkdir()
