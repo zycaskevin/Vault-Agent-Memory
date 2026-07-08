@@ -53,6 +53,9 @@ create table if not exists public.vault_memory_embeddings (
         check (embedding_hash <> '')
 );
 
+alter table public.vault_active_memory_snapshots
+    add column if not exists allowed_agents text[] not null default array[]::text[];
+
 comment on table public.vault_memory_embeddings is
     'Policy-aware derived vector read cache for reviewed active memory safe summaries. Remote agents must not write this table directly.';
 
@@ -274,7 +277,10 @@ as $$
                   nullif(p_agent_id, '') is not null
                   and p_project_id is not null
                   and left(s.memory_key, length(p_project_id) + 1) = p_project_id || ':'
-                  and s.owner_agent = p_agent_id
+                  and (
+                      s.owner_agent = p_agent_id
+                      or p_agent_id = any(s.allowed_agents)
+                  )
               )
           )
         order by s.revision desc

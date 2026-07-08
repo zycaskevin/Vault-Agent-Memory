@@ -22,6 +22,7 @@ from .gateway_central_candidates import (
     gateway_pull_central_candidates,
     gateway_submit_central_candidate,
 )
+from .gateway_errors import gateway_error_suggestions
 from .gateway_security import GatewaySecurityPolicy, GatewaySecurityState
 from .gateway_server import (
     DEFAULT_GATEWAY_MAX_WORKERS,
@@ -500,11 +501,15 @@ def make_gateway_handler(
     allow_private_candidates: bool = False,
     allow_high_sensitivity_candidates: bool = False,
     allow_restricted_candidates: bool = False,
+    token_agent_map: str | dict[str, str] | None = None,
+    remote_semantic_enabled: bool | None = None,
 ):
     """Create a small JSON HTTP handler for the Gateway."""
     project = Path(project_dir).expanduser().resolve()
     token = str(auth_token or "")
     security = GatewaySecurityState(security_policy)
+    token_agents = remote_semantic.gateway_token_agent_map(token_agent_map)
+    semantic_enabled = remote_semantic.remote_semantic_enabled(remote_semantic_enabled)
 
     class VaultGatewayHandler(BaseHTTPRequestHandler):
         server_version = "VaultGateway/0.1"
@@ -524,6 +529,10 @@ def make_gateway_handler(
                 payload["gateway"]["transport"] = "https_json" if tls_enabled else "http_json"
                 payload["gateway"]["tls_enabled"] = bool(tls_enabled)
                 payload["gateway"]["security"] = security.status()
+                payload["gateway"]["central_semantic_read"] = remote_semantic.remote_semantic_health_info(
+                    enabled=semantic_enabled,
+                    token_agent_binding=bool(token_agents),
+                )
                 _append_audit(project, "health", _request_agent({}, parsed), payload.get("status", "ok"), **self._audit_context(parsed))
                 self._send_json(payload)
                 return
@@ -674,11 +683,19 @@ def make_gateway_handler(
                 )
                 self._send_json(payload)
                 return
-            semantic_post = remote_semantic.gateway_remote_semantic_post(parsed.path, body, agent)
+            semantic_post = remote_semantic.gateway_remote_semantic_authorized_post(
+                parsed.path,
+                body,
+                agent,
+                presented_token=self._presented_token(parsed),
+                token_agents=token_agents,
+                enabled=semantic_enabled,
+            )
             if semantic_post is not None:
-                event, payload, extra = semantic_post
-                _append_audit(project, event, agent, payload.get("status", "ok"), **extra, **self._audit_context(parsed))
-                self._send_json(payload)
+                event, payload, extra, status = semantic_post
+                audit_agent = str(payload.get("agent_id") or agent)
+                _append_audit(project, event, audit_agent, payload.get("status", "ok"), **extra, **self._audit_context(parsed))
+                self._send_json(payload, status=HTTPStatus(status))
                 return
             self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
 
@@ -686,6 +703,11 @@ def make_gateway_handler(
             return
 
         def _is_authorized(self, parsed) -> bool:
+            presented = self._presented_token(parsed)
+            if presented and presented in token_agents:
+                return True
+            if token_agents and not token:
+                return False
             if not token:
                 return True
             if str(self.headers.get("X-Vault-Gateway-Token", "")) == token:
@@ -790,6 +812,8 @@ def run_gateway(
     allow_private_candidates: bool = False,
     allow_high_sensitivity_candidates: bool = False,
     allow_restricted_candidates: bool = False,
+    token_agent_map: str | dict[str, str] | None = None,
+    remote_semantic_enabled: bool | None = None,
     shutdown_timeout_seconds: float | None = None,
 ) -> None:
     """Start the thin Gateway server and block."""
@@ -807,6 +831,8 @@ def run_gateway(
         allow_private_candidates=allow_private_candidates,
         allow_high_sensitivity_candidates=allow_high_sensitivity_candidates,
         allow_restricted_candidates=allow_restricted_candidates,
+        token_agent_map=token_agent_map,
+        remote_semantic_enabled=remote_semantic_enabled,
     )
     workers = _gateway_max_workers(max_workers)
     shutdown_timeout = _gateway_shutdown_timeout_seconds(shutdown_timeout_seconds)
@@ -936,6 +962,8 @@ def cmd_gateway(args: Any) -> None:
         allow_private_candidates=bool(getattr(args, "allow_private_candidates", False)),
         allow_high_sensitivity_candidates=bool(getattr(args, "allow_high_sensitivity_candidates", False)),
         allow_restricted_candidates=bool(getattr(args, "allow_restricted_candidates", False)),
+        token_agent_map=str(getattr(args, "token_agent_map", "") or os.environ.get("VAULT_GATEWAY_TOKEN_AGENT_MAP", "") or ""),
+        remote_semantic_enabled=getattr(args, "remote_semantic", None),
         shutdown_timeout_seconds=getattr(args, "shutdown_timeout_seconds", None),
     )
 
@@ -1047,6 +1075,7 @@ def _arg_int_or_default(args: Any, name: str, default: int) -> int:
     except (TypeError, ValueError):
         return int(default)
 
+
 def _error(code: str, message: str, *, status: str = "error") -> dict[str, Any]:
     payload: dict[str, Any] = {"status": status, "error": code, "message": message}
     suggestions = _error_suggestions(code)
@@ -1055,38 +1084,7 @@ def _error(code: str, message: str, *, status: str = "error") -> dict[str, Any]:
     return payload
 
 def _error_suggestions(code: str) -> dict[str, Any]:
-    if code == "db_not_found":
-        return {
-            "try": [
-                "Run `vault init --project-dir <project>` before starting the Gateway.",
-                "Pass the intended project with `--project-dir <project>`.",
-            ],
-            "next_action": "Initialize the vault, then retry the Gateway request.",
-        }
-    if code in {"auth_failed", "auth_locked"}:
-        return {
-            "try": [
-                "Send `Authorization: Bearer $VAULT_GATEWAY_TOKEN` or `X-Vault-Gateway-Token`.",
-                "If locked out, wait for the lockout window or restart the local Gateway.",
-            ],
-            "next_action": "Retry with the configured Gateway token.",
-        }
-    if code == "rate_limited":
-        return {
-            "try": ["Reduce request rate or raise `--rate-limit-per-minute` for trusted local clients."],
-            "next_action": "Wait and retry the request.",
-        }
-    if code == "agent_id_required":
-        return {
-            "try": ["Include `agent_id` in the JSON body, for example `codex` or `claude-code`."],
-            "next_action": "Retry with an explicit agent_id.",
-        }
-    if code == "not_found":
-        return {
-            "try": ["Use `/health`, `/openapi.json`, `/search`, `/read-range`, or `/submit-candidate`."],
-            "next_action": "Check `/openapi.json` for the supported Gateway contract.",
-        }
-    return {}
+    return gateway_error_suggestions(code)
 
 def _resolve_tls_paths(tls_cert: str | Path | None, tls_key: str | Path | None) -> tuple[str, str] | None:
     cert_text = str(tls_cert or "").strip()
@@ -1115,6 +1113,7 @@ def _has_stable_gateway_token(args: Any) -> bool:
     if str(getattr(args, "auth_token", "") or "").strip():
         return True
     return bool(os.environ.get("VAULT_GATEWAY_TOKEN", "").strip())
+
 
 def _append_audit(project_dir: Path, event: str, agent_id: str, status: str, **extra: Any) -> None:
     path = project_dir / "reports" / "gateway" / "audit.jsonl"

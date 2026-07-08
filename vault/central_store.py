@@ -150,6 +150,7 @@ def build_active_memory_snapshot(
         "scope": str(row.get("scope") or "project"),
         "sensitivity": str(row.get("sensitivity") or "low"),
         "owner_agent": str(row.get("owner_agent") or ""),
+        "allowed_agents": _parse_tags(row.get("allowed_agents")),
         "status": str(row.get("status") or "active"),
         "content_hash": content_hash,
         "reviewed_at": row.get("updated_at") or row.get("created_at") or None,
@@ -161,7 +162,7 @@ def _load_active_rows(db_path: Path, *, limit: int) -> list[dict[str, Any]]:
     with VaultDB(db_path) as db:
         rows = db.conn.execute(
             """SELECT id, title, category, tags, content_raw, summary, content_hash,
-                      scope, sensitivity, owner_agent, status, created_at, updated_at
+                      scope, sensitivity, owner_agent, allowed_agents, status, created_at, updated_at
                  FROM knowledge
                 WHERE COALESCE(status, 'active') != 'archived'
                 ORDER BY id ASC

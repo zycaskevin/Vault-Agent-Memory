@@ -83,6 +83,7 @@ create table if not exists public.vault_active_memory_snapshots (
     scope text not null default 'project',
     sensitivity text not null default 'low',
     owner_agent text not null default '',
+    allowed_agents text[] not null default array[]::text[],
     status text not null default 'active',
     content_hash text not null default '',
     revision integer not null default 1,

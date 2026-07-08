@@ -102,6 +102,22 @@ Gateway 的安全原則：
 
 其中最後兩個是中央語義讀取鏈：
 
+這兩個 endpoint 比一般 search 更敏感，所以預設是關閉的。要開給非 MCP
+agent 使用時，Gateway host 必須同時設定：
+
+- `VAULT_GATEWAY_REMOTE_SEMANTIC_ENABLED=1` 或啟動參數
+  `--remote-semantic`；
+- `VAULT_GATEWAY_TOKEN_AGENT_MAP` 或 `--token-agent-map`，把每個 token 綁到
+  固定 `agent_id`，例如 `token-for-codex=codex,token-for-openclaw=openclaw`；
+- request 必須帶目前 Vault 的 `project_id`，除非你明確設定
+  `allow_global_public=true` 做 public-only 全域搜尋。
+
+不要讓多個 agent 共用同一個 remote semantic token。Gateway 會以 token 綁定
+的 agent 身分執行 policy check；如果 request 自稱另一個 `agent_id`，會被拒絕。
+另外，`/remote-semantic-search` 需要把 query text 送到 Gateway 設定的
+embedding provider 產生 query embedding。不要把 API key、密碼、客戶私密資料或
+未審核原文塞進 query。
+
 ```text
 /remote-semantic-search
   -> 中央向量索引只回 safe preview + read_handle
@@ -161,6 +177,8 @@ Supabase 是可選的中央 read/candidate surface，不是 active memory 真相
 - hosted agent 可以直接寫 active memory；
 - candidate 一提交就被其他 agent 搜到；
 - remote agent 拿到 service-role key；
+- 多個 remote agent 共用同一個 Gateway semantic token；
+- remote semantic search 沒帶 project_id 就跨專案搜尋；
 - 中央 vector table 變成 remote agent 可寫；
 - search 結果直接回 raw private content；
 - Dream / archive / forgetting 在非 trusted host 上跑。
@@ -195,4 +213,3 @@ Central semantic read layer
 
 > Vault 不是讓 agent 直接把所有東西丟進向量桶。Vault 先治理記憶，再讓
 > agent 搜尋和讀取治理後的結果。
-

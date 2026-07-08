@@ -142,6 +142,18 @@ Gateway/Remote Server HTTP paths:
 4. Non-MCP agents can use `POST /remote-semantic-search` followed by
    `POST /remote-snapshot-read` through the Gateway contract.
 
+Gateway/Remote Server semantic HTTP endpoints are disabled by default. Enable
+them only with `VAULT_GATEWAY_REMOTE_SEMANTIC_ENABLED=1` or `--remote-semantic`,
+and configure per-agent token binding through `VAULT_GATEWAY_TOKEN_AGENT_MAP` or
+`--token-agent-map`. Requests must include `project_id` unless
+`allow_global_public=true` is explicitly set for public-only global search. The
+Gateway default `max_sensitivity` is `low`.
+
+`vault_remote_semantic_search` and `POST /remote-semantic-search` create a query
+embedding before matching central vectors. With the default provider, the query
+text is sent to OpenAI. Treat semantic queries as provider-visible input and do
+not send secrets or unreviewed raw memory as query text.
+
 The preview path returns safe metadata such as title, summary, tags, scope,
 sensitivity, similarity, and `read_handle`; it does not return
 `remote_search_text` or embedding values. The bounded read returns a capped

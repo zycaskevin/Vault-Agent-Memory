@@ -57,6 +57,8 @@ def _add_serve_args(parser: Any, *, host_default: str) -> None:
     parser.add_argument("--max-workers", type=int, default=None, help="同時處理 request 的 worker 上限；也可用 VAULT_GATEWAY_MAX_WORKERS")
     parser.add_argument("--shutdown-timeout-seconds", type=float, default=None, help="SIGINT/SIGTERM drain 等待秒數；也可用 VAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS")
     parser.add_argument("--auth-token", default=None, help="Gateway token；也可用 VAULT_GATEWAY_TOKEN")
+    parser.add_argument("--token-agent-map", default="", help="逗號分隔 token=agent_id；也可用 VAULT_GATEWAY_TOKEN_AGENT_MAP")
+    parser.add_argument("--remote-semantic", action="store_true", default=None, help="啟用中央語義讀取 HTTP endpoints；也可用 VAULT_GATEWAY_REMOTE_SEMANTIC_ENABLED=1")
     parser.add_argument("--no-auth", action="store_true", help="只允許 localhost 綁定時關閉 token")
     parser.add_argument("--tls-cert", default="", help="HTTPS certificate path；也可用 VAULT_GATEWAY_TLS_CERT")
     parser.add_argument("--tls-key", default="", help="HTTPS private key path；也可用 VAULT_GATEWAY_TLS_KEY")

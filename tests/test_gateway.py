@@ -180,7 +180,10 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert payload["status"] == "ok"
         assert payload["gateway"]["candidate_first_writes"] is True
         assert payload["gateway"]["central_candidate_inbox"] is True
-        assert payload["gateway"]["central_semantic_read"]["enabled"] is True
+        assert payload["gateway"]["central_semantic_read"]["supported"] is True
+        assert payload["gateway"]["central_semantic_read"]["enabled"] is False
+        assert payload["gateway"]["central_semantic_read"]["ready"] is False
+        assert payload["gateway"]["central_semantic_read"]["token_agent_binding_required"] is True
         assert payload["gateway"]["central_semantic_read"]["returns_embedding_values"] is False
         assert "/openapi.json" in payload["gateway"]["endpoints"]
         assert "/central-candidates/submit" in payload["gateway"]["endpoints"]
@@ -200,6 +203,9 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert contract["x-vault-safety"]["candidate_first_writes"] is True
         assert contract["x-vault-safety"]["central_candidate_inbox"] is True
         assert contract["x-vault-safety"]["central_semantic_read"] is True
+        assert contract["x-vault-safety"]["remote_semantic_enabled_by_default"] is False
+        assert contract["x-vault-safety"]["remote_semantic_requires_token_agent_binding"] is True
+        assert contract["x-vault-safety"]["remote_semantic_query_sent_to_embedding_provider"] is True
         assert contract["x-vault-safety"]["remote_semantic_search_returns_raw_content"] is False
         assert contract["x-vault-safety"]["remote_semantic_search_returns_embedding_values"] is False
         assert contract["x-vault-safety"]["remote_snapshot_read_bounded"] is True
@@ -394,6 +400,9 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     assert safety["candidate_first_writes"] is True
     assert safety["central_candidate_inbox"] is True
     assert safety["central_semantic_read"] is True
+    assert safety["remote_semantic_enabled_by_default"] is False
+    assert safety["remote_semantic_requires_token_agent_binding"] is True
+    assert safety["remote_semantic_query_sent_to_embedding_provider"] is True
     assert safety["remote_semantic_search_returns_raw_content"] is False
     assert safety["remote_semantic_search_returns_embedding_values"] is False
     assert safety["remote_snapshot_read_bounded"] is True
@@ -419,6 +428,7 @@ def test_gateway_remote_semantic_helpers_use_safe_central_read_chain(monkeypatch
     assert search["safety"]["gateway_adapter"] is True
     assert search["safety"]["returns_raw_memory_content"] is False
     assert search["safety"]["returns_embedding_values"] is False
+    assert search["safety"]["query_sent_to_embedding_provider"] is True
     assert search["safety"]["writes_active_knowledge"] is False
     result = search["results"][0]
     assert result["read_handle"] == "private-memory:a87aa9886d99:knowledge:2"
@@ -450,7 +460,12 @@ def test_gateway_http_remote_semantic_search_snapshot_read_and_audit(tmp_path, m
     monkeypatch.setattr(remote_semantic, "_get_supabase_client", lambda: client)
     monkeypatch.setattr(remote_semantic, "_create_remote_semantic_query_provider", lambda: _FakeRemoteSemanticProvider())
 
-    handler = make_gateway_handler(project, auth_token="secret")
+    handler = make_gateway_handler(
+        project,
+        auth_token="secret",
+        token_agent_map={"agent-secret": "remote-agent"},
+        remote_semantic_enabled=True,
+    )
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -461,10 +476,10 @@ def test_gateway_http_remote_semantic_search_snapshot_read_and_audit(tmp_path, m
             port,
             "/remote-semantic-search",
             {
-                "agent_id": "remote-agent",
                 "query": "central semantic read",
                 "project_id": "private-memory:a87aa9886d99",
             },
+            token="agent-secret",
         )
         assert status == 200
         assert search["count"] == 1
@@ -477,10 +492,10 @@ def test_gateway_http_remote_semantic_search_snapshot_read_and_audit(tmp_path, m
             port,
             "/remote-snapshot-read",
             {
-                "agent_id": "remote-agent",
                 "read_handle": search["results"][0]["read_handle"],
                 "project_id": "private-memory:a87aa9886d99",
             },
+            token="agent-secret",
         )
         assert status == 200
         assert read["result_type"] == "bounded_central_snapshot_preview"
@@ -494,6 +509,72 @@ def test_gateway_http_remote_semantic_search_snapshot_read_and_audit(tmp_path, m
     lines = audit.read_text(encoding="utf-8").splitlines()
     assert any('"event": "remote_semantic_search"' in line for line in lines)
     assert any('"event": "remote_snapshot_read"' in line for line in lines)
+    parsed = [json.loads(line) for line in lines]
+    semantic_rows = [row for row in parsed if row.get("event") == "remote_semantic_search"]
+    assert semantic_rows[-1]["query_chars"] == len("central semantic read")
+    assert "query" not in semantic_rows[-1]
+
+
+def test_gateway_remote_semantic_http_requires_enablement_and_token_agent_binding(tmp_path, monkeypatch):
+    import vault.mcp_remote_semantic as remote_semantic
+
+    project, _public_id, _private_id = _project(tmp_path)
+    client = _FakeRemoteSemanticClient()
+    monkeypatch.setattr(remote_semantic, "_get_supabase_client", lambda: client)
+    monkeypatch.setattr(remote_semantic, "_create_remote_semantic_query_provider", lambda: _FakeRemoteSemanticProvider())
+
+    disabled_handler = make_gateway_handler(project, auth_token="secret")
+    disabled_server = ThreadingHTTPServer(("127.0.0.1", 0), disabled_handler)
+    disabled_thread = threading.Thread(target=disabled_server.serve_forever, daemon=True)
+    disabled_thread.start()
+    try:
+        host, port = disabled_server.server_address
+        status, blocked = _post_json(
+            host,
+            port,
+            "/remote-semantic-search",
+            {"agent_id": "remote-agent", "query": "central semantic read", "project_id": "private-memory:a87aa9886d99"},
+        )
+        assert status == 403
+        assert blocked["error"] == "remote_semantic_disabled"
+        assert blocked["status"] == "blocked"
+    finally:
+        disabled_server.shutdown()
+        disabled_server.server_close()
+
+    bound_handler = make_gateway_handler(
+        project,
+        auth_token="secret",
+        token_agent_map={"agent-secret": "remote-agent"},
+        remote_semantic_enabled=True,
+    )
+    bound_server = ThreadingHTTPServer(("127.0.0.1", 0), bound_handler)
+    bound_thread = threading.Thread(target=bound_server.serve_forever, daemon=True)
+    bound_thread.start()
+    try:
+        host, port = bound_server.server_address
+        status, unbound = _post_json(
+            host,
+            port,
+            "/remote-semantic-search",
+            {"agent_id": "remote-agent", "query": "central semantic read", "project_id": "private-memory:a87aa9886d99"},
+            token="secret",
+        )
+        assert status == 403
+        assert unbound["error"] == "agent_token_binding_required"
+
+        status, mismatch = _post_json(
+            host,
+            port,
+            "/remote-semantic-search",
+            {"agent_id": "other-agent", "query": "central semantic read", "project_id": "private-memory:a87aa9886d99"},
+            token="agent-secret",
+        )
+        assert status == 403
+        assert mismatch["error"] == "agent_token_mismatch"
+    finally:
+        bound_server.shutdown()
+        bound_server.server_close()
 
 
 def test_gateway_bounded_worker_pool_rejects_excess_requests():

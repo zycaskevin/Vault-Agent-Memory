@@ -40,6 +40,8 @@ def test_central_vector_index_migration_defines_pgvector_cache_contract():
     assert "create extension if not exists vector" in sql
     assert "set search_path = public, extensions" in sql
     assert "create table if not exists public.vault_memory_embeddings" in sql
+    assert "alter table public.vault_active_memory_snapshots" in sql
+    assert "add column if not exists allowed_agents text[]" in sql
     assert "embedding vector(1536) not null" in sql
     assert "using hnsw (embedding vector_cosine_ops)" in sql
     assert "alter table public.vault_memory_embeddings enable row level security" in sql
@@ -63,6 +65,7 @@ def test_central_vector_index_migration_defines_pgvector_cache_contract():
     assert "grant execute on function public.vault_get_readable_memory_snapshot" in sql
     assert "split_part(s.memory_key" not in sql
     assert "left(s.memory_key, length(p_project_id) + 1) = p_project_id || ':'" in sql
+    assert "p_agent_id = any(s.allowed_agents)" in sql
     assert "p_project_id is not null" in sql
     assert "lower(e.scope) = 'public'" in sql
     assert "lower(e.scope) in ('shared', 'project')" in sql

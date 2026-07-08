@@ -86,6 +86,9 @@ deployment details differ:
 - service-role operations are reserved for the trusted sync host;
 - `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` or the equivalent self-host marker
   distinguishes an operator machine from a normal remote-reader environment;
+- Gateway remote semantic reads require endpoint opt-in and per-agent token
+  binding; a shared unscoped Gateway token must not be used for central semantic
+  search;
 - status and doctor commands must report when service-role credentials are
   missing, misplaced, or present without the trusted-host marker.
 
@@ -122,6 +125,9 @@ candidate submission, or remote semantic search must verify:
   search before promotion;
 - service-role credentials are reported as unsafe unless the runtime is marked
   as a trusted sync host;
+- Gateway remote semantic endpoints are off by default, token-bound to one
+  `agent_id`, project-scoped by default, and documented as sending query text to
+  the configured embedding provider;
 - daily-loop or memory-sync reports show candidate pull, review, sync, and
   lifecycle status separately.
 
