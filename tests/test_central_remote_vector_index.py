@@ -102,6 +102,34 @@ def test_central_remote_vector_index_status_reports_missing_schema():
     assert "20260708_central_vector_index.sql" in payload["next_actions"][0]
 
 
+def test_central_remote_vector_index_status_rows_without_remote_read_requests_latest_migration():
+    client = _FakeSupabaseClient(
+        [
+            {
+                "installed": True,
+                "vector_rows": 3,
+                "latest_vector_rows": 3,
+                "embedding_models": 1,
+                "project_count": 1,
+                "oldest_updated_at": "2026-07-08T00:00:00Z",
+                "newest_updated_at": "2026-07-08T01:00:00Z",
+                "remote_read_enabled": False,
+                "remote_write_enabled": False,
+                "index_role": "derived_remote_read_cache",
+                "source_of_truth": "trusted_sync_host_reviewed_snapshots",
+            }
+        ]
+    )
+
+    payload = central_remote_vector_index_status(sb_client=client)
+
+    assert payload["ok"] is True
+    assert payload["status"] == "installed"
+    assert payload["remote_read_enabled"] is False
+    assert "Reapply" in payload["next_actions"][0]
+    assert "20260708_central_vector_index.sql" in payload["next_actions"][0]
+
+
 def test_central_remote_vector_index_status_handles_client_import_error(monkeypatch):
     import vault.central_vector_index as central_vector_index
 

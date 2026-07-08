@@ -215,6 +215,10 @@ def central_remote_vector_index_status(sb_client: Any | None = None) -> dict[str
         payload["next_actions"] = [
             "Central vector schema is installed. Run `vault memory-sync run-once --push-central-store --push-central-vectors --json` on a trusted sync host.",
         ]
+    elif not payload["remote_read_enabled"]:
+        payload["next_actions"] = [
+            f"Central vector rows exist. Reapply `{REMOTE_VECTOR_MIGRATION}` to create the policy-aware semantic preview RPC.",
+        ]
     else:
         payload["next_actions"] = [
             "Central vector rows exist and the policy-aware semantic preview RPC is available. Next step: wire a bounded MCP/Gateway semantic search tool.",
