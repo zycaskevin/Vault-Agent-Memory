@@ -841,6 +841,56 @@ TOOLS = [
         }
     },
     {
+        "name": "vault_remote_semantic_search",
+        "description": "透過 Supabase 中央向量索引做 policy-aware semantic preview search；只回傳安全摘要與 read handle。",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "語義搜尋查詢；會用與中央向量索引相同的 embedding model 產生 query vector",
+                    "maxLength": MAX_SEARCH_QUERY_CHARS,
+                },
+                "agent_id": {
+                    "type": "string",
+                    "description": "Agent 身份，用於 owner_agent / allowed_agents 過濾",
+                    "default": ""
+                },
+                "project_id": {
+                    "type": "string",
+                    "description": "Project identity；shared/project/private 記憶需要此值才會被中央語義搜尋回傳",
+                    "default": ""
+                },
+                "max_sensitivity": {
+                    "type": "string",
+                    "enum": ["low", "medium", "high", "restricted"],
+                    "description": "最高可讀 sensitivity；預設 medium",
+                    "default": "medium"
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "最多回傳幾筆，最高 50",
+                    "default": 10,
+                    "minimum": 1,
+                    "maximum": 50
+                },
+                "min_similarity": {
+                    "type": "number",
+                    "description": "最低相似度門檻，0.0 到 1.0",
+                    "default": 0.0,
+                    "minimum": 0.0,
+                    "maximum": 1.0
+                },
+                "compact": {
+                    "type": "boolean",
+                    "description": "回傳精簡欄位（預設 true）",
+                    "default": True
+                },
+            },
+            "required": ["query"]
+        }
+    },
+    {
         "name": "vault_remote_map_show",
         "description": "從 Supabase 同步目標讀取 Document Map 結構（唯讀；SQLite 仍是 source of truth）。",
         "inputSchema": {
@@ -972,6 +1022,7 @@ TOOL_PROFILES = {
         "vault_automation_brief",
         "vault_automation_handoff",
         "vault_remote_search",
+        "vault_remote_semantic_search",
         "vault_remote_map_show",
         "vault_remote_read_range",
         *MCP_GATEWAY_TOOL_NAMES,

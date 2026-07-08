@@ -173,6 +173,19 @@ def _remote_fake_client():
     )
 
 
+class _FakeEmbeddingProvider:
+    provider_id = "fake-openai:d1536"
+    dim = 1536
+    is_semantic = True
+
+    def __init__(self):
+        self.calls = []
+
+    def encode(self, texts):
+        self.calls.append(list(texts))
+        return [[0.001] * 1536 for _ in texts]
+
+
 RAW_CONTENT = "\n".join(
     [
         "# Title",
@@ -648,6 +661,62 @@ def test_vault_remote_search_preserves_supabase_uuid_next_action():
 def test_vault_remote_search_tool_is_in_remote_profile():
     remote_tools = {tool["name"] for tool in vault_mcp.select_tools("remote")}
     assert "vault_remote_search" in remote_tools
+
+
+def test_vault_remote_semantic_search_uses_policy_rpc_without_raw_or_vectors():
+    fake = _remote_fake_client()
+    fake.rpcs["vault_match_readable_memory_embeddings"] = [
+        {
+            "memory_key": "mem_123",
+            "revision": 2,
+            "similarity": 0.84,
+            "title": "Central semantic search",
+            "summary": "Safe approved summary",
+            "category": "architecture",
+            "tags": ["vault", "semantic"],
+            "scope": "project",
+            "sensitivity": "medium",
+            "read_handle": "mem_123",
+            "remote_search_text": "must not be exposed",
+            "embedding": [0.1, 0.2],
+        }
+    ]
+    provider = _FakeEmbeddingProvider()
+
+    payload = vault_mcp._vault_remote_semantic_search_payload(
+        "shared memory",
+        agent_id="remote-agent",
+        project_id="vault-project",
+        max_sensitivity="medium",
+        limit=5,
+        min_similarity=0.2,
+        sb_client=fake,
+        embedding_provider=provider,
+    )
+
+    assert payload["rpc"] == "vault_match_readable_memory_embeddings"
+    assert payload["count"] == 1
+    assert payload["safety"]["returns_raw_memory_content"] is False
+    assert payload["safety"]["returns_embedding_values"] is False
+    function_name, params = fake.rpc_calls[-1]
+    assert function_name == "vault_match_readable_memory_embeddings"
+    assert params["p_agent_id"] == "remote-agent"
+    assert params["p_project_id"] == "vault-project"
+    assert params["p_match_count"] == 5
+    assert params["p_min_similarity"] == 0.2
+    assert params["p_query_embedding"].startswith("[0.001,0.001")
+    result = payload["results"][0]
+    assert result["memory_key"] == "mem_123"
+    assert result["summary"] == "Safe approved summary"
+    assert result["read_handle"] == "mem_123"
+    assert "remote_search_text" not in result
+    assert "embedding" not in result
+    assert provider.calls == [["shared memory"]]
+
+
+def test_vault_remote_semantic_search_tool_is_in_remote_profile():
+    remote_tools = {tool["name"] for tool in vault_mcp.select_tools("remote")}
+    assert "vault_remote_semantic_search" in remote_tools
 
 
 def test_vault_remote_doctor_checks_full_remote_reader_path():
