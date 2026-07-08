@@ -28,6 +28,7 @@ from vault.gateway import (
     make_gateway_handler,
     run_gateway,
 )
+from vault.gateway_remote_semantic import gateway_remote_semantic_search, gateway_remote_snapshot_read
 from vault.gateway_audit import gateway_audit_report
 from vault.gateway_security import GatewaySecurityPolicy
 from vault.agent_setup_remote_server import write_remote_server_deploy_templates
@@ -97,6 +98,62 @@ def _wait_for_remote_server(url: str, token: str, *, timeout: float = 10.0) -> N
     raise AssertionError(f"remote server did not become ready: {last_error}")
 
 
+class _FakeRemoteSemanticProvider:
+    def encode(self, texts):
+        assert texts
+        return [[0.01] * 1536]
+
+
+class _FakeRemoteSemanticResponse:
+    def __init__(self, data):
+        self.data = data
+
+
+class _FakeRemoteSemanticRpc:
+    def __init__(self, client, name, params):
+        self.client = client
+        self.name = name
+        self.params = dict(params)
+
+    def execute(self):
+        self.client.rpc_calls.append((self.name, self.params))
+        return _FakeRemoteSemanticResponse(self.client.rows_by_rpc.get(self.name, []))
+
+
+class _FakeRemoteSemanticClient:
+    def __init__(self):
+        self.rpc_calls = []
+        self.rows_by_rpc = {
+            "vault_match_readable_memory_embeddings": [
+                {
+                    "memory_key": "private-memory:a87aa9886d99:knowledge:2",
+                    "revision": 1,
+                    "similarity": 0.91,
+                    "title": "Central semantic read",
+                    "summary": "Approved safe summary only.",
+                    "scope": "project",
+                    "sensitivity": "low",
+                    "read_handle": "private-memory:a87aa9886d99:knowledge:2",
+                }
+            ],
+            "vault_get_readable_memory_snapshot": [
+                {
+                    "memory_key": "private-memory:a87aa9886d99:knowledge:2",
+                    "revision": 1,
+                    "title": "Central semantic read",
+                    "content_preview": "Approved bounded preview.",
+                    "content_source": "reviewed_snapshot_summary",
+                    "truncated": False,
+                    "scope": "project",
+                    "sensitivity": "low",
+                }
+            ],
+        }
+
+    def rpc(self, name, params):
+        return _FakeRemoteSemanticRpc(self, name, params)
+
+
 def test_gateway_http_requires_token_and_serves_health(tmp_path):
     project, _public_id, _private_id = _project(tmp_path)
     handler = make_gateway_handler(project, auth_token="secret")
@@ -123,8 +180,12 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert payload["status"] == "ok"
         assert payload["gateway"]["candidate_first_writes"] is True
         assert payload["gateway"]["central_candidate_inbox"] is True
+        assert payload["gateway"]["central_semantic_read"]["enabled"] is True
+        assert payload["gateway"]["central_semantic_read"]["returns_embedding_values"] is False
         assert "/openapi.json" in payload["gateway"]["endpoints"]
         assert "/central-candidates/submit" in payload["gateway"]["endpoints"]
+        assert "/remote-semantic-search" in payload["gateway"]["endpoints"]
+        assert "/remote-snapshot-read" in payload["gateway"]["endpoints"]
         assert payload["gateway"]["graceful_shutdown_supported"] is True
         assert payload["gateway"]["default_shutdown_timeout_seconds"] == 10.0
         assert payload["gateway"]["remote_ready"]["active_multi_master_sync"] is False
@@ -138,9 +199,15 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert contract["info"]["title"] == "Vault Gateway"
         assert contract["x-vault-safety"]["candidate_first_writes"] is True
         assert contract["x-vault-safety"]["central_candidate_inbox"] is True
+        assert contract["x-vault-safety"]["central_semantic_read"] is True
+        assert contract["x-vault-safety"]["remote_semantic_search_returns_raw_content"] is False
+        assert contract["x-vault-safety"]["remote_semantic_search_returns_embedding_values"] is False
+        assert contract["x-vault-safety"]["remote_snapshot_read_bounded"] is True
         assert contract["x-vault-safety"]["writes_active_knowledge"] is False
         assert contract["x-vault-safety"]["max_search_query_chars"] == 1000
         assert contract["components"]["schemas"]["SearchRequest"]["properties"]["query"]["maxLength"] == 1000
+        assert "/remote-semantic-search" in contract["paths"]
+        assert "/remote-snapshot-read" in contract["paths"]
         conn.close()
     finally:
         server.shutdown()
@@ -315,6 +382,8 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
         "/central-candidates/status",
         "/central-candidates/submit",
         "/central-candidates/pull",
+        "/remote-semantic-search",
+        "/remote-snapshot-read",
     } <= set(contract["paths"])
     assert contract["components"]["securitySchemes"]["bearerAuth"]["scheme"] == "bearer"
     safety = contract["x-vault-safety"]
@@ -324,8 +393,107 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     assert safety["writes_active_knowledge"] is False
     assert safety["candidate_first_writes"] is True
     assert safety["central_candidate_inbox"] is True
+    assert safety["central_semantic_read"] is True
+    assert safety["remote_semantic_search_returns_raw_content"] is False
+    assert safety["remote_semantic_search_returns_embedding_values"] is False
+    assert safety["remote_snapshot_read_bounded"] is True
     assert safety["tls_supported"] is True
     assert safety["bounded_worker_pool_supported"] is True
+
+
+def test_gateway_remote_semantic_helpers_use_safe_central_read_chain(monkeypatch):
+    import vault.mcp_remote_semantic as remote_semantic
+
+    client = _FakeRemoteSemanticClient()
+    monkeypatch.setattr(remote_semantic, "_get_supabase_client", lambda: client)
+    monkeypatch.setattr(remote_semantic, "_create_remote_semantic_query_provider", lambda: _FakeRemoteSemanticProvider())
+
+    search = gateway_remote_semantic_search(
+        query="central semantic read",
+        agent_id="remote-agent",
+        project_id="private-memory:a87aa9886d99",
+    )
+
+    assert search["count"] == 1
+    assert search["agent_id"] == "remote-agent"
+    assert search["safety"]["gateway_adapter"] is True
+    assert search["safety"]["returns_raw_memory_content"] is False
+    assert search["safety"]["returns_embedding_values"] is False
+    assert search["safety"]["writes_active_knowledge"] is False
+    result = search["results"][0]
+    assert result["read_handle"] == "private-memory:a87aa9886d99:knowledge:2"
+    assert result["recommended_next_tool"] == "vault_remote_snapshot_read"
+    assert "content_preview" not in result
+
+    read = gateway_remote_snapshot_read(
+        read_handle=result["read_handle"],
+        agent_id="remote-agent",
+        project_id="private-memory:a87aa9886d99",
+    )
+
+    assert read["result_type"] == "bounded_central_snapshot_preview"
+    assert read["safety"]["gateway_adapter"] is True
+    assert read["safety"]["bounded_preview"] is True
+    assert read["safety"]["returns_embedding_values"] is False
+    assert read["result"]["content_preview"] == "Approved bounded preview."
+    assert [call[0] for call in client.rpc_calls] == [
+        "vault_match_readable_memory_embeddings",
+        "vault_get_readable_memory_snapshot",
+    ]
+
+
+def test_gateway_http_remote_semantic_search_snapshot_read_and_audit(tmp_path, monkeypatch):
+    import vault.mcp_remote_semantic as remote_semantic
+
+    project, _public_id, _private_id = _project(tmp_path)
+    client = _FakeRemoteSemanticClient()
+    monkeypatch.setattr(remote_semantic, "_get_supabase_client", lambda: client)
+    monkeypatch.setattr(remote_semantic, "_create_remote_semantic_query_provider", lambda: _FakeRemoteSemanticProvider())
+
+    handler = make_gateway_handler(project, auth_token="secret")
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        host, port = server.server_address
+        status, search = _post_json(
+            host,
+            port,
+            "/remote-semantic-search",
+            {
+                "agent_id": "remote-agent",
+                "query": "central semantic read",
+                "project_id": "private-memory:a87aa9886d99",
+            },
+        )
+        assert status == 200
+        assert search["count"] == 1
+        assert search["safety"]["gateway_adapter"] is True
+        assert search["safety"]["returns_raw_memory_content"] is False
+        assert search["results"][0]["read_handle"] == "private-memory:a87aa9886d99:knowledge:2"
+
+        status, read = _post_json(
+            host,
+            port,
+            "/remote-snapshot-read",
+            {
+                "agent_id": "remote-agent",
+                "read_handle": search["results"][0]["read_handle"],
+                "project_id": "private-memory:a87aa9886d99",
+            },
+        )
+        assert status == 200
+        assert read["result_type"] == "bounded_central_snapshot_preview"
+        assert read["safety"]["bounded_preview"] is True
+        assert read["result"]["content_preview"] == "Approved bounded preview."
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    audit = project / "reports" / "gateway" / "audit.jsonl"
+    lines = audit.read_text(encoding="utf-8").splitlines()
+    assert any('"event": "remote_semantic_search"' in line for line in lines)
+    assert any('"event": "remote_snapshot_read"' in line for line in lines)
 
 
 def test_gateway_bounded_worker_pool_rejects_excess_requests():

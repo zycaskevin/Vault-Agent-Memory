@@ -130,7 +130,8 @@ candidates, requires `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` when using env
 credentials, and builds `remote_search_text` from title, summary, category, and
 tags instead of raw memory content.
 
-Remote semantic read is available through the policy-aware RPC and MCP path:
+Remote semantic read is available through the policy-aware RPC, MCP, and
+Gateway/Remote Server HTTP paths:
 
 1. `vault_remote_semantic_search` creates a query embedding, calls
    `vault_match_readable_memory_embeddings()`, and returns safe preview rows.
@@ -138,6 +139,8 @@ Remote semantic read is available through the policy-aware RPC and MCP path:
    `vault_remote_snapshot_read`.
 3. `vault_remote_snapshot_read` calls `vault_get_readable_memory_snapshot()` and
    returns a bounded central snapshot preview.
+4. Non-MCP agents can use `POST /remote-semantic-search` followed by
+   `POST /remote-snapshot-read` through the Gateway contract.
 
 The preview path returns safe metadata such as title, summary, tags, scope,
 sensitivity, similarity, and `read_handle`; it does not return

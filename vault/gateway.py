@@ -28,6 +28,7 @@ from .gateway_server import (
     DEFAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS,
     BoundedThreadPoolHTTPServer,
 )
+from . import gateway_remote_semantic as remote_semantic
 from .gateway_remote_server import mark_remote_server_payload, remote_server_metadata
 from .gui_format import compact_knowledge
 from .mcp_read import _vault_read_range_payload
@@ -42,7 +43,7 @@ DEFAULT_GATEWAY_AUDIT_MAX_BYTES = 5 * 1024 * 1024
 DEFAULT_GATEWAY_AUDIT_BACKUPS = 5
 LOCALHOSTS = {"127.0.0.1", "localhost", "::1"}
 GATEWAY_CONTRACT_VERSION = "2026-07-02"
-GATEWAY_ENDPOINTS = ["/health", "/openapi.json", "/search", "/read-range", "/submit-candidate", "/central-candidates/status", "/central-candidates/submit", "/central-candidates/pull"]
+GATEWAY_ENDPOINTS = ["/health", "/openapi.json", "/search", "/read-range", "/submit-candidate", "/central-candidates/status", "/central-candidates/submit", "/central-candidates/pull"] + remote_semantic.REMOTE_SEMANTIC_ENDPOINTS
 
 
 def gateway_health(project_dir: str | Path) -> dict[str, Any]:
@@ -71,6 +72,7 @@ def gateway_health(project_dir: str | Path) -> dict[str, Any]:
             "writes_active_knowledge": False,
             "candidate_first_writes": True,
             "central_candidate_inbox": True,
+            "central_semantic_read": remote_semantic.remote_semantic_health_info(),
             "default_read_max_sensitivity": "low",
             "default_include_private": False,
             "max_workers_supported": True,
@@ -196,6 +198,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                     "responses": {"200": {"description": "Local candidate import preview or apply result"}},
                 }
             },
+            **remote_semantic.remote_semantic_openapi_paths(),
         },
         "components": {
             "securitySchemes": {
@@ -267,6 +270,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         "require_hmac": {"type": "boolean", "default": False},
                     },
                 },
+                **remote_semantic.remote_semantic_openapi_schemas(MAX_SEARCH_QUERY_CHARS),
             },
         },
         "x-vault-safety": {
@@ -277,6 +281,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
             "writes_active_knowledge": False,
             "candidate_first_writes": True,
             "central_candidate_inbox": True,
+            **remote_semantic.remote_semantic_safety_flags(),
             "rate_limit_supported": True,
             "ip_policy_supported": True,
             "auth_lockout_supported": True,
@@ -669,6 +674,12 @@ def make_gateway_handler(
                 )
                 self._send_json(payload)
                 return
+            semantic_post = remote_semantic.gateway_remote_semantic_post(parsed.path, body, agent)
+            if semantic_post is not None:
+                event, payload, extra = semantic_post
+                _append_audit(project, event, agent, payload.get("status", "ok"), **extra, **self._audit_context(parsed))
+                self._send_json(payload)
+                return
             self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
 
         def log_message(self, format: str, *args: Any) -> None:
@@ -1008,14 +1019,12 @@ def _install_gateway_signal_handlers(server: Any, stop_signal: dict[str, str]) -
             continue
     return previous
 
-
 def _restore_gateway_signal_handlers(previous: dict[int, Any]) -> None:
     for signum, handler in previous.items():
         try:
             signal.signal(signum, handler)
         except (ValueError, OSError):
             continue
-
 
 def _bool_value(value: Any, default: bool) -> bool:
     if isinstance(value, bool):
@@ -1029,7 +1038,6 @@ def _bool_value(value: Any, default: bool) -> bool:
         return False
     return bool(default)
 
-
 def _arg_int_or_default(args: Any, name: str, default: int) -> int:
     value = getattr(args, name, None)
     if value is None:
@@ -1039,14 +1047,12 @@ def _arg_int_or_default(args: Any, name: str, default: int) -> int:
     except (TypeError, ValueError):
         return int(default)
 
-
 def _error(code: str, message: str, *, status: str = "error") -> dict[str, Any]:
     payload: dict[str, Any] = {"status": status, "error": code, "message": message}
     suggestions = _error_suggestions(code)
     if suggestions:
         payload.update(suggestions)
     return payload
-
 
 def _error_suggestions(code: str) -> dict[str, Any]:
     if code == "db_not_found":
@@ -1082,7 +1088,6 @@ def _error_suggestions(code: str) -> dict[str, Any]:
         }
     return {}
 
-
 def _resolve_tls_paths(tls_cert: str | Path | None, tls_key: str | Path | None) -> tuple[str, str] | None:
     cert_text = str(tls_cert or "").strip()
     key_text = str(tls_key or "").strip()
@@ -1098,13 +1103,11 @@ def _resolve_tls_paths(tls_cert: str | Path | None, tls_key: str | Path | None) 
         raise FileNotFoundError(f"TLS key not found: {key}")
     return str(cert), str(key)
 
-
 def _wrap_gateway_tls(sock: Any, *, certfile: str, keyfile: str) -> Any:
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.minimum_version = ssl.TLSVersion.TLSv1_2
     context.load_cert_chain(certfile=certfile, keyfile=keyfile)
     return context.wrap_socket(sock, server_side=True)
-
 
 def _has_stable_gateway_token(args: Any) -> bool:
     if bool(getattr(args, "no_auth", False)):
@@ -1112,7 +1115,6 @@ def _has_stable_gateway_token(args: Any) -> bool:
     if str(getattr(args, "auth_token", "") or "").strip():
         return True
     return bool(os.environ.get("VAULT_GATEWAY_TOKEN", "").strip())
-
 
 def _append_audit(project_dir: Path, event: str, agent_id: str, status: str, **extra: Any) -> None:
     path = project_dir / "reports" / "gateway" / "audit.jsonl"
