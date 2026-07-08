@@ -129,6 +129,12 @@ def _vault_remote_search_payload(*args, **kwargs) -> dict:
     return _mcp_remote._vault_remote_search_payload(*args, **kwargs)
 
 
+def _vault_remote_semantic_search_payload(*args, **kwargs) -> dict:
+    if kwargs.get("sb_client") is None:
+        kwargs["sb_client"] = _get_supabase_client()
+    return _mcp_remote._vault_remote_semantic_search_payload(*args, **kwargs)
+
+
 def _vault_remote_doctor_payload(*args, **kwargs) -> dict:
     if kwargs.get("sb_client") is None:
         kwargs["sb_client"] = _get_supabase_client()
@@ -456,6 +462,18 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
                 include_private=bool(arguments.get("include_private", False)),
                 max_sensitivity=arguments.get("max_sensitivity", "medium"),
                 limit=arguments.get("limit", 10),
+                compact=bool(arguments.get("compact", True)),
+            )
+            return {"result": json.dumps(payload, ensure_ascii=False, indent=2)}
+
+        elif name == "vault_remote_semantic_search":
+            payload = _vault_remote_semantic_search_payload(
+                query=arguments.get("query", ""),
+                agent_id=arguments.get("agent_id", ""),
+                project_id=arguments.get("project_id", ""),
+                max_sensitivity=arguments.get("max_sensitivity", "medium"),
+                limit=arguments.get("limit", 10),
+                min_similarity=arguments.get("min_similarity", 0.0),
                 compact=bool(arguments.get("compact", True)),
             )
             return {"result": json.dumps(payload, ensure_ascii=False, indent=2)}
