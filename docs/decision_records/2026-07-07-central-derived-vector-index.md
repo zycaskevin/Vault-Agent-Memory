@@ -182,17 +182,19 @@ workflow. It defaults to dry-run, requires `--apply` before writing semantic
 vectors, writes no candidates or active memory, and does not clean risky/orphan
 rows or enable remote vector read.
 
-They do not create a remote index, change ranking, expose vector search through
-Gateway / Remote Server, or allow hosted agents to write active memory.
+The first Supabase central vector migration creates a remote pgvector schema and
+metadata-only status RPC. It does not push embeddings yet, change ranking,
+expose vector search through Gateway / Remote Server, or allow hosted agents to
+write active memory.
 
 ## Security Requirements
 
 Hosted or remote agents must not receive direct credentials to write the central
 vector index. They should call Gateway, Remote Server, or approved read RPCs.
 
-If a Supabase/pgvector-backed remote index is added, index upserts must be a
-trusted sync-host operation derived from reviewed memory. Candidate submission
-must not write the shared active vector index.
+Supabase/pgvector-backed index upserts must be a trusted sync-host operation
+derived from reviewed memory. Candidate submission must not write the shared
+active vector index.
 
 Remote vector search must not expose:
 
@@ -217,8 +219,8 @@ ship.
 
 ## Deferred
 
-- Choosing the storage backend: SQLite vectors, pgvector, Qdrant, LanceDB, or
-  another local-first option.
+- Trusted sync-host embedding push into the Supabase pgvector table.
+- Policy-aware remote semantic search RPC.
 - Candidate-review vector index.
 - Audit/archive vector index.
 - Remote vector read API schema.
