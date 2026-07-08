@@ -891,6 +891,48 @@ TOOLS = [
         }
     },
     {
+        "name": "vault_remote_snapshot_read",
+        "description": "用 semantic search 回傳的 read_handle 讀取 Supabase 中央已審核 snapshot 的受限 preview。",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "read_handle": {
+                    "type": "string",
+                    "description": "vault_remote_semantic_search 回傳的 read_handle",
+                },
+                "agent_id": {
+                    "type": "string",
+                    "description": "Agent 身份，用於 owner_agent 過濾",
+                    "default": ""
+                },
+                "project_id": {
+                    "type": "string",
+                    "description": "Project identity；shared/project snapshot 需要此值才會回傳",
+                    "default": ""
+                },
+                "max_sensitivity": {
+                    "type": "string",
+                    "enum": ["low", "medium", "high", "restricted"],
+                    "description": "最高可讀 sensitivity；預設 medium",
+                    "default": "medium"
+                },
+                "max_chars": {
+                    "type": "integer",
+                    "description": "最多回傳字元數，最高 8000",
+                    "default": 2000,
+                    "minimum": 1,
+                    "maximum": 8000
+                },
+                "compact": {
+                    "type": "boolean",
+                    "description": "回傳精簡欄位（預設 true）",
+                    "default": True
+                },
+            },
+            "required": ["read_handle"]
+        }
+    },
+    {
         "name": "vault_remote_map_show",
         "description": "從 Supabase 同步目標讀取 Document Map 結構（唯讀；SQLite 仍是 source of truth）。",
         "inputSchema": {
@@ -1023,6 +1065,7 @@ TOOL_PROFILES = {
         "vault_automation_handoff",
         "vault_remote_search",
         "vault_remote_semantic_search",
+        "vault_remote_snapshot_read",
         "vault_remote_map_show",
         "vault_remote_read_range",
         *MCP_GATEWAY_TOOL_NAMES,

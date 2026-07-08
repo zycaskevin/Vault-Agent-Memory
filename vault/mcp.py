@@ -58,6 +58,7 @@ from vault.mcp_read import (
     vault_read_range,
 )
 from vault import mcp_remote as _mcp_remote
+from vault import mcp_remote_semantic as _mcp_remote_semantic
 from vault.mcp_remote import (
     REMOTE_CLAIM_TABLE,
     REMOTE_KNOWLEDGE_TABLE,
@@ -132,7 +133,13 @@ def _vault_remote_search_payload(*args, **kwargs) -> dict:
 def _vault_remote_semantic_search_payload(*args, **kwargs) -> dict:
     if kwargs.get("sb_client") is None:
         kwargs["sb_client"] = _get_supabase_client()
-    return _mcp_remote._vault_remote_semantic_search_payload(*args, **kwargs)
+    return _mcp_remote_semantic._vault_remote_semantic_search_payload(*args, **kwargs)
+
+
+def _vault_remote_snapshot_read_payload(*args, **kwargs) -> dict:
+    if kwargs.get("sb_client") is None:
+        kwargs["sb_client"] = _get_supabase_client()
+    return _mcp_remote_semantic._vault_remote_snapshot_read_payload(*args, **kwargs)
 
 
 def _vault_remote_doctor_payload(*args, **kwargs) -> dict:
@@ -474,6 +481,17 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
                 max_sensitivity=arguments.get("max_sensitivity", "medium"),
                 limit=arguments.get("limit", 10),
                 min_similarity=arguments.get("min_similarity", 0.0),
+                compact=bool(arguments.get("compact", True)),
+            )
+            return {"result": json.dumps(payload, ensure_ascii=False, indent=2)}
+
+        elif name == "vault_remote_snapshot_read":
+            payload = _vault_remote_snapshot_read_payload(
+                read_handle=arguments.get("read_handle", ""),
+                agent_id=arguments.get("agent_id", ""),
+                project_id=arguments.get("project_id", ""),
+                max_sensitivity=arguments.get("max_sensitivity", "medium"),
+                max_chars=arguments.get("max_chars", 2000),
                 compact=bool(arguments.get("compact", True)),
             )
             return {"result": json.dumps(payload, ensure_ascii=False, indent=2)}
