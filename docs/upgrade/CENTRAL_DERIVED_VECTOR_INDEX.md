@@ -111,9 +111,10 @@ supabase/migrations/20260708_central_vector_index.sql
 ```
 
 That migration creates `public.vault_memory_embeddings`, a pgvector/HNSW index,
-and a metadata-only `vault_central_vector_index_status()` RPC. It is a derived
-remote read cache for reviewed safe summaries. It does not let remote agents
-write vectors, does not index candidates, and does not expose semantic search.
+a metadata-only `vault_central_vector_index_status()` RPC, and a guarded
+`vault_match_readable_memory_embeddings()` preview RPC. It is a derived remote
+read cache for reviewed safe summaries. It does not let remote agents write
+vectors and does not index candidates.
 
 After the active snapshot read copy is synced, a trusted sync host can push
 reviewed safe-summary embeddings:
@@ -128,9 +129,11 @@ candidates, requires `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` when using env
 credentials, and builds `remote_search_text` from title, summary, category, and
 tags instead of raw memory content.
 
-Remote vector read remains disabled. The local and central status surfaces exist
-so operators and tests can verify index posture before later Gateway, Remote
-Server, or Supabase/Postgres vector-read work.
+Remote vector preview read is available through the policy-aware RPC only. It
+returns safe metadata such as title, summary, tags, scope, sensitivity, and
+similarity; it does not return raw memory content, `remote_search_text`, or
+embedding values. MCP/Gateway semantic search tools should still perform bounded
+follow-up reads before citing memory.
 
 Rebuild vectors through the existing semantic workflow:
 

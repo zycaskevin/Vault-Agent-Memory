@@ -108,7 +108,7 @@ as $$
         count(distinct nullif(project_id, '')) as project_count,
         min(updated_at) as oldest_updated_at,
         max(updated_at) as newest_updated_at,
-        false as remote_read_enabled,
+        true as remote_read_enabled,
         false as remote_write_enabled,
         'derived_remote_read_cache'::text as index_role,
         'trusted_sync_host_reviewed_snapshots'::text as source_of_truth
@@ -119,3 +119,108 @@ comment on function public.vault_central_vector_index_status() is
     'Safe metadata-only status for the central vector index. Does not expose embedding values or memory content.';
 
 grant execute on function public.vault_central_vector_index_status() to anon, authenticated, service_role;
+
+create or replace function public.vault_sensitivity_rank(p_sensitivity text)
+returns integer
+language sql
+immutable
+set search_path = public
+as $$
+    select case lower(coalesce(p_sensitivity, ''))
+        when 'low' then 10
+        when 'medium' then 20
+        when 'high' then 30
+        when 'restricted' then 40
+        else 999
+    end;
+$$;
+
+comment on function public.vault_sensitivity_rank(text) is
+    'Small helper for Vault RPC policy filters. Lower numbers are less sensitive.';
+
+grant execute on function public.vault_sensitivity_rank(text) to anon, authenticated, service_role;
+
+create or replace function public.vault_match_readable_memory_embeddings(
+    p_agent_id text,
+    p_query_embedding vector(1536),
+    p_project_id text default null,
+    p_match_count integer default 10,
+    p_max_sensitivity text default 'medium',
+    p_min_similarity double precision default 0
+)
+returns table (
+    memory_key text,
+    revision integer,
+    similarity double precision,
+    title text,
+    summary text,
+    category text,
+    tags text[],
+    scope text,
+    sensitivity text,
+    read_handle text
+)
+language sql
+security definer
+set search_path = public, extensions
+as $$
+    with scored as (
+        select
+            e.memory_key,
+            e.revision,
+            1 - (e.embedding <=> p_query_embedding) as similarity,
+            s.title,
+            s.summary,
+            s.category,
+            s.tags,
+            e.scope,
+            e.sensitivity,
+            e.memory_key as read_handle
+        from public.vault_memory_embeddings e
+        join public.vault_active_memory_snapshots s
+          on s.memory_key = e.memory_key
+         and s.revision = e.revision
+        where e.is_latest
+          and lower(coalesce(s.status, 'active')) = 'active'
+          and (p_project_id is null or e.project_id = p_project_id)
+          and public.vault_sensitivity_rank(e.sensitivity) <= public.vault_sensitivity_rank(p_max_sensitivity)
+          and (
+              lower(e.scope) = 'public'
+              or (
+                  lower(e.scope) in ('shared', 'project')
+                  and p_project_id is not null
+                  and e.project_id = p_project_id
+              )
+              or (
+                  nullif(p_agent_id, '') is not null
+                  and p_project_id is not null
+                  and e.project_id = p_project_id
+                  and (
+                      e.owner_agent = p_agent_id
+                      or p_agent_id = any(e.allowed_agents)
+                  )
+              )
+          )
+    )
+    select
+        scored.memory_key,
+        scored.revision,
+        scored.similarity,
+        scored.title,
+        scored.summary,
+        scored.category,
+        scored.tags,
+        scored.scope,
+        scored.sensitivity,
+        scored.read_handle
+    from scored
+    where scored.similarity >= coalesce(p_min_similarity, 0)
+    order by scored.similarity desc
+    limit least(greatest(coalesce(p_match_count, 10), 1), 50);
+$$;
+
+comment on function public.vault_match_readable_memory_embeddings(text, vector, text, integer, text, double precision) is
+    'Policy-aware semantic preview search over reviewed safe-summary embeddings. Returns safe metadata only; no raw memory content or embedding values.';
+
+grant execute on function public.vault_match_readable_memory_embeddings(text, vector, text, integer, text, double precision)
+    to anon, authenticated, service_role;

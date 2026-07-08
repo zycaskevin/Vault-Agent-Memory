@@ -45,6 +45,15 @@ def test_central_vector_index_migration_defines_pgvector_cache_contract():
     assert "alter table public.vault_memory_embeddings enable row level security" in sql
     assert "create or replace function public.vault_central_vector_index_status()" in sql
     assert "grant execute on function public.vault_central_vector_index_status()" in sql
+    assert "create or replace function public.vault_match_readable_memory_embeddings" in sql
+    assert "p_query_embedding vector(1536)" in sql
+    assert "returns table (\n    memory_key text" in sql
+    assert "remote_search_text" not in sql.split("create or replace function public.vault_match_readable_memory_embeddings", 1)[1]
+    assert "s.content" not in sql
+    assert "grant execute on function public.vault_match_readable_memory_embeddings" in sql
+    assert "p_project_id is not null" in sql
+    assert "lower(e.scope) = 'public'" in sql
+    assert "lower(e.scope) in ('shared', 'project')" in sql
     assert "source_table = 'vault_active_memory_snapshots'" in sql
     assert "lower(sensitivity) in ('low', 'medium')" in sql
     assert "create policy agents_rw" not in sql
@@ -61,7 +70,7 @@ def test_central_remote_vector_index_status_installed_empty():
                 "project_count": 0,
                 "oldest_updated_at": None,
                 "newest_updated_at": None,
-                "remote_read_enabled": False,
+                "remote_read_enabled": True,
                 "remote_write_enabled": False,
                 "index_role": "derived_remote_read_cache",
                 "source_of_truth": "trusted_sync_host_reviewed_snapshots",
@@ -75,7 +84,7 @@ def test_central_remote_vector_index_status_installed_empty():
     assert payload["status"] == "installed_empty"
     assert payload["installed"] is True
     assert payload["counts"]["vector_rows"] == 0
-    assert payload["remote_read_enabled"] is False
+    assert payload["remote_read_enabled"] is True
     assert payload["remote_write_enabled"] is False
     assert payload["safety"]["trusted_sync_host_writes_only"] is True
     assert payload["safety"]["returns_embedding_values"] is False
@@ -122,7 +131,7 @@ def test_vector_index_central_status_cli_json(monkeypatch, tmp_path, capsys):
                 "project_count": 1,
                 "oldest_updated_at": "2026-07-08T00:00:00Z",
                 "newest_updated_at": "2026-07-08T01:00:00Z",
-                "remote_read_enabled": False,
+                "remote_read_enabled": True,
                 "remote_write_enabled": False,
                 "index_role": "derived_remote_read_cache",
                 "source_of_truth": "trusted_sync_host_reviewed_snapshots",
@@ -139,6 +148,7 @@ def test_vector_index_central_status_cli_json(monkeypatch, tmp_path, capsys):
 
     assert payload["artifact_type"] == "central_remote_vector_index_status"
     assert payload["status"] == "installed"
+    assert payload["remote_read_enabled"] is True
     assert payload["counts"]["vector_rows"] == 3
     assert payload["paths"]["json"] == "reports/vector-index/central-status-latest.json"
     assert (project / payload["paths"]["json"]).exists()
