@@ -54,7 +54,19 @@ vault memory-sync run-once --project-dir /path/to/project --push-central-store -
 This requires a 1536-dimensional embedding provider, defaults to OpenAI
 `text-embedding-3-small`, indexes only reviewed low/medium public/shared/project
 safe summaries, requires `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` when using env
-credentials, and still does not expose remote semantic search.
+credentials, and does not index candidates or high/restricted memory.
+
+Remote semantic read is exposed through guarded MCP tools, not direct table
+access:
+
+- `vault_remote_semantic_search` returns safe preview rows from reviewed
+  safe-summary embeddings.
+- `vault_remote_snapshot_read` follows the preview `read_handle` and returns a
+  bounded reviewed snapshot preview.
+
+The semantic preview does not return embeddings, `remote_search_text`, or raw
+memory content. The snapshot read is capped by `max_chars` and falls back to the
+reviewed summary when full reviewed snapshot content was not synced.
 
 `setup-agent --features supabase --supabase-sync cron|launchagent|n8n|all`
 also writes `central-memory-sync.cron`, a macOS LaunchAgent, an n8n workflow,

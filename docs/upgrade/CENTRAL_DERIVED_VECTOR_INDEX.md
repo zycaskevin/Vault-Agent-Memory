@@ -111,10 +111,11 @@ supabase/migrations/20260708_central_vector_index.sql
 ```
 
 That migration creates `public.vault_memory_embeddings`, a pgvector/HNSW index,
-a metadata-only `vault_central_vector_index_status()` RPC, and a guarded
-`vault_match_readable_memory_embeddings()` preview RPC. It is a derived remote
-read cache for reviewed safe summaries. It does not let remote agents write
-vectors and does not index candidates.
+a metadata-only `vault_central_vector_index_status()` RPC, a guarded
+`vault_match_readable_memory_embeddings()` preview RPC, and a bounded
+`vault_get_readable_memory_snapshot()` read RPC. It is a derived remote read
+cache for reviewed safe summaries. It does not let remote agents write vectors
+and does not index candidates.
 
 After the active snapshot read copy is synced, a trusted sync host can push
 reviewed safe-summary embeddings:
@@ -129,11 +130,29 @@ candidates, requires `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` when using env
 credentials, and builds `remote_search_text` from title, summary, category, and
 tags instead of raw memory content.
 
-Remote vector preview read is available through the policy-aware RPC only. It
-returns safe metadata such as title, summary, tags, scope, sensitivity, and
-similarity; it does not return raw memory content, `remote_search_text`, or
-embedding values. MCP/Gateway semantic search tools should still perform bounded
-follow-up reads before citing memory.
+Remote semantic read is available through the policy-aware RPC and MCP path:
+
+1. `vault_remote_semantic_search` creates a query embedding, calls
+   `vault_match_readable_memory_embeddings()`, and returns safe preview rows.
+2. Each preview row includes a `read_handle` and `next_action.tool` pointing to
+   `vault_remote_snapshot_read`.
+3. `vault_remote_snapshot_read` calls `vault_get_readable_memory_snapshot()` and
+   returns a bounded central snapshot preview.
+
+The preview path returns safe metadata such as title, summary, tags, scope,
+sensitivity, similarity, and `read_handle`; it does not return
+`remote_search_text` or embedding values. The bounded read returns a capped
+`content_preview` from reviewed snapshot content when available, otherwise the
+reviewed summary. It does not read candidates and does not expose the vector
+table.
+
+Verified live on 2026-07-08 against the Codex private-memory central read copy:
+three latest central vector rows returned safe semantic previews, each preview
+contained a `read_handle`, each `next_action.tool` was
+`vault_remote_snapshot_read`, and each bounded snapshot read returned
+`bounded_central_snapshot_preview` with `returns_embedding_values=false`,
+`returns_raw_memory_content=false` on semantic preview, `candidate_first=true`,
+and `bounded_preview=true`.
 
 Rebuild vectors through the existing semantic workflow:
 
