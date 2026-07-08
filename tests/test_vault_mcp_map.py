@@ -709,14 +709,98 @@ def test_vault_remote_semantic_search_uses_policy_rpc_without_raw_or_vectors():
     assert result["memory_key"] == "mem_123"
     assert result["summary"] == "Safe approved summary"
     assert result["read_handle"] == "mem_123"
+    assert result["next_action"]["tool"] == "vault_remote_snapshot_read"
+    assert result["next_action"]["arguments"]["read_handle"] == "mem_123"
     assert "remote_search_text" not in result
     assert "embedding" not in result
     assert provider.calls == [["shared memory"]]
 
 
+def test_vault_remote_snapshot_read_uses_policy_rpc_without_embeddings():
+    fake = _remote_fake_client()
+    fake.rpcs["vault_get_readable_memory_snapshot"] = [
+        {
+            "memory_key": "vault-project:knowledge:42",
+            "revision": 3,
+            "title": "Central memory",
+            "summary": "Safe summary",
+            "content_preview": "Bounded reviewed preview",
+            "content_source": "reviewed_snapshot_summary",
+            "truncated": False,
+            "max_chars": 2000,
+            "category": "architecture",
+            "tags": ["vault"],
+            "scope": "project",
+            "sensitivity": "medium",
+            "content_hash": "hash",
+            "updated_at": "2026-07-08T00:00:00Z",
+            "embedding": [0.1, 0.2],
+            "remote_search_text": "must not be exposed",
+        }
+    ]
+
+    payload = vault_mcp._vault_remote_snapshot_read_payload(
+        "vault-project:knowledge:42",
+        agent_id="remote-agent",
+        project_id="vault-project",
+        max_sensitivity="medium",
+        max_chars=500,
+        sb_client=fake,
+    )
+
+    assert payload["rpc"] == "vault_get_readable_memory_snapshot"
+    assert payload["result_type"] == "bounded_central_snapshot_preview"
+    function_name, params = fake.rpc_calls[-1]
+    assert function_name == "vault_get_readable_memory_snapshot"
+    assert params == {
+        "p_agent_id": "remote-agent",
+        "p_read_handle": "vault-project:knowledge:42",
+        "p_project_id": "vault-project",
+        "p_max_sensitivity": "medium",
+        "p_max_chars": 500,
+    }
+    result = payload["result"]
+    assert result["memory_key"] == "vault-project:knowledge:42"
+    assert result["content_preview"] == "Bounded reviewed preview"
+    assert result["content_source"] == "reviewed_snapshot_summary"
+    assert "embedding" not in result
+    assert "remote_search_text" not in result
+
+
+def test_handle_tool_call_routes_vault_remote_snapshot_read(monkeypatch):
+    fake = _remote_fake_client()
+    fake.rpcs["vault_get_readable_memory_snapshot"] = [
+        {
+            "memory_key": "vault-project:knowledge:42",
+            "revision": 1,
+            "title": "Central memory",
+            "content_preview": "Bounded reviewed preview",
+            "content_source": "reviewed_snapshot_summary",
+            "scope": "project",
+            "sensitivity": "medium",
+        }
+    ]
+    monkeypatch.setattr(vault_mcp, "_get_supabase_client", lambda: fake)
+
+    response = vault_mcp.handle_tool_call(
+        "vault_remote_snapshot_read",
+        {
+            "read_handle": "vault-project:knowledge:42",
+            "agent_id": "remote-agent",
+            "project_id": "vault-project",
+            "max_chars": 400,
+        },
+    )
+
+    payload = json.loads(response["result"])
+    assert payload["result"]["content_preview"] == "Bounded reviewed preview"
+    assert fake.rpc_calls[-1][0] == "vault_get_readable_memory_snapshot"
+
+
 def test_vault_remote_semantic_search_tool_is_in_remote_profile():
     remote_tools = {tool["name"] for tool in vault_mcp.select_tools("remote")}
     assert "vault_remote_semantic_search" in remote_tools
+    assert "vault_remote_snapshot_read" in remote_tools
 
 
 def test_vault_remote_doctor_checks_full_remote_reader_path():

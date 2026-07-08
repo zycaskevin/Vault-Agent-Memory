@@ -10,11 +10,8 @@ from __future__ import annotations
 import hashlib
 import os
 import re
-from typing import Any
 
 MCP_SEARCH_MAX_LIMIT = 50
-REMOTE_SEMANTIC_VECTOR_DIMENSION = 1536
-REMOTE_SEMANTIC_SEARCH_RPC = "vault_match_readable_memory_embeddings"
 
 REMOTE_NODE_TABLE = "vault_knowledge_nodes"
 REMOTE_CLAIM_TABLE = "vault_knowledge_claims"
@@ -152,34 +149,6 @@ def _supabase_rpc(sb_client, function_name: str, params: dict) -> list[dict]:
     return [dict(row) for row in (getattr(response, "data", None) or [])]
 
 
-def _pgvector_literal(vector: list[float]) -> str:
-    values = ",".join(str(float(value)) for value in vector)
-    return f"[{values}]"
-
-
-def _create_remote_semantic_query_provider():
-    from .embed import create_embedding_provider
-
-    provider_name = os.getenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_PROVIDER", "openai")
-    model_key = os.getenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_MODEL") or os.getenv(
-        "OPENAI_EMBEDDING_MODEL",
-        "text-embedding-3-small",
-    )
-    return create_embedding_provider(provider=provider_name, model_key=model_key)
-
-
-def _query_embedding_from_provider(query: str, provider: Any) -> list[float]:
-    vectors = provider.encode([query])
-    if not vectors:
-        raise RuntimeError("embedding provider returned no vectors")
-    vector = [float(value) for value in vectors[0]]
-    if len(vector) != REMOTE_SEMANTIC_VECTOR_DIMENSION:
-        raise RuntimeError(
-            f"central semantic search expects {REMOTE_SEMANTIC_VECTOR_DIMENSION} dimensions, got {len(vector)}"
-        )
-    return vector
-
-
 def _remote_policy_params(
     *,
     agent_id: str = "",
@@ -294,36 +263,6 @@ def _remote_search_result(
     return {key: value for key, value in item.items() if value is not None}
 
 
-def _remote_semantic_search_result(row: dict, *, compact: bool = True) -> dict:
-    item = {
-        "memory_key": row.get("memory_key"),
-        "revision": row.get("revision"),
-        "similarity": row.get("similarity"),
-        "title": row.get("title"),
-        "summary": row.get("summary"),
-        "category": row.get("category"),
-        "tags": row.get("tags"),
-        "scope": row.get("scope"),
-        "sensitivity": row.get("sensitivity"),
-        "read_handle": row.get("read_handle") or row.get("memory_key"),
-        "recommended_next_step": "Use read_handle with bounded central snapshot read support when available.",
-    }
-    if compact:
-        keep = {
-            "memory_key",
-            "revision",
-            "similarity",
-            "title",
-            "summary",
-            "scope",
-            "sensitivity",
-            "read_handle",
-            "recommended_next_step",
-        }
-        item = {key: value for key, value in item.items() if key in keep}
-    return {key: value for key, value in item.items() if value is not None}
-
-
 def _vault_remote_search_payload(
     query: str = "",
     *,
@@ -370,98 +309,6 @@ def _vault_remote_search_payload(
                 include_private=include_private,
                 max_sensitivity=max_sensitivity,
             )
-            for row in rows
-        ],
-    }
-
-
-def _vault_remote_semantic_search_payload(
-    query: str = "",
-    *,
-    agent_id: str = "",
-    project_id: str = "",
-    max_sensitivity: str = "medium",
-    limit: int = 10,
-    min_similarity: float = 0.0,
-    compact: bool = True,
-    sb_client=None,
-    embedding_provider=None,
-    query_embedding: list[float] | None = None,
-) -> dict:
-    limit = _clamp_int(limit, default=10, minimum=1, maximum=MCP_SEARCH_MAX_LIMIT)
-    query = str(query or "").strip()
-    if not query:
-        return _remote_error(
-            "remote_semantic_query_required",
-            "query is required for central semantic search.",
-        )
-
-    sb_client = sb_client or _get_supabase_client()
-    if sb_client is None:
-        return _remote_error(
-            "remote_client_missing",
-            "SUPABASE_URL and SUPABASE_ANON_KEY/SUPABASE_KEY are required for remote semantic search.",
-        )
-
-    if query_embedding is None:
-        try:
-            provider = embedding_provider or _create_remote_semantic_query_provider()
-            query_embedding = _query_embedding_from_provider(query, provider)
-        except Exception as exc:
-            return _remote_error(
-                "remote_semantic_embedding_failed",
-                "Unable to create a query embedding for central semantic search.",
-                detail=_remote_doctor_safe_detail(exc),
-                next_action={
-                    "tool": "vault_remote_search",
-                    "arguments": {"query": query, "agent_id": agent_id, "max_sensitivity": max_sensitivity},
-                },
-            )
-    elif len(query_embedding) != REMOTE_SEMANTIC_VECTOR_DIMENSION:
-        return _remote_error(
-            "remote_semantic_embedding_dimension_mismatch",
-            f"query_embedding must be {REMOTE_SEMANTIC_VECTOR_DIMENSION} dimensions.",
-        )
-
-    try:
-        min_similarity = float(min_similarity)
-    except (TypeError, ValueError):
-        min_similarity = 0.0
-
-    params = {
-        "p_agent_id": str(agent_id or ""),
-        "p_query_embedding": _pgvector_literal(query_embedding),
-        "p_project_id": str(project_id or "") or None,
-        "p_match_count": limit,
-        "p_max_sensitivity": str(max_sensitivity or "medium"),
-        "p_min_similarity": max(0.0, min(min_similarity, 1.0)),
-    }
-    try:
-        rows = _supabase_rpc(sb_client, REMOTE_SEMANTIC_SEARCH_RPC, params)
-    except Exception:
-        return _remote_error(
-            "remote_semantic_search_failed",
-            "Unable to call Supabase RPC vault_match_readable_memory_embeddings. Apply supabase/migrations/20260708_central_vector_index.sql first, then retry.",
-            next_action={
-                "tool": "vault_remote_search",
-                "arguments": {"query": query, "agent_id": agent_id, "max_sensitivity": max_sensitivity},
-            },
-        )
-
-    return {
-        "source": "supabase",
-        "rpc": REMOTE_SEMANTIC_SEARCH_RPC,
-        "query": query,
-        "project_id": str(project_id or ""),
-        "count": len(rows),
-        "result_type": "safe_semantic_preview",
-        "safety": {
-            "returns_raw_memory_content": False,
-            "returns_embedding_values": False,
-            "candidate_first": True,
-        },
-        "results": [
-            _remote_semantic_search_result(row, compact=compact)
             for row in rows
         ],
     }

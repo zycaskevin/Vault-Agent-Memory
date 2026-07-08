@@ -49,9 +49,18 @@ def test_central_vector_index_migration_defines_pgvector_cache_contract():
     assert "create or replace function public.vault_match_readable_memory_embeddings" in sql
     assert "p_query_embedding vector(1536)" in sql
     assert "returns table (\n    memory_key text" in sql
-    assert "remote_search_text" not in sql.split("create or replace function public.vault_match_readable_memory_embeddings", 1)[1]
-    assert "s.content" not in sql
+    semantic_sql = sql.split("create or replace function public.vault_match_readable_memory_embeddings", 1)[1].split(
+        "create or replace function public.vault_get_readable_memory_snapshot",
+        1,
+    )[0]
+    assert "remote_search_text" not in semantic_sql
+    assert "s.content" not in semantic_sql
     assert "grant execute on function public.vault_match_readable_memory_embeddings" in sql
+    assert "create or replace function public.vault_get_readable_memory_snapshot" in sql
+    assert "p_read_handle text" in sql
+    assert "left(" in sql
+    assert "least(greatest(coalesce(p_max_chars, 2000), 1), 8000)" in sql
+    assert "grant execute on function public.vault_get_readable_memory_snapshot" in sql
     assert "p_project_id is not null" in sql
     assert "lower(e.scope) = 'public'" in sql
     assert "lower(e.scope) in ('shared', 'project')" in sql

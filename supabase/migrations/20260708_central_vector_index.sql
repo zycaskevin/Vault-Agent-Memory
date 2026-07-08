@@ -226,3 +226,84 @@ comment on function public.vault_match_readable_memory_embeddings(text, vector, 
 
 grant execute on function public.vault_match_readable_memory_embeddings(text, vector, text, integer, text, double precision)
     to anon, authenticated, service_role;
+
+create or replace function public.vault_get_readable_memory_snapshot(
+    p_agent_id text,
+    p_read_handle text,
+    p_project_id text default null,
+    p_max_sensitivity text default 'medium',
+    p_max_chars integer default 2000
+)
+returns table (
+    memory_key text,
+    revision integer,
+    title text,
+    summary text,
+    content_preview text,
+    content_source text,
+    truncated boolean,
+    max_chars integer,
+    category text,
+    tags text[],
+    scope text,
+    sensitivity text,
+    content_hash text,
+    updated_at timestamp with time zone
+)
+language sql
+security definer
+set search_path = public, extensions
+as $$
+    with bounded as (
+        select least(greatest(coalesce(p_max_chars, 2000), 1), 8000) as max_chars
+    ),
+    readable as (
+        select s.*
+        from public.vault_active_memory_snapshots s
+        where s.memory_key = p_read_handle
+          and lower(coalesce(s.status, 'active')) = 'active'
+          and public.vault_sensitivity_rank(s.sensitivity) <= public.vault_sensitivity_rank(p_max_sensitivity)
+          and (
+              lower(s.scope) = 'public'
+              or (
+                  lower(s.scope) in ('shared', 'project')
+                  and p_project_id is not null
+                  and split_part(s.memory_key, ':', 1) = p_project_id
+              )
+              or (
+                  nullif(p_agent_id, '') is not null
+                  and p_project_id is not null
+                  and split_part(s.memory_key, ':', 1) = p_project_id
+                  and s.owner_agent = p_agent_id
+              )
+          )
+        order by s.revision desc
+        limit 1
+    )
+    select
+        r.memory_key,
+        r.revision,
+        r.title,
+        r.summary,
+        left(
+            case when nullif(r.content, '') is not null then r.content else r.summary end,
+            b.max_chars
+        ) as content_preview,
+        case when nullif(r.content, '') is not null then 'reviewed_snapshot_content' else 'reviewed_snapshot_summary' end as content_source,
+        length(case when nullif(r.content, '') is not null then r.content else r.summary end) > b.max_chars as truncated,
+        b.max_chars,
+        r.category,
+        r.tags,
+        r.scope,
+        r.sensitivity,
+        r.content_hash,
+        r.updated_at
+    from readable r
+    cross join bounded b;
+$$;
+
+comment on function public.vault_get_readable_memory_snapshot(text, text, text, text, integer) is
+    'Policy-aware bounded read for reviewed central active memory snapshots. Returns a limited preview only; candidates and embeddings are never returned.';
+
+grant execute on function public.vault_get_readable_memory_snapshot(text, text, text, text, integer)
+    to anon, authenticated, service_role;
