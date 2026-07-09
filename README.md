@@ -25,6 +25,25 @@ few setup questions, then read a short daily memory report.
 New here? Start with the visual demo:
 [`docs/landing/index.html`](docs/landing/index.html).
 
+## Release Maturity
+
+Vault Agent Memory v0.8.0 is a **Public Beta / Developer Preview** release.
+The local-first path is ready for agent developers to try in real projects, and
+the multi-agent model is intentionally conservative:
+
+- local SQLite/Markdown remains the source of truth;
+- same-machine agents can share one trusted Vault;
+- remote or hosted agents read approved memory and submit candidates;
+- only a trusted sync host should hold service-role credentials, promote
+  official memory, run Dream/forgetting/archive jobs, and push reviewed read
+  copies;
+- central vector search is a derived read layer over reviewed safe summaries,
+  not a second active-memory database.
+
+The package is pre-1.0. Advanced Supabase, Gateway, central vector, automation,
+and benchmark surfaces are useful for developer preview deployments, but should
+be enabled deliberately and monitored with the generated reports.
+
 ## 30-Second Version
 
 Vault Agent Memory exists because agent memory fails in practical ways:
@@ -599,6 +618,22 @@ More detail:
 Vault Agent Memory is pre-1.0. The core local path is intentionally conservative.
 Advanced remote and automation paths are powerful, but should be enabled
 deliberately.
+
+Known limitations for the Public Beta / Developer Preview:
+
+- Supabase, Gateway, and central semantic search are optional advanced paths,
+  not required for the local Vault source of truth.
+- Remote agents should not receive service-role keys; they should use anon or
+  scoped credentials for approved reads and candidate submission.
+- Semantic query text may be sent to the configured embedding provider when
+  remote semantic search is enabled.
+- Central vectors index reviewed safe summaries and previews only; they do not
+  make Supabase the active-memory authority.
+- LoCoMo / LongMemEval results are retrieval-only source-hit probes unless an
+  explicitly comparable final-QA answerer and judge run is published.
+- Automation is report-first and candidate-first. Governed-auto can close
+  routine low-risk metadata/dedup review noise, but strategic, sensitive,
+  freshness, convergence, and consolidation work stays visible for review.
 
 ## Documentation Map
 

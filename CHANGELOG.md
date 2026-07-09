@@ -2,6 +2,13 @@
 
 ## [0.8.0] - 2026-07-06
 
+### Maturity
+
+- Framed v0.8.0 as a Public Beta / Developer Preview: local SQLite/Markdown
+  remains the source of truth, remote agents stay candidate-first, and central
+  vector search is a derived read layer rather than a second active-memory
+  database.
+
 ### Added
 
 - Promoted the Central Memory Station foundation to the next major release
@@ -30,6 +37,20 @@
 - Fresh wheel install smoke verified `vault`, `vault-mcp`, local init/add/
   compile/search, and report generation from a clean virtual environment.
 - Full local test suite passed: `2448 passed, 10 skipped`.
+
+### Known limitations
+
+- Supabase, Gateway, and central semantic search are optional advanced paths,
+  not required for local-first Vault usage.
+- Service-role credentials are for trusted sync hosts only; remote or hosted
+  agents should use anon/scoped credentials for approved reads and candidate
+  submission.
+- Remote semantic search may send query text to the configured embedding
+  provider.
+- Central vectors index reviewed safe summaries/previews only and do not become
+  the active-memory source of truth.
+- LoCoMo / LongMemEval language is limited to retrieval-only source-hit probes
+  unless comparable final-QA runs are published.
 
 ## [0.7.31] - 2026-07-05
 
