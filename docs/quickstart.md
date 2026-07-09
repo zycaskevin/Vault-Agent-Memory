@@ -3,6 +3,10 @@
 This page is the shortest safe path for a new user. It keeps the first run small
 and leaves advanced setup under `vault setup-agent`.
 
+Start local by default. When you need more than one machine or hosted agents,
+choose a deployment mode from [Deployment Modes](deployment_modes.md) instead
+of treating any one backend as required.
+
 ## 5-Minute Quickstart
 
 ### 0:00 Install

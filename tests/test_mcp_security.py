@@ -91,3 +91,72 @@ def test_security_doctor_reports_hmac_posture():
     )
     assert strict["ok"] is True
     assert strict["warning_count"] == 0
+    assert strict["governance_contract"]["semantics"]["remote_writes_enter_candidates"] is True
+    assert strict["governance_contract"]["write_policy"]["direct_remote_active_memory_writes"] is False
+
+
+def _doctor_check(payload, check_id):
+    return next(check for check in payload["checks"] if check["id"] == check_id)
+
+
+def test_security_doctor_warns_when_service_role_is_not_on_trusted_host():
+    payload = security_doctor({"SUPABASE_SERVICE_ROLE_KEY": "service-role-secret"})
+
+    check = _doctor_check(payload, "supabase_service_role_trusted_host")
+    assert check["ok"] is False
+    assert payload["supabase"]["service_role_key_present"] is True
+    assert payload["supabase"]["trusted_sync_host"] is False
+    assert payload["supabase"]["service_role_policy"] == "remote_readers_must_not_receive_service_role"
+    assert "service-role-secret" not in str(payload)
+
+    trusted = security_doctor(
+        {
+            "SUPABASE_SERVICE_ROLE_KEY": "service-role-secret",
+            "VAULT_SUPABASE_TRUSTED_SYNC_HOST": "1",
+        }
+    )
+    trusted_check = _doctor_check(trusted, "supabase_service_role_trusted_host")
+    assert trusted_check["ok"] is True
+    assert trusted["supabase"]["service_role_policy"] == "allowed_on_trusted_sync_host"
+
+
+def test_security_doctor_checks_self_host_remote_server_boundaries(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    (project / "vault.db").write_bytes(b"sqlite placeholder")
+    semantic_binding_env = "VAULT_GATEWAY_" + "TOKEN_AGENT_MAP"
+
+    risky = security_doctor(
+        {
+            "VAULT_REMOTE_SERVER_BIND": "0.0.0.0",
+            "VAULT_GATEWAY_REMOTE_SEMANTIC_ENABLED": "1",
+        },
+        project_dir=project,
+    )
+
+    assert _doctor_check(risky, "remote_server_stable_token")["ok"] is False
+    assert _doctor_check(risky, "remote_server_transport_boundary")["ok"] is False
+    assert _doctor_check(risky, "remote_semantic_token_agent_binding")["ok"] is False
+    assert _doctor_check(risky, "remote_server_backup_plan")["ok"] is False
+    assert risky["self_host"]["signals_detected"] is True
+    assert risky["self_host"]["public_bind"] is True
+
+    backup_dir = project / "backups"
+    backup_dir.mkdir()
+    (backup_dir / "vault-test.db").write_bytes(b"backup placeholder")
+    hardened = security_doctor(
+        {
+            "VAULT_REMOTE_SERVER_BIND": "0.0.0.0",
+            "VAULT_GATEWAY_TOKEN": "stable-token",
+            "VAULT_GATEWAY_REMOTE_SEMANTIC_ENABLED": "1",
+            semantic_binding_env: "agent-auth=remote-agent",
+            "VAULT_REMOTE_SERVER_BEHIND_VPN": "1",
+        },
+        project_dir=project,
+    )
+
+    assert _doctor_check(hardened, "remote_server_stable_token")["ok"] is True
+    assert _doctor_check(hardened, "remote_server_transport_boundary")["ok"] is True
+    assert _doctor_check(hardened, "remote_semantic_token_agent_binding")["ok"] is True
+    assert _doctor_check(hardened, "remote_server_backup_plan")["ok"] is True
+    assert hardened["self_host"]["backup"]["latest_backup"].endswith("vault-test.db")

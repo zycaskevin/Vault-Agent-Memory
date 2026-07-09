@@ -179,12 +179,20 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         payload = json.loads(allowed.read().decode("utf-8"))
         assert payload["status"] == "ok"
         assert payload["gateway"]["candidate_first_writes"] is True
+        governance = payload["gateway"]["governance_contract"]
+        assert governance["semantics"]["remote_writes_enter_candidates"] is True
+        assert governance["write_policy"]["direct_remote_active_memory_writes"] is False
+        assert "submit_candidate" in governance["operations"]
         assert payload["gateway"]["central_candidate_inbox"] is True
         assert payload["gateway"]["central_semantic_read"]["supported"] is True
         assert payload["gateway"]["central_semantic_read"]["enabled"] is False
         assert payload["gateway"]["central_semantic_read"]["ready"] is False
         assert payload["gateway"]["central_semantic_read"]["token_agent_binding_required"] is True
         assert payload["gateway"]["central_semantic_read"]["returns_embedding_values"] is False
+        assert payload["gateway"]["central_semantic_read"]["query_embedding_provider"] == "openai"
+        assert payload["gateway"]["central_semantic_read"]["query_embedding_model"] == "text-embedding-3-small"
+        assert payload["gateway"]["central_semantic_read"]["privacy_warnings"] == []
+        assert "remote_semantic_query_text_sent_to_openai" in payload["gateway"]["central_semantic_read"]["privacy_warnings_if_enabled"]
         assert "/openapi.json" in payload["gateway"]["endpoints"]
         assert "/central-candidates/submit" in payload["gateway"]["endpoints"]
         assert "/remote-semantic-search" in payload["gateway"]["endpoints"]
@@ -201,11 +209,16 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         contract = json.loads(contract_response.read().decode("utf-8"))
         assert contract["info"]["title"] == "Vault Gateway"
         assert contract["x-vault-safety"]["candidate_first_writes"] is True
+        assert contract["x-vault-governance-contract"]["semantics"]["remote_agents_can_promote_active_memory"] is False
+        assert contract["x-vault-governance-contract"]["write_policy"]["remote_write_policy"] == "candidate_first_only"
         assert contract["x-vault-safety"]["central_candidate_inbox"] is True
         assert contract["x-vault-safety"]["central_semantic_read"] is True
         assert contract["x-vault-safety"]["remote_semantic_enabled_by_default"] is False
         assert contract["x-vault-safety"]["remote_semantic_requires_token_agent_binding"] is True
         assert contract["x-vault-safety"]["remote_semantic_query_sent_to_embedding_provider"] is True
+        assert contract["x-vault-safety"]["remote_semantic_default_query_embedding_provider"] == "openai"
+        assert contract["x-vault-safety"]["remote_semantic_query_embedding_provider"] == "openai"
+        assert contract["x-vault-safety"]["remote_semantic_query_text_sent_to_openai_by_default"] is True
         assert contract["x-vault-safety"]["remote_semantic_search_returns_raw_content"] is False
         assert contract["x-vault-safety"]["remote_semantic_search_returns_embedding_values"] is False
         assert contract["x-vault-safety"]["remote_snapshot_read_bounded"] is True
@@ -267,6 +280,44 @@ def test_gateway_health_missing_db_suggests_init(tmp_path):
     assert "next_action" in payload
 
 
+def test_gateway_health_discloses_remote_semantic_provider_and_query_privacy(tmp_path, monkeypatch):
+    project, _public_id, _private_id = _project(tmp_path)
+    monkeypatch.delenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_PROVIDER", raising=False)
+    monkeypatch.delenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_MODEL", raising=False)
+    monkeypatch.delenv("OPENAI_EMBEDDING_MODEL", raising=False)
+
+    payload = gateway_health(
+        project,
+        remote_semantic_enabled=True,
+        token_agent_map={"agent-secret": "remote-agent"},
+    )
+    semantic = payload["gateway"]["central_semantic_read"]
+
+    assert semantic["enabled"] is True
+    assert semantic["ready"] is True
+    assert semantic["query_embedding_provider"] == "openai"
+    assert semantic["query_embedding_model"] == "text-embedding-3-small"
+    assert semantic["query_embedding_provider_defaulted"] is True
+    assert semantic["query_text_sent_to_embedding_provider_when_enabled"] is True
+    assert semantic["query_text_sent_to_external_provider_when_enabled"] is True
+    assert "remote_semantic_query_text_sent_to_openai" in semantic["privacy_warnings"]
+    assert "OpenAI" in semantic["privacy_warning"]
+
+    monkeypatch.setenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_PROVIDER", "ollama")
+    monkeypatch.setenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_MODEL", "nomic-embed-text")
+    local_payload = gateway_health(
+        project,
+        remote_semantic_enabled=True,
+        token_agent_map={"agent-secret": "remote-agent"},
+    )
+    local_semantic = local_payload["gateway"]["central_semantic_read"]
+
+    assert local_semantic["query_embedding_provider"] == "ollama"
+    assert local_semantic["query_embedding_model"] == "nomic-embed-text"
+    assert local_semantic["query_text_sent_to_external_provider_when_enabled"] is False
+    assert local_semantic["privacy_warnings"] == []
+
+
 def test_gateway_search_rejects_overlong_query_and_missing_db_has_next_step(tmp_path):
     missing = gateway_search(tmp_path / "missing", query="runbook", agent_id="work-agent")
     assert missing["error"] == "db_not_found"
@@ -323,6 +374,7 @@ def test_gateway_submit_candidate_is_candidate_first_and_policy_bound(tmp_path):
     )
     assert accepted["status"] == "ok"
     assert accepted["safety"]["writes_active_knowledge"] is False
+    assert accepted["safety"]["governance_contract"]["write_policy"]["remote_write_policy"] == "candidate_first_only"
     with VaultDB(project / "vault.db") as db:
         candidates = db.list_memory_candidates(status=None)
         active_count = db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
@@ -355,6 +407,7 @@ def test_gateway_central_candidate_inbox_is_pull_into_review(tmp_path):
     assert submitted["status"] == "candidate"
     assert submitted["central_memory_station"] is True
     assert submitted["safety"]["writes_active_knowledge"] is False
+    assert submitted["safety"]["governance_contract"]["semantics"]["remote_writes_enter_candidates"] is True
 
     preview = gateway_pull_central_candidates(project, agent_id="review-agent", apply=False)
     assert preview["ok"] is True
@@ -366,6 +419,7 @@ def test_gateway_central_candidate_inbox_is_pull_into_review(tmp_path):
     assert applied["imported_count"] == 1
     assert applied["requests"][-1]["status"] == "imported"
     assert applied["safety"]["apply_writes_local_candidates_only"] is True
+    assert applied["safety"]["governance_contract"]["write_policy"]["direct_remote_active_memory_writes"] is False
 
     with VaultDB(project / "vault.db") as db:
         candidates = db.list_memory_candidates(status=None)
@@ -398,11 +452,16 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     assert safety["search_returns_raw_content"] is False
     assert safety["writes_active_knowledge"] is False
     assert safety["candidate_first_writes"] is True
+    governance = contract["x-vault-governance-contract"]
+    assert governance["semantics"]["remote_writes_enter_candidates"] is True
+    assert governance["write_policy"]["direct_remote_active_memory_writes"] is False
     assert safety["central_candidate_inbox"] is True
     assert safety["central_semantic_read"] is True
     assert safety["remote_semantic_enabled_by_default"] is False
     assert safety["remote_semantic_requires_token_agent_binding"] is True
     assert safety["remote_semantic_query_sent_to_embedding_provider"] is True
+    assert safety["remote_semantic_default_query_embedding_provider"] == "openai"
+    assert safety["remote_semantic_query_text_sent_to_openai_by_default"] is True
     assert safety["remote_semantic_search_returns_raw_content"] is False
     assert safety["remote_semantic_search_returns_embedding_values"] is False
     assert safety["remote_snapshot_read_bounded"] is True
@@ -429,6 +488,9 @@ def test_gateway_remote_semantic_helpers_use_safe_central_read_chain(monkeypatch
     assert search["safety"]["returns_raw_memory_content"] is False
     assert search["safety"]["returns_embedding_values"] is False
     assert search["safety"]["query_sent_to_embedding_provider"] is True
+    assert search["safety"]["query_embedding_provider"] == "openai"
+    assert search["safety"]["query_embedding_model"] == "text-embedding-3-small"
+    assert "remote_semantic_query_text_sent_to_openai" in search["safety"]["query_provider_privacy_warnings"]
     assert search["safety"]["writes_active_knowledge"] is False
     result = search["results"][0]
     assert result["read_handle"] == "private-memory:a87aa9886d99:knowledge:2"
@@ -485,6 +547,8 @@ def test_gateway_http_remote_semantic_search_snapshot_read_and_audit(tmp_path, m
         assert search["count"] == 1
         assert search["safety"]["gateway_adapter"] is True
         assert search["safety"]["returns_raw_memory_content"] is False
+        assert search["safety"]["query_embedding_provider"] == "openai"
+        assert "remote_semantic_query_text_sent_to_openai" in search["safety"]["query_provider_privacy_warnings"]
         assert search["results"][0]["read_handle"] == "private-memory:a87aa9886d99:knowledge:2"
 
         status, read = _post_json(

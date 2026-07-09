@@ -136,7 +136,7 @@ def cmd_security(args):
     if action != "doctor":
         print("用法: vault security doctor [--json|--pretty]")
         return
-    payload = security_doctor()
+    payload = security_doctor(project_dir=find_project_dir())
     if getattr(args, "json", False) or getattr(args, "pretty", False):
         _json_print(payload, pretty=getattr(args, "pretty", False))
         return

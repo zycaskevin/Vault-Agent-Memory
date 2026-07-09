@@ -2,13 +2,18 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
-Local-first memory governance for AI agents.
+Local-first, backend-agnostic memory governance for AI agents.
 
 Vault Agent Memory gives Codex, Claude Code, Hermes, OpenClaw, n8n, Coze, and
 other agents one governed memory vault to share. It is not trying to be another
 notes app or vector database. It helps agents decide what should be remembered,
 who can use it, whether it is still current, and how to roll it back when it is
 wrong.
+
+Vault's product boundary is the governance contract, not a specific backend.
+The same candidate-first review model can run on local SQLite, a self-hosted
+central memory host, a Supabase cloud adapter, or a future managed Vault Cloud
+backend.
 
 The core multi-agent model is **single-host sharing, multi-host governed sync**:
 agents on one trusted machine can share the same local Vault, while agents on
@@ -39,10 +44,23 @@ the multi-agent model is intentionally conservative:
   copies;
 - central vector search is a derived read layer over reviewed safe summaries,
   not a second active-memory database.
+- backend adapters can change, but the Vault Governance Contract stays the same:
+  approved reads, candidate submissions, review, promotion, audit, and daily
+  reports.
 
 The package is pre-1.0. Advanced Supabase, Gateway, central vector, automation,
 and benchmark surfaces are useful for developer preview deployments, but should
 be enabled deliberately and monitored with the generated reports.
+
+Deployment is intentionally layered:
+
+```text
+Agents / Apps
+  -> MCP / Gateway / OpenAPI adapters
+  -> Vault Governance Contract
+  -> Backend adapter
+  -> Local SQLite / Self-host central host / Supabase / future Vault Cloud
+```
 
 ## 30-Second Version
 
@@ -79,10 +97,12 @@ flowchart TB
         Storage["SQLite / Markdown<br/>Local-first · Zero dependencies"]
     end
 
-    subgraph Integrations["🔌 Integrations"]
+    subgraph Adapters["🔌 Adapters / Backends"]
         Obs[Obsidian Sync]
         Sup[Supabase]
         GW[Gateway API]
+        SH[Self-host Host]
+        VC[Vault Cloud Future]
     end
 
     Agents -->|propose| Pipeline
@@ -92,11 +112,11 @@ flowchart TB
     Report --> Layers
     Layers <--> Ledger
     Layers --> Storage
-    Integrations <-->|import / export / sync| Vault
+    Adapters <-->|import / export / sync / managed backend| Vault
 
     style Agents fill:#e1f5fe,stroke:#0288d1
     style Vault fill:#f3e5f5,stroke:#7b1fa2
-    style Integrations fill:#e8f5e9,stroke:#388e3c
+    style Adapters fill:#e8f5e9,stroke:#388e3c
 ```
 
 ### Why Vault?
@@ -497,13 +517,25 @@ vault export obsidian --project-dir ~/Vaults/my-project --vault ~/Documents/Obsi
 The conflict inbox uses explicit resolver choices: accept Obsidian, accept
 Vault, or keep both.
 
-## Remote Sharing
+## Deployment Modes And Remote Sharing
 
-Local SQLite remains the simplest source of truth. For remote sharing, choose
-the adapter that fits the deployment.
+Local SQLite remains the simplest source of truth, but Vault does not require
+one backend forever. Choose the deployment mode that fits the trust boundary:
 
-Supabase is useful when hosted agents or other machines need a filtered read
-copy:
+| Mode | Best for | Cost | Main risk | Default recommendation |
+|---|---|---:|---|---|
+| Local Vault | one developer, one machine | free | local backup discipline | default start |
+| Self-host Central Memory Host | clinics, teams, multi-agent workstations | hardware only | VPN/token/backup | recommended for privacy |
+| Supabase Adapter | hosted agents, Coze, n8n, no always-on host | possible cloud cost | RLS/key/schema/provider setup | optional cloud path |
+| Vault Cloud | teams that do not want to operate memory infrastructure | paid | vendor trust | future managed backend |
+
+The governance rules do not change between modes: remote writes enter as
+candidates, approved memory is the read surface, and a trusted reviewer or
+policy gate promotes durable memory.
+
+Supabase is an optional cloud adapter. It is useful when hosted agents or other
+machines need a filtered read copy and candidate inbox without operating a
+central host:
 
 ```bash
 pip install "vault-for-llm[supabase]==0.9.0"
@@ -511,18 +543,20 @@ vault remote status --project-dir ~/Vaults/my-project
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 
-Gateway / Remote Server is useful when many agents can reach one trusted
-self-hosted endpoint:
+Gateway / Remote Server is the self-host path. Use it when many agents can
+reach one trusted central memory host:
 
 ```bash
-export VAULT_GATEWAY_TOKEN="choose-a-stable-secret"
+# Set VAULT_GATEWAY_TOKEN from your shell or secret manager before serving.
 vault remote-server health --project-dir ~/Vaults/my-project --json
 vault remote-server openapi --project-dir ~/Vaults/my-project --json
 vault remote-server serve --project-dir ~/Vaults/my-project --host 0.0.0.0
 ```
 
 Remote contributions should enter as review candidates. This is centralized
-sharing, not offline multi-master sync.
+sharing, not offline multi-master sync. Vault Cloud is the future managed
+backend for the same Vault Governance Contract; it should not change the memory
+semantics that local, self-hosted, and Supabase deployments use.
 
 The trust model is:
 
@@ -558,6 +592,7 @@ the smaller operator entry for Supabase or self-hosted deployments.
 
 Docs:
 
+- [Deployment modes](docs/deployment_modes.md)
 - [Supabase setup](docs/supabase_setup.md)
 - [Supabase read policy](docs/supabase_read_policy.sql)
 - [Gateway security foundation](docs/decision_records/2026-07-02-gateway-security-foundation.md)
@@ -625,10 +660,13 @@ Known limitations for the Public Beta / Developer Preview:
   not required for the local Vault source of truth.
 - Remote agents should not receive service-role keys; they should use anon or
   scoped credentials for approved reads and candidate submission.
-- Semantic query text may be sent to the configured embedding provider when
-  remote semantic search is enabled.
+- Remote semantic search is disabled by default. If enabled, the default query
+  embedding provider is OpenAI, so search query text is sent to OpenAI unless
+  the operator configures a local or otherwise trusted embedding provider.
 - Central vectors index reviewed safe summaries and previews only; they do not
   make Supabase the active-memory authority.
+- Vault Cloud is a future managed backend for the same governance contract, not
+  a replacement for local/self-hosted/Supabase deployment modes.
 - LoCoMo / LongMemEval results are retrieval-only source-hit probes unless an
   explicitly comparable final-QA answerer and judge run is published.
 - Automation is report-first and candidate-first. Governed-auto can close
@@ -638,6 +676,7 @@ Known limitations for the Public Beta / Developer Preview:
 ## Documentation Map
 
 - [Core concepts in plain language](docs/core-concepts.md)
+- [Deployment modes](docs/deployment_modes.md)
 - [Agent install runbook](docs/agent_install.md)
 - [CLI reference](docs/cli_reference.md)
 - [Agent integrations](docs/agent_integrations.md)

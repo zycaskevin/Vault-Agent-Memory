@@ -115,8 +115,9 @@ agent 使用時，Gateway host 必須同時設定：
 不要讓多個 agent 共用同一個 remote semantic token。Gateway 會以 token 綁定
 的 agent 身分執行 policy check；如果 request 自稱另一個 `agent_id`，會被拒絕。
 另外，`/remote-semantic-search` 需要把 query text 送到 Gateway 設定的
-embedding provider 產生 query embedding。不要把 API key、密碼、客戶私密資料或
-未審核原文塞進 query。
+embedding provider 產生 query embedding。若沒有另外設定，預設 provider 是
+OpenAI。敏感部署請改成本地或可信任 provider；不要把 API key、密碼、客戶私密
+資料或未審核原文塞進 query。
 
 ```text
 /remote-semantic-search

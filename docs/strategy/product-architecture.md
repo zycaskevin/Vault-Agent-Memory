@@ -1,7 +1,19 @@
 # Product Architecture
 
-Vault Agent Memory should grow in layers. Each layer should preserve the local-first
-trust boundary while adding more team and enterprise governance.
+Vault Agent Memory should grow in layers. Each layer should preserve the
+local-first trust boundary while adding more team and enterprise governance.
+Vault's durable product boundary is the governance contract, not a specific
+backend.
+
+The backend-agnostic stack is:
+
+```text
+Agents / Apps
+  -> MCP / Gateway / OpenAPI adapters
+  -> Vault Governance Contract
+  -> Backend adapter
+  -> Local SQLite / Self-host central host / Supabase / future Vault Cloud
+```
 
 ## P0 Trust Boundary
 
@@ -16,9 +28,10 @@ memory and submit candidates. Only a trusted sync host with service-role/admin
 credentials reviews candidates, promotes official memory, runs Dream / archive /
 forgetting, and pushes reviewed read copies or derived indexes back out.
 
-This boundary should survive every adapter choice: Supabase, Gateway, Remote
-Server, Obsidian, local MCP, and future vector search are surfaces around the
-same governance model, not alternate sources of truth.
+This boundary should survive every adapter choice: local SQLite, self-hosted
+Gateway / Remote Server, Supabase, Obsidian, local MCP, future vector search,
+and future Vault Cloud are surfaces around the same governance model, not
+alternate memory semantics.
 
 ## Layer 1: Open-Source Local Memory Engine
 
@@ -65,8 +78,9 @@ Capabilities:
 - rollback and deprecation workflow
 - team dashboard
 - memory health reports
-- optional Supabase or Postgres-backed sharing
-- gateway or remote server deployment
+- optional backend adapters: self-hosted Gateway / Remote Server, Supabase, or
+  Postgres-backed sharing
+- trusted local central memory host deployment
 - trusted-host vector read index for shared retrieval, after access-policy and
   stale-index safeguards are in place
 
@@ -75,21 +89,27 @@ The core promise:
 > Multiple agents can share experience without polluting each other or leaking
 > private memory.
 
-## Layer 3: Hosted Cloud
+## Layer 3: Vault Cloud / Hosted Backend
 
-Hosted cloud should be delayed until self-host usage proves that teams want the
-workflow but do not want to maintain the infrastructure.
+Vault Cloud should be delayed until self-host usage proves that teams want the
+workflow but do not want to maintain the infrastructure. It should be a managed
+backend for the same Vault Governance Contract, not a replacement product model.
 
 Possible hosted features:
 
-- managed memory gateway
+- managed memory gateway / backend adapter
 - hosted review dashboard
 - team API key management
 - managed backups
-- managed embeddings and derived vector indexes
+- managed or customer-selected embeddings and derived vector indexes
 - usage analytics
 - integration templates
 - memory health reports
+
+Commercial framing:
+
+> Run it yourself, connect Supabase, or use Vault Cloud when you do not want to
+> operate memory infrastructure.
 
 Cloud beta should require real traction signals:
 

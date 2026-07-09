@@ -17,6 +17,9 @@ from .mcp_remote import (
 REMOTE_SEMANTIC_VECTOR_DIMENSION = 1536
 REMOTE_SEMANTIC_SEARCH_RPC = "vault_match_readable_memory_embeddings"
 REMOTE_SNAPSHOT_READ_RPC = "vault_get_readable_memory_snapshot"
+REMOTE_SEMANTIC_DEFAULT_EMBEDDING_PROVIDER = "openai"
+REMOTE_SEMANTIC_DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
+REMOTE_SEMANTIC_EXTERNAL_PROVIDERS = {"openai", "cohere", "voyage"}
 
 
 def _pgvector_literal(vector: list[float]) -> str:
@@ -24,15 +27,49 @@ def _pgvector_literal(vector: list[float]) -> str:
     return f"[{values}]"
 
 
+def remote_semantic_query_provider_disclosure(*, query_embedding_precomputed: bool = False) -> dict[str, Any]:
+    """Return safe metadata about the remote semantic query embedding provider."""
+    provider_env = os.getenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_PROVIDER", "").strip()
+    provider = (provider_env or REMOTE_SEMANTIC_DEFAULT_EMBEDDING_PROVIDER).strip().lower()
+    model_env = os.getenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_MODEL", "").strip()
+    openai_model_env = os.getenv("OPENAI_EMBEDDING_MODEL", "").strip()
+    model_key = model_env or openai_model_env or REMOTE_SEMANTIC_DEFAULT_EMBEDDING_MODEL
+    external_provider = provider in REMOTE_SEMANTIC_EXTERNAL_PROVIDERS
+    query_text_sent = not bool(query_embedding_precomputed)
+    warnings: list[str] = []
+    privacy_warning = ""
+    if query_text_sent and provider == "openai":
+        warnings.append("remote_semantic_query_text_sent_to_openai")
+        privacy_warning = (
+            "Remote Semantic Search sends query text to OpenAI by default. "
+            "Use VAULT_REMOTE_SEMANTIC_EMBEDDING_PROVIDER for a local or trusted provider."
+        )
+    elif query_text_sent and external_provider:
+        warnings.append("remote_semantic_query_text_sent_to_external_embedding_provider")
+        privacy_warning = (
+            "Remote Semantic Search sends query text to the configured external embedding provider. "
+            "Use a local or trusted provider for sensitive deployments."
+        )
+    return {
+        "provider": provider,
+        "model": model_key,
+        "provider_defaulted": not bool(provider_env),
+        "model_defaulted": not bool(model_env or openai_model_env),
+        "default_provider": REMOTE_SEMANTIC_DEFAULT_EMBEDDING_PROVIDER,
+        "default_model": REMOTE_SEMANTIC_DEFAULT_EMBEDDING_MODEL,
+        "query_text_sent_to_embedding_provider": query_text_sent,
+        "query_text_sent_to_external_provider": query_text_sent and external_provider,
+        "external_provider": external_provider,
+        "warnings": warnings,
+        "privacy_warning": privacy_warning,
+    }
+
+
 def _create_remote_semantic_query_provider():
     from .embed import create_embedding_provider
 
-    provider_name = os.getenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_PROVIDER", "openai")
-    model_key = os.getenv("VAULT_REMOTE_SEMANTIC_EMBEDDING_MODEL") or os.getenv(
-        "OPENAI_EMBEDDING_MODEL",
-        "text-embedding-3-small",
-    )
-    return create_embedding_provider(provider=provider_name, model_key=model_key)
+    disclosure = remote_semantic_query_provider_disclosure()
+    return create_embedding_provider(provider=disclosure["provider"], model_key=disclosure["model"])
 
 
 def _query_embedding_from_provider(query: str, provider: Any) -> list[float]:
@@ -99,6 +136,9 @@ def _vault_remote_semantic_search_payload(
 ) -> dict:
     limit = _clamp_int(limit, default=10, minimum=1, maximum=MCP_SEARCH_MAX_LIMIT)
     query = str(query or "").strip()
+    provider_disclosure = remote_semantic_query_provider_disclosure(
+        query_embedding_precomputed=query_embedding is not None
+    )
     if not query:
         return _remote_error(
             "remote_semantic_query_required",
@@ -168,6 +208,11 @@ def _vault_remote_semantic_search_payload(
             "returns_raw_memory_content": False,
             "returns_embedding_values": False,
             "candidate_first": True,
+            "query_text_sent_to_embedding_provider": provider_disclosure["query_text_sent_to_embedding_provider"],
+            "query_embedding_provider": provider_disclosure["provider"],
+            "query_embedding_model": provider_disclosure["model"],
+            "query_text_sent_to_external_provider": provider_disclosure["query_text_sent_to_external_provider"],
+            "query_provider_privacy_warnings": provider_disclosure["warnings"],
         },
         "results": [
             _remote_semantic_search_result(row, compact=compact)
