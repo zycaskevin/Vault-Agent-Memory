@@ -2,6 +2,18 @@
 
 ## [0.9.0] - 2026-07-09
 
+### Main branch follow-up for the next 0.9.x release
+
+- The `v0.9.0` tag and PyPI wheel remain the published Public Beta /
+  Developer Preview baseline.
+- The current `main` branch now also contains the memory-foundation follow-up:
+  backend-agnostic positioning, deployment-mode documentation, the Self-host
+  Central Memory Host specification, and an additive Vault Memory API Gateway
+  facade.
+- Treat those post-tag changes as the next `0.9.x` candidate until a new
+  package release is tagged and published. They are not a promise that the
+  already-published `0.9.0` wheel contains every `main` branch API facade.
+
 ### Maturity
 
 - Prepared the current release line as a Public Beta / Developer Preview because
