@@ -667,6 +667,18 @@ def test_run_agent_setup_writes_memory_automation_schedule_templates(tmp_path):
     remote_server_compose = tmp_path / "templates" / "vault-remote-server.compose.yaml"
     remote_server_env = tmp_path / "templates" / "vault-remote-server.env.example"
     remote_server_hardening = tmp_path / "templates" / "REMOTE_SERVER_HARDENING.md"
+    remote_operator_cron = tmp_path / "templates" / "vault-remote-server-operator.cron"
+    remote_operator_readme = tmp_path / "templates" / "README-remote-server-operator-schedule.md"
+    remote_operator_pull_launchagent = (
+        tmp_path / "templates" / "vault-remote-server-operator-candidate-pull.launchagent.plist"
+    )
+    remote_operator_daily_launchagent = (
+        tmp_path / "templates" / "vault-remote-server-operator-daily-report.launchagent.plist"
+    )
+    remote_operator_pull_service = tmp_path / "templates" / "vault-remote-server-operator-candidate-pull.service"
+    remote_operator_pull_timer = tmp_path / "templates" / "vault-remote-server-operator-candidate-pull.timer"
+    remote_operator_backup_service = tmp_path / "templates" / "vault-remote-server-operator-backup.service"
+    remote_operator_backup_timer = tmp_path / "templates" / "vault-remote-server-operator-backup.timer"
     remote_client_readme = tmp_path / "templates" / "README-remote-clients.md"
     remote_client_config = tmp_path / "templates" / "vault-remote-client-config.json"
     remote_client_openapi = tmp_path / "templates" / "coze-vault-remote-openapi.json"
@@ -679,6 +691,14 @@ def test_run_agent_setup_writes_memory_automation_schedule_templates(tmp_path):
     assert remote_server_compose.exists()
     assert remote_server_env.exists()
     assert remote_server_hardening.exists()
+    assert remote_operator_cron.exists()
+    assert remote_operator_readme.exists()
+    assert remote_operator_pull_launchagent.exists()
+    assert remote_operator_daily_launchagent.exists()
+    assert remote_operator_pull_service.exists()
+    assert remote_operator_pull_timer.exists()
+    assert remote_operator_backup_service.exists()
+    assert remote_operator_backup_timer.exists()
     assert remote_client_readme.exists()
     assert remote_client_config.exists()
     assert remote_client_openapi.exists()
@@ -699,6 +719,75 @@ def test_run_agent_setup_writes_memory_automation_schedule_templates(tmp_path):
     assert "Built-in HTTPS" in hardening_text
     assert "Reverse Proxy TLS" in hardening_text
     assert "candidate-first" in hardening_text
+    assert "README-remote-server-operator-schedule.md" in hardening_text
+    remote_operator_cron_text = remote_operator_cron.read_text(encoding="utf-8")
+    assert "*/15 * * * * sh -lc" in remote_operator_cron_text
+    assert "vault memory-sync run-once" in remote_operator_cron_text
+    assert "--central-backend self-host" in remote_operator_cron_text
+    assert "--pull-candidates --apply" in remote_operator_cron_text
+    assert "0 9 * * * sh -lc" in remote_operator_cron_text
+    assert "vault daily-loop report" in remote_operator_cron_text
+    assert "--refresh --write-report" in remote_operator_cron_text
+    assert "10 3 * * * sh -lc" in remote_operator_cron_text
+    assert "vault db backup" in remote_operator_cron_text
+    assert "--db-path" in remote_operator_cron_text
+    assert "--verify" in remote_operator_cron_text
+    assert "30 8 * * 0 sh -lc" in remote_operator_cron_text
+    assert "vault remote-server audit" in remote_operator_cron_text
+    assert "45 8 * * 0 sh -lc" in remote_operator_cron_text
+    assert "vault --project-dir" in remote_operator_cron_text
+    assert "security doctor" in remote_operator_cron_text
+    remote_operator_readme_text = remote_operator_readme.read_text(encoding="utf-8")
+    assert "trusted Self-host Central Memory Host" in remote_operator_readme_text
+    assert "macOS LaunchAgent templates" in remote_operator_readme_text
+    assert "systemd timer templates" in remote_operator_readme_text
+    assert "candidate pull imports central inbox rows into local review only" in remote_operator_readme_text
+    assert "--dry-run" in remote_operator_readme_text
+    assert "Install only one scheduler family" in remote_operator_readme_text
+    remote_operator_payload = result["remote_server_templates"]["operator_schedule"]
+    assert remote_operator_payload["cron"] == str(remote_operator_cron)
+    assert remote_operator_payload["readme"] == str(remote_operator_readme)
+    assert sorted(remote_operator_payload["launchagents"]) == [
+        "audit",
+        "backup",
+        "candidate_pull",
+        "daily_report",
+        "security_doctor",
+    ]
+    assert sorted(remote_operator_payload["systemd"]) == [
+        "audit",
+        "backup",
+        "candidate_pull",
+        "daily_report",
+        "security_doctor",
+    ]
+    assert remote_operator_payload["launchagents"]["candidate_pull"] == str(remote_operator_pull_launchagent)
+    assert remote_operator_payload["systemd"]["candidate_pull"]["service"] == str(remote_operator_pull_service)
+    assert remote_operator_payload["systemd"]["candidate_pull"]["timer"] == str(remote_operator_pull_timer)
+    assert "--dry-run" in remote_operator_payload["pull_candidates_dry_run_command"]
+    assert "--apply" in remote_operator_payload["pull_candidates_command"]
+    assert "vault db backup" in remote_operator_payload["backup_command"]
+    assert "vault remote-server audit" in remote_operator_payload["audit_command"]
+    pull_launchagent_text = remote_operator_pull_launchagent.read_text(encoding="utf-8")
+    assert "StartInterval" in pull_launchagent_text
+    assert "<integer>900</integer>" in pull_launchagent_text
+    assert "memory-sync" in pull_launchagent_text
+    assert "--pull-candidates" in pull_launchagent_text
+    daily_launchagent_text = remote_operator_daily_launchagent.read_text(encoding="utf-8")
+    assert "StartCalendarInterval" in daily_launchagent_text
+    assert "<key>Hour</key>" in daily_launchagent_text
+    assert "<integer>9</integer>" in daily_launchagent_text
+    pull_timer_text = remote_operator_pull_timer.read_text(encoding="utf-8")
+    assert "OnCalendar=*-*-* *:0/15:00" in pull_timer_text
+    assert "Unit=vault-remote-server-operator-candidate-pull.service" in pull_timer_text
+    pull_service_text = remote_operator_pull_service.read_text(encoding="utf-8")
+    assert "Type=oneshot" in pull_service_text
+    assert "memory-sync" in pull_service_text
+    assert "--pull-candidates" in pull_service_text
+    backup_service_text = remote_operator_backup_service.read_text(encoding="utf-8")
+    assert "vault db backup" in backup_service_text
+    assert "--verify" in backup_service_text
+    assert "OnCalendar=*-*-* 03:10:00" in remote_operator_backup_timer.read_text(encoding="utf-8")
     remote_launchagent_text = remote_server_launchagent.read_text(encoding="utf-8")
     assert "KeepAlive" in remote_launchagent_text
     assert "VAULT_GATEWAY_TOKEN" in remote_launchagent_text

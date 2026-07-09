@@ -112,6 +112,43 @@ def _add_memory_sync_parser(sub: argparse._SubParsersAction) -> None:
     sp.add_argument("--report", default="", help="同步報告路徑；預設 reports/central-memory-sync-latest.json")
     _add_output_args(sp)
 
+    sp = sync_sub.add_parser("migrate-candidates", help="在 Supabase 與 self-host 候選箱之間搬移候選收件箱")
+    sp.add_argument(
+        "--direction",
+        choices=["supabase-to-self-host", "self-host-to-supabase"],
+        required=True,
+        help="搬移方向；只搬 central candidate inbox，不搬 active memory",
+    )
+    sp.add_argument("--limit", "-n", type=int, default=100)
+    sp.add_argument("--apply", action="store_true", help="實際寫入目標候選箱；預設只預覽")
+    _add_output_args(sp)
+
+    sp = sync_sub.add_parser("export-snapshots", help="匯出已審核 active memory snapshot bundle")
+    sp.add_argument("--bundle", required=True, help="輸出的 snapshot bundle JSON 路徑")
+    sp.add_argument("--limit", "-n", type=int, default=1000)
+    sp.add_argument(
+        "--include-content",
+        action="store_true",
+        help="在 bundle 內包含 raw memory content；只應用於受信任/加密傳輸路徑",
+    )
+    _add_output_args(sp)
+
+    sp = sync_sub.add_parser("verify-snapshots", help="驗證 snapshot bundle manifest/hash；不寫入記憶")
+    sp.add_argument("--bundle", required=True, help="輸入的 snapshot bundle JSON 路徑")
+    sp.add_argument(
+        "--require-content",
+        action="store_true",
+        help="要求 bundle 具備 raw content，適合災難復原匯入前檢查",
+    )
+    _add_output_args(sp)
+
+    sp = sync_sub.add_parser("import-snapshots", help="將 snapshot bundle 匯入成本機候選記憶；預設只預覽")
+    sp.add_argument("--bundle", required=True, help="輸入的 snapshot bundle JSON 路徑")
+    sp.add_argument("--limit", "-n", type=int, default=1000)
+    sp.add_argument("--reviewer-agent", default="", help="匯入候選的本機 reviewer/owner agent")
+    sp.add_argument("--apply", action="store_true", help="實際寫入本機 memory_candidates；不寫 active memory")
+    _add_output_args(sp)
+
 
 def _add_memory_review_parser(sub: argparse._SubParsersAction) -> None:
     parser = sub.add_parser("memory-review", help="中央整理與審核：候選、衝突、人工決策")
@@ -285,6 +322,54 @@ def cmd_memory_sync(
         _emit(payload, args, json_print)
         return
 
+    if action == "migrate-candidates":
+        from vault.central_migration import migrate_central_candidate_inbox
+
+        payload = migrate_central_candidate_inbox(
+            find_project_dir(),
+            direction=getattr(args, "direction", ""),
+            limit=getattr(args, "limit", 100),
+            apply=bool(getattr(args, "apply", False)),
+        )
+        _emit(payload, args, json_print)
+        return
+
+    if action == "export-snapshots":
+        from vault.central_migration import export_reviewed_snapshot_bundle
+
+        payload = export_reviewed_snapshot_bundle(
+            find_project_dir(),
+            bundle_path=getattr(args, "bundle", ""),
+            include_content=bool(getattr(args, "include_content", False)),
+            limit=getattr(args, "limit", 1000),
+        )
+        _emit(payload, args, json_print)
+        return
+
+    if action == "verify-snapshots":
+        from vault.central_migration import verify_reviewed_snapshot_bundle
+
+        payload = verify_reviewed_snapshot_bundle(
+            find_project_dir(),
+            bundle_path=getattr(args, "bundle", ""),
+            require_content=bool(getattr(args, "require_content", False)),
+        )
+        _emit(payload, args, json_print)
+        return
+
+    if action == "import-snapshots":
+        from vault.central_migration import import_reviewed_snapshot_bundle
+
+        payload = import_reviewed_snapshot_bundle(
+            find_project_dir(),
+            bundle_path=getattr(args, "bundle", ""),
+            apply=bool(getattr(args, "apply", False)),
+            reviewer_agent=getattr(args, "reviewer_agent", "") or "",
+            limit=getattr(args, "limit", 1000),
+        )
+        _emit(payload, args, json_print)
+        return
+
     if action == "push":
         backend = str(getattr(args, "central_backend", "supabase") or "supabase")
         kwargs = dict(
@@ -332,7 +417,11 @@ def cmd_memory_sync(
         _emit(payload, args, json_print)
         return
 
-    print("error: memory-sync requires action: status, doctor, push, pull, or run-once", file=sys.stderr)
+    print(
+        "error: memory-sync requires action: status, doctor, push, pull, run-once, "
+        "migrate-candidates, export-snapshots, verify-snapshots, or import-snapshots",
+        file=sys.stderr,
+    )
     raise SystemExit(2)
 
 

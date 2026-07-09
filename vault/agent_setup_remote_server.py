@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from vault.agent_setup_templates import shell_join
 from vault.gateway import gateway_openapi
@@ -171,6 +172,7 @@ def write_remote_server_deploy_templates(
                 f"- Docker Compose example: `{compose_path.name}`",
                 "- remote client examples: `README-remote-clients.md`",
                 "- long-term hardening checklist: `REMOTE_SERVER_HARDENING.md`",
+                "- operator schedule: `README-remote-server-operator-schedule.md`",
                 "",
                 "Network guidance:",
                 "",
@@ -184,6 +186,11 @@ def write_remote_server_deploy_templates(
     )
     hardening_path = out / "REMOTE_SERVER_HARDENING.md"
     hardening_path.write_text(_render_remote_server_hardening(), encoding="utf-8")
+    operator_schedule = _write_remote_operator_schedule(
+        out,
+        project_path=project_path,
+        vault_executable=vault_executable,
+    )
     remote_client_templates = _write_remote_client_templates(out)
     return {
         "readme": str(readme_path),
@@ -195,8 +202,408 @@ def write_remote_server_deploy_templates(
         "launchagent": str(launchagent_path),
         "systemd": str(systemd_path),
         "docker_compose": str(compose_path),
+        "operator_schedule": operator_schedule,
         "remote_clients": remote_client_templates,
     }
+
+
+def _write_remote_operator_schedule(
+    out: Path,
+    *,
+    project_path: Path,
+    vault_executable: str,
+) -> dict[str, str]:
+    """Write operator-side self-host maintenance schedule templates."""
+    log_dir = project_path / "reports" / "remote-server-operator"
+    cron_path = out / "vault-remote-server-operator.cron"
+    readme_path = out / "README-remote-server-operator-schedule.md"
+
+    jobs = _remote_operator_jobs(project_path=project_path, vault_executable=vault_executable)
+    pull_dry_run_command = jobs["candidate_pull_dry_run"]["command"]
+    launchagents = _write_remote_operator_launchagents(out, jobs, log_dir=log_dir)
+    systemd = _write_remote_operator_systemd(out, jobs, log_dir=log_dir)
+
+    cron_path.write_text(_render_remote_operator_cron(jobs, log_dir=log_dir), encoding="utf-8")
+    readme_path.write_text(
+        _render_remote_operator_schedule_readme(
+            cron_path=cron_path,
+            log_dir=log_dir,
+            pull_dry_run_command=pull_dry_run_command,
+            launchagents=launchagents,
+            systemd=systemd,
+        ),
+        encoding="utf-8",
+    )
+    return {
+        "cron": str(cron_path),
+        "readme": str(readme_path),
+        "launchagents": launchagents,
+        "systemd": systemd,
+        "pull_candidates_command": shell_join(jobs["candidate_pull"]["command"]),
+        "pull_candidates_dry_run_command": shell_join(pull_dry_run_command),
+        "daily_report_command": shell_join(jobs["daily_report"]["command"]),
+        "backup_command": shell_join(jobs["backup"]["command"]),
+        "audit_command": shell_join(jobs["audit"]["command"]),
+        "security_doctor_command": shell_join(jobs["security_doctor"]["command"]),
+    }
+
+
+def _remote_operator_jobs(*, project_path: Path, vault_executable: str) -> dict[str, dict[str, Any]]:
+    pull_command = [
+        vault_executable,
+        "memory-sync",
+        "run-once",
+        "--project-dir",
+        str(project_path),
+        "--central-backend",
+        "self-host",
+        "--pull-candidates",
+        "--apply",
+        "--json",
+    ]
+    pull_dry_run_command = [
+        vault_executable,
+        "memory-sync",
+        "run-once",
+        "--project-dir",
+        str(project_path),
+        "--central-backend",
+        "self-host",
+        "--pull-candidates",
+        "--dry-run",
+        "--json",
+    ]
+    daily_report_command = [
+        vault_executable,
+        "daily-loop",
+        "report",
+        "--project-dir",
+        str(project_path),
+        "--refresh",
+        "--write-report",
+        "--json",
+    ]
+    backup_command = [
+        vault_executable,
+        "db",
+        "backup",
+        "--db-path",
+        str(project_path / "vault.db"),
+        "--verify",
+        "--json",
+    ]
+    audit_command = [
+        vault_executable,
+        "remote-server",
+        "audit",
+        "--project-dir",
+        str(project_path),
+        "--json",
+    ]
+    security_command = [
+        vault_executable,
+        "--project-dir",
+        str(project_path),
+        "security",
+        "doctor",
+        "--json",
+    ]
+    return {
+        "candidate_pull": {
+            "label": "Pull central candidates",
+            "command": pull_command,
+            "cron": "*/15 * * * *",
+            "launchd": {"interval": 15 * 60},
+            "systemd_on_calendar": "*-*-* *:0/15:00",
+            "log_name": "candidate-pull.log",
+            "unit_suffix": "candidate-pull",
+        },
+        "daily_report": {
+            "label": "Daily report refresh",
+            "command": daily_report_command,
+            "cron": "0 9 * * *",
+            "launchd": {"hour": 9, "minute": 0},
+            "systemd_on_calendar": "*-*-* 09:00:00",
+            "log_name": "daily-loop-report.log",
+            "unit_suffix": "daily-report",
+        },
+        "backup": {
+            "label": "Verified backup",
+            "command": backup_command,
+            "cron": "10 3 * * *",
+            "launchd": {"hour": 3, "minute": 10},
+            "systemd_on_calendar": "*-*-* 03:10:00",
+            "log_name": "backup.log",
+            "unit_suffix": "backup",
+        },
+        "audit": {
+            "label": "Gateway audit summary",
+            "command": audit_command,
+            "cron": "30 8 * * 0",
+            "launchd": {"weekday": 0, "hour": 8, "minute": 30},
+            "systemd_on_calendar": "Sun *-*-* 08:30:00",
+            "log_name": "audit.log",
+            "unit_suffix": "audit",
+        },
+        "security_doctor": {
+            "label": "Security doctor",
+            "command": security_command,
+            "cron": "45 8 * * 0",
+            "launchd": {"weekday": 0, "hour": 8, "minute": 45},
+            "systemd_on_calendar": "Sun *-*-* 08:45:00",
+            "log_name": "security-doctor.log",
+            "unit_suffix": "security-doctor",
+        },
+        "candidate_pull_dry_run": {
+            "label": "Pull central candidates dry-run",
+            "command": pull_dry_run_command,
+            "log_name": "candidate-pull-dry-run.log",
+            "unit_suffix": "candidate-pull-dry-run",
+        },
+    }
+
+
+def _render_remote_operator_cron(jobs: dict[str, dict[str, Any]], *, log_dir: Path) -> str:
+    return "\n".join(
+        [
+            "# Vault Remote Server operator schedule.",
+            "# Install by copying selected lines into `crontab -e` on the trusted central host.",
+            "# Candidate pull uses --apply, but writes local review candidates only; it never promotes active memory.",
+            "# Run the dry-run command in README-remote-server-operator-schedule.md before enabling the candidate-pull line.",
+            "",
+            _cron_line(
+                jobs["candidate_pull"]["cron"],
+                jobs["candidate_pull"]["command"],
+                log_dir=log_dir,
+                log_name=jobs["candidate_pull"]["log_name"],
+            ),
+            _cron_line(
+                jobs["daily_report"]["cron"],
+                jobs["daily_report"]["command"],
+                log_dir=log_dir,
+                log_name=jobs["daily_report"]["log_name"],
+            ),
+            _cron_line(
+                jobs["backup"]["cron"],
+                jobs["backup"]["command"],
+                log_dir=log_dir,
+                log_name=jobs["backup"]["log_name"],
+            ),
+            _cron_line(
+                jobs["audit"]["cron"],
+                jobs["audit"]["command"],
+                log_dir=log_dir,
+                log_name=jobs["audit"]["log_name"],
+            ),
+            _cron_line(
+                jobs["security_doctor"]["cron"],
+                jobs["security_doctor"]["command"],
+                log_dir=log_dir,
+                log_name=jobs["security_doctor"]["log_name"],
+            ),
+            "",
+        ]
+    )
+
+
+def _render_remote_operator_schedule_readme(
+    *,
+    cron_path: Path,
+    log_dir: Path,
+    pull_dry_run_command: list[str],
+    launchagents: dict[str, str],
+    systemd: dict[str, dict[str, str]],
+) -> str:
+    launchagent_names = ", ".join(f"`{Path(path).name}`" for path in launchagents.values())
+    systemd_names = ", ".join(
+        f"`{Path(paths['timer']).name}`" for paths in systemd.values() if isinstance(paths, dict)
+    )
+    return "\n".join(
+        [
+            "# Vault Remote Server Operator Schedule",
+            "",
+            "Use this on the trusted Self-host Central Memory Host, not on remote agent machines.",
+            "",
+            "Generated files:",
+            "",
+            f"- cron template: `{cron_path.name}`",
+            f"- macOS LaunchAgent templates: {launchagent_names}",
+            f"- systemd timer templates: {systemd_names}",
+            f"- log directory: `{log_dir}`",
+            "",
+            "Safety boundary:",
+            "",
+            "- candidate pull imports central inbox rows into local review only;",
+            "- candidate pull does not promote active memory;",
+            "- daily-loop report refresh is report-first and does not capture new candidates;",
+            "- backup uses the SQLite online backup API and verifies the result;",
+            "- audit and security doctor jobs are read-only.",
+            "",
+            "Before enabling a schedule that uses `--apply`, run:",
+            "",
+            "```bash",
+            shell_join(pull_dry_run_command),
+            "```",
+            "",
+            "Then inspect the result for expected counts and no safety warnings.",
+            "",
+            "Operator jobs:",
+            "",
+            "| Job | Default cadence | Command class |",
+            "|---|---:|---|",
+            "| Pull central candidates | every 15 minutes | `vault memory-sync run-once --central-backend self-host --pull-candidates --apply` |",
+            "| Daily report refresh | daily 09:00 | `vault daily-loop report --refresh --write-report` |",
+            "| Verified backup | daily 03:10 | `vault db backup --verify` |",
+            "| Gateway audit summary | weekly Sunday 08:30 | `vault remote-server audit --json` |",
+            "| Security doctor | weekly Sunday 08:45 | `vault security doctor --json` |",
+            "",
+            "Install only one scheduler family. Do not install cron, LaunchAgent, and systemd timers together on the same host.",
+            "",
+        ]
+    )
+
+
+def _write_remote_operator_launchagents(
+    out: Path,
+    jobs: dict[str, dict[str, Any]],
+    *,
+    log_dir: Path,
+) -> dict[str, str]:
+    paths: dict[str, str] = {}
+    for key in ["candidate_pull", "daily_report", "backup", "audit", "security_doctor"]:
+        job = jobs[key]
+        suffix = str(job["unit_suffix"])
+        path = out / f"vault-remote-server-operator-{suffix}.launchagent.plist"
+        path.write_text(_render_remote_operator_launchagent(job, log_dir=log_dir), encoding="utf-8")
+        paths[key] = str(path)
+    return paths
+
+
+def _render_remote_operator_launchagent(job: dict[str, Any], *, log_dir: Path) -> str:
+    suffix = str(job["unit_suffix"])
+    label = f"com.zycaskevin.vault-for-llm.remote-server.operator.{suffix}"
+    command = _operator_shell_command(job["command"], log_dir=log_dir, log_name=job["log_name"])
+    schedule = job["launchd"]
+    if "interval" in schedule:
+        trigger = "\n".join(
+            [
+                "  <key>StartInterval</key>",
+                f"  <integer>{int(schedule['interval'])}</integer>",
+            ]
+        )
+    else:
+        parts = ["  <key>StartCalendarInterval</key>", "  <dict>"]
+        if "weekday" in schedule:
+            parts.extend(["    <key>Weekday</key>", f"    <integer>{int(schedule['weekday'])}</integer>"])
+        parts.extend(
+            [
+                "    <key>Hour</key>",
+                f"    <integer>{int(schedule['hour'])}</integer>",
+                "    <key>Minute</key>",
+                f"    <integer>{int(schedule['minute'])}</integer>",
+                "  </dict>",
+            ]
+        )
+        trigger = "\n".join(parts)
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>{_xml_escape(label)}</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>-lc</string>
+    <string>{_xml_escape(command)}</string>
+  </array>
+{trigger}
+  <key>RunAtLoad</key>
+  <false/>
+</dict>
+</plist>
+"""
+
+
+def _write_remote_operator_systemd(
+    out: Path,
+    jobs: dict[str, dict[str, Any]],
+    *,
+    log_dir: Path,
+) -> dict[str, dict[str, str]]:
+    paths: dict[str, dict[str, str]] = {}
+    for key in ["candidate_pull", "daily_report", "backup", "audit", "security_doctor"]:
+        job = jobs[key]
+        suffix = str(job["unit_suffix"])
+        service_path = out / f"vault-remote-server-operator-{suffix}.service"
+        timer_path = out / f"vault-remote-server-operator-{suffix}.timer"
+        service_name = service_path.name
+        service_path.write_text(
+            _render_remote_operator_systemd_service(job, log_dir=log_dir),
+            encoding="utf-8",
+        )
+        timer_path.write_text(
+            _render_remote_operator_systemd_timer(job, service_name=service_name),
+            encoding="utf-8",
+        )
+        paths[key] = {"service": str(service_path), "timer": str(timer_path)}
+    return paths
+
+
+def _render_remote_operator_systemd_service(job: dict[str, Any], *, log_dir: Path) -> str:
+    command = _operator_shell_command(job["command"], log_dir=log_dir, log_name=job["log_name"])
+    return "\n".join(
+        [
+            "[Unit]",
+            f"Description=Vault Remote Server operator: {job['label']}",
+            "",
+            "[Service]",
+            "Type=oneshot",
+            f"ExecStart=/bin/sh -lc {shell_join([command])}",
+            "NoNewPrivileges=true",
+            "PrivateTmp=true",
+            "ProtectSystem=full",
+            "",
+        ]
+    )
+
+
+def _render_remote_operator_systemd_timer(job: dict[str, Any], *, service_name: str) -> str:
+    return "\n".join(
+        [
+            "[Unit]",
+            f"Description=Schedule Vault Remote Server operator: {job['label']}",
+            "",
+            "[Timer]",
+            f"OnCalendar={job['systemd_on_calendar']}",
+            "Persistent=true",
+            f"Unit={service_name}",
+            "",
+            "[Install]",
+            "WantedBy=timers.target",
+            "",
+        ]
+    )
+
+
+def _cron_line(
+    schedule: str,
+    command: list[str],
+    *,
+    log_dir: Path,
+    log_name: str,
+) -> str:
+    inner = _operator_shell_command(command, log_dir=log_dir, log_name=log_name)
+    return f"{schedule} sh -lc {shell_join([inner])}"
+
+
+def _operator_shell_command(command: list[str], *, log_dir: Path, log_name: str) -> str:
+    log_path = log_dir / log_name
+    return (
+        f"mkdir -p {shell_join([str(log_dir)])} && "
+        f"{shell_join(command)} >> {shell_join([str(log_path)])} 2>&1"
+    )
 
 
 def _render_remote_server_hardening() -> str:
@@ -238,6 +645,7 @@ def _render_remote_server_hardening() -> str:
             "- [ ] Confirm backups and restore verification exist.",
             "- [ ] Review `reports/gateway/audit.jsonl` during the first rollout week.",
             "- [ ] Add `vault remote-server audit --json` to the weekly operator check.",
+            "- [ ] Review `README-remote-server-operator-schedule.md` before installing recurring jobs.",
             "",
             "## When Not To Use It",
             "",

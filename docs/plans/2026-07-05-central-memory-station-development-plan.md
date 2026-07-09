@@ -151,11 +151,17 @@ Deliverables:
 - sync freshness warnings;
 - key rotation;
 - RLS / Gateway policy tests;
-- migration path between Supabase and self-hosted central store;
-- disaster recovery test.
+- candidate inbox migration between Supabase and self-hosted central store;
+- reviewed active-memory snapshot bundle export/verify/import as review candidates;
+- later full audit-history import and active-restore disaster recovery test.
 
 Done when a user can move from Supabase to self-hosted, or from self-hosted to
 Supabase, without losing reviewed memory history.
+
+The self-host implementation target is specified in
+[Self-host Central Memory Host Specification](../specs/self_host_central_memory_host.md).
+It defines the operator runbook, state model, security boundary, sync rhythm,
+and acceptance tests for the self-host backend adapter.
 
 ## Command Consolidation Policy
 

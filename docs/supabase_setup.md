@@ -5,6 +5,7 @@ does not need a hosted database for normal single-machine use.
 
 Treat Supabase as an optional cloud adapter for the Vault Governance Contract,
 not as the product's only backend or as an active multi-master memory database.
+Use it as a cloud adapter, not as an active multi-master memory database.
 See [Deployment Modes](deployment_modes.md) when choosing between local,
 self-hosted, Supabase, and future Vault Cloud deployments.
 

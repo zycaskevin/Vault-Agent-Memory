@@ -5,10 +5,10 @@ contract is candidate-first, reviewable, auditable memory for agents; the
 backend is replaceable.
 
 ```text
-Agents / Apps
-  -> MCP / Gateway / OpenAPI adapters
-  -> Vault Governance Contract
-  -> Backend adapter
+Agents / Apps / Memory Frameworks
+  -> Vault Memory API plus MCP / Gateway / OpenAPI adapters
+  -> Vault Gateway / Vault Governance Contract
+  -> Memory Provider Interface / Backend adapter
   -> Local SQLite / Self-host central host / Supabase / future Vault Cloud
 ```
 
@@ -88,8 +88,12 @@ setup.
 ## Self-host Central Memory Host
 
 Use this mode when privacy, local embeddings, and operational control matter.
-One trusted machine owns the source-of-truth vault; other machines connect
-through Gateway, Remote Server, or MCP-facing adapters.
+This is the **Trusted Local Central Memory Host** pattern: one trusted machine
+owns the source-of-truth vault; other machines connect through Gateway, Remote
+Server, or MCP-facing adapters.
+
+For the implementation contract, state model, sync rhythm, and acceptance
+tests, see [Self-host Central Memory Host Specification](specs/self_host_central_memory_host.md).
 
 Data flow:
 
@@ -110,6 +114,14 @@ Recommended host responsibilities:
 - run local embedding providers when semantic search is needed;
 - update derived semantic/vector indexes after promotion or on a schedule;
 - back up the vault daily.
+
+For backend moves, migrate central candidate inbox rows with
+`vault memory-sync migrate-candidates` and bootstrap reviewed memory with
+`vault memory-sync export-snapshots` / `vault memory-sync verify-snapshots` /
+`vault memory-sync import-snapshots`. Snapshot verify checks the bundle manifest,
+snapshot digest, content hashes, and missing-content state without writing
+memory. Snapshot import writes local `memory_candidates` only; it does not write
+active `knowledge` or bypass review.
 
 Network and credential checklist:
 
@@ -151,6 +163,9 @@ trusted machine.
 Use Supabase when hosted agents or cloud workflows need remote access and the
 team does not have an always-on central host.
 
+This is a **Cloud Adapter** path: Supabase supplies hosted infrastructure around
+the same Vault Governance Contract, not a separate memory truth model.
+
 Data flow:
 
 ```text
@@ -186,6 +201,9 @@ prefer managed cloud infrastructure over running a central host.
 
 Vault Cloud should be positioned as a future managed backend for the same Vault
 Governance Contract.
+
+It is also a **Cloud Adapter** path. It should manage operations for the same
+contract rather than replacing local, self-hosted, or Supabase semantics.
 
 It should provide:
 
@@ -260,3 +278,6 @@ Before describing a deployment as production-like, verify:
 - backup and restore have been tested for the chosen backend;
 - benchmark claims are described as retrieval evidence unless final-answer QA
   evaluation has been run.
+
+For the v0.9.0 memory foundation architecture score and remaining limitations,
+see [Memory Foundation Architecture Review](reviews/2026-07-09-memory-foundation-architecture-review.md).

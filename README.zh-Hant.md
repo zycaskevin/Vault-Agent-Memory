@@ -11,6 +11,11 @@ Vault 的產品邊界是治理合約，不是某個特定後端。同一套 cand
 可以跑在 local SQLite、自架中央記憶主機、Supabase cloud adapter，或未來
 Vault Cloud。
 
+Vault 可以單獨當記憶庫用，也可以成為其他 Agent / memory framework 背後的
+受治理記憶後端。你可以只用 CLI、MCP、Gateway 和本機 SQLite；也可以讓
+Hermes、OpenClaw、Letta、mem0、Claude Code、Codex 這類框架透過 Vault API
+連進來，由 Vault 統一守住審查、審計、生命週期與後端邊界。
+
 它最重要的多 Agent 模型是：**單機共享，多機治理同步**。同一台可信主機上的
 Agent 可以共用一份本機 Vault；不同主機或 hosted Agent 只能讀取已核准記憶、
 提交候選記憶。正式記憶、做夢、封存、忘記、回滾與同步，仍由 trusted sync

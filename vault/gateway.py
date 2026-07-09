@@ -38,6 +38,19 @@ from .gateway_openapi import (
     GATEWAY_ENDPOINTS,
     gateway_openapi,
 )
+from .gateway_memory_api import (
+    gateway_memory_audit,
+    gateway_memory_create,
+    gateway_memory_delete_request,
+    gateway_memory_get,
+    gateway_memory_http_delete,
+    gateway_memory_http_get,
+    gateway_memory_http_patch,
+    gateway_memory_http_post,
+    gateway_memory_search,
+    gateway_memory_timeline,
+    gateway_memory_update_request,
+)
 from . import gateway_remote_semantic as remote_semantic
 from .gateway_remote_server import mark_remote_server_payload, remote_server_metadata
 from .governance_contract import governance_contract_payload
@@ -84,6 +97,14 @@ def gateway_health(
             "writes_active_knowledge": False,
             "candidate_first_writes": True,
             "central_candidate_inbox": True,
+            "vault_memory_api": {
+                "status": "facade",
+                "additive": True,
+                "legacy_gateway_endpoints_preserved": True,
+                "update_writes_active_knowledge": False,
+                "delete_hard_deletes": False,
+                "delete_submits_review_candidate": True,
+            },
             "central_semantic_read": remote_semantic.remote_semantic_health_info(
                 enabled=remote_semantic_enabled,
                 token_agent_binding=bool(token_agents),
@@ -372,6 +393,15 @@ def make_gateway_handler(
                 )
                 self._send_json(payload)
                 return
+            memory_payload = gateway_memory_http_get(
+                parsed,
+                project,
+                append_audit=_append_audit,
+                audit_context=self._audit_context(parsed),
+            )
+            if memory_payload is not None:
+                self._send_json(memory_payload)
+                return
             self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
 
         def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
@@ -398,6 +428,21 @@ def make_gateway_handler(
                 )
                 _append_audit(project, "search", agent, payload.get("status", "ok"), query=str(body.get("query", "")), **self._audit_context(parsed))
                 self._send_json(payload)
+                return
+            memory_payload = gateway_memory_http_post(
+                parsed,
+                project,
+                body=body,
+                agent_id=agent,
+                append_audit=_append_audit,
+                audit_context=self._audit_context(parsed),
+                allow_shared_candidates=allow_shared_candidates,
+                allow_private_candidates=allow_private_candidates,
+                allow_high_sensitivity_candidates=allow_high_sensitivity_candidates,
+                allow_restricted_candidates=allow_restricted_candidates,
+            )
+            if memory_payload is not None:
+                self._send_json(memory_payload)
                 return
             if parsed.path == "/read-range":
                 payload = gateway_read_range(
@@ -518,6 +563,64 @@ def make_gateway_handler(
                 self._send_json(payload, status=HTTPStatus(status))
                 return
             self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
+
+        def do_PATCH(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
+            parsed = urlparse(self.path)
+            guard = self._transport_guard(parsed)
+            if guard is not None:
+                self._send_json(guard[0], status=guard[1])
+                return
+            if not self._is_authorized(parsed):
+                self._send_unauthorized(parsed)
+                return
+            security.record_auth_success(self._client_ip())
+            body = self._read_json_body()
+            agent = _request_agent(body, parsed)
+            payload = gateway_memory_http_patch(
+                parsed,
+                project,
+                body=body,
+                agent_id=agent,
+                append_audit=_append_audit,
+                audit_context=self._audit_context(parsed),
+                allow_shared_candidates=allow_shared_candidates,
+                allow_private_candidates=allow_private_candidates,
+                allow_high_sensitivity_candidates=allow_high_sensitivity_candidates,
+                allow_restricted_candidates=allow_restricted_candidates,
+            )
+            if payload is None:
+                self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
+                return
+            self._send_json(payload)
+
+        def do_DELETE(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
+            parsed = urlparse(self.path)
+            guard = self._transport_guard(parsed)
+            if guard is not None:
+                self._send_json(guard[0], status=guard[1])
+                return
+            if not self._is_authorized(parsed):
+                self._send_unauthorized(parsed)
+                return
+            security.record_auth_success(self._client_ip())
+            body = self._read_json_body()
+            agent = _request_agent(body, parsed)
+            payload = gateway_memory_http_delete(
+                parsed,
+                project,
+                body=body,
+                agent_id=agent,
+                append_audit=_append_audit,
+                audit_context=self._audit_context(parsed),
+                allow_shared_candidates=allow_shared_candidates,
+                allow_private_candidates=allow_private_candidates,
+                allow_high_sensitivity_candidates=allow_high_sensitivity_candidates,
+                allow_restricted_candidates=allow_restricted_candidates,
+            )
+            if payload is None:
+                self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
+                return
+            self._send_json(payload)
 
         def log_message(self, format: str, *args: Any) -> None:
             return

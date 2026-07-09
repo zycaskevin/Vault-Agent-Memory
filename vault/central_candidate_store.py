@@ -276,6 +276,65 @@ def central_candidate_inbox_status(project_dir: str | Path, *, limit: int = 20) 
     }
 
 
+def list_central_candidate_rows_local(project_dir: str | Path, *, limit: int = 100) -> list[dict[str, Any]]:
+    """List self-hosted central candidate rows for backend migration."""
+    return _select_candidate_rows(project_dir, limit=limit)
+
+
+def upsert_central_candidate_row_local(
+    project_dir: str | Path,
+    row: dict[str, Any],
+) -> dict[str, Any]:
+    """Upsert a normalized central candidate row into the self-host inbox."""
+    normalized = _migration_candidate_row(row)
+    if not normalized["candidate_key"]:
+        payload = build_remote_candidate_request(
+            title=normalized["title"],
+            content=normalized["content"],
+            from_agent=normalized["from_agent"],
+            reason=normalized["reason"],
+            category=normalized["category"],
+            tags=_json_list(normalized["tags"]),
+            trust=normalized["trust"],
+            scope=normalized["scope"],
+            sensitivity=normalized["sensitivity"],
+            owner_agent=normalized["owner_agent"],
+            allowed_agents=_json_list(normalized["allowed_agents"]),
+            memory_type=normalized["memory_type"],
+            source_ref=normalized["source_ref"],
+            idempotency_key=normalized["idempotency_key"],
+        )
+        normalized["candidate_key"] = payload["idempotency_key"]
+        normalized["idempotency_key"] = payload["idempotency_key"]
+    with _connect(project_dir) as conn:
+        existing = conn.execute(
+            f"SELECT id, created_at FROM {CENTRAL_CANDIDATE_TABLE} WHERE candidate_key=?",
+            (normalized["candidate_key"],),
+        ).fetchone()
+        now = _now()
+        if existing:
+            normalized["updated_at"] = now
+            _update_candidate_row(conn, str(existing["id"]), normalized)
+            return {
+                "ok": True,
+                "status": "updated",
+                "id": str(existing["id"]),
+                "candidate_key": normalized["candidate_key"],
+                "central_candidate_db": str(_db_path(project_dir)),
+            }
+        normalized["created_at"] = str(normalized.get("created_at") or now)
+        normalized["updated_at"] = now
+        _insert_candidate_row(conn, normalized)
+        row_id = str(conn.execute("SELECT last_insert_rowid() AS id").fetchone()["id"])
+    return {
+        "ok": True,
+        "status": "inserted",
+        "id": row_id,
+        "candidate_key": normalized["candidate_key"],
+        "central_candidate_db": str(_db_path(project_dir)),
+    }
+
+
 def _connect(project_dir: str | Path) -> sqlite3.Connection:
     path = _db_path(project_dir)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -349,6 +408,37 @@ def _central_candidate_row(payload: dict[str, Any]) -> dict[str, Any]:
         "gate_status": "{}",
         "local_candidate_id": "",
         "error": "",
+    }
+
+
+def _migration_candidate_row(row: dict[str, Any]) -> dict[str, Any]:
+    status = str(row.get("status") or "candidate").strip().lower()
+    return {
+        "candidate_key": str(row.get("candidate_key") or row.get("idempotency_key") or "").strip(),
+        "title": str(row.get("title") or ""),
+        "content": str(row.get("content") or ""),
+        "reason": str(row.get("reason") or ""),
+        "category": str(row.get("category") or "general"),
+        "tags": json.dumps(_json_list(row.get("tags")), ensure_ascii=False),
+        "trust": float(row.get("trust") or 0.0),
+        "scope": str(row.get("scope") or "project"),
+        "sensitivity": str(row.get("sensitivity") or "low"),
+        "owner_agent": str(row.get("owner_agent") or ""),
+        "allowed_agents": json.dumps(_json_list(row.get("allowed_agents")), ensure_ascii=False),
+        "from_agent": str(row.get("from_agent") or ""),
+        "source_ref": str(row.get("source_ref") or ""),
+        "memory_type": str(row.get("memory_type") or "remote_candidate"),
+        "status": status if status in {"candidate", "submitted"} else "candidate",
+        "idempotency_key": str(row.get("idempotency_key") or row.get("candidate_key") or ""),
+        "hmac_key_id": str(row.get("hmac_key_id") or ""),
+        "hmac_algorithm": str(row.get("hmac_algorithm") or ""),
+        "payload_hash": str(row.get("payload_hash") or ""),
+        "hmac_signature": str(row.get("hmac_signature") or ""),
+        "gate_status": str(row.get("gate_status") or "{}"),
+        "local_candidate_id": str(row.get("local_candidate_id") or ""),
+        "error": str(row.get("error") or ""),
+        "created_at": str(row.get("created_at") or ""),
+        "updated_at": str(row.get("updated_at") or ""),
     }
 
 

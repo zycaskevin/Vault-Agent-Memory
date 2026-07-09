@@ -19,6 +19,13 @@ from vault.docmap import build_document_map_for_entry
 from vault.gateway import (
     BoundedThreadPoolHTTPServer,
     gateway_health,
+    gateway_memory_audit,
+    gateway_memory_create,
+    gateway_memory_delete_request,
+    gateway_memory_get,
+    gateway_memory_search,
+    gateway_memory_timeline,
+    gateway_memory_update_request,
     gateway_read_range,
     gateway_openapi,
     gateway_pull_central_candidates,
@@ -63,11 +70,16 @@ def _project(tmp_path):
 
 
 def _post_json(host, port, path, payload, *, token="secret"):
+    return _request_json("POST", host, port, path, payload, token=token)
+
+
+def _request_json(method, host, port, path, payload=None, *, token="secret"):
     conn = http.client.HTTPConnection(host, port, timeout=5)
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
-    conn.request("POST", path, json.dumps(payload).encode("utf-8"), headers)
+    body = json.dumps(payload).encode("utf-8") if payload is not None else None
+    conn.request(method, path, body, headers)
     response = conn.getresponse()
     body = response.read()
     conn.close()
@@ -184,6 +196,11 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert governance["write_policy"]["direct_remote_active_memory_writes"] is False
         assert "submit_candidate" in governance["operations"]
         assert payload["gateway"]["central_candidate_inbox"] is True
+        assert payload["gateway"]["vault_memory_api"]["status"] == "facade"
+        assert payload["gateway"]["vault_memory_api"]["legacy_gateway_endpoints_preserved"] is True
+        assert payload["gateway"]["vault_memory_api"]["update_writes_active_knowledge"] is False
+        assert payload["gateway"]["vault_memory_api"]["delete_hard_deletes"] is False
+        assert payload["gateway"]["vault_memory_api"]["delete_submits_review_candidate"] is True
         assert payload["gateway"]["central_semantic_read"]["supported"] is True
         assert payload["gateway"]["central_semantic_read"]["enabled"] is False
         assert payload["gateway"]["central_semantic_read"]["ready"] is False
@@ -194,6 +211,9 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert payload["gateway"]["central_semantic_read"]["privacy_warnings"] == []
         assert "remote_semantic_query_text_sent_to_openai" in payload["gateway"]["central_semantic_read"]["privacy_warnings_if_enabled"]
         assert "/openapi.json" in payload["gateway"]["endpoints"]
+        assert "/memory/search" in payload["gateway"]["endpoints"]
+        assert "/memory/create" in payload["gateway"]["endpoints"]
+        assert "/memory/{id}" in payload["gateway"]["endpoints"]
         assert "/central-candidates/submit" in payload["gateway"]["endpoints"]
         assert "/remote-semantic-search" in payload["gateway"]["endpoints"]
         assert "/remote-snapshot-read" in payload["gateway"]["endpoints"]
@@ -439,6 +459,11 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
         "/search",
         "/read-range",
         "/submit-candidate",
+        "/memory/search",
+        "/memory/create",
+        "/memory/{id}",
+        "/memory/audit",
+        "/memory/timeline",
         "/central-candidates/status",
         "/central-candidates/submit",
         "/central-candidates/pull",
@@ -467,6 +492,198 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     assert safety["remote_snapshot_read_bounded"] is True
     assert safety["tls_supported"] is True
     assert safety["bounded_worker_pool_supported"] is True
+    assert safety["vault_memory_api_additive"] is True
+    assert safety["memory_api_update_writes_active_knowledge"] is False
+    assert safety["memory_api_delete_hard_deletes"] is False
+    assert safety["memory_api_delete_submits_review_candidate"] is True
+    memory_api = contract["x-vault-memory-api"]
+    assert memory_api["status"] == "facade"
+    assert memory_api["legacy_gateway_endpoints_preserved"] is True
+    assert memory_api["delete_semantics"] == "soft_delete_review_candidate_in_gateway_facade"
+    assert "/memory/promote" in memory_api["planned_paths"]
+
+
+def test_gateway_memory_api_facade_is_candidate_first_and_metadata_only(tmp_path):
+    project, public_id, _private_id = _project(tmp_path)
+
+    search = gateway_memory_search(project, query="Gateway", agent_id="work-agent")
+    assert search["status"] == "ok"
+    assert search["memory_api"]["legacy_equivalent"] == "/search"
+    assert any(row["id"] == public_id for row in search["results"])
+
+    read = gateway_memory_get(project, memory_id=public_id, agent_id="work-agent", line_start=1, line_end=2)
+    assert read["status"] == "ok"
+    assert read["memory_api"]["bounded_read"] is True
+    assert read["entry_id"] == public_id
+
+    created = gateway_memory_create(
+        project,
+        body={
+            "title": "Memory API project candidate",
+            "content": "Decision: Vault Memory API create remains candidate-first and does not write active memory.",
+            "agent_id": "work-agent",
+            "source_app": "test-suite",
+            "workspace_id": "workspace-a",
+        },
+        agent_id="work-agent",
+    )
+    assert created["status"] == "ok"
+    assert created["candidate"]["status"] == "candidate_created"
+    assert created["memory_api"]["legacy_equivalent"] == "/submit-candidate"
+    assert created["safety"]["writes_active_knowledge"] is False
+
+    updated = gateway_memory_update_request(
+        project,
+        memory_id=public_id,
+        body={
+            "agent_id": "work-agent",
+            "patch": {"summary": "Use the new bounded Memory API facade."},
+            "reason": "Keep the runbook current.",
+        },
+        agent_id="work-agent",
+        allow_shared_candidates=True,
+    )
+    assert updated["status"] == "ok"
+    assert updated["candidate"]["status"] == "candidate_created"
+    assert updated["safety"]["update_request"] is True
+    assert updated["safety"]["writes_active_knowledge"] is False
+
+    deleted = gateway_memory_delete_request(
+        project,
+        memory_id=public_id,
+        body={"agent_id": "work-agent", "reason": "Test the review candidate path."},
+        agent_id="work-agent",
+        allow_shared_candidates=True,
+    )
+    assert deleted["status"] == "ok"
+    assert deleted["candidate"]["status"] == "candidate_created"
+    assert deleted["safety"]["soft_delete_request"] is True
+    assert deleted["safety"]["hard_delete"] is False
+
+    with VaultDB(project / "vault.db") as db:
+        active_count = db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
+        public = db.get_knowledge(public_id)
+        candidates = db.list_memory_candidates(status=None)
+
+    assert active_count == 2
+    assert public["status"] == "active"
+    assert {row["memory_type"] for row in candidates} >= {
+        "knowledge",
+        "memory_update_candidate",
+        "memory_delete_candidate",
+    }
+
+    audit = gateway_memory_audit(project, agent_id="work-agent", memory_id=public_id)
+    assert audit["status"] == "ok"
+    assert audit["safety"]["returns_raw_audit_payloads"] is False
+    assert {row["action"] for row in audit["events"]} >= {
+        "memory_api:update_requested",
+        "memory_api:soft_delete_requested",
+    }
+    assert all("payload_json" not in row for row in audit["events"])
+
+    timeline = gateway_memory_timeline(project, agent_id="work-agent", memory_id=public_id)
+    assert timeline["status"] == "ok"
+    assert timeline["current"]["id"] == public_id
+    assert "content_raw" not in timeline["current"]
+    assert timeline["safety"]["returns_raw_memory_content"] is False
+    assert all("payload_json" not in row for row in timeline["audit_events"])
+
+
+def test_gateway_http_memory_api_facade_routes(tmp_path):
+    project, public_id, _private_id = _project(tmp_path)
+    handler = make_gateway_handler(project, auth_token="secret", allow_shared_candidates=True)
+    server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        host, port = server.server_address
+
+        status, search = _post_json(
+            host,
+            port,
+            "/memory/search",
+            {"agent_id": "work-agent", "query": "Gateway", "limit": 5},
+        )
+        assert status == 200
+        assert search["status"] == "ok"
+        assert search["memory_api"]["endpoint"] == "/memory/search"
+
+        status, created = _post_json(
+            host,
+            port,
+            "/memory/create",
+            {
+                "agent_id": "work-agent",
+                "title": "HTTP Memory API candidate",
+                "content": "Decision: HTTP Memory API create writes review candidates instead of active memory.",
+            },
+        )
+        assert status == 200
+        assert created["candidate"]["status"] == "candidate_created"
+        assert created["safety"]["candidate_first"] is True
+
+        status, read = _request_json(
+            "GET",
+            host,
+            port,
+            f"/memory/{public_id}?agent_id=work-agent&line_start=1&line_end=2",
+            None,
+        )
+        assert status == 200
+        assert read["status"] == "ok"
+        assert read["entry_id"] == public_id
+
+        status, updated = _request_json(
+            "PATCH",
+            host,
+            port,
+            f"/memory/{public_id}",
+            {"agent_id": "work-agent", "patch": {"summary": "HTTP patch request candidate"}},
+        )
+        assert status == 200
+        assert updated["candidate"]["status"] == "candidate_created"
+        assert updated["safety"]["update_request"] is True
+
+        status, deleted = _request_json(
+            "DELETE",
+            host,
+            port,
+            f"/memory/{public_id}?agent_id=work-agent",
+            None,
+        )
+        assert status == 200
+        assert deleted["candidate"]["status"] == "candidate_created"
+        assert deleted["safety"]["soft_delete_request"] is True
+
+        status, audit = _request_json(
+            "GET",
+            host,
+            port,
+            f"/memory/audit?agent_id=work-agent&memory_id={public_id}",
+            None,
+        )
+        assert status == 200
+        assert audit["status"] == "ok"
+        assert audit["safety"]["returns_raw_audit_payloads"] is False
+
+        status, timeline = _request_json(
+            "GET",
+            host,
+            port,
+            f"/memory/timeline?agent_id=work-agent&memory_id={public_id}",
+            None,
+        )
+        assert status == 200
+        assert timeline["status"] == "ok"
+        assert timeline["current"]["id"] == public_id
+    finally:
+        server.shutdown()
+        server.server_close()
+
+    with VaultDB(project / "vault.db") as db:
+        assert db.get_knowledge(public_id)["status"] == "active"
+        assert db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"] == 2
 
 
 def test_gateway_remote_semantic_helpers_use_safe_central_read_chain(monkeypatch):

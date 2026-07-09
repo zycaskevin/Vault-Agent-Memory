@@ -48,6 +48,10 @@ and debugging.
 | Pull self-host central candidates into local review | `vault memory-sync pull --central-backend self-host --apply --json` |
 | Dry-run one scheduled-sync pass | `vault memory-sync run-once --push-read-copy --push-central-store --pull-candidates --dry-run --json` |
 | Run one trusted scheduled-sync pass | `vault memory-sync run-once --push-read-copy --push-central-store --pull-candidates --apply --json` |
+| Preview candidate inbox migration between backends | `vault memory-sync migrate-candidates --direction self-host-to-supabase --json` |
+| Export reviewed memory snapshots to a bundle | `vault memory-sync export-snapshots --bundle ./vault-snapshots.json --json` |
+| Verify a snapshot bundle before DR import | `vault memory-sync verify-snapshots --bundle ./vault-snapshots.json --require-content --json` |
+| Import a snapshot bundle as review candidates | `vault memory-sync import-snapshots --bundle ./vault-snapshots.json --apply --json` |
 | Review candidates and conflicts | `vault memory-review inbox --json` |
 | Run conservative review automation | `vault memory-review run --mode conservative --json` |
 | Resolve a conflict explicitly | `vault memory-review resolve <conflict_id> --action keep_active --reason "..."` |
@@ -241,6 +245,23 @@ instead of Supabase. For one-off Supabase candidate submissions,
 `vault memory-sync push --central-store ...` writes the new
 `vault_memory_candidates_central` inbox; omitting `--central-store` keeps the
 older guarded RPC path for compatibility.
+`vault memory-sync migrate-candidates --direction supabase-to-self-host|self-host-to-supabase`
+copies only pending Central Memory Station candidate inbox rows between backend
+adapters. It previews by default and requires `--apply` before writing the
+target inbox. It does not migrate active memory, local review candidates, or
+promotion decisions.
+`vault memory-sync export-snapshots --bundle ./vault-snapshots.json` writes a
+reviewed active-memory snapshot bundle. By default the bundle excludes raw
+memory content; `--include-content` should be used only on a trusted, encrypted
+transfer path. The bundle includes a manifest with snapshot count, snapshot
+digest, content policy, and metadata-only local revision/audit counts.
+`vault memory-sync verify-snapshots --bundle ./vault-snapshots.json` validates
+the bundle manifest and content hashes without writing memory; add
+`--require-content` before a disaster-recovery candidate import.
+`vault memory-sync import-snapshots --bundle ./vault-snapshots.json`
+previews by default and, with `--apply`, writes local `memory_candidates` only.
+It does not write active `knowledge`, does not promote candidates, and does not
+turn the target backend into a multi-master memory database.
 When `setup-agent` generates Supabase sync templates, it also writes
 `central-memory-sync.cron`, `com.zycaskevin.vault-for-llm.central-memory-sync.plist`,
 `n8n-central-memory-sync.workflow.json`, and `README-central-memory-sync.md` for
