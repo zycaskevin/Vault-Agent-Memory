@@ -15,6 +15,12 @@ The same candidate-first review model can run on local SQLite, a self-hosted
 central memory host, a Supabase cloud adapter, or a future managed Vault Cloud
 backend.
 
+Vault works standalone, and it can also become the governed memory backend for
+other agent memory frameworks. You can use Vault by itself with CLI, MCP,
+Gateway, and local SQLite; or let frameworks such as Hermes, OpenClaw, Letta,
+mem0, Claude Code, and Codex connect through Vault APIs while Vault keeps the
+review, audit, lifecycle, and backend boundaries consistent.
+
 The core multi-agent model is **single-host sharing, multi-host governed sync**:
 agents on one trusted machine can share the same local Vault, while agents on
 other machines or hosted runtimes can read approved memory and submit
@@ -55,10 +61,10 @@ be enabled deliberately and monitored with the generated reports.
 Deployment is intentionally layered:
 
 ```text
-Agents / Apps
-  -> MCP / Gateway / OpenAPI adapters
-  -> Vault Governance Contract
-  -> Backend adapter
+Agents / Apps / Memory Frameworks
+  -> Vault Memory API plus MCP / Gateway / OpenAPI adapters
+  -> Vault Gateway / Vault Governance Contract
+  -> Memory Provider Interface / Backend adapter
   -> Local SQLite / Self-host central host / Supabase / future Vault Cloud
 ```
 

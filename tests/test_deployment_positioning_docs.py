@@ -13,10 +13,14 @@ def test_readme_positions_vault_as_backend_agnostic_governance_layer():
     first_screen = "\n".join(readme.splitlines()[:70])
 
     assert "Vault is a local-first, backend-agnostic memory governance layer for AI agents." in first_screen
+    assert "Vault Memory API" in first_screen
     assert "Vault Governance Contract" in first_screen
+    assert "Memory Provider Interface" in first_screen
     assert "Backend adapter" in first_screen
     assert "Local SQLite / Self-host central host / Supabase / future Vault Cloud" in first_screen
     assert "approved reads, candidate submissions, review, promotion, audit, and daily" in first_screen
+    assert "Vault works standalone" in first_screen
+    assert "other agent memory frameworks" in first_screen
     assert "multi-master cloud memory database" not in readme.lower()
 
 
@@ -25,6 +29,8 @@ def test_deployment_modes_define_contract_modes_and_backend_adapter_boundary():
 
     for term in [
         "Vault Governance Contract",
+        "Vault Memory API",
+        "Memory Provider Interface",
         "Backend Adapter Requirements",
         "Local Vault",
         "Self-host Central Memory Host",
@@ -128,3 +134,32 @@ def test_architecture_review_records_score_and_non_blocking_limits():
     assert "not release\nblockers" in review
     assert "Memory foundation architecture review" in readme
     assert "Memory Foundation Architecture Review" in deployment
+
+
+def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
+    spec = _read("docs/specs/vault_memory_api.md")
+    architecture = _read("docs/strategy/product-architecture.md")
+    positioning = _read("docs/strategy/positioning.md")
+    claim_matrix = _read("docs/readme_claim_matrix.md")
+    zh_readme = _read("README.zh-Hant.md")
+
+    assert "Vault works standalone" in positioning
+    assert "Vault 可以單獨當記憶庫用" in zh_readme
+    assert "standalone: agents use Vault directly through CLI, MCP, Gateway" in spec
+    assert "foundation: other agent or memory frameworks use Vault" in spec
+    assert "The API is additive" in spec
+    assert "must not remove or break the existing CLI, MCP tools" in spec
+    assert "POST   /memory/create" in spec
+    assert "DELETE /memory/{id}" in spec
+    assert "remote or untrusted `create` writes candidates, not active memory" in spec
+    assert "`DELETE /memory/{id}` is a soft tombstone by default" in spec
+    assert "`DELETE /memory/{id}` submits a soft-delete review candidate" in spec
+    assert "candidate\nactive\narchived\ndeprecated\ndeleted" in spec
+    assert "`active` is the official readable state" in spec
+    assert "`approved` should be represented as a\nreview decision or audit event" in spec
+    assert "semantic index providers, not default\nsource-of-truth memory providers" in spec
+    assert "Vault Memory API plus MCP / Gateway / OpenAPI adapters" in architecture
+    assert "Memory Provider Interface / Backend adapter" in architecture
+    assert "compatibility facade over current governed behavior" in architecture
+    assert "C38" in claim_matrix
+    assert "not as a requirement to install Letta, mem0, Supabase" in claim_matrix

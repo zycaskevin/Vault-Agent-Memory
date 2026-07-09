@@ -5,10 +5,10 @@ contract is candidate-first, reviewable, auditable memory for agents; the
 backend is replaceable.
 
 ```text
-Agents / Apps
-  -> MCP / Gateway / OpenAPI adapters
-  -> Vault Governance Contract
-  -> Backend adapter
+Agents / Apps / Memory Frameworks
+  -> Vault Memory API plus MCP / Gateway / OpenAPI adapters
+  -> Vault Gateway / Vault Governance Contract
+  -> Memory Provider Interface / Backend adapter
   -> Local SQLite / Self-host central host / Supabase / future Vault Cloud
 ```
 

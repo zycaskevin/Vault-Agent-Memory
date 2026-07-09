@@ -8,12 +8,23 @@ backend.
 The backend-agnostic stack is:
 
 ```text
-Agents / Apps
-  -> MCP / Gateway / OpenAPI adapters
-  -> Vault Governance Contract
-  -> Backend adapter
-  -> Local SQLite / Self-host central host / Supabase / future Vault Cloud
+Agents / Apps / Memory Frameworks
+  -> Vault Memory API plus MCP / Gateway / OpenAPI adapters
+  -> Vault Gateway / Vault Governance Contract
+  -> Memory Provider Interface / Backend adapter
+  -> Local SQLite / Self-host central host / Supabase / Postgres / future Vault Cloud
 ```
+
+This stack is additive, not a requirement to install another memory framework.
+Vault must remain useful as a standalone local memory system through CLI, MCP,
+Gateway, and SQLite. The same governance layer can also sit underneath other
+agent or memory frameworks, such as Hermes, OpenClaw, Letta, mem0, Claude Code,
+and Codex, when they need a reviewable and auditable shared memory backend.
+
+The detailed draft contract for that next public interface lives in
+[`docs/specs/vault_memory_api.md`](../specs/vault_memory_api.md). The first
+implementation should be a compatibility facade over current governed behavior,
+not a storage rewrite.
 
 ## P0 Trust Boundary
 

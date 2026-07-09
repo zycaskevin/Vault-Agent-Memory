@@ -14,13 +14,18 @@ DEFAULT_GATEWAY_HOST = "127.0.0.1"
 DEFAULT_GATEWAY_PORT = 8789
 DEFAULT_GATEWAY_AUDIT_MAX_BYTES = 5 * 1024 * 1024
 DEFAULT_GATEWAY_AUDIT_BACKUPS = 5
-GATEWAY_CONTRACT_VERSION = "2026-07-02"
+GATEWAY_CONTRACT_VERSION = "2026-07-09"
 GATEWAY_ENDPOINTS = [
     "/health",
     "/openapi.json",
     "/search",
     "/read-range",
     "/submit-candidate",
+    "/memory/search",
+    "/memory/create",
+    "/memory/{id}",
+    "/memory/audit",
+    "/memory/timeline",
     "/central-candidates/status",
     "/central-candidates/submit",
     "/central-candidates/pull",
@@ -87,6 +92,83 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         }
                     },
                     "responses": {"200": {"description": "Candidate creation or gate rejection"}},
+                }
+            },
+            "/memory/search": {
+                "post": {
+                    "summary": "Vault Memory API facade for governed active-memory search.",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {"schema": {"$ref": "#/components/schemas/SearchRequest"}}
+                        }
+                    },
+                    "responses": {"200": {"description": "Compact active-memory search results"}},
+                }
+            },
+            "/memory/create": {
+                "post": {
+                    "summary": "Vault Memory API facade for candidate-first memory creation.",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/MemoryCreateRequest"}
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Candidate creation or gate rejection"}},
+                }
+            },
+            "/memory/{id}": {
+                "get": {
+                    "summary": "Read a bounded active-memory range through Vault Memory API.",
+                    "parameters": [
+                        {"name": "id", "in": "path", "required": True, "schema": {"type": "integer"}},
+                        {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
+                        {"name": "line_start", "in": "query", "schema": {"type": "integer", "default": 1}},
+                        {"name": "line_end", "in": "query", "schema": {"type": "integer", "default": 40}},
+                    ],
+                    "responses": {"200": {"description": "Bounded memory read or access denial"}},
+                },
+                "patch": {
+                    "summary": "Submit an update request as a review candidate; does not edit active memory.",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/MemoryUpdateRequest"}
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Update candidate creation or gate rejection"}},
+                },
+                "delete": {
+                    "summary": "Submit a soft-delete request as a review candidate; never hard-deletes memory.",
+                    "parameters": [
+                        {"name": "id", "in": "path", "required": True, "schema": {"type": "integer"}},
+                        {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
+                    ],
+                    "responses": {"200": {"description": "Soft-delete candidate request"}},
+                },
+            },
+            "/memory/audit": {
+                "get": {
+                    "summary": "List recent memory audit events for operator visibility.",
+                    "parameters": [
+                        {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
+                        {"name": "memory_id", "in": "query", "schema": {"type": "integer"}},
+                        {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 20}},
+                    ],
+                    "responses": {"200": {"description": "Recent memory audit events"}},
+                }
+            },
+            "/memory/timeline": {
+                "get": {
+                    "summary": "List metadata-only memory timeline rows for one memory id.",
+                    "parameters": [
+                        {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
+                        {"name": "memory_id", "in": "query", "required": True, "schema": {"type": "integer"}},
+                        {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 20}},
+                    ],
+                    "responses": {"200": {"description": "Metadata-only memory timeline"}},
                 }
             },
             "/central-candidates/status": {
@@ -183,6 +265,42 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         "source_ref": {"type": "string"},
                     },
                 },
+                "MemoryCreateRequest": {
+                    "allOf": [
+                        {"$ref": "#/components/schemas/SubmitCandidateRequest"},
+                        {
+                            "type": "object",
+                            "properties": {
+                                "created_by_agent": {"type": "string"},
+                                "owner_user": {"type": "string"},
+                                "workspace_id": {"type": "string"},
+                                "source_app": {"type": "string"},
+                                "source_device": {"type": "string"},
+                                "permission_scope": {"type": "string"},
+                            },
+                        },
+                    ],
+                },
+                "MemoryUpdateRequest": {
+                    "type": "object",
+                    "required": ["agent_id"],
+                    "properties": {
+                        "agent_id": {"type": "string"},
+                        "title": {"type": "string"},
+                        "content": {"type": "string"},
+                        "proposed_content": {"type": "string"},
+                        "reason": {"type": "string"},
+                        "patch": {"type": "object"},
+                        "scope": {"type": "string", "default": "project"},
+                        "sensitivity": {"type": "string", "default": "low"},
+                        "created_by_agent": {"type": "string"},
+                        "owner_user": {"type": "string"},
+                        "workspace_id": {"type": "string"},
+                        "source_app": {"type": "string"},
+                        "source_device": {"type": "string"},
+                        "permission_scope": {"type": "string"},
+                    },
+                },
                 "PullCentralCandidatesRequest": {
                     "type": "object",
                     "required": ["agent_id"],
@@ -218,6 +336,29 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
             "default_audit_max_bytes": DEFAULT_GATEWAY_AUDIT_MAX_BYTES,
             "default_audit_backups": DEFAULT_GATEWAY_AUDIT_BACKUPS,
             "audit_path": "reports/gateway/audit.jsonl",
+            "vault_memory_api_additive": True,
+            "memory_api_update_writes_active_knowledge": False,
+            "memory_api_delete_hard_deletes": False,
+            "memory_api_delete_submits_review_candidate": True,
         },
         "x-vault-governance-contract": governance_contract_payload(adapter=title),
+        "x-vault-memory-api": {
+            "status": "facade",
+            "standalone_workflow_required": True,
+            "legacy_gateway_endpoints_preserved": True,
+            "implemented_paths": [
+                "/memory/search",
+                "/memory/create",
+                "/memory/{id}",
+                "/memory/audit",
+                "/memory/timeline",
+            ],
+            "planned_paths": [
+                "/memory/promote",
+                "/memory/link",
+                "/memory/sync",
+            ],
+            "delete_semantics": "soft_delete_review_candidate_in_gateway_facade",
+            "qdrant_boundary": "semantic_index_provider_not_source_of_truth",
+        },
     }
