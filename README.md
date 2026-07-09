@@ -2,7 +2,7 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
-Local-first, backend-agnostic memory governance for AI agents.
+Vault is a local-first, backend-agnostic memory governance layer for AI agents.
 
 Vault Agent Memory gives Codex, Claude Code, Hermes, OpenClaw, n8n, Coze, and
 other agents one governed memory vault to share. It is not trying to be another
@@ -543,8 +543,9 @@ vault remote status --project-dir ~/Vaults/my-project
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 
-Gateway / Remote Server is the self-host path. Use it when many agents can
-reach one trusted central memory host:
+Gateway / Remote Server is the self-host path, also called the **Trusted Local
+Central Memory Host** pattern. Use it when many agents can reach one trusted
+central memory host:
 
 ```bash
 # Set VAULT_GATEWAY_TOKEN from your shell or secret manager before serving.
@@ -576,6 +577,10 @@ vault daily-loop run --write-report --json
 vault daily-loop report --refresh --write-report --json
 vault memory-sync run-once --push-read-copy --push-central-store --pull-candidates --dry-run --json
 vault memory-sync run-once --central-backend self-host --pull-candidates --dry-run --json
+vault memory-sync migrate-candidates --direction self-host-to-supabase --json
+vault memory-sync export-snapshots --bundle ./vault-snapshots.json --json
+vault memory-sync verify-snapshots --bundle ./vault-snapshots.json --json
+vault memory-sync import-snapshots --bundle ./vault-snapshots.json --json
 vault memory-review inbox --json
 vault memory-lifecycle status --json
 vault ops security --json
@@ -599,6 +604,8 @@ Docs:
 - [Central Memory Station decision](docs/decision_records/2026-07-05-central-memory-station.md)
 - [Single-host sharing and multi-host governed sync](docs/decision_records/2026-07-08-single-host-multi-host-governed-sync.md)
 - [Central Memory Station plan](docs/plans/2026-07-05-central-memory-station-development-plan.md)
+- [Self-host Central Memory Host spec](docs/specs/self_host_central_memory_host.md)
+- [Memory foundation architecture review](docs/reviews/2026-07-09-memory-foundation-architecture-review.md)
 
 ## Memory Migration
 
@@ -610,6 +617,22 @@ vault import memory --source ~/Downloads/chatbox-export.json --write-candidates 
 ```
 
 Imported items pass the same privacy, duplicate, metadata, and quality gates.
+
+For backend moves or a self-host bootstrap, reviewed snapshot bundles can move
+approved memory evidence without direct active-memory writes:
+
+```bash
+vault memory-sync export-snapshots --bundle ./vault-snapshots.json --json
+vault memory-sync export-snapshots --bundle ./vault-snapshots.json --include-content --json
+vault memory-sync verify-snapshots --bundle ./vault-snapshots.json --require-content --json
+vault memory-sync import-snapshots --bundle ./vault-snapshots.json --apply --json
+```
+
+By default snapshot bundles exclude raw memory content. `--include-content`
+should be used only over a trusted, encrypted transfer path. The verify command
+checks the bundle manifest, snapshot digest, content hashes, and missing-content
+state without writing memory. Import still writes local `memory_candidates` for
+review; it does not write active `knowledge` or promote memory.
 
 ## Retrieval Quality
 

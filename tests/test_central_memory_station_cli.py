@@ -153,6 +153,148 @@ def test_memory_sync_self_host_push_and_pull_round_trip(tmp_path, capsys):
     assert active_count == 0
 
 
+def test_memory_sync_migrate_candidates_self_host_preview_is_candidate_only(tmp_path, capsys):
+    project = _init_project(tmp_path, capsys)
+    main(
+        [
+            "memory-sync",
+            "push",
+            "--central-backend",
+            "self-host",
+            "--project-dir",
+            str(project),
+            "--from-agent",
+            "phone-agent",
+            "--title",
+            "Self-host migration candidate",
+            "--content",
+            "Migration preview should not expose raw candidate content.",
+            "--json",
+        ]
+    )
+    pushed = _read_json(capsys)
+    assert pushed["ok"] is True
+
+    main(
+        [
+            "memory-sync",
+            "migrate-candidates",
+            "--direction",
+            "self-host-to-supabase",
+            "--project-dir",
+            str(project),
+            "--json",
+        ]
+    )
+    payload = _read_json(capsys)
+
+    assert payload["ok"] is True
+    assert payload["action"] == "migrate-candidates"
+    assert payload["dry_run"] is True
+    assert payload["count"] == 1
+    assert payload["inserted_count"] == 0
+    assert payload["safety"]["candidate_inbox_only"] is True
+    assert payload["safety"]["writes_active_memory"] is False
+    assert payload["safety"]["includes_raw_candidate_content"] is False
+    assert payload["candidates"][0]["has_content"] is True
+    assert "content" not in payload["candidates"][0]
+    with VaultDB(project / "vault.db") as db:
+        active_count = db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
+    assert active_count == 0
+
+
+def test_memory_sync_snapshot_bundle_imports_as_candidates_only(tmp_path, capsys):
+    project = _init_project(tmp_path, capsys)
+    with VaultDB(project / "vault.db") as db:
+        db.add_knowledge(
+            title="Reviewed CLI snapshot",
+            content_raw="Use reviewed snapshot bundles because direct active-memory import is unsafe.",
+            category="workflow",
+            tags="snapshot,self-host",
+            trust=0.9,
+        )
+    bundle = tmp_path / "cli-snapshots.json"
+
+    main(
+        [
+            "memory-sync",
+            "export-snapshots",
+            "--project-dir",
+            str(project),
+            "--bundle",
+            str(bundle),
+            "--include-content",
+            "--json",
+        ]
+    )
+    exported = _read_json(capsys)
+    assert exported["ok"] is True
+    assert exported["action"] == "export-snapshots"
+    assert exported["count"] == 1
+    assert exported["snapshots"][0]["has_content"] is True
+    assert "content" not in exported["snapshots"][0]
+
+    main(
+        [
+            "memory-sync",
+            "verify-snapshots",
+            "--project-dir",
+            str(project),
+            "--bundle",
+            str(bundle),
+            "--require-content",
+            "--json",
+        ]
+    )
+    verified = _read_json(capsys)
+    assert verified["ok"] is True
+    assert verified["action"] == "verify-snapshots"
+    assert verified["missing_content_count"] == 0
+    assert verified["safety"]["writes_active_memory"] is False
+
+    main(
+        [
+            "memory-sync",
+            "import-snapshots",
+            "--project-dir",
+            str(project),
+            "--bundle",
+            str(bundle),
+            "--json",
+        ]
+    )
+    preview = _read_json(capsys)
+    assert preview["ok"] is True
+    assert preview["dry_run"] is True
+    assert preview["created_count"] == 0
+
+    main(
+        [
+            "memory-sync",
+            "import-snapshots",
+            "--project-dir",
+            str(project),
+            "--bundle",
+            str(bundle),
+            "--apply",
+            "--json",
+        ]
+    )
+    applied = _read_json(capsys)
+    assert applied["ok"] is True
+    assert applied["created_count"] == 1
+    assert applied["safety"]["candidate_first_import"] is True
+    assert applied["safety"]["writes_active_memory"] is False
+    assert applied["safety"]["promotes_candidates"] is False
+    assert "content" not in applied["snapshots"][0]
+    with VaultDB(project / "vault.db") as db:
+        active_count = db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
+        candidates = db.list_memory_candidates(status=None)
+    assert active_count == 1
+    assert len(candidates) == 1
+    assert candidates[0]["source"] == "snapshot_bundle_import"
+
+
 def test_memory_review_inbox_lists_candidates_without_raw_content(tmp_path, capsys):
     project = _init_project(tmp_path, capsys)
     main(

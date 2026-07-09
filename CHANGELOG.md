@@ -17,6 +17,19 @@
   rows, and bounded snapshot reads resolve returned `read_handle` values.
 - Added Gateway / Remote Server HTTP endpoints for the same remote semantic read
   chain when deployments explicitly enable it.
+- Added backend-agnostic deployment-mode documentation that names the Vault
+  Governance Contract, Backend Adapter boundary, Trusted Local Central Memory
+  Host pattern, Supabase cloud adapter, and future Vault Cloud managed backend.
+- Added the Self-host Central Memory Host specification, including state model,
+  credential boundary, sync rhythm, operator runbook, and acceptance checks.
+- Added generated self-host operator schedule templates for trusted central
+  hosts: candidate pull, daily-loop report refresh, verified backup, audit, and
+  security doctor jobs.
+- Added `vault memory-sync migrate-candidates` for bounded candidate inbox
+  migration between Supabase and self-host backends.
+- Added reviewed snapshot bundle `export-snapshots`, `verify-snapshots`, and
+  `import-snapshots` commands. Imports remain candidate-first and never write
+  active `knowledge` directly.
 - Added README, changelog, and announcement language for Public Beta / Developer
   Preview known limitations.
 
@@ -27,6 +40,12 @@
   consolidation, sensitive, or strategic review work.
 - Updated current install prompts, landing page snippets, installer defaults,
   integration docs, and release verification notes to `vault-for-llm==0.9.0`.
+- Clarified Supabase as an optional cloud adapter and reviewed read copy plus
+  candidate inbox, not the product identity or an active multi-master memory
+  database.
+- Clarified that Remote Semantic Search is disabled by default and, if enabled
+  without a local/trusted provider override, sends query text to OpenAI by
+  default.
 
 ### Validation
 
@@ -35,6 +54,8 @@
   pytest (`2507 passed`), `uv build`, `twine check`, and clean wheel install
   smoke for `[mcp,supabase]` with `vault`, `vault-mcp`, local add/search, and
   daily-loop status/report.
+- Memory foundation follow-up validation passed targeted architecture and
+  runtime checks plus full pytest: `2524 passed`.
 
 ### Known limitations
 
@@ -44,9 +65,12 @@
   agents should use anon/scoped credentials for approved reads and candidate
   submission.
 - Remote semantic search may send query text to the configured embedding
-  provider.
+  provider. The default provider is OpenAI unless the operator configures a
+  local or otherwise trusted provider.
 - Central vectors index reviewed safe summaries/previews only and do not become
   the active-memory source of truth.
+- Snapshot bundle import is for candidate-first backend bootstrap and disaster
+  recovery review, not full active-memory restore.
 - LoCoMo / LongMemEval language is limited to retrieval-only source-hit probes
   unless comparable final-QA runs are published.
 
