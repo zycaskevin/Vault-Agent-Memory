@@ -93,7 +93,7 @@ scheduled jobs, or explicit maintenance sessions.
 | `vault remote-server health --json` | Check self-hosted remote-server readiness without starting the server |
 | `vault remote-server openapi --json` | Return the same Gateway contract with self-hosted remote-server metadata |
 | `vault remote-server serve --host 0.0.0.0` | Start a self-hosted central memory entrypoint; requires `VAULT_GATEWAY_TOKEN` or `--auth-token` |
-| `vault security doctor` | Check local GUI/MCP security posture, including GUI token and MCP HMAC settings |
+| `vault security doctor` | Check local GUI/MCP security posture plus Supabase service-role and self-host Remote Server boundary warnings |
 | `vault remote status --json` | Offline check for local source-of-truth, Supabase read-copy/candidate-inbox setup, sync freshness hints, and Agent sharing policy files |
 | `vault remote smoke --agent-id remote-agent --query "deployment SOP" --json` | Verify Supabase remote reader credentials and the `vault_search_readable` RPC |
 | `vault remote doctor --agent-id remote-agent --query "deployment SOP" --json` | Diagnose the full Supabase remote reader path: search, readable-entry RPCs, Document Map, claims, content, map, and bounded read |

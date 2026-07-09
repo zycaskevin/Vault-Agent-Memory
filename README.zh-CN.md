@@ -2,10 +2,14 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
-给 AI Agent 用的记忆金库。
+给 AI Agent 用的本地优先、后端无关记忆治理层。
 
 它让 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 等不同 Agent，
 可以使用同一套项目记忆，而不是每次换工具就重新交代背景。
+
+Vault 的产品边界是治理合约，不是某个特定后端。同一套 candidate-first 流程
+可以跑在 local SQLite、自架中央记忆主机、Supabase cloud adapter，或未来
+Vault Cloud。
 
 它最重要的多 Agent 模型是：**单机共享，多机治理同步**。同一台可信主机上的
 Agent 可以共用一份本地 Vault；不同主机或 hosted Agent 只能读取已批准记忆、
@@ -62,10 +66,12 @@ flowchart TB
         Storage["SQLite / Markdown<br/>本地优先 · 零托管依赖"]
     end
 
-    subgraph Integrations["集成"]
+    subgraph Integrations["Adapters / Backends"]
         Obs[Obsidian Sync]
         Sup[Supabase]
         GW[Gateway API]
+        SH[Self-host Host]
+        VC[Vault Cloud Future]
     end
 
     Agents -->|提出候选记忆| Pipeline
@@ -75,7 +81,7 @@ flowchart TB
     Report --> Layers
     Layers <--> Ledger
     Layers --> Storage
-    Integrations <-->|导入 / 导出 / 同步| Vault
+    Integrations <-->|导入 / 导出 / 同步 / managed backend| Vault
 
     style Agents fill:#e1f5fe,stroke:#0288d1
     style Vault fill:#f3e5f5,stroke:#7b1fa2
@@ -438,11 +444,22 @@ vault export obsidian --project-dir ~/Vaults/my-project --vault ~/Documents/Obsi
 
 Obsidian conflict inbox 会用明确选项处理冲突：接受 Obsidian、接受 Vault、或保留两份。
 
-## Supabase 与远端共享
+## 部署模式与远端共享
 
-SQLite 仍然是最简单的 source of truth。远端共享时，先选 adapter，不要急着把本地数据库变成黑盒云端状态。
+SQLite 仍然是最简单的 source of truth，但 Vault 不绑单一 backend。真正不变的是
+Vault Governance Contract：approved read、candidate submit、review、promote、
+audit、daily report 的语义在所有后端都要一致。
 
-Supabase 适合不同主机、n8n、Coze 或 hosted Agent 读取经过筛选的共享记忆：
+| Mode | 适合 | 成本 | 主要风险 | 建议 |
+|---|---|---:|---|---|
+| Local Vault | 单人、单机、开发者 | free | 本地备份 | default start |
+| Self-host Central Memory Host | 诊所、团队、多 Agent | hardware only | VPN/token/backup | recommended for privacy |
+| Supabase Adapter | hosted agents、Coze、n8n、无中央主机者 | possible cloud cost | RLS/key/schema/provider | optional cloud path |
+| Vault Cloud | 想免运维的团队 | paid | vendor trust | future managed backend |
+
+Supabase 是 optional cloud adapter，适合不同主机、n8n、Coze 或 hosted Agent
+读取经过筛选的共享记忆。它是 reviewed read copy + candidate inbox，不是 active
+multi-master memory DB：
 
 ```bash
 pip install "vault-for-llm[supabase]==0.9.0"
@@ -450,16 +467,20 @@ vault remote status --project-dir ~/Vaults/my-project
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
 
-Gateway / Remote Server 适合多个 Agent 能连到同一个可信自架 endpoint 的场景：
+Gateway / Remote Server 适合多个 Agent 能连到同一个可信自架 endpoint 的场景。
+这是 Trusted Local Central Memory Host 路线：中央主机保存 `vault.db`，其他主机
+通过 MCP / Gateway 读 approved memory、提交 candidates：
 
 ```bash
-export VAULT_GATEWAY_TOKEN="choose-a-stable-secret"
+# 先从 shell 或 secret manager 设置 VAULT_GATEWAY_TOKEN。
 vault remote-server health --project-dir ~/Vaults/my-project --json
 vault remote-server openapi --project-dir ~/Vaults/my-project --json
 vault remote-server serve --project-dir ~/Vaults/my-project --host 0.0.0.0
 ```
 
 远端写入应该先进入候选记忆，不要直接变成 active memory。这是集中共享，不是 offline multi-master sync。
+Vault Cloud 则是未来 managed backend for the same Governance Contract：不想运维记忆基础设施时可以使用，
+但不改变 local / self-host / Supabase 的治理语义。
 
 信任模型很简单：
 
@@ -470,6 +491,7 @@ vault remote-server serve --project-dir ~/Vaults/my-project --host 0.0.0.0
 
 设置指南：
 
+- [Deployment modes](docs/deployment_modes.md)
 - [Supabase 设置](docs/supabase_setup.md)
 - [Supabase read policy SQL](docs/supabase_read_policy.sql)
 - [Gateway security foundation](docs/decision_records/2026-07-02-gateway-security-foundation.md)
@@ -531,9 +553,17 @@ vault search-qa run \
 | Consumer guided setup / governed-auto | 稳定成长中 |
 | Obsidian 导入/导出/冲突审核 | 可用，仍在打磨同步体验 |
 | Supabase / Gateway remote sharing | 可用，部署时要注意权限与传输安全 |
+| Deployment backends | Local / self-host / Supabase / Vault Cloud future，后端可换但治理语义不变 |
 | Semantic embedding / reranker | 可选，需要额外依赖 |
 | Search QA / benchmark gates | 可用，适合验证 retrieval 变更 |
 | Memory migration | 可用，建议先走 candidate-first |
+
+Public Beta / Developer Preview 阶段的已知边界：
+
+- Supabase、Gateway、central semantic search 是 optional advanced paths，不是本地 source of truth 的必要条件。
+- Remote Semantic Search 默认关闭；若启用且未改设置，默认 query embedding provider 是 OpenAI，搜索文字会送到 OpenAI。
+- Central vectors 只索引 reviewed safe summaries/previews，不让 Supabase 变成 active-memory authority。
+- Vault Cloud 是未来 managed backend，不是取代 local / self-host / Supabase 的新记忆语义。
 
 ## 开发与测试
 

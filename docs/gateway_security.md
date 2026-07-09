@@ -28,8 +28,23 @@ generated docs.
 - [ ] Restrict firewall, VPN, or IP allowlist access to known clients.
 - [ ] Store `VAULT_GATEWAY_TOKEN` in environment variables or a secret manager.
 - [ ] Run `vault remote-server health --json` before opening client access.
+- [ ] Run `vault security doctor --json` and resolve Remote Server warnings.
 - [ ] Check `reports/gateway/audit.jsonl` during the first rollout week.
 - [ ] Rotate the token if it was pasted into an unsafe place.
+
+`vault security doctor --json` checks the self-host boundary when Remote Server
+signals are present:
+
+- a stable `VAULT_GATEWAY_TOKEN` is configured;
+- public binds have TLS/reverse proxy configuration or a declared private
+  network/VPN marker such as `VAULT_REMOTE_SERVER_BEHIND_VPN=1`;
+- Remote Semantic Search has per-agent token binding when enabled;
+- a SQLite backup exists under `backups/` for self-hosted deployments.
+
+`vault gateway openapi --json` and `vault remote-server openapi --json` include
+`x-vault-governance-contract`. Use it as the adapter contract: remote writes
+must stay candidate-first, remote agents must not promote active memory, and
+approved memory remains the remote read surface.
 
 ## Graceful Shutdown
 
@@ -76,6 +91,13 @@ Security rules for these endpoints:
 - Semantic search sends the query text to the configured embedding provider to
   create a query vector. Do not put secrets or unreviewed private text in query
   strings.
+- If remote semantic search is enabled and no override is set, the default
+  query embedding provider is OpenAI. Configure a local or otherwise trusted
+  provider for sensitive deployments.
+- Check `vault gateway health --json`, `vault remote-server health --json`, or
+  `/health` before exposing the endpoint. The health payload reports the active
+  query embedding provider/model and warns when enabled remote semantic queries
+  would be sent to OpenAI or another external provider.
 - Gateway audit logs record query length and outcome, not the raw query text.
 
 These endpoints still do not write active memory, candidates, snapshot rows, or

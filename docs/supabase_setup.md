@@ -3,6 +3,11 @@
 Supabase is optional. Vault Agent Memory starts as a local SQLite memory vault and
 does not need a hosted database for normal single-machine use.
 
+Treat Supabase as an optional cloud adapter for the Vault Governance Contract,
+not as the product's only backend or as an active multi-master memory database.
+See [Deployment Modes](deployment_modes.md) when choosing between local,
+self-hosted, Supabase, and future Vault Cloud deployments.
+
 Add Supabase when the memory needs to cross a machine or runtime boundary:
 
 - different agents run on different computers
@@ -96,6 +101,8 @@ browser clients, mobile clients, or public workflow endpoints.
 When the trusted host intentionally has the service-role key, set
 `VAULT_SUPABASE_TRUSTED_SYNC_HOST=1` so `vault remote status` can distinguish
 approved sync-host credentials from a leaked remote-reader environment.
+`vault security doctor --json` also checks this boundary and warns when a
+service-role key is present without the trusted-sync-host marker.
 
 When remote hosts need to contribute memory, use candidate sync instead of
 direct active-memory writes:

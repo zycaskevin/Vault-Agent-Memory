@@ -7,6 +7,7 @@ from typing import Any
 
 from .access_policy import can_write_memory, normalize_write_policy
 from .central_candidate_store import pull_central_candidates_local, submit_central_candidate_local
+from .governance_contract import governance_contract_payload
 
 
 def gateway_submit_central_candidate(
@@ -74,6 +75,7 @@ def gateway_submit_central_candidate(
         "writes_active_knowledge": False,
         "requires_pull_into_local_review": True,
         "self_hosted_central_inbox": True,
+        "governance_contract": governance_contract_payload(adapter="gateway_central_candidate_submit"),
     }
     return result
 
@@ -106,6 +108,7 @@ def gateway_pull_central_candidates(
         "writes_active_knowledge": False,
         "apply_writes_local_candidates_only": bool(apply),
         "self_hosted_central_inbox": True,
+        "governance_contract": governance_contract_payload(adapter="gateway_central_candidate_pull"),
     }
     return payload
 

@@ -61,7 +61,10 @@ PATTERNS: list[tuple[str, re.Pattern[str]]] = [
 ALLOWED_SECRET_PLACEHOLDERS = {
     "SUPABASE_ANON_KEY",
     "SUPABASE_SERVICE_ROLE_KEY",
+    "VAULT_GATEWAY_TOKEN",
+    "VAULT_GUI_TOKEN",
     "YOUR_SUPABASE_ANON_KEY",
+    "Token: {token}",
     "supersecret123",
 }
 

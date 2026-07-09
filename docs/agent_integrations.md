@@ -170,8 +170,10 @@ default `max_sensitivity` is `low`.
 
 `/remote-semantic-search` creates a query embedding before calling the central
 RPC. In the default setup, that means the query text is sent to the configured
-embedding provider. Do not place secrets, API keys, customer-private text, or
-unreviewed raw memory in semantic queries.
+embedding provider. If no override is configured, the default provider is
+OpenAI. Do not place secrets, API keys, customer-private text, or unreviewed raw
+memory in semantic queries; use a local or otherwise trusted provider for
+sensitive deployments.
 
 Do not use `--no-auth` except for local throwaway tests. It is rejected for
 non-localhost binds.

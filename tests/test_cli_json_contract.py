@@ -161,6 +161,9 @@ def test_gateway_and_obsidian_export_json_contracts_are_parseable(tmp_path, caps
     assert gateway["ok"] is True
     assert gateway["status"] == "ok"
     assert gateway["gateway"]["candidate_first_writes"] is True
+    assert gateway["gateway"]["governance_contract"]["write_policy"]["remote_write_policy"] == "candidate_first_only"
+    assert gateway["gateway"]["central_semantic_read"]["query_embedding_provider"]
+    assert gateway["gateway"]["central_semantic_read"]["query_text_sent_to_embedding_provider_when_enabled"] is True
     assert "/openapi.json" in gateway["gateway"]["endpoints"]
 
     main(["gateway", "openapi", "--project-dir", str(project), "--json"])
@@ -168,6 +171,7 @@ def test_gateway_and_obsidian_export_json_contracts_are_parseable(tmp_path, caps
     assert gateway_contract["ok"] is True
     assert gateway_contract["info"]["title"] == "Vault Gateway"
     assert gateway_contract["x-vault-safety"]["writes_active_knowledge"] is False
+    assert gateway_contract["x-vault-governance-contract"]["semantics"]["remote_agents_can_promote_active_memory"] is False
 
     main(["remote-server", "health", "--project-dir", str(project), "--json"])
     remote_health = _read_json(capsys)

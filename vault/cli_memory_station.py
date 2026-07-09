@@ -522,9 +522,10 @@ def cmd_ops(
 
         return cmd_doctor(args)
     if action == "security":
+        from vault.cli_context import find_project_dir
         from vault.security import security_doctor
 
-        _emit(security_doctor(), args, json_print)
+        _emit(security_doctor(project_dir=find_project_dir()), args, json_print)
         return
     print("error: ops requires action: status, doctor, or security", file=sys.stderr)
     raise SystemExit(2)

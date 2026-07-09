@@ -8,6 +8,7 @@ from typing import Any
 from .mcp_remote_semantic import (
     _vault_remote_semantic_search_payload,
     _vault_remote_snapshot_read_payload,
+    remote_semantic_query_provider_disclosure,
 )
 from .search_utils import validate_search_query
 
@@ -55,6 +56,8 @@ def gateway_token_agent_map(value: str | dict[str, str] | None) -> dict[str, str
 
 def remote_semantic_health_info(*, enabled: bool | None = None, token_agent_binding: bool = False) -> dict[str, Any]:
     enabled_flag = remote_semantic_enabled() if enabled is None else bool(enabled)
+    provider = remote_semantic_query_provider_disclosure()
+    active_warnings = list(provider["warnings"]) if enabled_flag else []
     return {
         "supported": True,
         "enabled": enabled_flag,
@@ -66,6 +69,14 @@ def remote_semantic_health_info(*, enabled: bool | None = None, token_agent_bind
         "candidate_first_writes": True,
         "returns_embedding_values": False,
         "query_embedding_provider_required": True,
+        "query_embedding_provider": provider["provider"],
+        "query_embedding_model": provider["model"],
+        "query_embedding_provider_defaulted": provider["provider_defaulted"],
+        "query_text_sent_to_embedding_provider_when_enabled": True,
+        "query_text_sent_to_external_provider_when_enabled": provider["external_provider"],
+        "privacy_warnings": active_warnings,
+        "privacy_warnings_if_enabled": provider["warnings"],
+        "privacy_warning": provider["privacy_warning"] if enabled_flag else "",
         "token_agent_binding_required": True,
         "token_agent_binding_configured": bool(token_agent_binding),
     }
@@ -141,12 +152,18 @@ def remote_semantic_openapi_schemas(max_query_chars: int) -> dict[str, Any]:
 
 
 def remote_semantic_safety_flags() -> dict[str, Any]:
+    provider = remote_semantic_query_provider_disclosure()
     return {
         "central_semantic_read": True,
         "remote_semantic_supported": True,
         "remote_semantic_enabled_by_default": False,
         "remote_semantic_requires_token_agent_binding": True,
         "remote_semantic_query_sent_to_embedding_provider": True,
+        "remote_semantic_default_query_embedding_provider": provider["default_provider"],
+        "remote_semantic_query_embedding_provider": provider["provider"],
+        "remote_semantic_query_embedding_model": provider["model"],
+        "remote_semantic_query_text_sent_to_openai_by_default": True,
+        "remote_semantic_query_text_sent_to_external_provider": provider["external_provider"],
         "remote_semantic_search_returns_raw_content": False,
         "remote_semantic_search_returns_embedding_values": False,
         "remote_snapshot_read_bounded": True,
@@ -186,7 +203,13 @@ def gateway_remote_semantic_search(
         min_similarity=min_similarity,
         compact=compact,
     )
-    _mark_gateway_safe(payload, agent, raw_content=False, bounded_preview=False)
+    _mark_gateway_safe(
+        payload,
+        agent,
+        raw_content=False,
+        bounded_preview=False,
+        query_embedding_precomputed=False,
+    )
     return payload
 
 
@@ -218,7 +241,13 @@ def gateway_remote_snapshot_read(
         max_chars=max_chars,
         compact=compact,
     )
-    _mark_gateway_safe(payload, agent, raw_content=None, bounded_preview=True)
+    _mark_gateway_safe(
+        payload,
+        agent,
+        raw_content=None,
+        bounded_preview=True,
+        query_embedding_precomputed=True,
+    )
     return payload
 
 
@@ -304,7 +333,11 @@ def _mark_gateway_safe(
     *,
     raw_content: bool | None,
     bounded_preview: bool,
+    query_embedding_precomputed: bool,
 ) -> None:
+    provider = remote_semantic_query_provider_disclosure(
+        query_embedding_precomputed=query_embedding_precomputed
+    )
     payload["agent_id"] = agent
     payload.setdefault("safety", {})
     payload["safety"].update(
@@ -312,6 +345,10 @@ def _mark_gateway_safe(
             "gateway_adapter": True,
             "writes_active_knowledge": False,
             "query_sent_to_embedding_provider": raw_content is False,
+            "query_embedding_provider": provider["provider"],
+            "query_embedding_model": provider["model"],
+            "query_text_sent_to_external_provider": provider["query_text_sent_to_external_provider"],
+            "query_provider_privacy_warnings": provider["warnings"],
             "returns_embedding_values": False,
         }
     )
