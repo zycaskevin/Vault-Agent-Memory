@@ -16,7 +16,7 @@ For adjacent systems and design comparisons, see
 ## Fast Prompt For Agents
 
 ```text
-Install Vault Agent Memory for this project with vault-for-llm[mcp]==0.8.0.
+Install Vault Agent Memory for this project with vault-for-llm[mcp]==0.9.0.
 Ask me where the vault database should live, whether it should be private or
 shared, and whether you should use a stable Python virtualenv path instead of a
 temporary one. Enable MCP by default if this agent runtime supports MCP. Ask
@@ -81,7 +81,7 @@ also prefer a stable virtualenv path such as `~/.hermes/venvs/vault-for-llm/`.
 Use the PyPI release unless the user explicitly asks for source development:
 
 ```bash
-python -m pip install "vault-for-llm[mcp]==0.8.0"
+python -m pip install "vault-for-llm[mcp]==0.9.0"
 vault quickstart
 ```
 

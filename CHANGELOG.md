@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## [0.9.0] - 2026-07-09
+
+### Maturity
+
+- Prepared the current release line as a Public Beta / Developer Preview because
+  `0.8.0` is already published on PyPI and tagged on GitHub.
+- Kept the release boundary explicit: local SQLite/Markdown is the source of
+  truth, remote agents stay candidate-first, and central vector search is a
+  derived read layer rather than active-memory authority.
+
+### Added
+
+- Added the policy-aware remote semantic read chain: trusted sync hosts can push
+  reviewed safe-summary embeddings, remote semantic search returns safe preview
+  rows, and bounded snapshot reads resolve returned `read_handle` values.
+- Added Gateway / Remote Server HTTP endpoints for the same remote semantic read
+  chain when deployments explicitly enable it.
+- Added README, changelog, and announcement language for Public Beta / Developer
+  Preview known limitations.
+
+### Changed
+
+- Hardened governed-auto Dream queue convergence so routine low-risk
+  metadata/dedup review noise can close without hiding freshness, convergence,
+  consolidation, sensitive, or strategic review work.
+- Updated current install prompts, landing page snippets, installer defaults,
+  integration docs, and release verification notes to `vault-for-llm==0.9.0`.
+
+### Validation
+
+- Release preflight on the post-#375 main branch passed: `git diff --check`,
+  release parity, module-size gate, public PR gate, README command smoke, full
+  pytest (`2507 passed`), `uv build`, `twine check`, and clean wheel install
+  smoke for `[mcp,supabase]` with `vault`, `vault-mcp`, local add/search, and
+  daily-loop status/report.
+
+### Known limitations
+
+- Supabase, Gateway, and central semantic search are optional advanced paths,
+  not required for local-first Vault usage.
+- Service-role credentials are for trusted sync hosts only; remote or hosted
+  agents should use anon/scoped credentials for approved reads and candidate
+  submission.
+- Remote semantic search may send query text to the configured embedding
+  provider.
+- Central vectors index reviewed safe summaries/previews only and do not become
+  the active-memory source of truth.
+- LoCoMo / LongMemEval language is limited to retrieval-only source-hit probes
+  unless comparable final-QA runs are published.
+
 ## [0.8.0] - 2026-07-06
 
 ### Maturity

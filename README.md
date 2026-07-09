@@ -27,7 +27,7 @@ New here? Start with the visual demo:
 
 ## Release Maturity
 
-Vault Agent Memory v0.8.0 is a **Public Beta / Developer Preview** release.
+Vault Agent Memory v0.9.0 is a **Public Beta / Developer Preview** release.
 The local-first path is ready for agent developers to try in real projects, and
 the multi-agent model is intentionally conservative:
 
@@ -135,7 +135,7 @@ In plain language:
 Copy this prompt into an agent that can run local commands:
 
 ```text
-Install Vault Agent Memory for this project. Use vault-for-llm[mcp]==0.8.0.
+Install Vault Agent Memory for this project. Use vault-for-llm[mcp]==0.9.0.
 Use the agent-assisted governed-auto memory mode.
 
 Do not show advanced CLI flags first. Ask me only four questions:
@@ -160,7 +160,7 @@ The agent will usually run:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.8.0"
+pip install "vault-for-llm[mcp]==0.9.0"
 vault quickstart
 ```
 
@@ -345,7 +345,7 @@ Source: [`scripts/install.sh`](scripts/install.sh) · [`scripts/install.ps1`](sc
 ## Developer Quickstart
 
 ```bash
-pip install "vault-for-llm[mcp]==0.8.0"
+pip install "vault-for-llm[mcp]==0.9.0"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -506,7 +506,7 @@ Supabase is useful when hosted agents or other machines need a filtered read
 copy:
 
 ```bash
-pip install "vault-for-llm[supabase]==0.8.0"
+pip install "vault-for-llm[supabase]==0.9.0"
 vault remote status --project-dir ~/Vaults/my-project
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
