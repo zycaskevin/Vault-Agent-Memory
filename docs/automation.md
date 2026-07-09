@@ -418,7 +418,6 @@ auto_promote_requires_source_ref: true
 auto_close_low_risk_dream_noise: true
 auto_close_dream_noise_memory_types:
   - dream_suggestion
-  - consolidation_suggestion
 auto_close_dream_noise_tags:
   - metadata
   - dedup
@@ -459,11 +458,11 @@ duplicate review items.
 
 `auto_close_low_risk_dream_noise` gives governed-auto installs a convergence
 path for routine Dream queue noise. When `--apply` is used, Vault can mark
-low-trust, low-sensitivity Dream metadata/dedup suggestions as `rejected` and
+low-trust, low-sensitivity Dream metadata/dedup review notices as `rejected` and
 write review feedback. It does not promote candidates, hard-delete rows, alter
 active knowledge, or close private/high/restricted candidates. Freshness,
-orphan-repair, sensitive, or otherwise non-matching candidates remain visible
-for review.
+convergence, orphan-repair, consolidation, sensitive, or otherwise non-matching
+candidates remain visible for review.
 
 `forgetting_write_candidates` works the same way for lifecycle review. When
 `--apply` is used, automation can create candidate-only suggestions for expired
