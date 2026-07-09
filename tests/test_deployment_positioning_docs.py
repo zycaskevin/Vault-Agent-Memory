@@ -163,3 +163,19 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     assert "compatibility facade over current governed behavior" in architecture
     assert "C38" in claim_matrix
     assert "not as a requirement to install Letta, mem0, Supabase" in claim_matrix
+
+
+def test_release_notes_distinguish_published_090_from_main_followup():
+    changelog = _read("CHANGELOG.md")
+    announcement_090 = _read("docs/announcements/v0.9.0-short.md")
+    followup = _read("docs/announcements/v0.9.x-memory-foundation-followup.md")
+
+    assert "## [0.9.0] - 2026-07-09" in changelog
+    assert "Main branch follow-up for the next 0.9.x release" in changelog
+    assert "already-published `0.9.0` wheel" in changelog
+    assert "do not assume every main-branch Gateway/API facade is" in announcement_090
+    assert "present in the already-published `0.9.0` wheel" in announcement_090
+    assert "These changes are on `main` after the `v0.9.0` tag" in followup
+    assert "candidate-first" in followup
+    assert "DELETE is not a hard delete" in followup
+    assert "Vault is a multi-master cloud memory database" in followup
