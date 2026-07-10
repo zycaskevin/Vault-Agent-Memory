@@ -163,6 +163,12 @@ Initial runtime implementation:
   `result_adapter=provider`. It uses the provider for the read-policy gate, then
   returns only the requested line range; it does not return the provider raw row
   or full raw memory content.
+- `vault.memory_provider_parity.provider_adapter_parity_report(...)` compares
+  legacy Gateway results with provider-backed preview results across explicit
+  search and bounded-read probes. The report is metadata-only: search compares
+  result ids without returning raw query text, reads compare access decisions
+  and bounded content hashes. It is a gate for any future default-authority
+  switch, not a switch by itself.
 - The first provider implementation is intentionally additive. Existing CLI,
   MCP, local SQLite, and legacy Gateway routes continue to work without
   provider configuration.

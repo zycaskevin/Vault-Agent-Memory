@@ -253,7 +253,7 @@ def _bounded_provider_memory_read(
 
 def _line_hash(lines: list[str], line_start: int, line_end: int) -> str:
     text = "\n".join(lines[line_start - 1 : line_end])
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def _agent_id(value: Any) -> str:
