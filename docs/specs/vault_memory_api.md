@@ -173,6 +173,10 @@ Initial runtime implementation:
   `vault memory-api parity-report --agent-id AGENT --search-query TEXT
   --read-range ID:START-END --json`. The command remains report-only and does
   not change Gateway or provider authority.
+- Provider-backed adapters must satisfy
+  `docs/specs/provider_adapter_default_promotion.md` before they can become the
+  default Gateway result authority. Until then, they remain opt-in preview
+  adapters and the legacy Gateway result authority remains the default.
 - The first provider implementation is intentionally additive. Existing CLI,
   MCP, local SQLite, and legacy Gateway routes continue to work without
   provider configuration.

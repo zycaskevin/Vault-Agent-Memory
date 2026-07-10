@@ -27,6 +27,9 @@
   default-authority switch.
 - Added `vault memory-api parity-report` as the report-only operator CLI for
   the same provider adapter promotion gate.
+- Added provider adapter default-promotion criteria so preview adapters cannot
+  become the default Gateway result authority without representative parity,
+  security, rollback, and release-documentation evidence.
 - Treat those post-tag changes as the next `0.9.x` candidate until a new
   package release is tagged and published. They are not a promise that the
   already-published `0.9.0` wheel contains every `main` branch API facade.

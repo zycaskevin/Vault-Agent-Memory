@@ -173,6 +173,10 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     assert "`vault memory-api parity-report --agent-id AGENT --search-query TEXT" in spec
     assert "does\n  not change Gateway or provider authority" in spec
     assert "semantic index providers, not default\nsource-of-truth memory providers" in spec
+    assert "provider_adapter_default_promotion.md" in spec
+    assert "before they can become the\n  default Gateway result authority" in spec
+    assert "remain opt-in preview\n  adapters" in spec
+    assert "legacy Gateway result authority remains the default" in spec
     assert "Vault Memory API plus MCP / Gateway / OpenAPI adapters" in architecture
     assert "Memory Provider Interface / Backend adapter" in architecture
     assert "compatibility facade over current governed behavior" in architecture
@@ -204,7 +208,40 @@ def test_release_notes_distinguish_published_090_from_main_followup():
     assert "without returning raw memory\n  content, raw query text, or changing the default Gateway authority" in followup
     assert "`vault memory-api parity-report`" in followup
     assert "empty report cannot be mistaken for a passing gate" in followup
+    assert "provider adapter default-promotion criteria" in followup
+    assert "parity, security, rollback, CI, and release-note\n  evidence" in followup
+    assert "cannot become the default Gateway result authority" in followup
+    assert "security-misleading behavior" in followup
     assert "read-policy filtering to the default SQLite provider" in followup
     assert "candidate-first" in followup
     assert "DELETE is not a hard delete" in followup
     assert "Vault is a multi-master cloud memory database" in followup
+
+
+def test_provider_adapter_default_promotion_criteria_are_explicit():
+    criteria = _read("docs/specs/provider_adapter_default_promotion.md")
+    changelog = _read("CHANGELOG.md")
+
+    assert "required release-readiness checklist" in criteria
+    assert "That report is a promotion gate. It is not a promotion switch." in criteria
+    assert "Current Authority" in criteria
+    assert "legacy Gateway policy-filtered result authority" in criteria
+    assert "Provider-backed adapters stay opt-in preview paths" in criteria
+    assert "No backend adapter may bypass candidate-first writes" in criteria
+    assert "Required Evidence Before Default Promotion" in criteria
+    assert "public, shared, private, high-sensitivity, and denied-read cases" in criteria
+    assert "at least one search probe and one bounded-read probe" in criteria
+    assert "does not return raw query text" in criteria
+    assert "does not return raw memory content" in criteria
+    assert "Provider adapters do not create hidden-result count side channels" in criteria
+    assert "rollback path" in criteria
+    assert "Full pytest passes" in criteria
+    assert "Release parity passes" in criteria
+    assert "GitHub Actions for the pull request and main branch pass" in criteria
+    assert "Release-Blocker Boundary" in criteria
+    assert "installation failure" in criteria
+    assert "data corruption or irreversible active-memory mutation" in criteria
+    assert "security-misleading behavior" in criteria
+    assert "core read, write, review, promotion, or audit flow becoming unusable" in criteria
+    assert "Provider default promotion evidence" in criteria
+    assert "provider adapter default-promotion criteria" in changelog
