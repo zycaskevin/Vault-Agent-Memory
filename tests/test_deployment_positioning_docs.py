@@ -166,6 +166,8 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     assert "SQLite provider now applies the same read-policy semantics" in spec
     assert "`result_adapter=provider`" in spec
     assert "It is not\n  the default result authority yet" in spec
+    assert "`/memory/{id}` also has an opt-in preview bounded-read adapter" in spec
+    assert "does not return the provider raw row\n  or full raw memory content" in spec
     assert "semantic index providers, not default\nsource-of-truth memory providers" in spec
     assert "Vault Memory API plus MCP / Gateway / OpenAPI adapters" in architecture
     assert "Memory Provider Interface / Backend adapter" in architecture
@@ -192,6 +194,8 @@ def test_release_notes_distinguish_published_090_from_main_followup():
     assert "avoids hidden-result\n  count side channels" in followup
     assert "opt-in provider-backed `/memory/search` result adapter" in followup
     assert "default `/memory/search` authority remains the legacy Gateway" in followup
+    assert "opt-in provider-backed `/memory/{id}` bounded-read adapter" in followup
+    assert "not the full provider\n  raw row or full memory body" in followup
     assert "read-policy filtering to the default SQLite provider" in followup
     assert "candidate-first" in followup
     assert "DELETE is not a hard delete" in followup

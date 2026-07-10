@@ -127,6 +127,15 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
                         {"name": "line_start", "in": "query", "schema": {"type": "integer", "default": 1}},
                         {"name": "line_end", "in": "query", "schema": {"type": "integer", "default": 40}},
+                        {
+                            "name": "result_adapter",
+                            "in": "query",
+                            "schema": {"type": "string", "enum": ["legacy", "provider"], "default": "legacy"},
+                            "description": (
+                                "Use provider only for the opt-in preview bounded-read adapter; "
+                                "legacy remains the default read authority."
+                            ),
+                        },
                     ],
                     "responses": {"200": {"description": "Bounded memory read or access denial"}},
                 },
@@ -381,15 +390,17 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                 "returns_provider_raw_rows": False,
             },
             "provider_backed_result_adapter": {
-                "path": "/memory/search",
+                "paths": ["/memory/search", "/memory/{id}"],
                 "opt_in_field": "result_adapter",
                 "opt_in_value": "provider",
                 "default_result_adapter": "legacy",
                 "status": "preview",
-                "supported_modes": ["auto", "keyword"],
+                "search_supported_modes": ["auto", "keyword"],
                 "read_policy_filtering": True,
                 "returns_provider_raw_rows": False,
-                "returns_raw_content": False,
+                "search_returns_raw_content": False,
+                "read_returns_bounded_content": True,
+                "read_returns_full_raw_content": False,
             },
             "delete_semantics": "soft_delete_review_candidate_in_gateway_facade",
             "qdrant_boundary": "semantic_index_provider_not_source_of_truth",
