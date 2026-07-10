@@ -25,6 +25,8 @@
 - Added a metadata-only provider adapter parity report helper to compare legacy
   Gateway behavior with provider-backed preview adapters before any future
   default-authority switch.
+- Added `vault memory-api parity-report` as the report-only operator CLI for
+  the same provider adapter promotion gate.
 - Treat those post-tag changes as the next `0.9.x` candidate until a new
   package release is tagged and published. They are not a promise that the
   already-published `0.9.0` wheel contains every `main` branch API facade.

@@ -87,6 +87,7 @@ from .cli_quickstart import cmd_quickstart
 from .cli_daily_report import cmd_daily_report as _cmd_daily_report_impl
 from .cli_daily_loop import add_daily_loop_parser, cmd_daily_loop as _cmd_daily_loop_impl
 from .cli_demo import add_demo_parser, cmd_demo as _cmd_demo_impl
+from .cli_memory_api import add_memory_api_parser, cmd_memory_api as _cmd_memory_api_impl
 from .cli_gateway import add_gateway_parsers
 from .cli_map_remote import add_remote_parser, cmd_map, cmd_remote, _parse_map_line_range, _positive_int
 from .cli_okf import add_okf_parser, cmd_okf
@@ -110,7 +111,6 @@ from .cli_memory_station import (
 from .central_vector_index import add_vector_index_parser, cmd_vector_index
 from .gui import DEFAULT_HOST, DEFAULT_PORT, cmd_gui
 from .gateway import cmd_gateway
-
 def cmd_skill(args):
     """Dispatch skill subcommands through vault.cli symbols for compatibility."""
     if args.skill_action == "push":
@@ -1112,8 +1112,8 @@ def main(argv: list[str] | None = None):
     add_memory_parser(sub)
     add_okf_parser(sub)
     add_demo_parser(sub)
+    add_memory_api_parser(sub)
     args = parser.parse_args(normalized_argv)
-
     previous_project_dir_override = get_project_dir_override()
     if explicit_project_dir:
         if args.command == "init":
@@ -1134,6 +1134,7 @@ def main(argv: list[str] | None = None):
         "daily-report": cmd_daily_report,
         "daily-loop": lambda parsed: _cmd_daily_loop_impl(parsed, find_project_dir=find_project_dir, json_print=_json_print),
         "demo": cmd_demo,
+        "memory-api": lambda parsed: _cmd_memory_api_impl(parsed, find_project_dir=find_project_dir, json_print=_json_print),
         "gateway": cmd_gateway,
         "remote-server": cmd_gateway,
         "add": cmd_add,

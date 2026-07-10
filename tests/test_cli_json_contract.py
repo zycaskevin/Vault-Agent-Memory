@@ -114,6 +114,40 @@ def test_search_json_contract_has_agent_status_envelope(tmp_path, capsys):
     assert searched["next_action"]
 
 
+def test_memory_api_parity_report_json_contract_is_metadata_only(tmp_path, capsys):
+    project = _make_project(tmp_path, capsys)
+
+    main(
+        [
+            "memory-api",
+            "parity-report",
+            "--project-dir",
+            str(project),
+            "--agent-id",
+            "work-agent",
+            "--search-query",
+            "contract",
+            "--read-range",
+            "1:1-1",
+            "--json",
+        ]
+    )
+    payload = _read_json(capsys)
+
+    assert payload["status"] == "ok"
+    assert payload["ok"] is True
+    assert payload["summary"]["search_probes"] == 1
+    assert payload["summary"]["read_probes"] == 1
+    assert payload["safety"]["changes_default_authority"] is False
+    assert payload["safety"]["returns_raw_memory_content"] is False
+    assert "query" not in payload["search"][0]
+    assert len(payload["search"][0]["query_hash"]) == 64
+    encoded = json.dumps(payload, ensure_ascii=False)
+    assert "contract" not in encoded
+    assert "Vault CLI JSON contract smoke should stay parseable" not in encoded
+    assert '"content":' not in encoded
+
+
 def test_map_and_graph_json_contracts_are_parseable(tmp_path, capsys):
     project = _make_project(tmp_path, capsys)
 
