@@ -547,11 +547,18 @@ def central_vector_index_repair(
     apply: bool = False,
     changed_only: bool = True,
     limit: int = 20,
+    batch_size: int = 0,
     allow_hash: bool = False,
     hash_dim: int = 8,
     persist_cache: bool = True,
 ) -> dict[str, Any]:
-    """Return a dry-run or applied repair wrapper for the derived vector index."""
+    """Return a dry-run or applied repair wrapper for the derived vector index.
+
+    When ``batch_size > 0`` and ``apply`` is True with ``changed_only=True``,
+    the repair runs in auto-batch mode: it keeps processing batches until no
+    more stale/missing rows remain. This avoids needing multiple manual calls
+    for large knowledge bases.
+    """
     project = Path(project)
     db_path = Path(db_path)
     before_status = central_vector_index_status(db_path)
@@ -609,6 +616,16 @@ def central_vector_index_repair(
         validate_embedding_provider,
     )
 
+    batch_size_i = max(0, int(batch_size or 0))
+    use_batching = batch_size_i > 0 and changed_only and apply
+    pass_limit = batch_size_i if use_batching else int(limit)
+    total_repaired = 0
+    total_node_vectors = 0
+    total_claim_vectors = 0
+    total_batches = 0
+    last_stats = None
+    cache_stats: dict[str, Any] = {}
+
     with VaultDB(db_path) as db:
         if allow_hash:
             provider = DeterministicHashEmbeddingProvider(dim=hash_dim)
@@ -620,32 +637,59 @@ def central_vector_index_repair(
         if persist_cache:
             provider = PersistentCachedEmbeddingProvider(provider, db)
         try:
-            stats = rebuild_semantic_index(
-                db,
-                provider,
-                require_semantic=not allow_hash,
-                allow_hash=allow_hash,
-                changed_only=changed_only,
-                limit=limit,
-            )
+            if use_batching:
+                # Auto-batch mode: keep going until no more rows need repair
+                while True:
+                    stats = rebuild_semantic_index(
+                        db,
+                        provider,
+                        require_semantic=not allow_hash,
+                        allow_hash=allow_hash,
+                        changed_only=True,
+                        limit=pass_limit,
+                    )
+                    total_batches += 1
+                    total_repaired += int(stats.knowledge_rows)
+                    total_node_vectors += int(stats.node_vectors)
+                    total_claim_vectors += int(stats.claim_vectors)
+                    last_stats = stats
+                    if int(stats.knowledge_rows) < pass_limit:
+                        break  # Finished all pending rows
+            else:
+                # Single pass (either full rebuild or limited changed-only)
+                last_stats = rebuild_semantic_index(
+                    db,
+                    provider,
+                    require_semantic=not allow_hash,
+                    allow_hash=allow_hash,
+                    changed_only=changed_only,
+                    limit=None if (not changed_only and batch_size_i <= 0) else pass_limit,
+                )
+                total_repaired = int(last_stats.knowledge_rows)
+                total_batches = 1
+
+            final_stats = last_stats
             payload["rebuild"] = {
                 "provider_id": provider.provider_id,
                 "is_semantic": bool(provider.is_semantic),
                 "dimension": int(provider.dim),
-                "knowledge_rows": int(stats.knowledge_rows),
-                "node_vectors": int(stats.node_vectors),
-                "claim_vectors": int(stats.claim_vectors),
-                "changed_only": bool(getattr(stats, "changed_only", False)),
-                "candidate_rows": int(getattr(stats, "candidate_rows", stats.knowledge_rows)),
-                "skipped_rows": int(getattr(stats, "skipped_rows", 0)),
+                "knowledge_rows": total_repaired,
+                "node_vectors": total_node_vectors if use_batching else int(getattr(final_stats, "node_vectors", 0)),
+                "claim_vectors": total_claim_vectors if use_batching else int(getattr(final_stats, "claim_vectors", 0)),
+                "changed_only": bool(getattr(final_stats, "changed_only", False)),
+                "candidate_rows": int(getattr(final_stats, "candidate_rows", 0)),
+                "skipped_rows": int(getattr(final_stats, "skipped_rows", 0)),
+                "batches": total_batches,
+                "batch_size": batch_size_i if use_batching else 0,
             }
             if persist_cache:
-                payload["rebuild"]["persistent_cache"] = {
+                cache_stats = {
                     "memory_rows": int(getattr(provider, "cache_size", 0)),
                     "persistent_hits": int(getattr(provider, "persistent_hits", 0)),
                     "persistent_misses": int(getattr(provider, "persistent_misses", 0)),
                     "writes": int(getattr(provider, "writes", 0)),
                 }
+                payload["rebuild"]["persistent_cache"] = cache_stats
         finally:
             close = getattr(provider, "close", None)
             if callable(close):
@@ -1038,7 +1082,8 @@ def add_vector_index_parser(sub) -> None:
     sp.add_argument("--db-path", help="SQLite DB 路徑（預設 project_dir/vault.db）")
     sp.add_argument("--apply", action="store_true", help="apply semantic rebuild repair; default is dry-run")
     sp.add_argument("--full", action="store_true", help="full rebuild instead of changed-only repair")
-    sp.add_argument("--limit", type=int, default=20, help="maximum rows to repair in one apply pass")
+    sp.add_argument("--limit", type=int, default=20, help="maximum rows to repair in one pass (default: 20)")
+    sp.add_argument("--batch-size", type=int, default=0, help="auto-batch mode: process all pending rows in batches of this size (0=disabled)")
     sp.add_argument("--allow-hash", action="store_true", help="allow deterministic hash vectors for local tests")
     sp.add_argument("--hash-dim", type=int, default=8, help="deterministic hash vector dimension")
     sp.add_argument("--no-persist-cache", action="store_true", help="disable persistent embedding cache during apply")
@@ -1086,6 +1131,7 @@ def cmd_vector_index(args, *, find_project_dir, json_print) -> None:
             apply=bool(getattr(args, "apply", False)),
             changed_only=not bool(getattr(args, "full", False)),
             limit=getattr(args, "limit", 20),
+            batch_size=getattr(args, "batch_size", 0),
             allow_hash=bool(getattr(args, "allow_hash", False)),
             hash_dim=getattr(args, "hash_dim", 8),
             persist_cache=not bool(getattr(args, "no_persist_cache", False)),
