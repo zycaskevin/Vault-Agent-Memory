@@ -196,17 +196,26 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     assert "not as a requirement to install Letta, mem0, Supabase" in claim_matrix
 
 
-def test_release_notes_distinguish_published_090_from_main_followup():
+def test_release_notes_promote_memory_foundation_followup_to_010():
     changelog = _read("CHANGELOG.md")
+    announcement_010 = _read("docs/announcements/v0.10.0-short.md")
     announcement_090 = _read("docs/announcements/v0.9.0-short.md")
     followup = _read("docs/announcements/v0.9.x-memory-foundation-followup.md")
 
+    assert "## [0.10.0] - 2026-07-10" in changelog
+    assert "Promoted the post-`v0.9.0` memory-foundation follow-up" in changelog
+    assert "backend-agnostic memory governance layer" in changelog
+    assert "vault-for-llm==0.10.0" in changelog
+    assert "Provider-backed Memory API adapters remain opt-in preview paths" in changelog
+    assert "v0.10.0 is the memory-foundation release" in announcement_010
+    assert "vault-for-llm[mcp,supabase]==0.10.0" in announcement_010
+    assert "provider adapter default-promotion criteria" in announcement_010
+    assert "Default `/memory/search` and `/memory/{id}` authority remains the legacy" in announcement_010
     assert "## [0.9.0] - 2026-07-09" in changelog
-    assert "Main branch follow-up for the next 0.9.x release" in changelog
-    assert "already-published `0.9.0` wheel" in changelog
     assert "do not assume every main-branch Gateway/API facade is" in announcement_090
     assert "present in the already-published `0.9.0` wheel" in announcement_090
-    assert "These changes are on `main` after the `v0.9.0` tag" in followup
+    assert "promoted into `docs/announcements/v0.10.0-short.md`" in followup
+    assert "basis of `v0.10.0`" in followup
     assert "runtime Memory Provider Interface and default SQLite provider" in followup
     assert "SQLite provider facade preserves candidate-first remote writes" in followup
     assert "shadow metadata probe while keeping the legacy Gateway policy gate" in followup

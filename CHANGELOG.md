@@ -1,38 +1,94 @@
 # CHANGELOG
 
-## [0.9.0] - 2026-07-09
+## [0.10.0] - 2026-07-10
 
-### Main branch follow-up for the next 0.9.x release
+### Maturity
 
-- The `v0.9.0` tag and PyPI wheel remain the published Public Beta /
-  Developer Preview baseline.
-- The current `main` branch now also contains the memory-foundation follow-up:
-  backend-agnostic positioning, deployment-mode documentation, the Self-host
-  Central Memory Host specification, and an additive Vault Memory API Gateway
-  facade.
-- The same follow-up adds the first runtime Memory Provider Interface with a
-  default SQLite provider facade exposed through Gateway health and OpenAPI.
-- `/memory/search` and `/memory/{id}` now include provider-read adoption
-  metadata as a shadow probe of policy-authorized results only.
-- The default SQLite provider now applies read-policy filtering for
-  `agent_id`, `include_private`, and `max_sensitivity`.
-- `/memory/search` now has an opt-in preview provider-backed result adapter via
-  `result_adapter=provider`; default search results still come from the legacy
-  Gateway policy-filtered path.
-- `/memory/{id}` now has an opt-in preview provider-backed bounded-read adapter
-  via `result_adapter=provider`; default reads still come from the legacy
-  Gateway read-range path.
-- Added a metadata-only provider adapter parity report helper to compare legacy
-  Gateway behavior with provider-backed preview adapters before any future
-  default-authority switch.
-- Added `vault memory-api parity-report` as the report-only operator CLI for
-  the same provider adapter promotion gate.
+- Promoted the post-`v0.9.0` memory-foundation follow-up into the `v0.10.0`
+  Public Beta / Developer Preview release line.
+- Positioned Vault as a local-first, backend-agnostic memory governance layer
+  for AI agents: usable standalone through CLI/MCP/Gateway/local SQLite, and
+  usable as a governed memory foundation underneath other agent or memory
+  frameworks.
+- Kept the release boundary explicit: remote or untrusted writes remain
+  candidate-first, provider-backed Memory API adapters remain opt-in preview
+  paths, and the legacy Gateway policy-filtered result authority remains the
+  default until provider parity is proven.
+
+### Added
+
+- Added backend-agnostic positioning around the Vault Governance Contract and
+  Memory Provider Interface across English, Traditional Chinese, and Simplified
+  Chinese public docs.
+- Added deployment-mode guidance for Local Vault, Trusted Local Central Memory
+  Host, Supabase Adapter, and future Vault Cloud.
+- Added the Self-host Central Memory Host specification and operator runbook.
+- Added the draft Vault Memory API specification for create, search, read,
+  update, delete, audit, timeline, and future sync/link/promote surfaces.
+- Added the first runtime Memory Provider Interface and default SQLite provider
+  facade, surfaced through Gateway health and OpenAPI.
+- Added provider-read adoption metadata for `/memory/search` and `/memory/{id}`
+  as a shadow probe of policy-authorized results only.
+- Added read-policy filtering to the default SQLite provider for `agent_id`,
+  `include_private`, and `max_sensitivity`.
+- Added opt-in provider-backed `/memory/search` and `/memory/{id}` preview
+  result adapters through `result_adapter=provider`.
+- Added metadata-only provider adapter parity reporting plus
+  `vault memory-api parity-report` for release and operator comparison before
+  any future default-authority switch.
 - Added provider adapter default-promotion criteria so preview adapters cannot
   become the default Gateway result authority without representative parity,
-  security, rollback, and release-documentation evidence.
-- Treat those post-tag changes as the next `0.9.x` candidate until a new
-  package release is tagged and published. They are not a promise that the
-  already-published `0.9.0` wheel contains every `main` branch API facade.
+  security, rollback, CI, and release-documentation evidence.
+
+### Changed
+
+- Updated install examples and integration docs to `vault-for-llm==0.10.0`.
+- Updated the release positioning from "next 0.9.x follow-up" to the formal
+  `v0.10.0` memory-foundation release.
+- Clarified in all public README languages that Vault still works without
+  Letta, mem0, Supabase, Vault Cloud, or any other memory framework.
+- Clarified in all public README languages that provider-backed Memory API
+  adapters are preview-only until the promotion gate passes.
+
+### Safety boundary
+
+- Provider-backed search returns compact, policy-filtered rows only; it does
+  not expose provider raw rows or raw memory content.
+- Provider-backed bounded reads return only the requested line range after
+  provider read-policy filtering.
+- The parity report compares result ids, access decisions, and bounded content
+  hashes without returning raw memory content or raw query text.
+- `DELETE /memory/{id}` remains a soft-delete review candidate path in the
+  initial Gateway facade, not a remote hard delete.
+- Supabase remains an optional cloud adapter and reviewed read copy plus
+  candidate inbox, not an active multi-master memory database.
+
+### Validation
+
+- Pre-release validation passed on main before the version bump: GitHub CI,
+  full pytest (`2534 passed`), release parity, module-size gate, README command
+  smoke, build/twine/wheel smoke, Linux/Windows installer smoke, Search QA
+  regression gate, and three-language README documentation tests.
+- `v0.10.0` release-prep validation passed locally: release parity against
+  `v0.10.0`, module-size gate, public PR gate, history privacy scan, README
+  command smoke, focused Gateway/CLI/docs tests, full pytest (`2534 passed`),
+  `uv build`, `twine check`, clean wheel smoke, and install smoke matrix in
+  both source and wheel modes.
+
+### Known limitations
+
+- Provider-backed Memory API adapters remain opt-in preview paths; they are not
+  the default Gateway authority in this release.
+- Supabase, Gateway, central semantic search, and provider-backed adapters are
+  optional advanced paths, not required for local-first Vault usage.
+- Remote Semantic Search is disabled by default. If enabled without a local or
+  otherwise trusted provider override, query text is sent to OpenAI by default.
+- Vault Cloud remains a future managed backend for the same governance contract,
+  not a replacement product meaning.
+- Benchmark language remains retrieval-only source-hit evidence unless
+  comparable final-QA answerer and judge runs are published.
+
+## [0.9.0] - 2026-07-09
 
 ### Maturity
 
