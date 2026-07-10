@@ -7,6 +7,7 @@ from typing import Any
 from . import gateway_remote_semantic as remote_semantic
 from .gateway_server import DEFAULT_GATEWAY_MAX_WORKERS
 from .governance_contract import governance_contract_payload
+from .memory_provider import memory_provider_contract_payload
 from .search_utils import MAX_SEARCH_QUERY_CHARS
 
 
@@ -340,8 +341,12 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
             "memory_api_update_writes_active_knowledge": False,
             "memory_api_delete_hard_deletes": False,
             "memory_api_delete_submits_review_candidate": True,
+            "memory_provider_interface": True,
+            "default_memory_provider": "sqlite",
+            "remote_direct_active_memory_writes": False,
         },
         "x-vault-governance-contract": governance_contract_payload(adapter=title),
+        "x-vault-memory-provider-interface": memory_provider_contract_payload(provider_id="sqlite"),
         "x-vault-memory-api": {
             "status": "facade",
             "standalone_workflow_required": True,

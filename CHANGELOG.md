@@ -10,6 +10,8 @@
   backend-agnostic positioning, deployment-mode documentation, the Self-host
   Central Memory Host specification, and an additive Vault Memory API Gateway
   facade.
+- The same follow-up adds the first runtime Memory Provider Interface with a
+  default SQLite provider facade exposed through Gateway health and OpenAPI.
 - Treat those post-tag changes as the next `0.9.x` candidate until a new
   package release is tagged and published. They are not a promise that the
   already-published `0.9.0` wheel contains every `main` branch API facade.
