@@ -363,6 +363,13 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                 "/memory/link",
                 "/memory/sync",
             ],
+            "provider_read_adoption": {
+                "paths": ["/memory/search", "/memory/{id}"],
+                "mode": "shadow_metadata_probe",
+                "policy_authority": "legacy_gateway_policy_gate",
+                "search_probes_returned_ids_only": True,
+                "returns_provider_raw_rows": False,
+            },
             "delete_semantics": "soft_delete_review_candidate_in_gateway_facade",
             "qdrant_boundary": "semantic_index_provider_not_source_of_truth",
         },

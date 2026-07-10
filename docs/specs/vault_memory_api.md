@@ -144,6 +144,12 @@ Initial runtime implementation:
   provider facade over `VaultDB`.
 - Gateway health and OpenAPI expose the active provider contract so operators
   can tell which backend boundary is in use.
+- `/memory/search` and `/memory/{id}` now attach provider-read adoption metadata
+  through a shadow metadata probe. The returned search/read results still come
+  from the legacy Gateway policy gate, so existing private/sensitive filtering
+  remains authoritative while provider reads are introduced. Search probes only
+  inspect ids already returned by the policy gate, so they do not leak hidden
+  private/sensitive result counts.
 - The first provider implementation is intentionally additive. Existing CLI,
   MCP, local SQLite, and legacy Gateway routes continue to work without
   provider configuration.
