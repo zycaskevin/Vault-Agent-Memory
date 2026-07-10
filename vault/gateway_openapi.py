@@ -367,6 +367,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                 "paths": ["/memory/search", "/memory/{id}"],
                 "mode": "shadow_metadata_probe",
                 "policy_authority": "legacy_gateway_policy_gate",
+                "provider_read_policy_filtering": True,
                 "search_probes_returned_ids_only": True,
                 "returns_provider_raw_rows": False,
             },

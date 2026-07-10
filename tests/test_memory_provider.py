@@ -108,3 +108,65 @@ def test_sqlite_memory_provider_is_candidate_first_and_metadata_only(tmp_path):
     sync = provider.sync()
     assert sync["status"] == "unsupported"
     assert sync["provider"] == "sqlite"
+
+
+def test_sqlite_memory_provider_applies_read_policy_filtering(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    db_path = project / "vault.db"
+    with VaultDB(db_path) as db:
+        shared_id = db.add_knowledge(
+            title="Provider policy shared",
+            content_raw="Provider policy smoke shared note.",
+            scope="shared",
+            sensitivity="low",
+            trust=0.9,
+        )
+        private_id = db.add_knowledge(
+            title="Provider policy private",
+            content_raw="Provider policy smoke private note.",
+            scope="private",
+            sensitivity="high",
+            owner_agent="profile-agent",
+            allowed_agents=["work-agent"],
+            trust=0.9,
+        )
+        restricted_id = db.add_knowledge(
+            title="Provider policy restricted",
+            content_raw="Provider policy smoke restricted note.",
+            scope="shared",
+            sensitivity="restricted",
+            owner_agent="profile-agent",
+            allowed_agents=["work-agent"],
+            trust=0.9,
+        )
+
+    provider = sqlite_memory_provider(project)
+
+    legacy = provider.search_active("Provider policy smoke", limit=10)
+    work_agent = provider.search_active("Provider policy smoke", limit=10, agent_id="work-agent")
+    work_agent_private = provider.search_active(
+        "Provider policy smoke",
+        limit=10,
+        agent_id="work-agent",
+        include_private=True,
+    )
+    product_agent = provider.search_active("Provider policy smoke", limit=10, agent_id="product-agent")
+    capped = provider.search_active(
+        "Provider policy smoke",
+        limit=10,
+        agent_id="work-agent",
+        include_private=True,
+        max_sensitivity="medium",
+    )
+
+    assert {row["id"] for row in legacy} == {shared_id, private_id, restricted_id}
+    assert {row["id"] for row in work_agent} == {shared_id, restricted_id}
+    assert {row["id"] for row in work_agent_private} == {shared_id, private_id, restricted_id}
+    assert {row["id"] for row in product_agent} == {shared_id}
+    assert {row["id"] for row in capped} == {shared_id}
+
+    assert provider.get_memory(private_id, agent_id="work-agent") is None
+    assert provider.get_memory(private_id, agent_id="work-agent", include_private=True)["id"] == private_id
+    assert provider.get_memory(restricted_id, agent_id="product-agent") is None
+    assert provider.get_memory(restricted_id, agent_id="work-agent")["id"] == restricted_id

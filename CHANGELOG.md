@@ -14,6 +14,8 @@
   default SQLite provider facade exposed through Gateway health and OpenAPI.
 - `/memory/search` and `/memory/{id}` now include provider-read adoption
   metadata as a shadow probe of policy-authorized results only.
+- The default SQLite provider now applies read-policy filtering for
+  `agent_id`, `include_private`, and `max_sensitivity`.
 - Treat those post-tag changes as the next `0.9.x` candidate until a new
   package release is tagged and published. They are not a promise that the
   already-published `0.9.0` wheel contains every `main` branch API facade.
