@@ -150,6 +150,10 @@ Initial runtime implementation:
   remains authoritative while provider reads are introduced. Search probes only
   inspect ids already returned by the policy gate, so they do not leak hidden
   private/sensitive result counts.
+- The default SQLite provider now applies the same read-policy semantics for
+  `agent_id`, `include_private`, and `max_sensitivity`; this prepares the next
+  step where Memory API read results can become provider-backed without losing
+  Gateway access controls.
 - The first provider implementation is intentionally additive. Existing CLI,
   MCP, local SQLite, and legacy Gateway routes continue to work without
   provider configuration.

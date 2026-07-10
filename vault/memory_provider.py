@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
+from .access_policy import can_read_memory, filter_readable_memories, normalize_read_policy
 from .db import VaultDB
 from .governance_contract import governance_contract_payload
 from .memory import create_candidate, promote_candidate
@@ -46,10 +47,26 @@ class MemoryProvider(Protocol):
     def create_candidate(self, **kwargs: Any) -> dict[str, Any]:
         """Create a review candidate; never write active memory directly."""
 
-    def search_active(self, query: str, *, limit: int = 10, min_trust: float = 0.0) -> list[dict[str, Any]]:
+    def search_active(
+        self,
+        query: str,
+        *,
+        limit: int = 10,
+        min_trust: float = 0.0,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> list[dict[str, Any]]:
         """Search official active memory rows."""
 
-    def get_memory(self, memory_id: int) -> dict[str, Any] | None:
+    def get_memory(
+        self,
+        memory_id: int,
+        *,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> dict[str, Any] | None:
         """Read one memory row by id."""
 
     def update_memory(self, memory_id: int, **fields: Any) -> dict[str, Any]:
@@ -85,6 +102,7 @@ def memory_provider_contract_payload(*, provider_id: str = "sqlite") -> dict[str
             "remote_direct_active_memory_writes": False,
             "hard_delete_by_remote_agent": False,
             "audit_metadata_required": True,
+            "read_policy_filtering": True,
             "semantic_index_is_optional": True,
         },
         "backend_boundary": {
@@ -133,6 +151,7 @@ class SQLiteMemoryProvider:
                 "access_policy_metadata": True,
                 "audit_trail": True,
                 "keyword_search": True,
+                "read_policy_filtering": True,
                 "semantic_index_optional": True,
                 "sync": False,
             },
@@ -153,20 +172,54 @@ class SQLiteMemoryProvider:
             },
         }
 
-    def search_active(self, query: str, *, limit: int = 10, min_trust: float = 0.0) -> list[dict[str, Any]]:
+    def search_active(
+        self,
+        query: str,
+        *,
+        limit: int = 10,
+        min_trust: float = 0.0,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> list[dict[str, Any]]:
         limit_i = normalize_search_limit(limit)
         if limit_i <= 0:
             return []
+        read_policy = normalize_read_policy(
+            agent_id=agent_id,
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+        )
         with VaultDB(self.resolved_db_path) as db:
-            rows = db.search_keyword(query, limit=max(limit_i * 3, limit_i), min_trust=min_trust)
+            rows = db.search_keyword(query, limit=max(limit_i * 10, 100), min_trust=min_trust)
         active = [row for row in rows if str(row.get("status") or "active") == "active"]
-        return active[:limit_i]
+        readable = filter_readable_memories(active, read_policy)
+        return readable[:limit_i]
 
-    def get_memory(self, memory_id: int) -> dict[str, Any] | None:
+    def get_memory(
+        self,
+        memory_id: int,
+        *,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> dict[str, Any] | None:
         if int(memory_id or 0) <= 0:
             return None
+        read_policy = normalize_read_policy(
+            agent_id=agent_id,
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+        )
         with VaultDB(self.resolved_db_path) as db:
-            return db.get_knowledge(int(memory_id))
+            row = db.get_knowledge(int(memory_id))
+        if not row:
+            return None
+        if str(row.get("status") or "active") != "active" and read_policy.active:
+            return None
+        if not can_read_memory(row, read_policy):
+            return None
+        return row
 
     def update_memory(self, memory_id: int, **fields: Any) -> dict[str, Any]:
         if int(memory_id or 0) <= 0:
@@ -322,6 +375,7 @@ def _provider_safety_flags() -> dict[str, bool]:
         "hard_delete_by_remote_agent": False,
         "metadata_only_audit": True,
         "metadata_only_timeline": True,
+        "read_policy_filtering": True,
     }
 
 

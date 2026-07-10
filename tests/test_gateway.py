@@ -261,6 +261,7 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert provider_read["paths"] == ["/memory/search", "/memory/{id}"]
         assert provider_read["mode"] == "shadow_metadata_probe"
         assert provider_read["policy_authority"] == "legacy_gateway_policy_gate"
+        assert provider_read["provider_read_policy_filtering"] is True
         assert provider_read["search_probes_returned_ids_only"] is True
         assert provider_read["returns_provider_raw_rows"] is False
         assert contract["x-vault-safety"]["max_search_query_chars"] == 1000
@@ -533,6 +534,7 @@ def test_gateway_memory_api_facade_is_candidate_first_and_metadata_only(tmp_path
     assert search["memory_api"]["provider_read"]["mode"] == "shadow_metadata_probe"
     assert search["memory_api"]["provider_read"]["policy_authority"] == "legacy_gateway_search"
     assert search["memory_api"]["provider_read"]["results_authority"] == "legacy_gateway_policy_filtered"
+    assert search["memory_api"]["provider_read"]["read_policy_filtering"] is True
     assert search["memory_api"]["provider_read"]["returned_result_count"] == len(search["results"])
     assert search["memory_api"]["provider_read"]["probes_returned_ids_only"] is True
     assert search["memory_api"]["provider_read"]["returns_provider_raw_rows"] is False
@@ -554,6 +556,7 @@ def test_gateway_memory_api_facade_is_candidate_first_and_metadata_only(tmp_path
     assert read["memory_api"]["provider_read"]["provider_id"] == "sqlite"
     assert read["memory_api"]["provider_read"]["mode"] == "metadata_probe_after_legacy_policy_gate"
     assert read["memory_api"]["provider_read"]["policy_authority"] == "legacy_gateway_read_range"
+    assert read["memory_api"]["provider_read"]["read_policy_filtering"] is True
     assert read["memory_api"]["provider_read"]["metadata_only"] is True
     assert read["memory_api"]["provider_read"]["memory_exists"] is True
     assert read["memory_api"]["provider_read"]["returns_provider_raw_content"] is False

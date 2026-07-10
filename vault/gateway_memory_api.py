@@ -54,6 +54,9 @@ def gateway_memory_search(
     _attach_provider_search_probe(
         payload,
         project_dir,
+        agent_id=agent_id,
+        include_private=include_private,
+        max_sensitivity=max_sensitivity,
     )
     return payload
 
@@ -145,7 +148,14 @@ def gateway_memory_get(
         "bounded_read": True,
         "memory_id": int(memory_id),
     }
-    _attach_provider_get_probe(payload, project_dir, memory_id=int(memory_id))
+    _attach_provider_get_probe(
+        payload,
+        project_dir,
+        memory_id=int(memory_id),
+        agent_id=agent_id,
+        include_private=include_private,
+        max_sensitivity=max_sensitivity,
+    )
     return payload
 
 
@@ -800,6 +810,10 @@ def _record_memory_api_event(
 def _attach_provider_search_probe(
     payload: dict[str, Any],
     project_dir: str | Path,
+    *,
+    agent_id: str,
+    include_private: bool,
+    max_sensitivity: str,
 ) -> None:
     """Attach metadata-only provider read adoption details without changing policy results."""
     if payload.get("status") != "ok":
@@ -814,7 +828,12 @@ def _attach_provider_search_probe(
         provider_ids = {
             memory_id
             for memory_id in returned_ids
-            if provider.get_memory(memory_id) is not None
+            if provider.get_memory(
+                memory_id,
+                agent_id=agent_id,
+                include_private=include_private,
+                max_sensitivity=max_sensitivity,
+            ) is not None
         }
         payload.setdefault("memory_api", {})["provider_read"] = {
             "provider_id": provider.provider_id,
@@ -822,6 +841,9 @@ def _attach_provider_search_probe(
             "mode": "shadow_metadata_probe",
             "policy_authority": "legacy_gateway_search",
             "results_authority": "legacy_gateway_policy_filtered",
+            "read_policy_filtering": True,
+            "include_private": bool(include_private),
+            "max_sensitivity": max_sensitivity or "low",
             "returned_result_count": len(returned_ids),
             "returned_ids_present_in_provider": sorted(returned_ids & provider_ids),
             "probes_returned_ids_only": True,
@@ -836,18 +858,34 @@ def _attach_provider_search_probe(
         }
 
 
-def _attach_provider_get_probe(payload: dict[str, Any], project_dir: str | Path, *, memory_id: int) -> None:
+def _attach_provider_get_probe(
+    payload: dict[str, Any],
+    project_dir: str | Path,
+    *,
+    memory_id: int,
+    agent_id: str,
+    include_private: bool,
+    max_sensitivity: str,
+) -> None:
     """Attach provider metadata for a bounded read after the legacy policy gate."""
     if payload.get("status") != "ok":
         return
     try:
         provider = sqlite_memory_provider(project_dir)
-        row = provider.get_memory(memory_id)
+        row = provider.get_memory(
+            memory_id,
+            agent_id=agent_id,
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+        )
         payload.setdefault("memory_api", {})["provider_read"] = {
             "provider_id": provider.provider_id,
             "backend_type": provider.backend_type,
             "mode": "metadata_probe_after_legacy_policy_gate",
             "policy_authority": "legacy_gateway_read_range",
+            "read_policy_filtering": True,
+            "include_private": bool(include_private),
+            "max_sensitivity": max_sensitivity or "low",
             "metadata_only": True,
             "memory_exists": bool(row),
             "memory_status": row.get("status", "") if row else "",
