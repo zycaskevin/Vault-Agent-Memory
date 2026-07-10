@@ -14,8 +14,10 @@ from urllib.parse import parse_qs
 
 from .db import VaultDB
 from .gateway_errors import gateway_error_suggestions
+from .gui_format import compact_knowledge
 from .memory_provider import sqlite_memory_provider
 from .multi_host import list_audit_log, record_audit_event
+from .search_utils import validate_search_query
 
 
 AppendGatewayAudit = Callable[..., None]
@@ -30,9 +32,20 @@ def gateway_memory_search(
     limit: int = 10,
     include_private: bool = False,
     max_sensitivity: str = "low",
+    result_adapter: str = "legacy",
     search_func: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Vault Memory API facade for governed active-memory search."""
+    if _result_adapter(result_adapter) == "provider":
+        return _gateway_memory_search_provider_adapter(
+            project_dir,
+            query=query,
+            agent_id=agent_id,
+            mode=mode,
+            limit=limit,
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+        )
     if search_func is None:
         from .gateway import gateway_search as search_func
 
@@ -50,6 +63,8 @@ def gateway_memory_search(
         "facade": True,
         "legacy_equivalent": "/search",
         "read_surface": "active_reviewed_memory",
+        "result_adapter": "legacy",
+        "default_result_adapter": True,
     }
     _attach_provider_search_probe(
         payload,
@@ -59,6 +74,59 @@ def gateway_memory_search(
         max_sensitivity=max_sensitivity,
     )
     return payload
+
+
+def _gateway_memory_search_provider_adapter(
+    project_dir: str | Path,
+    *,
+    query: str,
+    agent_id: str,
+    mode: str,
+    limit: int,
+    include_private: bool,
+    max_sensitivity: str,
+) -> dict[str, Any]:
+    """Opt-in provider-backed search payload for Memory API adoption tests."""
+    agent = _agent_id(agent_id)
+    if not agent:
+        return _error("agent_id_required", "agent_id is required")
+    query_text, query_error = validate_search_query(query)
+    if query_error is not None:
+        return query_error
+    mode_name = str(mode or "keyword").strip().lower() or "keyword"
+    if mode_name not in {"auto", "keyword"}:
+        return {
+            "status": "unsupported",
+            "error": "provider_result_adapter_mode_unsupported",
+            "message": "provider result adapter currently supports keyword search only",
+            "mode": mode_name,
+            "supported_modes": ["auto", "keyword"],
+            "memory_api": _provider_adapter_memory_api_payload(),
+            "safety": _provider_adapter_safety(include_private, max_sensitivity),
+        }
+
+    provider = sqlite_memory_provider(project_dir)
+    rows = provider.search_active(
+        query_text,
+        limit=limit,
+        agent_id=agent,
+        include_private=include_private,
+        max_sensitivity=max_sensitivity,
+    )
+    return {
+        "status": "ok",
+        "query": query_text,
+        "mode": "keyword",
+        "agent_id": agent,
+        "results": [compact_knowledge(row) for row in rows],
+        "memory_api": {
+            **_provider_adapter_memory_api_payload(),
+            "provider_id": provider.provider_id,
+            "backend_type": provider.backend_type,
+            "result_count": len(rows),
+        },
+        "safety": _provider_adapter_safety(include_private, max_sensitivity),
+    }
 
 
 def gateway_memory_create(
@@ -514,6 +582,7 @@ def gateway_memory_http_post(
             limit=_int_value(body.get("limit"), 10),
             include_private=_bool_value(body.get("include_private"), False),
             max_sensitivity=str(body.get("max_sensitivity", "low") or "low"),
+            result_adapter=str(body.get("result_adapter", "legacy") or "legacy"),
         )
         append_audit(
             Path(project_dir),
@@ -628,6 +697,40 @@ def gateway_memory_http_delete(
 
 def _agent_id(value: Any) -> str:
     return str(value or "").strip().lower()
+
+
+def _result_adapter(value: Any) -> str:
+    adapter = str(value or "legacy").strip().lower()
+    return adapter if adapter in {"legacy", "provider"} else "legacy"
+
+
+def _provider_adapter_memory_api_payload() -> dict[str, Any]:
+    return {
+        "endpoint": "/memory/search",
+        "facade": True,
+        "legacy_equivalent": "/search",
+        "read_surface": "active_reviewed_memory",
+        "result_adapter": "provider",
+        "provider_backed_result_adapter": True,
+        "adapter_status": "preview",
+        "default_result_adapter": False,
+        "default_authority": "legacy_gateway_policy_filtered",
+        "results_authority": "provider_policy_filtered",
+        "read_policy_filtering": True,
+        "returns_provider_raw_rows": False,
+    }
+
+
+def _provider_adapter_safety(include_private: bool, max_sensitivity: str) -> dict[str, Any]:
+    return {
+        "read_policy_active": True,
+        "include_private": bool(include_private),
+        "max_sensitivity": max_sensitivity or "low",
+        "search_returns_raw_content": False,
+        "returns_raw_content": False,
+        "candidate_first_writes": True,
+        "writes_active_knowledge": False,
+    }
 
 
 def _request_agent(body: dict[str, Any], parsed: Any) -> str:

@@ -164,6 +164,8 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     assert "legacy Gateway policy gate" in spec
     assert "do not leak hidden\n  private/sensitive result counts" in spec
     assert "SQLite provider now applies the same read-policy semantics" in spec
+    assert "`result_adapter=provider`" in spec
+    assert "It is not\n  the default result authority yet" in spec
     assert "semantic index providers, not default\nsource-of-truth memory providers" in spec
     assert "Vault Memory API plus MCP / Gateway / OpenAPI adapters" in architecture
     assert "Memory Provider Interface / Backend adapter" in architecture
@@ -188,6 +190,8 @@ def test_release_notes_distinguish_published_090_from_main_followup():
     assert "shadow metadata probe while keeping the legacy Gateway policy gate" in followup
     assert "does not return provider raw rows or raw content" in followup
     assert "avoids hidden-result\n  count side channels" in followup
+    assert "opt-in provider-backed `/memory/search` result adapter" in followup
+    assert "default `/memory/search` authority remains the legacy Gateway" in followup
     assert "read-policy filtering to the default SQLite provider" in followup
     assert "candidate-first" in followup
     assert "DELETE is not a hard delete" in followup

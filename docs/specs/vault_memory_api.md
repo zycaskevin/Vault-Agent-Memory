@@ -154,6 +154,11 @@ Initial runtime implementation:
   `agent_id`, `include_private`, and `max_sensitivity`; this prepares the next
   step where Memory API read results can become provider-backed without losing
   Gateway access controls.
+- `/memory/search` also has an opt-in preview result adapter:
+  `result_adapter=provider`. This adapter returns compact search rows produced
+  by the default SQLite provider after the same read-policy filtering. It is not
+  the default result authority yet; requests without the opt-in field still use
+  the legacy Gateway policy-filtered search path.
 - The first provider implementation is intentionally additive. Existing CLI,
   MCP, local SQLite, and legacy Gateway routes continue to work without
   provider configuration.
