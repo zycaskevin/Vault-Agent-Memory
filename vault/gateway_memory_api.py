@@ -14,6 +14,7 @@ from urllib.parse import parse_qs
 
 from .db import VaultDB
 from .gateway_errors import gateway_error_suggestions
+from .memory_provider import sqlite_memory_provider
 from .multi_host import list_audit_log, record_audit_event
 
 
@@ -50,6 +51,10 @@ def gateway_memory_search(
         "legacy_equivalent": "/search",
         "read_surface": "active_reviewed_memory",
     }
+    _attach_provider_search_probe(
+        payload,
+        project_dir,
+    )
     return payload
 
 
@@ -140,6 +145,7 @@ def gateway_memory_get(
         "bounded_read": True,
         "memory_id": int(memory_id),
     }
+    _attach_provider_get_probe(payload, project_dir, memory_id=int(memory_id))
     return payload
 
 
@@ -789,6 +795,74 @@ def _record_memory_api_event(
             )
     except Exception:
         return
+
+
+def _attach_provider_search_probe(
+    payload: dict[str, Any],
+    project_dir: str | Path,
+) -> None:
+    """Attach metadata-only provider read adoption details without changing policy results."""
+    if payload.get("status") != "ok":
+        return
+    try:
+        provider = sqlite_memory_provider(project_dir)
+        returned_ids = {
+            int(row.get("id"))
+            for row in payload.get("results", [])
+            if isinstance(row, dict) and str(row.get("id") or "").isdigit()
+        }
+        provider_ids = {
+            memory_id
+            for memory_id in returned_ids
+            if provider.get_memory(memory_id) is not None
+        }
+        payload.setdefault("memory_api", {})["provider_read"] = {
+            "provider_id": provider.provider_id,
+            "backend_type": provider.backend_type,
+            "mode": "shadow_metadata_probe",
+            "policy_authority": "legacy_gateway_search",
+            "results_authority": "legacy_gateway_policy_filtered",
+            "returned_result_count": len(returned_ids),
+            "returned_ids_present_in_provider": sorted(returned_ids & provider_ids),
+            "probes_returned_ids_only": True,
+            "returns_provider_raw_rows": False,
+        }
+    except Exception:
+        payload.setdefault("memory_api", {})["provider_read"] = {
+            "mode": "shadow_metadata_probe",
+            "status": "skipped",
+            "reason": "provider_probe_failed",
+            "returns_provider_raw_rows": False,
+        }
+
+
+def _attach_provider_get_probe(payload: dict[str, Any], project_dir: str | Path, *, memory_id: int) -> None:
+    """Attach provider metadata for a bounded read after the legacy policy gate."""
+    if payload.get("status") != "ok":
+        return
+    try:
+        provider = sqlite_memory_provider(project_dir)
+        row = provider.get_memory(memory_id)
+        payload.setdefault("memory_api", {})["provider_read"] = {
+            "provider_id": provider.provider_id,
+            "backend_type": provider.backend_type,
+            "mode": "metadata_probe_after_legacy_policy_gate",
+            "policy_authority": "legacy_gateway_read_range",
+            "metadata_only": True,
+            "memory_exists": bool(row),
+            "memory_status": row.get("status", "") if row else "",
+            "memory_type": row.get("memory_type", "") if row else "",
+            "scope": row.get("scope", "") if row else "",
+            "sensitivity": row.get("sensitivity", "") if row else "",
+            "returns_provider_raw_content": False,
+        }
+    except Exception:
+        payload.setdefault("memory_api", {})["provider_read"] = {
+            "mode": "metadata_probe_after_legacy_policy_gate",
+            "status": "skipped",
+            "reason": "provider_probe_failed",
+            "returns_provider_raw_content": False,
+        }
 
 
 def _compact_audit_row(row: dict[str, Any]) -> dict[str, Any]:

@@ -160,6 +160,9 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     assert "`vault.memory_provider.MemoryProvider` defines the provider protocol" in spec
     assert "`vault.memory_provider.SQLiteMemoryProvider` is the default local-first" in spec
     assert "Gateway health and OpenAPI expose the active provider contract" in spec
+    assert "`/memory/search` and `/memory/{id}` now attach provider-read adoption metadata" in spec
+    assert "legacy Gateway policy gate" in spec
+    assert "do not leak hidden\n  private/sensitive result counts" in spec
     assert "semantic index providers, not default\nsource-of-truth memory providers" in spec
     assert "Vault Memory API plus MCP / Gateway / OpenAPI adapters" in architecture
     assert "Memory Provider Interface / Backend adapter" in architecture
@@ -181,6 +184,9 @@ def test_release_notes_distinguish_published_090_from_main_followup():
     assert "These changes are on `main` after the `v0.9.0` tag" in followup
     assert "runtime Memory Provider Interface and default SQLite provider" in followup
     assert "SQLite provider facade preserves candidate-first remote writes" in followup
+    assert "shadow metadata probe while keeping the legacy Gateway policy gate" in followup
+    assert "does not return provider raw rows or raw content" in followup
+    assert "avoids hidden-result\n  count side channels" in followup
     assert "candidate-first" in followup
     assert "DELETE is not a hard delete" in followup
     assert "Vault is a multi-master cloud memory database" in followup
