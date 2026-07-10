@@ -19,6 +19,9 @@
 - `/memory/search` now has an opt-in preview provider-backed result adapter via
   `result_adapter=provider`; default search results still come from the legacy
   Gateway policy-filtered path.
+- `/memory/{id}` now has an opt-in preview provider-backed bounded-read adapter
+  via `result_adapter=provider`; default reads still come from the legacy
+  Gateway read-range path.
 - Treat those post-tag changes as the next `0.9.x` candidate until a new
   package release is tagged and published. They are not a promise that the
   already-published `0.9.0` wheel contains every `main` branch API facade.

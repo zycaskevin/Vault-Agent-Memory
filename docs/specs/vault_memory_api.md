@@ -159,6 +159,10 @@ Initial runtime implementation:
   by the default SQLite provider after the same read-policy filtering. It is not
   the default result authority yet; requests without the opt-in field still use
   the legacy Gateway policy-filtered search path.
+- `/memory/{id}` also has an opt-in preview bounded-read adapter through
+  `result_adapter=provider`. It uses the provider for the read-policy gate, then
+  returns only the requested line range; it does not return the provider raw row
+  or full raw memory content.
 - The first provider implementation is intentionally additive. Existing CLI,
   MCP, local SQLite, and legacy Gateway routes continue to work without
   provider configuration.
