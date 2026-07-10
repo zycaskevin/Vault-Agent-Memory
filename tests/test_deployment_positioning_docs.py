@@ -170,6 +170,8 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     assert "does not return the provider raw row\n  or full raw memory content" in spec
     assert "`vault.memory_provider_parity.provider_adapter_parity_report(...)`" in spec
     assert "gate for any future default-authority\n  switch" in spec
+    assert "`vault memory-api parity-report --agent-id AGENT --search-query TEXT" in spec
+    assert "does\n  not change Gateway or provider authority" in spec
     assert "semantic index providers, not default\nsource-of-truth memory providers" in spec
     assert "Vault Memory API plus MCP / Gateway / OpenAPI adapters" in architecture
     assert "Memory Provider Interface / Backend adapter" in architecture
@@ -200,6 +202,8 @@ def test_release_notes_distinguish_published_090_from_main_followup():
     assert "not the full provider\n  raw row or full memory body" in followup
     assert "metadata-only provider adapter parity report helper" in followup
     assert "without returning raw memory\n  content, raw query text, or changing the default Gateway authority" in followup
+    assert "`vault memory-api parity-report`" in followup
+    assert "empty report cannot be mistaken for a passing gate" in followup
     assert "read-policy filtering to the default SQLite provider" in followup
     assert "candidate-first" in followup
     assert "DELETE is not a hard delete" in followup

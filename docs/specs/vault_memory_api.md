@@ -169,6 +169,10 @@ Initial runtime implementation:
   result ids without returning raw query text, reads compare access decisions
   and bounded content hashes. It is a gate for any future default-authority
   switch, not a switch by itself.
+- Operators can run the same check through
+  `vault memory-api parity-report --agent-id AGENT --search-query TEXT
+  --read-range ID:START-END --json`. The command remains report-only and does
+  not change Gateway or provider authority.
 - The first provider implementation is intentionally additive. Existing CLI,
   MCP, local SQLite, and legacy Gateway routes continue to work without
   provider configuration.
