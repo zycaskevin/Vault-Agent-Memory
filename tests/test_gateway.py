@@ -39,6 +39,7 @@ from vault.gateway_remote_semantic import gateway_remote_semantic_search, gatewa
 from vault.gateway_audit import gateway_audit_report
 from vault.gateway_security import GatewaySecurityPolicy
 from vault.agent_setup_remote_server import write_remote_server_deploy_templates
+from vault.memory_provider_parity import provider_adapter_parity_report
 
 
 def _project(tmp_path):
@@ -275,6 +276,12 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert provider_adapter["search_returns_raw_content"] is False
         assert provider_adapter["read_returns_bounded_content"] is True
         assert provider_adapter["read_returns_full_raw_content"] is False
+        parity_gate = contract["x-vault-memory-api"]["provider_adapter_parity_gate"]
+        assert parity_gate["helper"] == "vault.memory_provider_parity.provider_adapter_parity_report"
+        assert parity_gate["required_before_default_authority_switch"] is True
+        assert parity_gate["returns_raw_query_text"] is False
+        assert parity_gate["returns_raw_memory_content"] is False
+        assert parity_gate["changes_default_authority"] is False
         assert contract["x-vault-safety"]["max_search_query_chars"] == 1000
         search_schema = contract["components"]["schemas"]["SearchRequest"]
         assert search_schema["properties"]["query"]["maxLength"] == 1000
@@ -540,6 +547,75 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     assert memory_api["legacy_gateway_endpoints_preserved"] is True
     assert memory_api["delete_semantics"] == "soft_delete_review_candidate_in_gateway_facade"
     assert "/memory/promote" in memory_api["planned_paths"]
+
+
+def test_provider_adapter_parity_report_is_metadata_only(tmp_path):
+    project, public_id, private_id = _project(tmp_path)
+
+    report = provider_adapter_parity_report(
+        project,
+        agent_id="work-agent",
+        search_probes=[
+            {"query": "Gateway", "limit": 5},
+            {"query": "Only the owner should see", "limit": 5},
+            {
+                "query": "Only the owner should see",
+                "agent_id": "profile-agent",
+                "include_private": True,
+                "max_sensitivity": "high",
+                "limit": 5,
+            },
+        ],
+        read_probes=[
+            {"memory_id": public_id, "line_start": 1, "line_end": 2},
+            {
+                "memory_id": private_id,
+                "line_start": 1,
+                "line_end": 2,
+                "include_private": True,
+                "max_sensitivity": "high",
+            },
+            {
+                "memory_id": private_id,
+                "agent_id": "profile-agent",
+                "line_start": 1,
+                "line_end": 3,
+                "include_private": True,
+                "max_sensitivity": "high",
+            },
+        ],
+    )
+
+    assert report["status"] == "ok"
+    assert report["ok"] is True
+    assert report["summary"] == {
+        "search_probes": 3,
+        "search_matches": 3,
+        "read_probes": 3,
+        "read_matches": 3,
+        "mismatches": 0,
+    }
+    assert report["safety"]["report_only"] is True
+    assert report["safety"]["changes_default_authority"] is False
+    assert report["safety"]["returns_raw_memory_content"] is False
+    assert report["search"][0]["legacy_ids"] == [public_id]
+    assert report["search"][0]["provider_ids"] == [public_id]
+    assert "query" not in report["search"][0]
+    assert report["search"][0]["query_chars"] == len("Gateway")
+    assert len(report["search"][0]["query_hash"]) == 64
+    assert report["search"][1]["legacy_ids"] == []
+    assert report["search"][1]["provider_ids"] == []
+    assert report["search"][2]["legacy_ids"] == [private_id]
+    assert report["search"][2]["provider_ids"] == [private_id]
+    assert report["read"][0]["content_hash_match"] is True
+    assert report["read"][1]["allowed_match"] is True
+    assert report["read"][1]["legacy_status"] == "error"
+    assert report["read"][1]["provider_status"] == "error"
+    assert report["read"][2]["content_hash_match"] is True
+    encoded = json.dumps(report, ensure_ascii=False)
+    assert "Gateway search should find this shared runbook" not in encoded
+    assert "Only the owner should see" not in encoded
+    assert '"content":' not in encoded
 
 
 def test_gateway_memory_api_facade_is_candidate_first_and_metadata_only(tmp_path):
