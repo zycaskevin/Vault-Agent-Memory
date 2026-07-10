@@ -57,6 +57,7 @@ from .governance_contract import governance_contract_payload
 from .gui_format import compact_knowledge
 from .mcp_read import _vault_read_range_payload
 from .memory import create_candidate
+from .memory_provider import sqlite_memory_provider
 from .search import VaultSearch
 from .search_utils import normalize_search_limit, validate_search_query
 
@@ -94,6 +95,7 @@ def gateway_health(
             "source_of_truth": "local_sqlite_vault",
             "adapter_boundary": True,
             "governance_contract": governance_contract_payload(adapter="gateway"),
+            "memory_provider": sqlite_memory_provider(project).status(),
             "writes_active_knowledge": False,
             "candidate_first_writes": True,
             "central_candidate_inbox": True,

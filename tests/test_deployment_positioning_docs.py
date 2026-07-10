@@ -157,6 +157,9 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     assert "candidate\nactive\narchived\ndeprecated\ndeleted" in spec
     assert "`active` is the official readable state" in spec
     assert "`approved` should be represented as a\nreview decision or audit event" in spec
+    assert "`vault.memory_provider.MemoryProvider` defines the provider protocol" in spec
+    assert "`vault.memory_provider.SQLiteMemoryProvider` is the default local-first" in spec
+    assert "Gateway health and OpenAPI expose the active provider contract" in spec
     assert "semantic index providers, not default\nsource-of-truth memory providers" in spec
     assert "Vault Memory API plus MCP / Gateway / OpenAPI adapters" in architecture
     assert "Memory Provider Interface / Backend adapter" in architecture
@@ -176,6 +179,8 @@ def test_release_notes_distinguish_published_090_from_main_followup():
     assert "do not assume every main-branch Gateway/API facade is" in announcement_090
     assert "present in the already-published `0.9.0` wheel" in announcement_090
     assert "These changes are on `main` after the `v0.9.0` tag" in followup
+    assert "runtime Memory Provider Interface and default SQLite provider" in followup
+    assert "SQLite provider facade preserves candidate-first remote writes" in followup
     assert "candidate-first" in followup
     assert "DELETE is not a hard delete" in followup
     assert "Vault is a multi-master cloud memory database" in followup

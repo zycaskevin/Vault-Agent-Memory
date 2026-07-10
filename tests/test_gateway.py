@@ -195,6 +195,12 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert governance["semantics"]["remote_writes_enter_candidates"] is True
         assert governance["write_policy"]["direct_remote_active_memory_writes"] is False
         assert "submit_candidate" in governance["operations"]
+        provider = payload["gateway"]["memory_provider"]
+        assert provider["provider_id"] == "sqlite"
+        assert provider["backend_type"] == "local_sqlite"
+        assert provider["provider_contract"]["name"] == "Memory Provider Interface"
+        assert provider["provider_contract"]["semantics"]["remote_direct_active_memory_writes"] is False
+        assert provider["safety"]["candidate_first_remote_writes"] is True
         assert payload["gateway"]["central_candidate_inbox"] is True
         assert payload["gateway"]["vault_memory_api"]["status"] == "facade"
         assert payload["gateway"]["vault_memory_api"]["legacy_gateway_endpoints_preserved"] is True
@@ -243,6 +249,14 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert contract["x-vault-safety"]["remote_semantic_search_returns_embedding_values"] is False
         assert contract["x-vault-safety"]["remote_snapshot_read_bounded"] is True
         assert contract["x-vault-safety"]["writes_active_knowledge"] is False
+        assert contract["x-vault-safety"]["memory_provider_interface"] is True
+        assert contract["x-vault-safety"]["default_memory_provider"] == "sqlite"
+        assert contract["x-vault-safety"]["remote_direct_active_memory_writes"] is False
+        assert contract["x-vault-memory-provider-interface"]["name"] == "Memory Provider Interface"
+        assert (
+            contract["x-vault-memory-provider-interface"]["semantics"]["remote_direct_active_memory_writes"]
+            is False
+        )
         assert contract["x-vault-safety"]["max_search_query_chars"] == 1000
         assert contract["components"]["schemas"]["SearchRequest"]["properties"]["query"]["maxLength"] == 1000
         assert "/remote-semantic-search" in contract["paths"]

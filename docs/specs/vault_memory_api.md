@@ -137,6 +137,17 @@ list_audit(...)
 sync(...)
 ```
 
+Initial runtime implementation:
+
+- `vault.memory_provider.MemoryProvider` defines the provider protocol.
+- `vault.memory_provider.SQLiteMemoryProvider` is the default local-first
+  provider facade over `VaultDB`.
+- Gateway health and OpenAPI expose the active provider contract so operators
+  can tell which backend boundary is in use.
+- The first provider implementation is intentionally additive. Existing CLI,
+  MCP, local SQLite, and legacy Gateway routes continue to work without
+  provider configuration.
+
 SQLite remains the default local-first provider. Supabase remains an optional
 cloud adapter and reviewed read-copy plus candidate inbox. Postgres and Vault
 Cloud can implement the same provider contract later without changing agent
