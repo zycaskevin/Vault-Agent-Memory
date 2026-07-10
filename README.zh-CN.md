@@ -11,6 +11,11 @@ Vault 的产品边界是治理合约，不是某个特定后端。同一套 cand
 可以跑在 local SQLite、自架中央记忆主机、Supabase cloud adapter，或未来
 Vault Cloud。
 
+Vault 可以单独当记忆库用，也可以成为其他 Agent / memory framework 背后的
+受治理记忆后端。你可以只用 CLI、MCP、Gateway 和本机 SQLite；也可以让
+Hermes、OpenClaw、Letta、mem0、Claude Code、Codex 这类框架透过 Vault API
+接进来，由 Vault 统一守住审查、审计、生命周期与后端边界。
+
 它最重要的多 Agent 模型是：**单机共享，多机治理同步**。同一台可信主机上的
 Agent 可以共用一份本地 Vault；不同主机或 hosted Agent 只能读取已批准记忆、
 提交候选记忆。正式记忆、做梦、归档、遗忘、回滚与同步，仍由 trusted sync
@@ -563,6 +568,7 @@ Public Beta / Developer Preview 阶段的已知边界：
 - Supabase、Gateway、central semantic search 是 optional advanced paths，不是本地 source of truth 的必要条件。
 - Remote Semantic Search 默认关闭；若启用且未改设置，默认 query embedding provider 是 OpenAI，搜索文字会送到 OpenAI。
 - Central vectors 只索引 reviewed safe summaries/previews，不让 Supabase 变成 active-memory authority。
+- Provider-backed Memory API adapters 目前仍是 opt-in preview；必须通过 provider adapter promotion gate 后，才可以成为默认 Gateway result authority。
 - Vault Cloud 是未来 managed backend，不是取代 local / self-host / Supabase 的新记忆语义。
 
 ## 开发与测试

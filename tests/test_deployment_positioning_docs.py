@@ -142,9 +142,11 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     positioning = _read("docs/strategy/positioning.md")
     claim_matrix = _read("docs/readme_claim_matrix.md")
     zh_readme = _read("README.zh-Hant.md")
+    zh_cn_readme = _read("README.zh-CN.md")
 
     assert "Vault works standalone" in positioning
     assert "Vault 可以單獨當記憶庫用" in zh_readme
+    assert "Vault 可以单独当记忆库用" in zh_cn_readme
     assert "standalone: agents use Vault directly through CLI, MCP, Gateway" in spec
     assert "foundation: other agent or memory frameworks use Vault" in spec
     assert "The API is additive" in spec
@@ -177,6 +179,16 @@ def test_vault_memory_api_spec_is_additive_and_keeps_vault_standalone():
     assert "before they can become the\n  default Gateway result authority" in spec
     assert "remain opt-in preview\n  adapters" in spec
     assert "legacy Gateway result authority remains the default" in spec
+    assert "Provider-backed Memory API adapters 目前仍是 opt-in preview" in zh_readme
+    assert "才可以成為預設 Gateway result authority" in zh_readme
+    assert "Provider-backed Memory API adapters 目前仍是 opt-in preview" in zh_cn_readme
+    assert "才可以成为默认 Gateway result authority" in zh_cn_readme
+    assert "Remote Semantic Search 預設關閉" in zh_readme
+    assert "搜尋文字會送到 OpenAI" in zh_readme
+    assert "Remote Semantic Search 默认关闭" in zh_cn_readme
+    assert "搜索文字会送到 OpenAI" in zh_cn_readme
+    assert "Vault Cloud 是未來 managed backend" in zh_readme
+    assert "Vault Cloud 是未来 managed backend" in zh_cn_readme
     assert "Vault Memory API plus MCP / Gateway / OpenAPI adapters" in architecture
     assert "Memory Provider Interface / Backend adapter" in architecture
     assert "compatibility facade over current governed behavior" in architecture
