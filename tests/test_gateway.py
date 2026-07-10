@@ -264,8 +264,20 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert provider_read["provider_read_policy_filtering"] is True
         assert provider_read["search_probes_returned_ids_only"] is True
         assert provider_read["returns_provider_raw_rows"] is False
+        provider_adapter = contract["x-vault-memory-api"]["provider_backed_result_adapter"]
+        assert provider_adapter["path"] == "/memory/search"
+        assert provider_adapter["opt_in_field"] == "result_adapter"
+        assert provider_adapter["opt_in_value"] == "provider"
+        assert provider_adapter["default_result_adapter"] == "legacy"
+        assert provider_adapter["status"] == "preview"
+        assert provider_adapter["read_policy_filtering"] is True
+        assert provider_adapter["returns_provider_raw_rows"] is False
+        assert provider_adapter["returns_raw_content"] is False
         assert contract["x-vault-safety"]["max_search_query_chars"] == 1000
-        assert contract["components"]["schemas"]["SearchRequest"]["properties"]["query"]["maxLength"] == 1000
+        search_schema = contract["components"]["schemas"]["SearchRequest"]
+        assert search_schema["properties"]["query"]["maxLength"] == 1000
+        assert search_schema["properties"]["result_adapter"]["default"] == "legacy"
+        assert search_schema["properties"]["result_adapter"]["enum"] == ["legacy", "provider"]
         assert "/remote-semantic-search" in contract["paths"]
         assert "/remote-snapshot-read" in contract["paths"]
         conn.close()
@@ -542,6 +554,25 @@ def test_gateway_memory_api_facade_is_candidate_first_and_metadata_only(tmp_path
     assert "rows" not in search["memory_api"]["provider_read"]
     assert any(row["id"] == public_id for row in search["results"])
 
+    provider_search = gateway_memory_search(
+        project,
+        query="Gateway",
+        agent_id="work-agent",
+        result_adapter="provider",
+    )
+    assert provider_search["status"] == "ok"
+    assert provider_search["memory_api"]["result_adapter"] == "provider"
+    assert provider_search["memory_api"]["provider_backed_result_adapter"] is True
+    assert provider_search["memory_api"]["adapter_status"] == "preview"
+    assert provider_search["memory_api"]["default_result_adapter"] is False
+    assert provider_search["memory_api"]["default_authority"] == "legacy_gateway_policy_filtered"
+    assert provider_search["memory_api"]["results_authority"] == "provider_policy_filtered"
+    assert provider_search["memory_api"]["read_policy_filtering"] is True
+    assert provider_search["memory_api"]["returns_provider_raw_rows"] is False
+    assert provider_search["safety"]["returns_raw_content"] is False
+    assert [row["id"] for row in provider_search["results"]] == [public_id]
+    assert all("content" not in row for row in provider_search["results"])
+
     private_search = gateway_memory_search(project, query="Only the owner should see", agent_id="work-agent")
     assert private_search["status"] == "ok"
     assert private_search["results"] == []
@@ -549,6 +580,29 @@ def test_gateway_memory_api_facade_is_candidate_first_and_metadata_only(tmp_path
     assert private_search["memory_api"]["provider_read"]["returned_ids_present_in_provider"] == []
     assert private_search["memory_api"]["provider_read"]["probes_returned_ids_only"] is True
     assert "provider_result_count" not in private_search["memory_api"]["provider_read"]
+
+    provider_private_denied = gateway_memory_search(
+        project,
+        query="Only the owner should see",
+        agent_id="work-agent",
+        result_adapter="provider",
+    )
+    assert provider_private_denied["status"] == "ok"
+    assert provider_private_denied["results"] == []
+
+    provider_private_owner = gateway_memory_search(
+        project,
+        query="Only the owner should see",
+        agent_id="profile-agent",
+        include_private=True,
+        max_sensitivity="high",
+        result_adapter="provider",
+    )
+    assert provider_private_owner["status"] == "ok"
+    assert provider_private_owner["results"][0]["id"] == _private_id
+    assert provider_private_owner["results"][0]["scope"] == "private"
+    assert provider_private_owner["results"][0]["sensitivity"] == "high"
+    assert "content" not in provider_private_owner["results"][0]
 
     read = gateway_memory_get(project, memory_id=public_id, agent_id="work-agent", line_start=1, line_end=2)
     assert read["status"] == "ok"
@@ -656,6 +710,20 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
         assert search["status"] == "ok"
         assert search["memory_api"]["endpoint"] == "/memory/search"
         assert search["memory_api"]["provider_read"]["returns_provider_raw_rows"] is False
+
+        status, provider_search = _post_json(
+            host,
+            port,
+            "/memory/search",
+            {"agent_id": "work-agent", "query": "Gateway", "limit": 5, "result_adapter": "provider"},
+        )
+        assert status == 200
+        assert provider_search["status"] == "ok"
+        assert provider_search["memory_api"]["result_adapter"] == "provider"
+        assert provider_search["memory_api"]["provider_backed_result_adapter"] is True
+        assert provider_search["memory_api"]["default_result_adapter"] is False
+        assert provider_search["results"][0]["id"] == public_id
+        assert "content" not in provider_search["results"][0]
 
         status, created = _post_json(
             host,

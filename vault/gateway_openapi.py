@@ -230,6 +230,15 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         "limit": {"type": "integer", "default": 10, "minimum": 0, "maximum": 50},
                         "include_private": {"type": "boolean", "default": False},
                         "max_sensitivity": {"type": "string", "default": "low"},
+                        "result_adapter": {
+                            "type": "string",
+                            "enum": ["legacy", "provider"],
+                            "default": "legacy",
+                            "description": (
+                                "Use provider only for the opt-in preview adapter; "
+                                "legacy remains the default result authority."
+                            ),
+                        },
                     },
                 },
                 "ReadRangeRequest": {
@@ -370,6 +379,17 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                 "provider_read_policy_filtering": True,
                 "search_probes_returned_ids_only": True,
                 "returns_provider_raw_rows": False,
+            },
+            "provider_backed_result_adapter": {
+                "path": "/memory/search",
+                "opt_in_field": "result_adapter",
+                "opt_in_value": "provider",
+                "default_result_adapter": "legacy",
+                "status": "preview",
+                "supported_modes": ["auto", "keyword"],
+                "read_policy_filtering": True,
+                "returns_provider_raw_rows": False,
+                "returns_raw_content": False,
             },
             "delete_semantics": "soft_delete_review_candidate_in_gateway_facade",
             "qdrant_boundary": "semantic_index_provider_not_source_of_truth",
