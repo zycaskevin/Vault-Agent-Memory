@@ -583,6 +583,7 @@ Public Beta / Developer Preview 階段的已知邊界：
 - Supabase、Gateway、central semantic search 是 optional advanced paths，不是本地 source of truth 的必要條件。
 - Remote Semantic Search 預設關閉；若啟用且未改設定，預設 query embedding provider 是 OpenAI，搜尋文字會送到 OpenAI。
 - Central vectors 只索引 reviewed safe summaries/previews，不讓 Supabase 變成 active-memory authority。
+- Provider-backed Memory API adapters 目前仍是 opt-in preview；必須通過 provider adapter promotion gate 後，才可以成為預設 Gateway result authority。
 - Vault Cloud 是未來 managed backend，不是取代 local / self-host / Supabase 的新記憶語意。
 
 ## 開發與測試
