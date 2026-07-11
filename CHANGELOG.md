@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## [0.10.1] - 2026-07-11
+
+### Fixed
+
+- Fixed a read-policy activation gap where `include_private=True` without an
+  agent identity could preserve legacy visibility instead of applying private
+  memory ownership and allow-list checks.
+- Added optional `allowed_statuses` filtering to the shared read-policy
+  helper for callers that need an explicit lifecycle-state boundary.
+- Changed Gateway token comparisons to `hmac.compare_digest` for configured
+  token maps, header tokens, bearer tokens, and query tokens.
+- Added provider update validation that blocks protected identity fields and
+  invalid lifecycle status transitions before reaching SQLite.
+
+### Validation
+
+- Added regression coverage for identity-less private reads, explicit status
+  filtering, protected provider fields, and invalid status transitions.
+- Release Readiness CI passed on Python 3.10, 3.11, and 3.12 together with the
+  module-size, build/wheel, installer, Search QA, secret, and history-privacy
+  gates.
+
+### Release boundary
+
+- This is a focused Public Beta safety patch. It does not change provider
+  authority, enable Remote Semantic Search by default, or add multi-master
+  active-memory writes.
+- The proposed vector-index auto-batch feature remains deferred until it has
+  bounded and no-progress termination safeguards.
+- The proposed v0.8.0 to v0.10.x upgrade guide remains deferred until every
+  documented command and environment variable is executable-smoke tested.
+
 ## [0.10.0] - 2026-07-10
 
 ### Maturity
