@@ -45,6 +45,28 @@ def test_read_policy_private_and_restricted_rules():
     assert can_read_memory(restricted_row, product_agent_private) is False
 
 
+def test_include_private_without_agent_does_not_restore_legacy_visibility():
+    private_row = {
+        "scope": "private",
+        "sensitivity": "high",
+        "owner_agent": "profile-agent",
+        "allowed_agents": '["work-agent"]',
+    }
+
+    policy = normalize_read_policy(include_private=True)
+
+    assert policy.active is True
+    assert can_read_memory(private_row, policy) is False
+
+
+def test_read_policy_can_restrict_memory_status_explicitly():
+    active_only = normalize_read_policy(allowed_statuses=("active",))
+
+    assert can_read_memory({"status": "active"}, active_only) is True
+    assert can_read_memory({"status": "archived"}, active_only) is False
+    assert can_read_memory({"status": "deleted"}, active_only) is False
+
+
 def test_write_policy_requires_explicit_shared_and_sensitive_flags():
     default_policy = normalize_write_policy()
     shared = {"scope": "shared", "sensitivity": "low"}

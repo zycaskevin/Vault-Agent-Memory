@@ -170,3 +170,29 @@ def test_sqlite_memory_provider_applies_read_policy_filtering(tmp_path):
     assert provider.get_memory(private_id, agent_id="work-agent", include_private=True)["id"] == private_id
     assert provider.get_memory(restricted_id, agent_id="product-agent") is None
     assert provider.get_memory(restricted_id, agent_id="work-agent")["id"] == restricted_id
+
+
+def test_sqlite_memory_provider_blocks_protected_fields_and_invalid_status_transitions(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    db_path = project / "vault.db"
+    with VaultDB(db_path) as db:
+        memory_id = db.add_knowledge(
+            title="Protected provider memory",
+            content_raw="Provider updates must preserve identity fields.",
+        )
+
+    provider = sqlite_memory_provider(project)
+
+    protected = provider.update_memory(memory_id, actor_agent="provider-agent", id=999)
+    invalid_transition = provider.update_memory(
+        memory_id,
+        actor_agent="provider-agent",
+        status="candidate",
+    )
+
+    assert protected["status"] == "blocked"
+    assert protected["error"] == "protected_field:id"
+    assert invalid_transition["status"] == "blocked"
+    assert invalid_transition["error"] == "invalid_status_transition:active->candidate"
+    assert provider.get_memory(memory_id)["id"] == memory_id

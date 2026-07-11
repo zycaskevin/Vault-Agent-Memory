@@ -41,10 +41,11 @@ class ReadPolicy:
     agent_id: str = ""
     include_private: bool = False
     max_sensitivity: str = ""
+    allowed_statuses: tuple[str, ...] = ()
 
     @property
     def active(self) -> bool:
-        return bool(self.agent_id or self.max_sensitivity)
+        return bool(self.agent_id or self.max_sensitivity or self.include_private or self.allowed_statuses)
 
 
 def normalize_read_policy(
@@ -52,25 +53,58 @@ def normalize_read_policy(
     agent_id: Any = "",
     include_private: Any = False,
     max_sensitivity: Any = "",
+    allowed_statuses: Any = None,
 ) -> ReadPolicy:
     sensitivity = str(max_sensitivity or "").strip().lower()
     if sensitivity and sensitivity not in SENSITIVITY_RANK:
         sensitivity = ""
+    statuses = _normalize_statuses(allowed_statuses)
     return ReadPolicy(
         agent_id=_normalize_agent(agent_id),
         include_private=bool(include_private),
         max_sensitivity=sensitivity,
+        allowed_statuses=statuses,
     )
+
+
+def _normalize_statuses(statuses: Any) -> tuple[str, ...]:
+    """Parse allowed_statuses into a tuple of lowercase status strings.
+
+    Returns empty tuple if no status filter is set (backward-compatible default).
+    When non-empty, only rows with matching status pass the read policy filter.
+
+    Example usage for knowledge tables:
+        allowed_statuses=("active",)
+    Example usage for candidates:
+        allowed_statuses=("candidate", "reviewed")
+    """
+    if statuses is None:
+        return ()
+    if isinstance(statuses, str):
+        if not statuses.strip():
+            return ()
+        parts = [s.strip().lower() for s in statuses.split(",") if s.strip()]
+        return tuple(parts)
+    if isinstance(statuses, (list, tuple, set)):
+        parts = [str(s).strip().lower() for s in statuses if str(s).strip()]
+        return tuple(parts)
+    return ()
 
 
 def can_read_memory(row: dict[str, Any], policy: ReadPolicy) -> bool:
     """Return whether a knowledge row is visible under a local read policy.
 
-    The policy is opt-in. Without `agent_id` or `max_sensitivity`, legacy local
-    behavior is preserved and all rows remain visible.
+    The policy is opt-in. Without `agent_id`, `max_sensitivity`, or `include_private`,
+    legacy local behavior is preserved and all rows remain visible.
     """
     if not policy.active:
         return True
+
+    # Status filter (optional - only applied when explicitly set)
+    if policy.allowed_statuses:
+        status = str(row.get("status") or "active").strip().lower()
+        if status not in policy.allowed_statuses:
+            return False
 
     sensitivity = str(row.get("sensitivity") or "low").strip().lower()
     sensitivity_rank = SENSITIVITY_RANK.get(sensitivity, 0)

@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
+import hmac
 import json
 import os
 from pathlib import Path
@@ -629,19 +630,27 @@ def make_gateway_handler(
 
         def _is_authorized(self, parsed) -> bool:
             presented = self._presented_token(parsed)
-            if presented and presented in token_agents:
-                return True
+            if presented and token_agents:
+                for known_token in token_agents:
+                    if hmac.compare_digest(str(presented), str(known_token)):
+                        return True
             if token_agents and not token:
                 return False
             if not token:
                 return True
-            if str(self.headers.get("X-Vault-Gateway-Token", "")) == token:
+            header_token = str(self.headers.get("X-Vault-Gateway-Token", ""))
+            if header_token and hmac.compare_digest(header_token, str(token)):
                 return True
             auth = str(self.headers.get("Authorization", ""))
-            if auth == f"Bearer {token}":
+            bearer_token = f"Bearer {token}"
+            if auth and len(auth) == len(bearer_token) and hmac.compare_digest(auth, bearer_token):
                 return True
             query = parse_qs(parsed.query)
-            return bool(query.get("token") and str(query["token"][0]) == token)
+            query_tokens = query.get("token", [])
+            if query_tokens:
+                qt = str(query_tokens[0])
+                return bool(qt and len(qt) == len(str(token)) and hmac.compare_digest(qt, str(token)))
+            return False
 
         def _transport_guard(self, parsed) -> tuple[dict[str, Any], HTTPStatus] | None:
             client_ip = self._client_ip()

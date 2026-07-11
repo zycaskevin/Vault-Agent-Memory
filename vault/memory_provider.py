@@ -21,6 +21,47 @@ from .search_utils import normalize_search_limit
 
 MEMORY_PROVIDER_INTERFACE_VERSION = "2026-07-09"
 
+# Fields that must never be directly modified through update_memory
+_PROTECTED_UPDATE_FIELDS = frozenset({
+    "id",
+    "created_at",
+    "memory_id",
+    "actor_agent",  # handled separately via parameter
+})
+
+# Valid status transitions for active memory
+_VALID_STATUS_TRANSITIONS: dict[str, set[str]] = {
+    "active": {"archived", "deleted", "active"},
+    "archived": {"active", "deleted", "archived"},
+    "deleted": {"active", "deleted"},
+    "reviewed": {"active", "archived", "deleted", "reviewed"},
+    "candidate": {"active", "archived", "deleted", "reviewed", "candidate"},
+}
+
+
+def _validate_update_fields(before: dict[str, Any], fields: dict[str, Any]) -> tuple[bool, str]:
+    """Validate update fields against business rules.
+
+    Returns (ok, error_message). Protected fields and invalid status
+    transitions are blocked before reaching the DB layer.
+    """
+    # Block protected fields
+    for field in _PROTECTED_UPDATE_FIELDS:
+        if field in fields:
+            return False, f"protected_field:{field}"
+
+    # Validate status transition
+    if "status" in fields:
+        old_status = str(before.get("status") or "active").strip().lower()
+        new_status = str(fields["status"] or "").strip().lower()
+        if not new_status:
+            return False, "invalid_status:empty"
+        valid_next = _VALID_STATUS_TRANSITIONS.get(old_status, set())
+        if new_status not in valid_next:
+            return False, f"invalid_status_transition:{old_status}->{new_status}"
+
+    return True, ""
+
 MEMORY_PROVIDER_OPERATIONS = [
     "create_candidate",
     "search_active",
@@ -229,6 +270,9 @@ class SQLiteMemoryProvider:
             before = db.get_knowledge(int(memory_id))
             if not before:
                 return {"status": "blocked", "error": "memory_not_found", "memory_id": int(memory_id)}
+            ok, err = _validate_update_fields(before, fields)
+            if not ok:
+                return {"status": "blocked", "error": err, "memory_id": int(memory_id)}
             changed = db.update_knowledge(int(memory_id), **fields)
             if changed:
                 record_audit_event(
