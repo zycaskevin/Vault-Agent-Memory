@@ -1,86 +1,64 @@
 name: Bug report
-description: Report a reproducible Vault Agent Memory problem.
+description: Report a reproducible problem in Vault Agent Memory
 title: "[Bug]: "
-labels: ["bug", "needs-triage"]
+labels:
+  - bug
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for reporting a bug. Please do not include real API keys, tokens,
-        customer data, medical data, private chat logs, or production vault
-        exports.
-  - type: textarea
-    id: summary
-    attributes:
-      label: What happened?
-      description: Describe the problem in a few sentences.
-      placeholder: "Example: vault setup-agent generated a schedule, but daily-report did not run."
-    validations:
-      required: true
-  - type: textarea
-    id: expected
-    attributes:
-      label: What did you expect?
-      placeholder: "Example: daily-report should be created under reports/automation."
-    validations:
-      required: true
-  - type: textarea
-    id: reproduce
-    attributes:
-      label: Steps to reproduce
-      description: Use the smallest safe reproduction you can share.
-      placeholder: |
-        1. Run ...
-        2. Then ...
-        3. See ...
-    validations:
-      required: true
-  - type: dropdown
-    id: area
-    attributes:
-      label: Area
-      options:
-        - Install / setup-agent
-        - CLI
-        - MCP
-        - Gateway / remote server
-        - Supabase / sync
-        - Obsidian
-        - GUI / dashboard
-        - Search / retrieval
-        - Memory candidates / automation
-        - Privacy / security
-        - Documentation
-        - Other
-    validations:
-      required: true
+        Thanks for helping improve Vault Agent Memory. Never include real secrets, patient data, customer data, private memory content, or production database files.
   - type: input
     id: version
     attributes:
       label: Vault version
-      description: Output of `vault --version`, package version, or commit SHA.
-      placeholder: "0.7.27 or main@abc123"
+      description: Run `vault --version`.
+      placeholder: vault-for-llm 0.10.1
     validations:
-      required: false
-  - type: input
-    id: python
+      required: true
+  - type: dropdown
+    id: surface
     attributes:
-      label: Python version and OS
-      placeholder: "Python 3.11 on macOS 15 / Ubuntu 24.04 / Windows 11"
+      label: Surface
+      options:
+        - CLI
+        - MCP
+        - Gateway / Remote Server
+        - SQLite / migration
+        - Supabase / central memory
+        - Semantic search
+        - Obsidian import or export
+        - Documentation or installer
+        - Other
     validations:
-      required: false
+      required: true
   - type: textarea
-    id: logs
+    id: summary
     attributes:
-      label: Relevant output
-      description: Paste redacted logs or command output.
+      label: Problem
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Provide sanitized commands or code and the smallest reproducible project.
       render: shell
     validations:
-      required: false
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Sanitized output
+      description: Remove tokens, paths containing personal names, raw memory, and private project data.
+      render: text
   - type: checkboxes
     id: safety
     attributes:
       label: Safety check
       options:
-        - label: I removed secrets, tokens, private chat logs, and sensitive personal data from this report.
+        - label: I removed secrets and private or identifying data.
+          required: true
+        - label: I confirmed whether this also occurs on the latest published version.
           required: true

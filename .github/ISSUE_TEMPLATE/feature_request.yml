@@ -1,69 +1,60 @@
 name: Feature request
-description: Propose a new Vault Agent Memory capability or integration.
+description: Propose a focused improvement with clear governance boundaries
 title: "[Feature]: "
-labels: ["enhancement", "needs-triage"]
+labels:
+  - enhancement
 body:
   - type: markdown
     attributes:
       value: |
-        Feature requests are easiest to evaluate when they name the Agent
-        workflow, the memory-governance problem, and the expected user path.
+        Vault is a local-first, candidate-first memory governance layer. Please describe the user problem before proposing a backend or framework.
   - type: textarea
     id: problem
     attributes:
-      label: What problem should this solve?
-      placeholder: "Example: I use Claude Code and n8n on the same machine, but I cannot see which Agent created a memory candidate."
+      label: User problem
+      description: Who needs this, and what cannot they do today?
     validations:
       required: true
   - type: textarea
-    id: proposal
+    id: outcome
     attributes:
-      label: Proposed behavior
-      placeholder: "Example: Add a dashboard card that groups memory candidates by owner_agent."
+      label: Desired outcome
+      description: What observable result would count as done?
     validations:
       required: true
   - type: dropdown
-    id: area
+    id: boundary
     attributes:
-      label: Area
+      label: Main area
       options:
-        - Agent install / setup
+        - Local CLI or SQLite
         - MCP integration
-        - Gateway / remote server
-        - Supabase / sync
-        - Obsidian-as-GUI
-        - Daily report / automation
-        - Memory governance
-        - Search / retrieval
-        - Migration from another memory tool
-        - Documentation / examples
+        - Memory governance or review
+        - Gateway or remote read
+        - Supabase or central memory
+        - Semantic retrieval
+        - Obsidian
+        - Documentation or onboarding
+        - Contributor experience
         - Other
     validations:
       required: true
   - type: textarea
-    id: agent
+    id: safety
     attributes:
-      label: Agent or tool involved
-      description: Name the Agent client, automation tool, or platform if relevant.
-      placeholder: "Codex, Claude Code, Hermes, OpenClaw, Coze, n8n, Cursor, Obsidian, etc."
-    validations:
-      required: false
-  - type: dropdown
-    id: scope
-    attributes:
-      label: Change size
-      options:
-        - Small docs or example
-        - Small behavior change
-        - New command or MCP tool
-        - Schema or security-sensitive change
-        - Not sure
+      label: Privacy and authority impact
+      description: Could this change permissions, private reads, active-memory writes, external data transfer, or source-of-truth behavior?
     validations:
       required: true
-  - type: checkboxes
-    id: planning
+  - type: textarea
+    id: alternatives
     attributes:
-      label: Planning check
+      label: Smallest useful version
+      description: Describe the smallest low-risk implementation and any alternatives considered.
+  - type: checkboxes
+    id: release_boundary
+    attributes:
+      label: Release boundary
       options:
-        - label: I understand that large schema, security, Gateway, sync, or automation-policy changes should be discussed before implementation.
+        - label: This request does not assume multi-master, Vault Cloud, or direct remote active-memory writes unless explicitly justified.
           required: true
