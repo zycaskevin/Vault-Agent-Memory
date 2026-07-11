@@ -158,6 +158,15 @@ vault quickstart
 vault guide --intent install
 ```
 
+若要在不修改環境的前提下檢查新版本：
+
+```bash
+vault upgrade --check
+```
+
+Vault 會辨識常見的 pip、pipx、uv tool 與 editable 安裝，並顯示對應的升級指令。
+第一階段只做檢查，不會自行安裝套件，也不會遷移 `vault.db`。
+
 ## 每天怎麼用
 
 已經在用 Agent 的 builder，不應該每天為了記憶庫打指令。理想流程是：

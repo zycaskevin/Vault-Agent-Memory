@@ -100,6 +100,7 @@ from .cli_quality import (
     cmd_search_qa,
 )
 from .cli_sync import add_sync_parser, cmd_sync
+from .cli_upgrade import cmd_upgrade as _cmd_upgrade_impl
 from .cli_memory_station import (
     add_memory_station_parsers,
     cmd_memory_lifecycle,
@@ -211,6 +212,13 @@ def main(argv: list[str] | None = None):
     # init
     p = sub.add_parser("init", help="初始化專案")
     p.add_argument("project_dir", nargs="?", default=".")
+    p.add_argument("--json", action="store_true", help="輸出 JSON")
+    p.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+
+    # upgrade — safe package update check (phase one; never mutates)
+    p = sub.add_parser("upgrade", help="檢查 PyPI 新版本並顯示安全升級指令（不自動修改）")
+    p.add_argument("--check", action="store_true", help="明確執行唯讀版本檢查；目前也是預設行為")
+    p.add_argument("--latest-version", default="", help="手動提供最新版本，用於離線比較")
     p.add_argument("--json", action="store_true", help="輸出 JSON")
     p.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
 
@@ -1161,6 +1169,7 @@ def main(argv: list[str] | None = None):
         "ops": lambda parsed: cmd_ops(parsed, json_print=_json_print),
         "install-embedding": cmd_install_embedding,
         "update-status": cmd_update_status,
+        "upgrade": lambda parsed: _cmd_upgrade_impl(parsed, json_print=_json_print),
         "agent": cmd_agent,
         "quickstart": cmd_quickstart,
         "setup-agent": cmd_setup_agent,
