@@ -17,6 +17,18 @@ from vault.agent_registry import fetch_latest_pypi_version, is_newer_version
 PACKAGE_NAME = "vault-for-llm"
 
 
+def add_upgrade_parser(subparsers) -> None:
+    """Register the check-only upgrade command without growing the main CLI module."""
+    parser = subparsers.add_parser(
+        "upgrade",
+        help="檢查 PyPI 新版本並顯示安全升級指令（不自動修改）",
+    )
+    parser.add_argument("--check", action="store_true", help="明確執行唯讀版本檢查；目前也是預設行為")
+    parser.add_argument("--latest-version", default="", help="手動提供最新版本，用於離線比較")
+    parser.add_argument("--json", action="store_true", help="輸出 JSON")
+    parser.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
+
+
 def _installed_direct_url() -> dict[str, Any]:
     """Read PEP 610 install metadata when the distribution provides it."""
     try:
