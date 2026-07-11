@@ -239,6 +239,20 @@ def test_release_notes_promote_memory_foundation_followup_to_010():
     assert "Vault is a multi-master cloud memory database" in followup
 
 
+
+def test_0101_release_is_a_focused_safety_patch():
+    changelog = _read("CHANGELOG.md")
+    announcement = _read("docs/announcements/v0.10.1-short.md")
+
+    assert "## [0.10.1] - 2026-07-11" in changelog
+    assert "include_private=True" in changelog
+    assert "hmac.compare_digest" in changelog
+    assert "does not change provider" in changelog
+    assert "v0.10.1 is a focused safety patch" in announcement
+    assert "vault-for-llm[mcp,supabase]==0.10.1" in announcement
+    assert "Remote Semantic Search remains disabled by default" in announcement
+    assert "Gateway startup already" in announcement
+
 def test_provider_adapter_default_promotion_criteria_are_explicit():
     criteria = _read("docs/specs/provider_adapter_default_promotion.md")
     changelog = _read("CHANGELOG.md")
