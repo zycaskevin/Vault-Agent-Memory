@@ -253,6 +253,18 @@ def test_0101_release_is_a_focused_safety_patch():
     assert "Remote Semantic Search remains disabled by default" in announcement
     assert "Gateway startup already" in announcement
 
+
+def test_0102_release_adds_safe_upgrade_check():
+    changelog = _read("CHANGELOG.md")
+    announcement = _read("docs/announcements/v0.10.2-short.md")
+
+    assert "## [0.10.2] - 2026-07-12" in changelog
+    assert "`vault upgrade` and `vault upgrade --check`" in changelog
+    assert "v0.10.2 adds a safe way to check" in announcement
+    assert "vault-for-llm[mcp,supabase]==0.10.2" in announcement
+    assert "does not auto-upgrade Vault" in announcement
+
+
 def test_provider_adapter_default_promotion_criteria_are_explicit():
     criteria = _read("docs/specs/provider_adapter_default_promotion.md")
     changelog = _read("CHANGELOG.md")
