@@ -196,6 +196,16 @@ You can also print the install prompt from Vault itself:
 vault guide --intent install
 ```
 
+To check for a newer release without changing the environment:
+
+```bash
+vault upgrade --check
+```
+
+Vault detects common pip, pipx, uv tool, and editable installs and prints the
+appropriate upgrade command. This first-stage command is check-only: it does
+not install packages or migrate `vault.db`.
+
 `vault quickstart` is the small first-run wizard. It asks only for language,
 independent/shared memory, optional Obsidian/Supabase connections, and daily
 report time. See [docs/quickstart.md](docs/quickstart.md) for the 5-minute

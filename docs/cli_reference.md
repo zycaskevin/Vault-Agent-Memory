@@ -182,6 +182,9 @@ changed notes without duplicating unchanged ones.
 | `vault setup-agent --non-interactive --agent automation-agent --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,memory_agents --automation-schedule cron --automation-apply --automation-auto-promote-low-risk --json` | Write `automation_policy.yaml` for low-risk session-capture auto-promotion and generate a scheduled cycle that can apply it |
 | `vault setup-agent --obsidian-vault ~/Documents/ObsidianVault --import-obsidian --obsidian-sync all` | Run first Obsidian import and write cron, LaunchAgent, and n8n templates |
 | `vault update-status` | Show installed Vault version, local Agent registry, project vaults, per-Agent update notices, and startup handoff commands |
+| `vault upgrade --check` | Check PyPI for a newer Vault release and print the correct pip, pipx, uv tool, or editable-install guidance without changing the environment |
+| `vault upgrade --check --json` | Return the same check-only upgrade plan as machine-readable JSON |
+| `vault upgrade --latest-version 0.10.2` | Compare against a manually supplied version when PyPI is unavailable |
 | `vault update-status --check-pypi --write-status --json` | Check PyPI for the latest release and write the machine-level update notice to `~/.vault-for-llm/update-status.json` |
 | `vault update-status --read-status --json` | Read the existing machine-level update notice without recomputing or contacting PyPI |
 | `vault update-status --read-status --agent codex --json` | Read the shared notice and add a focused startup checklist for one Agent/runtime |
@@ -210,6 +213,9 @@ and writes status, other local runtimes can see whether their registered
 environment is behind the current or latest known version.
 Use `vault agent doctor` after upgrades to verify the shared notice is fresh and
 all registered runtimes appear in the update notice.
+`vault upgrade` is intentionally check-only in this release. It never invokes a
+package manager or migrates a database; review and run the recommended command,
+then use `vault --version` and `vault doctor` to verify the upgraded runtime.
 MCP-capable runtimes can call `vault_update_status` and
 `vault_automation_handoff` from the `core` profile for the same startup path.
 They can also call `vault_update_status` with `doctor=true` and their

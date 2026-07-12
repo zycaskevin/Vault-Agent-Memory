@@ -213,10 +213,9 @@ def main(argv: list[str] | None = None):
     p.add_argument("project_dir", nargs="?", default=".")
     p.add_argument("--json", action="store_true", help="輸出 JSON")
     p.add_argument("--pretty", action="store_true", help="縮排 JSON 輸出")
-
+    __import__("vault.cli_upgrade", fromlist=["add_upgrade_parser"]).add_upgrade_parser(sub)
     # add
     from vault.cli_common import add_governance_args
-
     p = sub.add_parser("add", help="新增知識")
     p.add_argument("title", help="標題")
     p.add_argument("--content", "-c", default=None, help="內容；省略時讀 stdin")
@@ -1161,6 +1160,7 @@ def main(argv: list[str] | None = None):
         "ops": lambda parsed: cmd_ops(parsed, json_print=_json_print),
         "install-embedding": cmd_install_embedding,
         "update-status": cmd_update_status,
+        "upgrade": lambda parsed: __import__("vault.cli_upgrade", fromlist=["cmd_upgrade"]).cmd_upgrade(parsed, json_print=_json_print),
         "agent": cmd_agent,
         "quickstart": cmd_quickstart,
         "setup-agent": cmd_setup_agent,
