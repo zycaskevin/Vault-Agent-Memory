@@ -1,5 +1,31 @@
 # CHANGELOG
 
+## [0.10.2] - 2026-07-12
+
+### Added
+
+- Added `vault upgrade` and `vault upgrade --check` as a safe, check-only
+  release discovery path for users and Agent runtimes.
+- Added install-method detection for pip, pipx, uv tool, and editable source
+  installs so the CLI can print the appropriate upgrade command.
+- Added `--latest-version` for offline comparisons and JSON/pretty JSON output
+  for automation.
+
+### Safety boundary
+
+- The first-stage upgrade command never invokes a package manager, changes the
+  Python environment, or migrates `vault.db`.
+- Upgrade results explicitly report `automatic_upgrade: false` and
+  `changes_made: false`.
+
+### Validation
+
+- PR #396 passed all 28 GitHub checks, including Python 3.10, 3.11, and 3.12,
+  module-size, build/wheel, installer, secret, and history-privacy gates.
+- Added regression coverage for online and offline version checks, pip/pipx/uv
+  tool/editable detection, JSON output, current-version behavior, and PyPI
+  failure reporting.
+
 ## [0.10.1] - 2026-07-11
 
 ### Fixed

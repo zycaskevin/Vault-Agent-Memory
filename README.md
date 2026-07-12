@@ -38,7 +38,7 @@ New here? Start with the visual demo:
 
 ## Release Maturity
 
-Vault Agent Memory v0.10.1 is a **Public Beta / Developer Preview** release.
+Vault Agent Memory v0.10.2 is a **Public Beta / Developer Preview** release.
 The local-first path is ready for agent developers to try in real projects, and
 the multi-agent model is intentionally conservative:
 
@@ -161,7 +161,7 @@ In plain language:
 Copy this prompt into an agent that can run local commands:
 
 ```text
-Install Vault Agent Memory for this project. Use vault-for-llm[mcp]==0.10.1.
+Install Vault Agent Memory for this project. Use vault-for-llm[mcp]==0.10.2.
 Use the agent-assisted governed-auto memory mode.
 
 Do not show advanced CLI flags first. Ask me only four questions:
@@ -186,7 +186,7 @@ The agent will usually run:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-pip install "vault-for-llm[mcp]==0.10.1"
+pip install "vault-for-llm[mcp]==0.10.2"
 vault quickstart
 ```
 
@@ -381,7 +381,7 @@ Source: [`scripts/install.sh`](scripts/install.sh) · [`scripts/install.ps1`](sc
 ## Developer Quickstart
 
 ```bash
-pip install "vault-for-llm[mcp]==0.10.1"
+pip install "vault-for-llm[mcp]==0.10.2"
 
 vault init ~/Vaults/demo
 vault add "First lesson" \
@@ -554,7 +554,7 @@ machines need a filtered read copy and candidate inbox without operating a
 central host:
 
 ```bash
-pip install "vault-for-llm[supabase]==0.10.1"
+pip install "vault-for-llm[supabase]==0.10.2"
 vault remote status --project-dir ~/Vaults/my-project
 python -m scripts.sync_to_supabase --db ~/Vaults/my-project/vault.db --document-map --health
 ```
