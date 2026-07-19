@@ -83,21 +83,29 @@ def run_external_memory_retrieval(
     if not cases:
         raise ValueError("no evidence-bearing cases found")
 
+    requested_embed_provider = str(embed_provider or "")
     with _maybe_temp_db(db_path) as actual_db_path:
         db_reused = bool(reuse_db and actual_db_path.exists())
-        index_latency_ms = 0.0
+        storage_index_latency_ms = 0.0
         if not db_reused:
             index_start = time.perf_counter()
             _build_vault_db(actual_db_path, documents)
-            index_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
-        embed_provider = _prepare_semantic_provider(
+            storage_index_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
+        semantic_index_start = time.perf_counter()
+        semantic_provider = _prepare_semantic_provider(
             db_path=actual_db_path,
             mode=mode,
-            embed_provider_name=embed_provider,
+            embed_provider_name=requested_embed_provider,
             embed_model=embed_model,
             allow_hash=allow_hash,
             hash_dim=hash_dim,
         )
+        semantic_index_latency_ms = (
+            round((time.perf_counter() - semantic_index_start) * 1000, 3)
+            if mode in {"semantic", "hybrid"} and semantic_provider is not None
+            else 0.0
+        )
+        index_latency_ms = round(storage_index_latency_ms + semantic_index_latency_ms, 3)
         case_results = _evaluate_cases(
             db_path=actual_db_path,
             cases=cases,
@@ -105,7 +113,7 @@ def run_external_memory_retrieval(
             limit=limit,
             search_scope=search_scope,
             progress_every=progress_every,
-            embed_provider=embed_provider,
+            embed_provider=semantic_provider,
             semantic_vector_kind=semantic_vector_kind,
             allow_hash=allow_hash,
         )
@@ -120,14 +128,16 @@ def run_external_memory_retrieval(
         "granularity": granularity,
         "search_scope": search_scope,
         "semantic_vector_kind": semantic_vector_kind,
-        "embed_provider": embed_provider or None,
-        "embed_model": embed_model if embed_provider else None,
+        "embed_provider": requested_embed_provider or ("deterministic-hash" if allow_hash else None),
+        "embed_model": embed_model if requested_embed_provider else None,
         "allow_hash": bool(allow_hash),
         "hash_dim": int(hash_dim) if allow_hash else None,
         "db_path": str(actual_db_path),
         "db_reused": db_reused,
         "documents_indexed": len(documents),
         "index_latency_ms": index_latency_ms,
+        "storage_index_latency_ms": storage_index_latency_ms,
+        "semantic_index_latency_ms": semantic_index_latency_ms,
         "cases_total": len(cases),
         "aggregate": _aggregate(case_results),
         "cases": case_results,
@@ -330,7 +340,6 @@ def _format_turn(
             f"turn_index: {turn_idx}",
             f"role: {turn.get('role', '')}",
             f"content: {turn.get('content', '')}",
-            "has_answer: true" if turn.get("has_answer") is True else "",
         )
         if part
     )

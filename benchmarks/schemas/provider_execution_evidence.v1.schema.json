@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zycaskevin/Vault-Agent-Memory/benchmarks/schemas/provider_execution_evidence.v1.schema.json",
+  "title": "Provider Execution Evidence v1",
+  "description": "Post-teardown lifecycle evidence cryptographically bound to one external-memory run artifact.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "system",
+    "run_artifact_digest",
+    "run_id",
+    "provider_observed",
+    "isolation",
+    "dependencies",
+    "lifecycle"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "artifact_type": {"const": "provider_execution_evidence"},
+    "system": {"type": "string", "minLength": 1},
+    "run_artifact_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "run_id": {"type": "string", "minLength": 1},
+    "provider_observed": {
+      "type": "object",
+      "required": ["version", "embedding_provider", "embedding_model", "embedding_dims"],
+      "properties": {
+        "version": {"type": "string", "minLength": 1},
+        "embedding_provider": {"type": "string", "minLength": 1},
+        "embedding_model": {"type": "string", "minLength": 1},
+        "embedding_dims": {"type": "integer", "minimum": 1}
+      },
+      "additionalProperties": true
+    },
+    "isolation": {
+      "type": "object",
+      "required": [
+        "fresh_store_id_digest",
+        "store_root_digest",
+        "worker_registration_id_digest",
+        "memory_count_before",
+        "fresh_store_created"
+      ],
+      "properties": {
+        "fresh_store_id_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "store_root_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "worker_registration_id_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "memory_count_before": {"const": 0},
+        "fresh_store_created": {"const": true}
+      },
+      "additionalProperties": true
+    },
+    "dependencies": {
+      "type": "object",
+      "required": ["provider_lock_digest", "provider_tree_digest"],
+      "properties": {
+        "provider_lock_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "provider_tree_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+      },
+      "additionalProperties": true
+    },
+    "lifecycle": {
+      "type": "object",
+      "required": [
+        "server_started",
+        "readiness_passed",
+        "adapter_errors",
+        "adapter_timeouts",
+        "server_stopped",
+        "ports_closed"
+      ],
+      "properties": {
+        "server_started": {"const": true},
+        "readiness_passed": {"const": true},
+        "adapter_errors": {"const": 0},
+        "adapter_timeouts": {"const": 0},
+        "server_stopped": {"const": true},
+        "ports_closed": {"const": true}
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

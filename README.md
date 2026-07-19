@@ -297,6 +297,11 @@ contract:
 
 - **Search QA**: source-hit, MRR, no-result, and citation-boundary checks for
   retrieval evidence, not final answer quality.
+- **[Memory-foundation benchmark](docs/memory_foundation_benchmarks.md)**:
+  paired external-engine `A` versus engine-plus-Vault `A+B` Valid Recall,
+  forbidden-exposure, latency, and cost deltas, plus a fixed-clock dynamic
+  governance suite. Synthetic contract data is kept separate from live provider
+  claims.
 - **README command smoke**: public README commands are exercised so install and
   quickstart examples do not drift.
 - **Release gates**: pytest, release parity, public-boundary checks, package

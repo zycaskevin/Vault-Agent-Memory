@@ -15,10 +15,14 @@ judge pipeline.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import math
 import os
+import platform
 import re
 import statistics
+import subprocess
 import sys
 import tempfile
 import time
@@ -53,6 +57,76 @@ ENGINEERING_CAPABILITIES = (
     "audit",
 )
 
+PROVIDER_GOVERNANCE_FIELDS = (
+    "approval_state",
+    "status",
+    "scope",
+    "sensitivity",
+    "owner_agent",
+    "allowed_agents",
+    "memory_type",
+    "expires_at",
+    "valid_from",
+    "valid_until",
+    "privacy_status",
+    "supersedes_id",
+)
+PROVIDER_DOCUMENT_FIELDS = (
+    "id",
+    "source",
+    "source_ref",
+    "title",
+    "content",
+    "category",
+    "tags",
+    "layer",
+    "trust",
+    *PROVIDER_GOVERNANCE_FIELDS,
+)
+PROVIDER_CASE_FIELDS = (
+    "id",
+    "query",
+    "search_category",
+    "agent_id",
+    "include_private",
+    "max_sensitivity",
+    "as_of",
+)
+
+
+def benchmark_source_manifest(adapter_path: str | Path) -> dict[str, Any]:
+    """Capture the benchmark source state at provider-run creation time."""
+    git_sha = ""
+    git_dirty: bool | None = None
+    try:
+        git_sha = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=REPO_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        git_dirty = bool(
+            subprocess.run(
+                ["git", "status", "--porcelain"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+        )
+    except (OSError, subprocess.CalledProcessError):
+        pass
+    adapter = Path(adapter_path)
+    lock_path = REPO_ROOT / "uv.lock"
+    return {
+        "git_sha": git_sha,
+        "git_dirty": git_dirty,
+        "adapter_file": adapter.name,
+        "adapter_digest": _file_digest(adapter) if adapter.exists() else "",
+        "dependency_lock_digest": _file_digest(lock_path) if lock_path.exists() else "",
+    }
+
 
 def export_fixture(
     *,
@@ -73,7 +147,8 @@ def export_fixture(
         "artifact_type": "external_memory_comparison_fixture",
         "generated_at": _utc_now(),
         "benchmark": benchmark,
-        "input_path": str(Path(input_path)),
+        "input_file_name": Path(input_path).name,
+        "input_file_digest": _file_digest(Path(input_path)),
         "granularity": granularity,
         "documents_total": len(documents),
         "cases_total": len(cases),
@@ -84,6 +159,46 @@ def export_fixture(
             "final_qa": "Non-official normalized exact/contains/token-F1 answer metrics.",
         },
     }
+    payload["fixture_digest"] = fixture_digest(payload)
+    if output_path:
+        write_json(output_path, payload)
+    return payload
+
+
+def export_provider_input(
+    *,
+    fixture_path: str | Path,
+    output_path: str | Path | None = None,
+) -> dict[str, Any]:
+    """Create an adapter input that excludes scorer gold labels and answers."""
+    fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
+    _validate_fixture_integrity(fixture)
+    evaluation_digest = str(fixture.get("fixture_digest") or fixture_digest(fixture))
+    payload = {
+        "schema_version": 1,
+        "artifact_type": "external_memory_comparison_fixture",
+        "generated_at": _utc_now(),
+        "benchmark": fixture.get("benchmark"),
+        "fixture_version": fixture.get("fixture_version"),
+        "fixed_clock": fixture.get("fixed_clock"),
+        "granularity": fixture.get("granularity"),
+        "provider_input": True,
+        "gold_labels_excluded": True,
+        "fixture_digest": evaluation_digest,
+        "documents": [_provider_document(document) for document in fixture.get("documents", [])],
+        "cases": [
+            {field: case[field] for field in PROVIDER_CASE_FIELDS if field in case}
+            for case in fixture.get("cases", [])
+        ],
+        "documents_total": len(fixture.get("documents", [])),
+        "cases_total": len(fixture.get("cases", [])),
+        "notes": [
+            "Provider-process input only; expected answers, expected sources, forbidden sources, and scorer metadata are excluded.",
+            "fixture_digest identifies the separate gold evaluation fixture; provider_input_digest identifies this redacted file.",
+        ],
+    }
+    payload["provider_input_digest"] = fixture_digest(payload)
+    _validate_fixture_integrity(payload)
     if output_path:
         write_json(output_path, payload)
     return payload
@@ -108,6 +223,12 @@ def run_vault_comparison(
     allow_hash: bool = False,
     hash_dim: int = 32,
 ) -> dict[str, Any]:
+    fixture = export_fixture(
+        benchmark=benchmark,
+        input_path=input_path,
+        max_cases=max_cases,
+        granularity=granularity,
+    )
     report = run_external_memory_retrieval(
         benchmark=benchmark,
         input_path=input_path,
@@ -132,7 +253,9 @@ def run_vault_comparison(
         "system": "vault",
         "system_version": _vault_version(),
         "benchmark": benchmark,
+        "fixture_digest": fixture["fixture_digest"],
         "top_k": limit,
+        "candidate_pool_k": limit,
         "retrieval_mode": mode,
         "granularity": granularity,
         "search_scope": search_scope,
@@ -143,6 +266,8 @@ def run_vault_comparison(
         "hash_dim": int(hash_dim) if allow_hash else None,
         "documents_total": report.get("documents_indexed"),
         "index_latency_ms": report.get("index_latency_ms"),
+        "storage_index_latency_ms": report.get("storage_index_latency_ms"),
+        "semantic_index_latency_ms": report.get("semantic_index_latency_ms"),
         "cases_total": report["cases_total"],
         "cases": [
             {
@@ -159,6 +284,7 @@ def run_vault_comparison(
             "No reader model was run, so final_qa metrics will be unavailable unless answers are added.",
         ],
     }
+    _validate_run_for_fixture(fixture, payload)
     if output_path:
         write_json(output_path, payload)
     return payload
@@ -230,7 +356,9 @@ def run_vault_mode_comparison(
         "system": "vault",
         "system_version": _vault_version(),
         "benchmark": benchmark,
-        "input_path": str(Path(input_path)),
+        "fixture_digest": fixture["fixture_digest"],
+        "input_file_name": Path(input_path).name,
+        "input_file_digest": _file_digest(Path(input_path)),
         "top_k": limit,
         "mode_order": mode_order,
         "baseline_mode": baseline_mode,
@@ -270,28 +398,110 @@ def run_mem0_comparison(
     output_path: str | Path | None = None,
     limit: int = 10,
     search_scope: str = "case",
-    vector_store_path: str | Path = "/tmp/mem0-comparison-qdrant",
-    collection_name: str = "external_memory_comparison",
+    vector_store_path: str | Path | None = None,
+    collection_name: str = "",
+    run_namespace: str = "",
     embedder: str = "fastembed",
+    embed_model: str = "",
     embedding_dims: int | None = None,
     llm_provider: str = "ollama",
     threshold: float = 0.0,
+    history_db_path: str | Path | None = None,
+    model_cache_path: str | Path | None = None,
+    enable_telemetry: bool = False,
+    require_native_retrieval_assets: bool = True,
+    include_content: bool = False,
     memory_factory: Any | None = None,
 ) -> dict[str, Any]:
     if search_scope not in {"case", "global"}:
         raise ValueError(f"unsupported search scope: {search_scope}")
+    if limit <= 0:
+        raise ValueError("limit must be positive")
+    if not 0.0 <= threshold <= 1.0:
+        raise ValueError("threshold must be between 0 and 1")
     fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
-    memory = memory_factory() if memory_factory else _create_mem0_memory(
-        vector_store_path=vector_store_path,
-        collection_name=collection_name,
-        embedder=embedder,
-        embedding_dims=embedding_dims,
-        llm_provider=llm_provider,
+    _validate_fixture_integrity(fixture)
+    if search_scope == "case":
+        _validate_case_search_scope(fixture)
+    fixture_hash = (fixture.get("fixture_digest") or fixture_digest(fixture)).removeprefix("sha256:")
+    actual_run_namespace = str(run_namespace or "").strip() or (
+        f"external-memory-{fixture_hash[:12]}-{time.time_ns()}"
     )
+    actual_collection_name = str(collection_name or "").strip() or actual_run_namespace.replace("-", "_")
+    actual_embed_model = str(embed_model or "").strip() or _default_mem0_embed_model(embedder)
+    actual_embedding_dims = _mem0_embedding_dims(
+        embedder=embedder,
+        embed_model=actual_embed_model,
+        embedding_dims=embedding_dims,
+    )
+    vector_path = (
+        Path(vector_store_path)
+        if vector_store_path
+        else Path(tempfile.gettempdir()) / f"{actual_collection_name}.qdrant"
+    )
+    actual_history_db_path = Path(history_db_path) if history_db_path else (
+        vector_path.parent / f"{actual_collection_name}.history.sqlite3"
+    )
+    actual_mem0_dir = vector_path.parent / f".{actual_collection_name}.mem0"
+    actual_model_cache_path = Path(
+        model_cache_path
+        or os.environ.get("FASTEMBED_CACHE_PATH")
+        or (Path(tempfile.gettempdir()) / "fastembed_cache")
+    )
+    clean_state_paths = (vector_path, actual_history_db_path, actual_mem0_dir)
+    if memory_factory is None:
+        existing_paths = [path.name for path in clean_state_paths if path.exists()]
+        if existing_paths:
+            raise RuntimeError(
+                "mem0 clean-state run requires new vector, history, and MEM0_DIR paths; "
+                f"already present: {', '.join(sorted(existing_paths))}"
+            )
+    model_revisions_before = _fastembed_cache_revisions(actual_model_cache_path)
+    previous_env: dict[str, str | None] = {}
+    memory = None
+    cleanup_succeeded = False
+    index_start = time.perf_counter()
     try:
-        index_start = time.perf_counter()
-        _reset_memory(memory)
-        _index_mem0_documents(memory, fixture.get("documents", []))
+        if memory_factory is None:
+            if "mem0" in sys.modules:
+                raise RuntimeError(
+                    "mem0-run requires a fresh process so MEM0_DIR and telemetry settings "
+                    "take effect before mem0 is imported"
+                )
+            previous_env = _set_process_env(
+                {
+                    "MEM0_DIR": str(actual_mem0_dir),
+                    "MEM0_TELEMETRY": "true" if enable_telemetry else "false",
+                    "FASTEMBED_CACHE_PATH": str(actual_model_cache_path),
+                }
+            )
+            memory = _create_mem0_memory(
+                vector_store_path=vector_path,
+                collection_name=actual_collection_name,
+                embedder=embedder,
+                embed_model=actual_embed_model,
+                embedding_dims=actual_embedding_dims,
+                llm_provider=llm_provider,
+                history_db_path=actual_history_db_path,
+            )
+        else:
+            memory = memory_factory()
+        effective_retrieval = _mem0_retrieval_preflight(
+            memory,
+            expected_embedding_dims=actual_embedding_dims,
+            limit=limit,
+            require_native_assets=require_native_retrieval_assets and memory_factory is None,
+            test_double=memory_factory is not None,
+        )
+        setup_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
+        ingest_start = time.perf_counter()
+        indexing = _index_mem0_documents(
+            memory,
+            fixture.get("documents", []),
+            run_namespace=actual_run_namespace,
+            require_provider_confirmation=memory_factory is None,
+        )
+        ingest_latency_ms = round((time.perf_counter() - ingest_start) * 1000, 3)
         index_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
         cases = [
             _search_mem0_case(
@@ -300,34 +510,109 @@ def run_mem0_comparison(
                 limit=limit,
                 search_scope=search_scope,
                 threshold=threshold,
+                run_namespace=actual_run_namespace,
+                include_content=include_content,
             )
             for case in fixture.get("cases", [])
         ]
     finally:
-        close = getattr(memory, "close", None)
-        if callable(close):
-            close()
+        if memory is not None:
+            _close_mem0_memory(memory)
+            cleanup_succeeded = True
+        if previous_env:
+            _restore_process_env(previous_env)
+    model_revisions_after = _fastembed_cache_revisions(actual_model_cache_path)
     payload = {
         "schema_version": 1,
         "artifact_type": "external_memory_comparison_run",
         "generated_at": _utc_now(),
         "system": "mem0",
-        "system_version": _module_version("mem0"),
+        "system_version": _module_version("mem0") or _module_version("mem0ai"),
         "benchmark": fixture.get("benchmark"),
+        "fixture_digest": fixture.get("fixture_digest") or fixture_digest(fixture),
         "top_k": limit,
-        "retrieval_mode": f"mem0:{embedder}",
+        "candidate_pool_k": limit,
+        "retrieval_mode": effective_retrieval["effective_retrieval_mode"],
+        "track": "controlled_retrieval_raw_insert",
+        "native_memory_features_exercised": False,
+        "embed_model": actual_embed_model,
+        "embedding_dims": actual_embedding_dims,
         "llm_provider": llm_provider,
+        "collection_name": actual_collection_name,
+        "run_namespace": actual_run_namespace,
         "search_scope": search_scope,
-        "documents_total": len(fixture.get("documents", [])),
+        "documents_total": indexing["attempted"],
+        "documents_attempted": indexing["attempted"],
+        "documents_indexed": indexing["indexed"],
+        "documents_failed": indexing["failed"],
         "index_latency_ms": index_latency_ms,
+        "setup_latency_ms": setup_latency_ms,
+        "ingest_latency_ms": ingest_latency_ms,
         "cases_total": len(cases),
         "cases": cases,
+        "manifest": {
+            "benchmark_source": benchmark_source_manifest(__file__),
+            "provider_input": _provider_input_provenance(fixture),
+            "python_version": platform.python_version(),
+            "os": platform.system(),
+            "os_release": platform.release(),
+            "machine": platform.machine(),
+            "provider_dependencies": {
+                "mem0ai": _module_version("mem0ai") or None,
+                "fastembed": _module_version("fastembed") or None,
+                "qdrant-client": _module_version("qdrant-client") or None,
+                "ollama": _module_version("ollama") or None,
+                "onnxruntime": _module_version("onnxruntime") or None,
+                "spacy": _module_version("spacy") or None,
+                "en-core-web-sm": _module_version("en-core-web-sm") or None,
+            },
+            "provider_config": {
+                "embedder": embedder,
+                "embed_model": actual_embed_model,
+                "embedding_dims": actual_embedding_dims,
+                "vector_store": "qdrant-local",
+                "llm_provider": llm_provider,
+                "llm_used_for_ingestion": False,
+                "infer": False,
+                "telemetry_enabled": enable_telemetry,
+                "history_db_isolated": memory_factory is None,
+                "mem0_dir_isolated": memory_factory is None,
+                "index_latency_includes_initialization": True,
+                "retrieval_text_template": "title: {title}\\ncontent: {content}",
+                "content_in_run_artifact": include_content,
+                "require_native_retrieval_assets": require_native_retrieval_assets,
+            },
+            "isolation": {
+                "clean_state_paths_checked_before_run": memory_factory is None,
+                "clean_state_paths_absent_before_run": memory_factory is None,
+                "vector_store_identity_digest": _opaque_value_digest(str(vector_path)),
+                "history_db_identity_digest": _opaque_value_digest(
+                    str(actual_history_db_path)
+                ),
+                "mem0_dir_identity_digest": _opaque_value_digest(str(actual_mem0_dir)),
+                "collection_name": actual_collection_name,
+                "run_namespace": actual_run_namespace,
+                "provider_handles_closed": cleanup_succeeded,
+            },
+            "effective_retrieval": effective_retrieval,
+            "model_cache": {
+                "state_before_run": "warm" if model_revisions_before else "cold_or_empty",
+                "revisions_before_run": model_revisions_before,
+                "revisions_after_run": model_revisions_after,
+            },
+        },
         "engineering": _mem0_engineering_profile(),
         "notes": [
             "mem0 adapter run artifact. Score with score-run against the same fixture.",
             "Documents are inserted with infer=False so retrieval-only runs do not require an LLM extraction pass.",
+            "This controlled raw-insert track does not measure mem0 extraction, consolidation, deduplication, or lifecycle decisions.",
+            "Each run uses an isolated namespace and does not reset or delete an existing collection.",
+            "Index latency includes embedder/vector-store initialization, model loading, and document ingestion.",
+            "The default benchmark path isolates MEM0_DIR and the history SQLite database; telemetry is disabled unless explicitly enabled.",
+            "Publish runs fail closed when mem0 native Qdrant BM25 or spaCy retrieval assets are unavailable.",
         ],
     }
+    _validate_run_for_fixture(fixture, payload)
     if output_path:
         write_json(output_path, payload)
     return payload
@@ -336,67 +621,150 @@ def run_mem0_comparison(
 def run_letta_comparison(
     *,
     fixture_path: str | Path,
-    agent_id: str,
     output_path: str | Path | None = None,
     api_key: str | None = None,
     base_url: str = "https://api.letta.com",
     run_id: str | None = None,
+    embedding: str = "ollama/bge-m3:latest",
+    server_version: str = "",
     limit: int = 10,
     search_scope: str = "case",
+    include_content: bool = False,
     transport: Any | None = None,
 ) -> dict[str, Any]:
     if search_scope not in {"case", "global"}:
         raise ValueError(f"unsupported search scope: {search_scope}")
+    if limit <= 0 or limit > 100:
+        raise ValueError("Letta limit must be between 1 and 100")
     fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
-    actual_run_id = run_id or f"external-memory-{int(time.time())}"
+    _validate_fixture_integrity(fixture)
+    if search_scope == "case":
+        _validate_case_search_scope(fixture)
+    actual_run_id = run_id or f"external-memory-{time.time_ns()}"
     api_key = api_key or os.environ.get("LETTA_API_KEY")
     request = transport or _letta_json_request
+    archive_id = ""
+    cleanup_succeeded = False
+    cleanup_error = ""
+    primary_error: Exception | None = None
     index_start = time.perf_counter()
-    for document in fixture.get("documents", []):
-        _create_letta_passage(
-            request=request,
-            base_url=base_url,
+    try:
+        archive = request(
+            method="POST",
+            url=f"{base_url.rstrip('/')}/v1/archives/",
             api_key=api_key,
-            agent_id=agent_id,
-            document=document,
-            run_id=actual_run_id,
+            payload={"name": actual_run_id, "embedding": embedding},
         )
-    index_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
-    cases = [
-        _search_letta_case(
-            request=request,
-            base_url=base_url,
-            api_key=api_key,
-            agent_id=agent_id,
-            case=case,
-            run_id=actual_run_id,
-            limit=limit,
-            search_scope=search_scope,
-        )
-        for case in fixture.get("cases", [])
-    ]
+        archive_id = str(archive.get("id") or "") if isinstance(archive, dict) else ""
+        if not archive_id:
+            raise RuntimeError("Letta archive create response did not include an id")
+        indexed = 0
+        for document in fixture.get("documents", []):
+            passage = _create_letta_passage(
+                request=request,
+                base_url=base_url,
+                api_key=api_key,
+                archive_id=archive_id,
+                document=document,
+                run_id=actual_run_id,
+            )
+            if not str(passage.get("id") or ""):
+                raise RuntimeError("Letta passage create response did not include an id")
+            indexed += 1
+        index_latency_ms = round((time.perf_counter() - index_start) * 1000, 3)
+        cases = [
+            _search_letta_case(
+                request=request,
+                base_url=base_url,
+                api_key=api_key,
+                archive_id=archive_id,
+                case=case,
+                run_id=actual_run_id,
+                limit=limit,
+                search_scope=search_scope,
+                include_content=include_content,
+            )
+            for case in fixture.get("cases", [])
+        ]
+    except Exception as exc:
+        primary_error = exc
+    finally:
+        if archive_id:
+            try:
+                request(
+                    method="DELETE",
+                    url=f"{base_url.rstrip('/')}/v1/archives/{archive_id}",
+                    api_key=api_key,
+                )
+                cleanup_succeeded = True
+            except Exception as exc:
+                cleanup_error = f"{type(exc).__name__}: {exc}"
+    if primary_error is not None:
+        if cleanup_error:
+            raise RuntimeError(
+                f"Letta run failed ({type(primary_error).__name__}: {primary_error}); "
+                f"archive cleanup also failed ({cleanup_error})"
+            ) from primary_error
+        raise primary_error
+    if not cleanup_succeeded:
+        raise RuntimeError(f"Letta archive cleanup failed: {cleanup_error or 'unknown error'}")
     payload = {
         "schema_version": 1,
         "artifact_type": "external_memory_comparison_run",
         "generated_at": _utc_now(),
         "system": "letta",
-        "system_version": "",
+        "system_version": server_version,
         "benchmark": fixture.get("benchmark"),
+        "fixture_digest": fixture.get("fixture_digest") or fixture_digest(fixture),
         "top_k": limit,
-        "retrieval_mode": "letta:archival-memory",
+        "candidate_pool_k": limit,
+        "retrieval_mode": "letta:archive-passages",
+        "track": "controlled_retrieval_raw_insert",
+        "native_memory_features_exercised": False,
         "search_scope": search_scope,
-        "agent_id": agent_id,
+        "archive_id": archive_id,
         "run_id": actual_run_id,
-        "documents_total": len(fixture.get("documents", [])),
+        "embedding": embedding,
+        "documents_total": indexed,
+        "documents_attempted": len(fixture.get("documents", [])),
+        "documents_indexed": indexed,
+        "documents_failed": len(fixture.get("documents", [])) - indexed,
         "index_latency_ms": index_latency_ms,
         "cases_total": len(cases),
         "cases": cases,
+        "manifest": {
+            "benchmark_source": benchmark_source_manifest(__file__),
+            "provider_input": _provider_input_provenance(fixture),
+            "python_version": platform.python_version(),
+            "os": platform.system(),
+            "os_release": platform.release(),
+            "machine": platform.machine(),
+            "provider_dependencies": {
+                "letta-client": _module_version("letta-client") or None,
+            },
+            "provider_config": {
+                "base_url_kind": "cloud" if base_url.rstrip("/") == "https://api.letta.com" else "self-hosted",
+                "embedding": embedding,
+                "runtime_config_verified_by_adapter": False,
+                "llm_used": False,
+                "retrieval_text_template": "title: {title}\\ncontent: {content}",
+                "content_in_run_artifact": include_content,
+            },
+            "cleanup": {
+                "resource": "run-scoped archive",
+                "attempted": True,
+                "succeeded": cleanup_succeeded,
+                "error": cleanup_error or None,
+            },
+        },
         "engineering": _letta_engineering_profile(),
         "notes": [
-            "Letta adapter run artifact using archival-memory create/search endpoints.",
-            "Documents are isolated with a generated run-id tag; this adapter does not delete existing Letta memory.",
+            "Letta retrieval-only adapter using a run-scoped Archive and Passages API.",
+            "The archive was deleted after retrieval so clean-state repeats do not require a pre-existing agent or LLM.",
+            "This controlled raw-insert track does not measure Letta agent memory extraction or agent behavior.",
         ],
     }
+    _validate_run_for_fixture(fixture, payload)
     if output_path:
         write_json(output_path, payload)
     return payload
@@ -410,6 +778,7 @@ def score_run(
 ) -> dict[str, Any]:
     fixture = json.loads(Path(fixture_path).read_text(encoding="utf-8"))
     run = json.loads(Path(run_path).read_text(encoding="utf-8"))
+    _validate_run_for_fixture(fixture, run)
     fixture_cases = {str(case["id"]): case for case in fixture.get("cases", [])}
     run_cases = {str(case.get("id")): case for case in run.get("cases", [])}
     scored_cases: list[dict[str, Any]] = []
@@ -417,7 +786,11 @@ def score_run(
 
     for case_id, fixture_case in fixture_cases.items():
         run_case = run_cases.get(case_id, {})
-        retrieval = _score_retrieval_case(fixture_case, run_case)
+        retrieval = _score_retrieval_case(
+            fixture_case,
+            run_case,
+            top_k=int(run.get("top_k") or 0),
+        )
         final_qa = _score_answer_case(fixture_case, run_case)
         payload = {
             "id": case_id,
@@ -434,6 +807,7 @@ def score_run(
         "artifact_type": "external_memory_comparison_score",
         "generated_at": _utc_now(),
         "benchmark": fixture.get("benchmark"),
+        "fixture_digest": fixture.get("fixture_digest") or fixture_digest(fixture),
         "system": run.get("system", "unknown"),
         "system_version": run.get("system_version", ""),
         "top_k": run.get("top_k"),
@@ -566,9 +940,14 @@ def _case_to_payload(case: ExternalCase) -> dict[str, Any]:
     }
 
 
-def _score_retrieval_case(fixture_case: dict[str, Any], run_case: dict[str, Any]) -> dict[str, Any]:
+def _score_retrieval_case(
+    fixture_case: dict[str, Any],
+    run_case: dict[str, Any],
+    *,
+    top_k: int,
+) -> dict[str, Any]:
     expected = {str(source) for source in fixture_case.get("expected_sources", [])}
-    ranked = run_case.get("results", [])
+    ranked = run_case.get("results", [])[:top_k]
     hit_rank = None
     returned_sources: list[str] = []
     for index, result in enumerate(ranked, start=1):
@@ -590,16 +969,19 @@ def _score_retrieval_case(fixture_case: dict[str, Any], run_case: dict[str, Any]
 def _score_answer_case(fixture_case: dict[str, Any], run_case: dict[str, Any]) -> dict[str, Any] | None:
     expected = str(fixture_case.get("expected_answer") or "")
     predicted = str(run_case.get("answer") or "")
-    if not expected or not predicted:
+    if not expected:
         return None
     expected_norm = _normalize_answer(expected)
     predicted_norm = _normalize_answer(predicted)
     return {
         "expected_answer": expected,
         "predicted_answer": predicted,
-        "normalized_exact_match": expected_norm == predicted_norm,
-        "normalized_contains_expected": bool(expected_norm and expected_norm in predicted_norm),
-        "token_f1": _token_f1(expected_norm, predicted_norm),
+        "answered": bool(predicted.strip()),
+        "normalized_exact_match": bool(predicted_norm and expected_norm == predicted_norm),
+        "normalized_contains_expected": bool(
+            predicted_norm and expected_norm and expected_norm in predicted_norm
+        ),
+        "token_f1": _token_f1(expected_norm, predicted_norm) if predicted_norm else 0.0,
     }
 
 
@@ -628,14 +1010,21 @@ def _aggregate_final_qa(items: list[dict[str, Any]]) -> dict[str, Any]:
     if not total:
         return {
             "available": False,
+            "eligible_cases": 0,
             "answered_cases": 0,
+            "unanswered_cases": 0,
+            "answer_coverage": None,
             "normalized_exact_match_rate": None,
             "normalized_contains_expected_rate": None,
             "mean_token_f1": None,
         }
+    answered = sum(1 for item in items if item.get("answered"))
     return {
         "available": True,
-        "answered_cases": total,
+        "eligible_cases": total,
+        "answered_cases": answered,
+        "unanswered_cases": total - answered,
+        "answer_coverage": round(answered / total, 6),
         "normalized_exact_match_rate": round(
             sum(1 for item in items if item.get("normalized_exact_match")) / total,
             6,
@@ -793,9 +1182,12 @@ def _create_mem0_memory(
     vector_store_path: str | Path,
     collection_name: str,
     embedder: str,
-    embedding_dims: int | None,
+    embed_model: str,
+    embedding_dims: int,
     llm_provider: str,
+    history_db_path: str | Path,
 ):
+    Path(history_db_path).parent.mkdir(parents=True, exist_ok=True)
     try:
         from mem0 import Memory
     except ImportError as exc:
@@ -804,39 +1196,205 @@ def _create_mem0_memory(
             "Install it in an isolated environment before running mem0-run."
         ) from exc
 
-    dims = embedding_dims or (1536 if embedder == "openai" else 1024)
-    config = {
+    config = _mem0_config(
+        vector_store_path=vector_store_path,
+        collection_name=collection_name,
+        embedder=embedder,
+        embed_model=embed_model,
+        embedding_dims=embedding_dims,
+        llm_provider=llm_provider,
+        history_db_path=history_db_path,
+    )
+    return Memory.from_config(config)
+
+
+def _set_process_env(values: dict[str, str]) -> dict[str, str | None]:
+    previous = {key: os.environ.get(key) for key in values}
+    for key, value in values.items():
+        os.environ[key] = value
+    return previous
+
+
+def _restore_process_env(previous: dict[str, str | None]) -> None:
+    for key, value in previous.items():
+        if value is None:
+            os.environ.pop(key, None)
+        else:
+            os.environ[key] = value
+
+
+def _fastembed_cache_revisions(cache_path: str | Path) -> dict[str, str]:
+    root = Path(cache_path)
+    if not root.exists():
+        return {}
+    revisions: dict[str, str] = {}
+    for ref in sorted(root.glob("models--*/refs/main")):
+        try:
+            revision = ref.read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        if revision:
+            revisions[ref.parent.parent.name] = revision
+    return revisions
+
+
+def _mem0_retrieval_preflight(
+    memory: Any,
+    *,
+    expected_embedding_dims: int,
+    limit: int,
+    require_native_assets: bool,
+    test_double: bool,
+) -> dict[str, Any]:
+    if test_double:
+        return {
+            "preflight_status": "test_double_not_applicable",
+            "effective_retrieval_mode": "mem0:test-double",
+            "bm25_available": None,
+            "lemmatization_available": None,
+            "entity_boost_available": None,
+            "embedding_dimensions_verified": None,
+            "provider_internal_candidate_pool_k": max(limit * 4, 60),
+        }
+
+    vector_store = getattr(memory, "vector_store", None)
+    has_bm25_slot = bool(getattr(vector_store, "_has_bm25_slot", False))
+    get_bm25_encoder = getattr(vector_store, "_get_bm25_encoder", None)
+    bm25_available = bool(callable(get_bm25_encoder) and get_bm25_encoder() is not None)
+
+    try:
+        from mem0.utils.spacy_models import get_nlp_full, get_nlp_lemma
+
+        lemmatization_available = get_nlp_lemma() is not None
+        entity_boost_available = get_nlp_full() is not None
+    except Exception:
+        lemmatization_available = False
+        entity_boost_available = False
+
+    dense_model = getattr(getattr(memory, "embedding_model", None), "dense_model", None)
+    actual_embedding_dims = getattr(dense_model, "embedding_size", None)
+    if actual_embedding_dims is None:
+        actual_embedding_dims = getattr(getattr(memory, "embedding_model", None), "config", None)
+        actual_embedding_dims = getattr(actual_embedding_dims, "embedding_dims", None)
+    dimensions_verified = actual_embedding_dims == expected_embedding_dims
+
+    missing: list[str] = []
+    if not has_bm25_slot:
+        missing.append("qdrant_bm25_slot")
+    if not bm25_available:
+        missing.append("qdrant_bm25_encoder")
+    if not lemmatization_available:
+        missing.append("spacy_lemmatizer")
+    if not entity_boost_available:
+        missing.append("spacy_entity_model")
+    if not dimensions_verified:
+        missing.append("embedding_dimensions")
+    if require_native_assets and missing:
+        raise RuntimeError(
+            "mem0 native retrieval preflight failed; refusing a publishable artifact: "
+            + ", ".join(missing)
+        )
+
+    if has_bm25_slot and bm25_available:
+        effective_mode = "mem0:semantic+bm25"
+        if entity_boost_available:
+            effective_mode += "+entity"
+    else:
+        effective_mode = "mem0:dense-fallback"
+    return {
+        "preflight_status": "passed" if not missing else "fallback_allowed",
+        "effective_retrieval_mode": effective_mode,
+        "bm25_slot_available": has_bm25_slot,
+        "bm25_available": bm25_available,
+        "lemmatization_available": lemmatization_available,
+        "entity_boost_available": entity_boost_available,
+        "embedding_dimensions_expected": expected_embedding_dims,
+        "embedding_dimensions_actual": actual_embedding_dims,
+        "embedding_dimensions_verified": dimensions_verified,
+        "provider_internal_candidate_pool_k": max(limit * 4, 60),
+        "missing_assets": missing,
+    }
+
+
+def _close_mem0_memory(memory: Any) -> None:
+    vector_store = getattr(memory, "vector_store", None)
+    client = getattr(vector_store, "client", None)
+    client_close = getattr(client, "close", None)
+    if callable(client_close):
+        client_close()
+    close = getattr(memory, "close", None)
+    if callable(close):
+        close()
+
+
+def _mem0_config(
+    *,
+    vector_store_path: str | Path,
+    collection_name: str,
+    embedder: str,
+    embed_model: str,
+    embedding_dims: int,
+    llm_provider: str,
+    history_db_path: str | Path,
+) -> dict[str, Any]:
+    return {
         "vector_store": {
             "provider": "qdrant",
             "config": {
                 "path": str(vector_store_path),
                 "collection_name": collection_name,
-                "embedding_model_dims": dims,
+                "embedding_model_dims": embedding_dims,
             },
         },
         "embedder": {
             "provider": embedder,
-            "config": {},
+            "config": {
+                "model": embed_model,
+                "embedding_dims": embedding_dims,
+            },
         },
         "llm": {
             "provider": llm_provider,
             "config": {},
         },
+        "history_db_path": str(history_db_path),
     }
-    return Memory.from_config(config)
 
 
-def _reset_memory(memory: Any) -> None:
-    reset = getattr(memory, "reset", None)
-    if callable(reset):
-        reset()
-        return
-    delete_all = getattr(memory, "delete_all", None)
-    if callable(delete_all):
-        delete_all()
+def _default_mem0_embed_model(embedder: str) -> str:
+    if embedder == "fastembed":
+        return "thenlper/gte-large"
+    if embedder == "openai":
+        return "text-embedding-3-small"
+    raise ValueError("mem0 ollama embedder requires --embed-model")
 
 
-def _index_mem0_documents(memory: Any, documents: list[dict[str, Any]]) -> None:
+def _mem0_embedding_dims(
+    *,
+    embedder: str,
+    embed_model: str,
+    embedding_dims: int | None,
+) -> int:
+    if embedding_dims is not None:
+        if embedding_dims <= 0:
+            raise ValueError("embedding_dims must be positive")
+        return embedding_dims
+    if embedder == "fastembed" and embed_model == "thenlper/gte-large":
+        return 1024
+    if embedder == "openai" and embed_model == "text-embedding-3-small":
+        return 1536
+    raise ValueError("custom mem0 embed models require --embedding-dims")
+
+
+def _index_mem0_documents(
+    memory: Any,
+    documents: list[dict[str, Any]],
+    *,
+    run_namespace: str,
+    require_provider_confirmation: bool,
+) -> dict[str, int]:
+    indexed = 0
+    failed = 0
     for document in documents:
         metadata = {
             "source": document.get("source", ""),
@@ -844,12 +1402,21 @@ def _index_mem0_documents(memory: Any, documents: list[dict[str, Any]]) -> None:
             "search_category": document.get("category", ""),
             "tags": document.get("tags", ""),
         }
-        memory.add(
-            str(document.get("content") or ""),
-            user_id="external-memory-comparison",
+        response = memory.add(
+            _canonical_retrieval_text(document),
+            user_id=run_namespace,
             metadata=metadata,
             infer=False,
         )
+        if require_provider_confirmation:
+            results = response.get("results") if isinstance(response, dict) else None
+            if not isinstance(results, list) or not results:
+                failed += 1
+                continue
+        indexed += 1
+    if failed:
+        raise RuntimeError(f"mem0 failed to confirm {failed} indexed documents")
+    return {"attempted": len(documents), "indexed": indexed, "failed": failed}
 
 
 def _search_mem0_case(
@@ -859,8 +1426,10 @@ def _search_mem0_case(
     limit: int,
     search_scope: str,
     threshold: float,
+    run_namespace: str,
+    include_content: bool,
 ) -> dict[str, Any]:
-    filters = {"user_id": "external-memory-comparison"}
+    filters = {"user_id": run_namespace}
     if search_scope == "case":
         filters["search_category"] = str(case.get("search_category") or "")
     start = time.perf_counter()
@@ -876,36 +1445,54 @@ def _search_mem0_case(
         "id": case.get("id"),
         "query": case.get("query", ""),
         "latency_ms": latency_ms,
-        "results": _normalize_mem0_results(raw),
+        "results": _normalize_mem0_results(raw, include_content=include_content),
     }
 
 
-def _normalize_mem0_results(raw: Any) -> list[dict[str, Any]]:
+def _normalize_mem0_results(raw: Any, *, include_content: bool) -> list[dict[str, Any]]:
     if isinstance(raw, dict):
-        candidates = raw.get("results") or raw.get("memories") or []
+        if "results" in raw:
+            candidates = raw["results"]
+        elif "memories" in raw:
+            candidates = raw["memories"]
+        else:
+            raise RuntimeError("mem0 search response did not include results or memories")
     elif isinstance(raw, list):
         candidates = raw
     else:
-        candidates = []
+        raise RuntimeError("mem0 search response must be an object or list")
+    if not isinstance(candidates, list):
+        raise RuntimeError("mem0 search results must be a list")
     results: list[dict[str, Any]] = []
     for index, item in enumerate(candidates, start=1):
         if not isinstance(item, dict):
-            continue
+            raise RuntimeError("mem0 search result must be an object")
         metadata = item.get("metadata") if isinstance(item.get("metadata"), dict) else {}
         source = str(item.get("source") or metadata.get("source") or "")
+        if not source:
+            raise RuntimeError("mem0 search result did not include source provenance")
         title = str(item.get("title") or metadata.get("title") or "")
         content = str(item.get("memory") or item.get("content") or item.get("text") or "")
-        results.append(
-            {
-                "rank": index,
-                "id": item.get("id"),
-                "title": title,
-                "source": source,
-                "score": item.get("score"),
-                "content": content,
-            }
-        )
+        result = {
+            "rank": index,
+            "id": item.get("id"),
+            "title": title,
+            "source": source,
+            "score": item.get("score"),
+        }
+        if include_content:
+            result["content"] = content
+        results.append(result)
     return results
+
+
+def _canonical_retrieval_text(document: dict[str, Any]) -> str:
+    return "\n".join(
+        (
+            f"title: {str(document.get('title') or '').strip()}",
+            f"content: {str(document.get('content') or '').strip()}",
+        )
+    )
 
 
 def _create_letta_passage(
@@ -913,19 +1500,20 @@ def _create_letta_passage(
     request: Any,
     base_url: str,
     api_key: str | None,
-    agent_id: str,
+    archive_id: str,
     document: dict[str, Any],
     run_id: str,
-) -> None:
-    request(
+) -> dict[str, Any]:
+    response = request(
         method="POST",
-        url=f"{base_url.rstrip('/')}/v1/agents/{agent_id}/archival-memory",
+        url=f"{base_url.rstrip('/')}/v1/archives/{archive_id}/passages",
         api_key=api_key,
         payload={
-            "text": str(document.get("content") or ""),
+            "text": _canonical_retrieval_text(document),
             "tags": _letta_document_tags(document, run_id),
         },
     )
+    return response if isinstance(response, dict) else {}
 
 
 def _search_letta_case(
@@ -933,34 +1521,36 @@ def _search_letta_case(
     request: Any,
     base_url: str,
     api_key: str | None,
-    agent_id: str,
+    archive_id: str,
     case: dict[str, Any],
     run_id: str,
     limit: int,
     search_scope: str,
+    include_content: bool,
 ) -> dict[str, Any]:
     tags = [f"run:{run_id}"]
     if search_scope == "case":
         tags.append(f"category:{case.get('search_category', '')}")
-    params = {
+    payload = {
         "query": str(case.get("query") or ""),
-        "top_k": limit,
+        "archive_id": archive_id,
+        "limit": limit,
         "tags": tags,
         "tag_match_mode": "all",
     }
     start = time.perf_counter()
     raw = request(
-        method="GET",
-        url=f"{base_url.rstrip('/')}/v1/agents/{agent_id}/archival-memory/search",
+        method="POST",
+        url=f"{base_url.rstrip('/')}/v1/passages/search",
         api_key=api_key,
-        params=params,
+        payload=payload,
     )
     latency_ms = round((time.perf_counter() - start) * 1000, 3)
     return {
         "id": case.get("id"),
         "query": case.get("query", ""),
         "latency_ms": latency_ms,
-        "results": _normalize_letta_results(raw),
+        "results": _normalize_letta_results(raw, include_content=include_content),
     }
 
 
@@ -976,24 +1566,39 @@ def _letta_document_tags(document: dict[str, Any], run_id: str) -> list[str]:
     return tags
 
 
-def _normalize_letta_results(raw: Any) -> list[dict[str, Any]]:
-    candidates = raw.get("results", []) if isinstance(raw, dict) else []
+def _normalize_letta_results(raw: Any, *, include_content: bool) -> list[dict[str, Any]]:
+    if isinstance(raw, list):
+        candidates = raw
+    elif isinstance(raw, dict):
+        if "results" in raw:
+            candidates = raw["results"]
+        elif "passages" in raw:
+            candidates = raw["passages"]
+        else:
+            raise RuntimeError("Letta search response did not include results or passages")
+    else:
+        raise RuntimeError("Letta search response must be an object or list")
+    if not isinstance(candidates, list):
+        raise RuntimeError("Letta search results must be a list")
     results: list[dict[str, Any]] = []
     for index, item in enumerate(candidates, start=1):
         if not isinstance(item, dict):
-            continue
-        tags = item.get("tags") if isinstance(item.get("tags"), list) else []
+            raise RuntimeError("Letta search result must be an object")
+        passage = item.get("passage") if isinstance(item.get("passage"), dict) else item
+        tags = passage.get("tags") if isinstance(passage.get("tags"), list) else []
         source = _source_from_tags(tags)
-        results.append(
-            {
-                "rank": index,
-                "id": item.get("id"),
-                "title": "",
-                "source": source,
-                "score": item.get("score"),
-                "content": str(item.get("content") or item.get("text") or ""),
-            }
-        )
+        if not source:
+            raise RuntimeError("Letta search result did not include source provenance")
+        result = {
+            "rank": index,
+            "id": passage.get("id"),
+            "title": "",
+            "source": source,
+            "score": item.get("score", passage.get("score")),
+        }
+        if include_content:
+            result["content"] = str(passage.get("content") or passage.get("text") or "")
+        results.append(result)
     return results
 
 
@@ -1013,20 +1618,18 @@ def _letta_json_request(
     payload: dict[str, Any] | None = None,
     params: dict[str, Any] | None = None,
 ) -> Any:
-    if not api_key:
-        raise RuntimeError("letta-run requires LETTA_API_KEY or --letta-api-key")
     if params:
         query = urllib.parse.urlencode(params, doseq=True)
         url = f"{url}?{query}"
     data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(
         url,
         data=data,
         method=method,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
+        headers=headers,
     )
     try:
         with urllib.request.urlopen(request, timeout=120) as response:
@@ -1145,8 +1748,8 @@ def _mem0_engineering_profile() -> dict[str, Any]:
         },
         "audit": {
             "supported": True,
-            "measured": True,
-            "evidence": "Adapter preserves benchmark source ids in mem0 metadata and output results.",
+            "measured": False,
+            "evidence": "The run measures source traceability only; mem0 audit lifecycle behavior is not measured.",
         },
     }
 
@@ -1154,9 +1757,9 @@ def _mem0_engineering_profile() -> dict[str, Any]:
 def _letta_engineering_profile() -> dict[str, Any]:
     return {
         "local_first": {
-            "supported": False,
+            "supported": True,
             "measured": False,
-            "evidence": "The adapter uses Letta HTTP archival-memory endpoints and does not measure local mode.",
+            "evidence": "Letta can be self-hosted; this run records the URL kind but does not prove deployment portability.",
         },
         "multi_agent_shared_memory": {
             "supported": True,
@@ -1175,8 +1778,8 @@ def _letta_engineering_profile() -> dict[str, Any]:
         },
         "audit": {
             "supported": True,
-            "measured": True,
-            "evidence": "Adapter preserves benchmark source ids as passage tags and output result sources.",
+            "measured": False,
+            "evidence": "The run measures source traceability and archive cleanup, not Letta audit lifecycle behavior.",
         },
     }
 
@@ -1212,6 +1815,259 @@ def _coerce_float(value: Any) -> float | None:
         return None
 
 
+def fixture_digest(payload: dict[str, Any]) -> str:
+    """Return a stable digest for benchmark content, excluding local paths and timestamps."""
+    canonical = {
+        "schema_version": payload.get("schema_version"),
+        "artifact_type": payload.get("artifact_type"),
+        "benchmark": payload.get("benchmark"),
+        "fixture_version": payload.get("fixture_version"),
+        "fixed_clock": payload.get("fixed_clock"),
+        "granularity": payload.get("granularity"),
+        "documents": payload.get("documents", []),
+        "cases": payload.get("cases", []),
+        "matching_rule": payload.get("matching_rule", {}),
+    }
+    encoded = json.dumps(
+        canonical,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
+
+
+def _file_digest(path: Path) -> str:
+    return f"sha256:{hashlib.sha256(path.read_bytes()).hexdigest()}"
+
+
+def _opaque_value_digest(value: str) -> str:
+    return f"sha256:{hashlib.sha256(value.encode('utf-8')).hexdigest()}"
+
+
+def _validate_run_for_fixture(fixture: dict[str, Any], run: dict[str, Any]) -> None:
+    if fixture.get("schema_version") != 1 or run.get("schema_version") != 1:
+        raise ValueError("fixture and run schema_version must be 1")
+    if fixture.get("artifact_type") != "external_memory_comparison_fixture":
+        raise ValueError("fixture artifact_type must be external_memory_comparison_fixture")
+    if run.get("artifact_type") != "external_memory_comparison_run":
+        raise ValueError("run artifact_type must be external_memory_comparison_run")
+    if fixture.get("benchmark") != run.get("benchmark"):
+        raise ValueError("fixture and run benchmark must match")
+    if not str(run.get("system") or "").strip():
+        raise ValueError("run system must be non-empty")
+    top_k = run.get("top_k")
+    if not isinstance(top_k, int) or isinstance(top_k, bool) or top_k <= 0:
+        raise ValueError("run top_k must be a positive integer")
+    candidate_pool_k = run.get("candidate_pool_k")
+    if (
+        not isinstance(candidate_pool_k, int)
+        or isinstance(candidate_pool_k, bool)
+        or candidate_pool_k < top_k
+    ):
+        raise ValueError("run candidate_pool_k must be an integer greater than or equal to top_k")
+
+    fixture_ids = [str(case.get("id")) for case in fixture.get("cases", [])]
+    run_ids = [str(case.get("id")) for case in run.get("cases", [])]
+    if len(fixture_ids) != len(set(fixture_ids)):
+        raise ValueError("fixture contains duplicate case ids")
+    if len(run_ids) != len(set(run_ids)):
+        raise ValueError("run contains duplicate case ids")
+    if run_ids != fixture_ids:
+        raise ValueError("run cases must exactly match fixture case ids and order")
+    if run.get("cases_total") != len(fixture_ids):
+        raise ValueError("run cases_total must match fixture cases")
+    for case in run.get("cases", []):
+        results = case.get("results")
+        if not isinstance(results, list):
+            raise ValueError(f"run case {case.get('id')} results must be a list")
+        if len(results) > candidate_pool_k:
+            raise ValueError(f"run case {case.get('id')} exceeds candidate_pool_k")
+        if any(not isinstance(result, dict) for result in results):
+            raise ValueError(f"run case {case.get('id')} contains a non-object result")
+        latency = case.get("latency_ms")
+        if latency is not None and not _is_finite_nonnegative_number(latency):
+            raise ValueError(f"run case {case.get('id')} latency_ms must be finite and nonnegative")
+        cost = case.get("cost_usd")
+        if cost is not None and not _is_finite_nonnegative_number(cost):
+            raise ValueError(f"run case {case.get('id')} cost_usd must be finite and nonnegative")
+        seen_sources: set[str] = set()
+        for index, result in enumerate(results, start=1):
+            if result.get("rank") != index:
+                raise ValueError(f"run case {case.get('id')} result ranks must be contiguous")
+            source = str(result.get("source") or "")
+            if not source:
+                raise ValueError(f"run case {case.get('id')} result source must be non-empty")
+            if source in seen_sources:
+                raise ValueError(f"run case {case.get('id')} contains duplicate result sources")
+            seen_sources.add(source)
+            score = result.get("score")
+            if score is not None and not _is_finite_nonnegative_number(score):
+                raise ValueError(f"run case {case.get('id')} result score must be finite and nonnegative")
+
+    expected_digest = _validated_evaluation_fixture_digest(fixture)
+    run_digest = str(run.get("fixture_digest") or "")
+    if not run_digest:
+        raise ValueError("run fixture_digest is required")
+    if run_digest != expected_digest:
+        raise ValueError("fixture and run digest must match")
+
+
+def _is_finite_nonnegative_number(value: Any) -> bool:
+    return (
+        isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and float(value) >= 0
+        and math.isfinite(float(value))
+    )
+
+
+def _provider_document(document: dict[str, Any]) -> dict[str, Any]:
+    payload = {
+        field: document[field]
+        for field in PROVIDER_DOCUMENT_FIELDS
+        if field in document
+    }
+    governance = document.get("governance")
+    if isinstance(governance, dict):
+        payload["governance"] = {
+            field: governance[field]
+            for field in PROVIDER_GOVERNANCE_FIELDS
+            if field in governance
+        }
+    return payload
+
+
+def _contains_scorer_only_key(value: Any) -> bool:
+    if isinstance(value, dict):
+        for key, nested in value.items():
+            normalized = str(key).strip().lower()
+            if (
+                normalized in {"answer", "has_answer", "metadata"}
+                or normalized.startswith("expected_")
+                or normalized.startswith("forbidden_")
+            ):
+                return True
+            if _contains_scorer_only_key(nested):
+                return True
+    elif isinstance(value, list):
+        return any(_contains_scorer_only_key(item) for item in value)
+    return False
+
+
+def _validate_fixture_integrity(fixture: dict[str, Any]) -> None:
+    if fixture.get("schema_version") != 1:
+        raise ValueError("fixture schema_version must be 1")
+    if fixture.get("artifact_type") != "external_memory_comparison_fixture":
+        raise ValueError("fixture artifact_type must be external_memory_comparison_fixture")
+    _validated_evaluation_fixture_digest(fixture)
+    documents = fixture.get("documents", [])
+    cases = fixture.get("cases", [])
+    if not isinstance(documents, list) or any(
+        not isinstance(document, dict) for document in documents
+    ):
+        raise ValueError("fixture documents must be a list of objects")
+    if not isinstance(cases, list) or any(not isinstance(case, dict) for case in cases):
+        raise ValueError("fixture cases must be a list of objects")
+    if fixture.get("documents_total") is not None and fixture.get(
+        "documents_total"
+    ) != len(documents):
+        raise ValueError("fixture documents_total must match documents")
+    if fixture.get("cases_total") is not None and fixture.get("cases_total") != len(cases):
+        raise ValueError("fixture cases_total must match cases")
+    document_sources = [str(document.get("source") or "") for document in documents]
+    case_ids = [str(case.get("id") or "") for case in cases]
+    if not document_sources or any(not source for source in document_sources):
+        raise ValueError("fixture documents must have non-empty source ids")
+    if len(document_sources) != len(set(document_sources)):
+        raise ValueError("fixture contains duplicate document source ids")
+    if not case_ids or any(not case_id for case_id in case_ids):
+        raise ValueError("fixture cases must have non-empty ids")
+    if len(case_ids) != len(set(case_ids)):
+        raise ValueError("fixture contains duplicate case ids")
+
+
+def _validated_evaluation_fixture_digest(fixture: dict[str, Any]) -> str:
+    actual_digest = fixture_digest(fixture)
+    stored_digest = str(fixture.get("fixture_digest") or "")
+    if fixture.get("provider_input") is True:
+        provider_digest = str(fixture.get("provider_input_digest") or "")
+        if provider_digest != actual_digest:
+            raise ValueError("provider input digest does not match provider input content")
+        if not re.fullmatch(r"sha256:[0-9a-f]{64}", stored_digest):
+            raise ValueError("provider input requires the gold evaluation fixture digest")
+        if fixture.get("gold_labels_excluded") is not True:
+            raise ValueError("provider input must attest that gold labels are excluded")
+        allowed_document_fields = set(PROVIDER_DOCUMENT_FIELDS) | {"governance"}
+        allowed_case_fields = set(PROVIDER_CASE_FIELDS)
+        if any(
+            not isinstance(document, dict)
+            or not set(document).issubset(allowed_document_fields)
+            for document in fixture.get("documents", [])
+        ):
+            raise ValueError("provider input documents contain fields outside the allowlist")
+        if any(
+            not isinstance(case, dict) or not set(case).issubset(allowed_case_fields)
+            for case in fixture.get("cases", [])
+        ):
+            raise ValueError("provider input cases contain fields outside the allowlist")
+        for document in fixture.get("documents", []):
+            governance = document.get("governance")
+            if governance is not None and (
+                not isinstance(governance, dict)
+                or not set(governance).issubset(PROVIDER_GOVERNANCE_FIELDS)
+            ):
+                raise ValueError(
+                    "provider input governance contains fields outside the allowlist"
+                )
+        forbidden_case_fields = {
+            "answer",
+            "expected_answer",
+            "expected_sources",
+            "expected_valid_sources",
+            "forbidden_sources",
+            "expected_block_reasons",
+            "metadata",
+        }
+        if any(forbidden_case_fields.intersection(case) for case in fixture.get("cases", [])):
+            raise ValueError("provider input cases contain scorer-only gold fields")
+        if any(_contains_scorer_only_key(document) for document in fixture.get("documents", [])):
+            raise ValueError("provider input documents contain scorer-only gold fields")
+        return stored_digest
+    if stored_digest and stored_digest != actual_digest:
+        raise ValueError("fixture digest does not match fixture content")
+    return actual_digest
+
+
+def _validate_case_search_scope(fixture: dict[str, Any]) -> None:
+    missing_cases = [
+        str(case.get("id") or "")
+        for case in fixture.get("cases", [])
+        if not str(case.get("search_category") or "").strip()
+    ]
+    missing_documents = [
+        str(document.get("source") or "")
+        for document in fixture.get("documents", [])
+        if not str(document.get("category") or "").strip()
+    ]
+    if missing_cases or missing_documents:
+        raise ValueError(
+            "case search scope requires non-empty case search_category and document category; "
+            "use --search-scope global for a global fixture"
+        )
+
+
+def _provider_input_provenance(fixture: dict[str, Any]) -> dict[str, Any]:
+    is_blinded = fixture.get("provider_input") is True
+    return {
+        "gold_labels_excluded": is_blinded and fixture.get("gold_labels_excluded") is True,
+        "provider_input_digest": (
+            fixture.get("provider_input_digest") if is_blinded else None
+        ),
+        "evaluation_fixture_digest": _validated_evaluation_fixture_digest(fixture),
+    }
+
+
 def _vault_version() -> str:
     try:
         import vault
@@ -1244,6 +2100,13 @@ def _build_parser() -> argparse.ArgumentParser:
     fixture.add_argument("--output", required=True)
     fixture.add_argument("--max-cases", type=int)
     fixture.add_argument("--granularity", default="session", choices=["session", "turn"])
+
+    provider_input = subparsers.add_parser(
+        "export-provider-input",
+        help="Strip scorer gold labels before giving a fixture to a provider adapter.",
+    )
+    provider_input.add_argument("--fixture", required=True)
+    provider_input.add_argument("--output", required=True)
 
     vault_run = subparsers.add_parser("vault-run", help="Run Vault and emit a comparison run artifact.")
     vault_run.add_argument("--benchmark", choices=["locomo", "longmemeval"], required=True)
@@ -1294,22 +2157,46 @@ def _build_parser() -> argparse.ArgumentParser:
     mem0_run.add_argument("--output", required=True)
     mem0_run.add_argument("--limit", type=int, default=10)
     mem0_run.add_argument("--search-scope", default="case", choices=["case", "global"])
-    mem0_run.add_argument("--vector-store-path", default="/tmp/mem0-comparison-qdrant")
-    mem0_run.add_argument("--collection-name", default="external_memory_comparison")
+    mem0_run.add_argument(
+        "--vector-store-path",
+        default="",
+        help="Local Qdrant path; defaults to a run-unique path under the system temp directory.",
+    )
+    mem0_run.add_argument("--collection-name", default="")
+    mem0_run.add_argument("--run-namespace", default="")
     mem0_run.add_argument("--embedder", default="fastembed", choices=["fastembed", "openai", "ollama"])
+    mem0_run.add_argument("--embed-model", default="")
     mem0_run.add_argument("--embedding-dims", type=int)
     mem0_run.add_argument("--llm-provider", default="ollama", choices=["ollama", "openai", "anthropic"])
     mem0_run.add_argument("--threshold", type=float, default=0.0)
+    mem0_run.add_argument("--history-db-path")
+    mem0_run.add_argument("--model-cache-path")
+    mem0_run.add_argument("--enable-telemetry", action="store_true")
+    mem0_run.add_argument(
+        "--allow-provider-fallback",
+        action="store_true",
+        help="Allow a diagnostic artifact when mem0 BM25 or spaCy assets are unavailable.",
+    )
+    mem0_run.add_argument(
+        "--include-content",
+        action="store_true",
+        help="Include retrieved memory text in the run artifact (debug only).",
+    )
 
-    letta_run = subparsers.add_parser("letta-run", help="Run Letta archival memory and emit a comparison artifact.")
+    letta_run = subparsers.add_parser(
+        "letta-run",
+        help="Run Letta Archive/Passages retrieval and emit a comparison artifact.",
+    )
     letta_run.add_argument("--fixture", required=True)
     letta_run.add_argument("--output", required=True)
-    letta_run.add_argument("--agent-id", required=True)
     letta_run.add_argument("--letta-api-key")
     letta_run.add_argument("--base-url", default="https://api.letta.com")
     letta_run.add_argument("--run-id")
+    letta_run.add_argument("--embedding", default="ollama/bge-m3:latest")
+    letta_run.add_argument("--server-version", default="")
     letta_run.add_argument("--limit", type=int, default=10)
     letta_run.add_argument("--search-scope", default="case", choices=["case", "global"])
+    letta_run.add_argument("--include-content", action="store_true")
 
     score = subparsers.add_parser("score-run", help="Score a comparison run artifact against a fixture.")
     score.add_argument("--fixture", required=True)
@@ -1340,6 +2227,11 @@ def main(argv: list[str] | None = None) -> int:
             output_path=args.output,
             max_cases=args.max_cases,
             granularity=args.granularity,
+        )
+    elif args.command == "export-provider-input":
+        payload = export_provider_input(
+            fixture_path=args.fixture,
+            output_path=args.output,
         )
     elif args.command == "vault-run":
         payload = run_vault_comparison(
@@ -1387,21 +2279,30 @@ def main(argv: list[str] | None = None) -> int:
             search_scope=args.search_scope,
             vector_store_path=args.vector_store_path,
             collection_name=args.collection_name,
+            run_namespace=args.run_namespace,
             embedder=args.embedder,
+            embed_model=args.embed_model,
             embedding_dims=args.embedding_dims,
             llm_provider=args.llm_provider,
             threshold=args.threshold,
+            history_db_path=args.history_db_path,
+            model_cache_path=args.model_cache_path,
+            enable_telemetry=args.enable_telemetry,
+            require_native_retrieval_assets=not args.allow_provider_fallback,
+            include_content=args.include_content,
         )
     elif args.command == "letta-run":
         payload = run_letta_comparison(
             fixture_path=args.fixture,
-            agent_id=args.agent_id,
             output_path=args.output,
             api_key=args.letta_api_key,
             base_url=args.base_url,
             run_id=args.run_id,
+            embedding=args.embedding,
+            server_version=args.server_version,
             limit=args.limit,
             search_scope=args.search_scope,
+            include_content=args.include_content,
         )
     elif args.command == "score-run":
         payload = score_run(fixture_path=args.fixture, run_path=args.run, output_path=args.output)
@@ -1451,12 +2352,22 @@ def _summary(payload: dict[str, Any]) -> dict[str, Any]:
                 "measured_count": payload["engineering"]["measured_count"],
             },
         }
+    provider_provenance = ((payload.get("manifest") or {}).get("provider_input") or {})
+    provider_input = payload.get("provider_input")
+    if provider_input is None and provider_provenance:
+        provider_input = provider_provenance.get("gold_labels_excluded") is True
+    provider_input_digest = payload.get("provider_input_digest")
+    if provider_input_digest is None:
+        provider_input_digest = provider_provenance.get("provider_input_digest")
     return {
         "artifact_type": payload.get("artifact_type"),
         "benchmark": payload.get("benchmark"),
         "cases_total": payload.get("cases_total"),
         "documents_total": payload.get("documents_total"),
         "system": payload.get("system"),
+        "provider_input": provider_input,
+        "fixture_digest": payload.get("fixture_digest"),
+        "provider_input_digest": provider_input_digest,
     }
 
 

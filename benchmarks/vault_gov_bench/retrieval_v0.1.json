@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "artifact_type": "external_memory_comparison_fixture",
+  "benchmark": "vaultgovbench-retrieval-v0.1",
+  "granularity": "synthetic-governance-case",
+  "fixed_clock": "2026-07-19T00:00:00Z",
+  "documents": [
+    {
+      "id": 1,
+      "source": "gov/office/old",
+      "title": "Former office",
+      "content": "The office was in Kaohsiung.",
+      "governance": {"valid_until": "2026-07-01T00:00:00Z"}
+    },
+    {
+      "id": 2,
+      "source": "gov/office/current",
+      "title": "Current office",
+      "content": "The office is in Taipei.",
+      "governance": {"valid_from": "2026-07-01T00:00:00Z"}
+    },
+    {
+      "id": 3,
+      "source": "gov/access/private",
+      "title": "Private profile note",
+      "content": "A profile-only note that must not be shared.",
+      "governance": {"scope": "private", "owner_agent": "profile-agent"}
+    },
+    {
+      "id": 4,
+      "source": "gov/access/shared",
+      "title": "Shared meeting note",
+      "content": "The shared meeting starts at 10:00.",
+      "governance": {"scope": "shared"}
+    },
+    {
+      "id": 5,
+      "source": "gov/status/deleted",
+      "title": "Deleted deployment target",
+      "content": "Deploy to the retired blue cluster.",
+      "governance": {"status": "deleted"}
+    },
+    {
+      "id": 6,
+      "source": "gov/status/active",
+      "title": "Active deployment target",
+      "content": "Deploy to the green cluster.",
+      "governance": {"status": "active"}
+    },
+    {
+      "id": 7,
+      "source": "gov/ttl/expired",
+      "title": "Expired incident command",
+      "content": "Use the temporary incident bridge.",
+      "governance": {"expires_at": "2026-07-18T00:00:00Z"}
+    },
+    {
+      "id": 8,
+      "source": "gov/ttl/current",
+      "title": "Current incident command",
+      "content": "Use the permanent operations room.",
+      "governance": {"expires_at": "2026-08-01T00:00:00Z"}
+    },
+    {
+      "id": 9,
+      "source": "gov/revision/v1",
+      "title": "Runbook revision one",
+      "content": "Restart service alpha first.",
+      "governance": {"status": "active"}
+    },
+    {
+      "id": 10,
+      "source": "gov/revision/v2",
+      "title": "Runbook revision two",
+      "content": "Restart service beta first.",
+      "governance": {"status": "active", "supersedes_id": 9}
+    },
+    {
+      "id": 11,
+      "source": "gov/privacy/blocked",
+      "title": "Blocked secret memory",
+      "content": "A redacted secret-bearing memory.",
+      "governance": {"privacy_status": "fail"}
+    },
+    {
+      "id": 12,
+      "source": "gov/privacy/clean",
+      "title": "Clean credential guidance",
+      "content": "Retrieve credentials from the approved secret manager.",
+      "governance": {"privacy_status": "pass"}
+    }
+  ],
+  "cases": [
+    {
+      "id": "temporal-correction",
+      "query": "Where is the office now?",
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "expected_sources": ["gov/office/current"],
+      "expected_valid_sources": ["gov/office/current"],
+      "forbidden_sources": ["gov/office/old"],
+      "expected_block_reasons": {"gov/office/old": "temporal_past"}
+    },
+    {
+      "id": "private-access",
+      "query": "What is the shared meeting time?",
+      "agent_id": "work-agent",
+      "include_private": false,
+      "as_of": "2026-07-19T00:00:00Z",
+      "expected_sources": ["gov/access/shared"],
+      "expected_valid_sources": ["gov/access/shared"],
+      "forbidden_sources": ["gov/access/private"],
+      "expected_block_reasons": {"gov/access/private": "private"}
+    },
+    {
+      "id": "deleted-ghost",
+      "query": "Which cluster is the deployment target?",
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "expected_sources": ["gov/status/active"],
+      "expected_valid_sources": ["gov/status/active"],
+      "forbidden_sources": ["gov/status/deleted"],
+      "expected_block_reasons": {"gov/status/deleted": "deleted"}
+    },
+    {
+      "id": "ttl-expiry",
+      "query": "Where should incident command meet?",
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "expected_sources": ["gov/ttl/current"],
+      "expected_valid_sources": ["gov/ttl/current"],
+      "forbidden_sources": ["gov/ttl/expired"],
+      "expected_block_reasons": {"gov/ttl/expired": "expired"}
+    },
+    {
+      "id": "superseded-revision",
+      "query": "Which service should restart first?",
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "expected_sources": ["gov/revision/v2"],
+      "expected_valid_sources": ["gov/revision/v2"],
+      "forbidden_sources": ["gov/revision/v1"],
+      "expected_block_reasons": {"gov/revision/v1": "superseded"}
+    },
+    {
+      "id": "privacy-block",
+      "query": "Where should credentials be retrieved?",
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "expected_sources": ["gov/privacy/clean"],
+      "expected_valid_sources": ["gov/privacy/clean"],
+      "forbidden_sources": ["gov/privacy/blocked"],
+      "expected_block_reasons": {"gov/privacy/blocked": "privacy_blocked"}
+    }
+  ],
+  "matching_rule": {
+    "retrieval": "Exact canonical source-id matching at each declared K.",
+    "valid_recall": "Relevant AND approved AND active AND authorized AND unexpired AND temporally current."
+  }
+}

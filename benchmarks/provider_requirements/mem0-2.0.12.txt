@@ -1,0 +1,12 @@
+# Direct benchmark dependency lock for the mem0 2.0.12 track.
+#
+# This is intentionally not a complete transitive lock. Record `pip freeze`
+# alongside each published result package so the full resolved environment is
+# auditable.
+mem0ai==2.0.12
+fastembed==0.8.0
+qdrant-client==1.18.0
+onnxruntime==1.27.0
+ollama==0.6.2
+spacy==3.8.14
+en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl

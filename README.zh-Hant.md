@@ -243,6 +243,9 @@ Vault 目前不宣稱自己有 LoCoMo / LongMemEval 類 leaderboard 分數。這
 Vault 現在公開的是可重現的產品契約驗證：
 
 - **Search QA**：source hit、MRR、no-result、citation boundary；衡量 retrieval evidence，不是 final answer 品質。
+- **[記憶地基 benchmark](docs/memory_foundation_benchmarks.md)**：同一 frozen candidate pool
+  比較外部引擎 `A` 與引擎加 Vault `A+B` 的 Valid Recall、forbidden exposure、latency、cost，
+  並跑 fixed-clock 動態治理 suite；synthetic contract data 不混充 live provider 成績。
 - **README command smoke**：確認 README 裡的公開命令沒有飄掉。
 - **Release gates**：pytest、release parity、public-boundary checks、package build checks、clean-install smoke。
 - **Integration smoke**：依 release scope 驗證 MCP/CLI、本機路徑，以及可選的 Supabase、Gateway、OpenClaw、Coze read-only hosted reader。
