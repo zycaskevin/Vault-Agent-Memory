@@ -126,10 +126,12 @@ policy remain diagnostics.
   preflight, ingest or index counts, retrieval execution, teardown, and closed
   handles. Evidence is bound to the raw-run digest and validated after
   teardown; absent or mismatched evidence fails the publication gate.
-- A publishable provider row requires at least five independent fresh-state
-  repeats with the same declared configuration. No repeat may reuse an index,
+- A publishable provider row requires at least five distinct sequential
+  fresh-state process repeats with the same declared configuration. No repeat
+  may reuse an index,
   collection, history store, database, or server namespace from another
-  repeat.
+  repeat. Runs over one public fixture and warm shared model cache establish
+  reproducibility and stability; they are not independent statistical samples.
 - `A` and `A+B` must use one frozen candidate pool. If `A+B` guards 40
   candidates to return 10, the engine artifact must actually contain and
   declare a pool of at least 40; the harness must not expand a top-10 artifact.
@@ -159,11 +161,17 @@ process and released only after scoring.
 
 ## Current Provider Measurement Status
 
-The first live runs are diagnostics until the full evidence gates above are
-green. mem0 and AgentMemory can be exercised through their native adapters and
-paired with Vault guard-only or RRF-fusion augmentation, but results produced
-from a dirty or gold-visible source chain must not be promoted as public
-benchmark rows.
+The built-in Vault keyword track and mem0 `2.0.12` controlled-retrieval track
+now each have five clean, blinded, distinct sequential process repeats bound to
+source revision `89b9156f501b74ddc48b689386eb159246b4b1db`. Their repeat
+summaries report `publishable: true`; the complete JSON evidence is checked in under
+`benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156`.
+
+That status is scoped to the six-case public synthetic contract fixture and
+guard-only `A+B-R` comparison. It does not convert the result into an official
+LoCoMo/LongMemEval score, measure final-answer quality, or prove universal
+improvement. AgentMemory remains diagnostic because its existing live repeats
+predate the blinded-input and clean-source gates.
 
 Letta remains **unmeasured**, not scored as zero. The current benchmark host
 does not provide the required Docker/Postgres/pgvector runtime for a clean,

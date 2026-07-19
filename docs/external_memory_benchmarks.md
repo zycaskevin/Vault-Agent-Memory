@@ -22,6 +22,11 @@ What is ready to claim:
   expected answers and expected/forbidden source labels with the scorer.
 - The harness can add a fixed-reader answer pass and score diagnostic final-QA
   metrics separately from retrieval.
+- A clean five-repeat-per-track Vault and mem0 controlled-retrieval VaultGovBench
+  evidence bundle is published for source revision `89b9156`; both summaries
+  report `publishable: true` under this repository's documented harness gate.
+  It uses an open six-case synthetic fixture and mem0 `infer=False` controlled
+  raw insertion.
 
 What is not ready to claim:
 
@@ -32,8 +37,14 @@ What is not ready to claim:
 - The mem0 row below is a 10-case adapter smoke, not a full mem0 baseline.
 - The Letta adapter has not yet produced a published live run result in this
   document.
-- The dated mem0 and AgentMemory developer snapshots predate the blinded-input
-  gate and are not promotion-ready results.
+- The clean VaultGovBench row is a six-case synthetic governance-contract test,
+  not a full mem0 product baseline or an official QA leaderboard result.
+- The dated AgentMemory developer snapshot predates the blinded-input gate and
+  is not promotion-ready.
+
+The clean artifacts, five raw/guard/pair chains per track, and repeat summaries
+are published at
+[`benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156`](../benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156/README.md).
 
 ## Supported Adapters
 
@@ -528,8 +539,10 @@ Before publishing comparison numbers, check:
   one clean committed source revision in every stage;
 - public-fixture results are labelled as reproducible open-fixture evidence;
   promotion-grade comparative claims also include a rotating hidden holdout;
-- no private paths, API keys, local database files, or benchmark data copies are
-  committed.
+- no private paths, API keys, local database files, or external/private
+  benchmark data copies are committed. Small sanitized, schema-validated
+  result bundles derived only from repository-owned public fixtures may live
+  under `benchmarks/results/`.
 
 ## Initial Local Smoke Results
 

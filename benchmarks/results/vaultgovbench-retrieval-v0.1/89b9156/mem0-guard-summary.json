@@ -1,0 +1,291 @@
+{
+  "artifact_type": "memory_foundation_repeat_summary",
+  "augmented": {
+    "forbidden_exposure_case_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "stdev": 0.0
+    },
+    "query_latency_mean_ms": {
+      "available": true,
+      "count": 5,
+      "max": 785.908,
+      "mean": 747.85,
+      "min": 736.657,
+      "stdev": 19.083305
+    },
+    "query_latency_p95_ms": {
+      "available": true,
+      "count": 5,
+      "max": 1267.833,
+      "mean": 1138.9214,
+      "min": 1102.758,
+      "stdev": 64.535514
+    },
+    "valid_hit_rate": {
+      "available": true,
+      "count": 5,
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "stdev": 0.0
+    },
+    "valid_mrr": {
+      "available": true,
+      "count": 5,
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "stdev": 0.0
+    },
+    "valid_precision": {
+      "available": true,
+      "count": 5,
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "stdev": 0.0
+    },
+    "valid_recall": {
+      "available": true,
+      "count": 5,
+      "max": 1.0,
+      "mean": 1.0,
+      "min": 1.0,
+      "stdev": 0.0
+    }
+  },
+  "baseline": {
+    "forbidden_exposure_case_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.333333,
+      "mean": 0.333333,
+      "min": 0.333333,
+      "stdev": 0.0
+    },
+    "query_latency_mean_ms": {
+      "available": true,
+      "count": 5,
+      "max": 785.767,
+      "mean": 747.7018,
+      "min": 736.497,
+      "stdev": 19.08692
+    },
+    "query_latency_p95_ms": {
+      "available": true,
+      "count": 5,
+      "max": 1267.77,
+      "mean": 1138.8622,
+      "min": 1102.701,
+      "stdev": 64.533594
+    },
+    "valid_hit_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.666667,
+      "mean": 0.666667,
+      "min": 0.666667,
+      "stdev": 0.0
+    },
+    "valid_mrr": {
+      "available": true,
+      "count": 5,
+      "max": 0.666667,
+      "mean": 0.666667,
+      "min": 0.666667,
+      "stdev": 0.0
+    },
+    "valid_precision": {
+      "available": true,
+      "count": 5,
+      "max": 0.666667,
+      "mean": 0.666667,
+      "min": 0.666667,
+      "stdev": 0.0
+    },
+    "valid_recall": {
+      "available": true,
+      "count": 5,
+      "max": 0.666667,
+      "mean": 0.666667,
+      "min": 0.666667,
+      "stdev": 0.0
+    }
+  },
+  "benchmark": "vaultgovbench-retrieval-v0.1",
+  "cases_per_repeat": 6,
+  "delta": {
+    "forbidden_exposure_case_rate": {
+      "available": true,
+      "count": 5,
+      "max": -0.333333,
+      "mean": -0.333333,
+      "min": -0.333333,
+      "stdev": 0.0
+    },
+    "latency_mean_ms": {
+      "available": true,
+      "count": 5,
+      "max": 0.16,
+      "mean": 0.1482,
+      "min": 0.141,
+      "stdev": 0.00725
+    },
+    "latency_p95_ms": {
+      "available": true,
+      "count": 5,
+      "max": 0.063,
+      "mean": 0.0592,
+      "min": 0.056,
+      "stdev": 0.002786
+    },
+    "valid_hit_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.333333,
+      "mean": 0.333333,
+      "min": 0.333333,
+      "stdev": 0.0
+    },
+    "valid_mrr": {
+      "available": true,
+      "count": 5,
+      "max": 0.333333,
+      "mean": 0.333333,
+      "min": 0.333333,
+      "stdev": 0.0
+    },
+    "valid_precision": {
+      "available": true,
+      "count": 5,
+      "max": 0.333333,
+      "mean": 0.333333,
+      "min": 0.333333,
+      "stdev": 0.0
+    },
+    "valid_recall": {
+      "available": true,
+      "count": 5,
+      "max": 0.333333,
+      "mean": 0.333333,
+      "min": 0.333333,
+      "stdev": 0.0
+    }
+  },
+  "fixture_digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+  "generated_at": "2026-07-19T05:16:48.057618+00:00",
+  "latency": {
+    "index_total_ms": {
+      "available": true,
+      "count": 5,
+      "max": 10889.702,
+      "mean": 10009.3916,
+      "min": 9664.463,
+      "stdev": 445.329257
+    },
+    "ingest_ms": {
+      "available": true,
+      "count": 5,
+      "max": 6857.308,
+      "mean": 6713.8464,
+      "min": 6632.859,
+      "stdev": 80.066961
+    },
+    "setup_ms": {
+      "available": true,
+      "count": 5,
+      "max": 4204.008,
+      "mean": 3295.536,
+      "min": 3010.851,
+      "stdev": 457.195211
+    }
+  },
+  "manifest": {
+    "adapter_digest": "sha256:3d5c84f9d2dc73062e71478c73ede990bd32d23d11874d85ce0c98a49f6808c1",
+    "architecture": "arm64",
+    "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+    "fixed_clock": "2026-07-19T00:00:00Z",
+    "git_dirty": false,
+    "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db",
+    "os": "Darwin",
+    "python": "3.12.12",
+    "redaction": "default artifact fields omit credentials and local paths; fixtures require separate input review",
+    "seed": null,
+    "seed_status": "not_applicable_to_deterministic_policy_replay"
+  },
+  "notes": [
+    "All quality deltas are paired on the same case ids and frozen candidate pool per repeat.",
+    "This is a controlled retrieval-only track, not a full agent answer-quality leaderboard.",
+    "Missing latency or cost values remain unavailable and are never converted to zero."
+  ],
+  "publishable": true,
+  "quality_gates": {
+    "artifact_source_chain_clean_and_bound_all_repeats": true,
+    "clean_state_repeats_minimum_met": true,
+    "missing_metrics_are_not_zero": true,
+    "provider_clean_state_execution_verified_all_repeats": true,
+    "provider_gold_labels_excluded_all_repeats": true,
+    "provider_native_preflight_applicable": true,
+    "provider_native_preflight_passed_all_repeats": true,
+    "provider_retrieval_integrity_passed_all_repeats": true,
+    "same_provider_configuration": true,
+    "unique_clean_state_identities": true,
+    "unique_pair_artifacts": true,
+    "unique_run_artifacts": true,
+    "zero_index_failures_all_repeats": true
+  },
+  "ranking_stability": {
+    "cases": [
+      {
+        "full_ranking_stable": true,
+        "id": "temporal-correction",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "private-access",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "deleted-ghost",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "ttl-expiry",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "superseded-revision",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "privacy-block",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      }
+    ],
+    "full_ranking_stable_case_rate": 1.0,
+    "mean_top1_agreement_rate": 1.0,
+    "min_top1_agreement_rate": 1.0
+  },
+  "release_gate_reasons": [],
+  "repeats": 5,
+  "retrieval_mode": "mem0:semantic+bm25+entity",
+  "schema_version": 1,
+  "system": "mem0",
+  "system_version": "2.0.12",
+  "track": "controlled_retrieval_raw_insert"
+}

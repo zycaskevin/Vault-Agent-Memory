@@ -68,9 +68,11 @@ stages cannot be silently mixed.
 CI reruns the dynamic suite and paired contract on every relevant change,
 enforces zero unexpected failures/exposures/filter-regret, and uploads the
 four JSON artifacts as the `memory-foundation-contract-<git sha>` workflow
-artifact for 30 days. Long-lived provider result packages should be attached to
-a release or stored in a dedicated results repository, not committed as local
-benchmark output.
+artifact for 30 days. Small, sanitized, schema-validated bundles derived only
+from a repository-owned public fixture may be committed under
+`benchmarks/results/`. Large, external, licensed, private, or credential-bearing
+provider packages belong in a release asset or dedicated results repository,
+not in the source tree.
 
 Apply Vault read governance to an existing engine run:
 
@@ -368,7 +370,8 @@ local diagnostic is still not publishable unless its repeat summary says
 
 | Provider track | Pinned target | Execution prerequisites | Status represented here |
 |---|---|---|---|
-| mem0 controlled retrieval | `mem0ai==2.0.12`; direct dependency lock above | Five separate clean-state processes; blinded provider input; explicit FastEmbed model/dimensions; isolated Qdrant, history, collection, namespace, and mem0 state; telemetry off; `infer=False`; full initialization included in index timing | Five current-adapter blinded developer-diagnostic repeats completed. Native retrieval, gold-isolation, clean-state execution, and ranking-stability gates passed. Publication remains blocked only by the dirty, uncommitted source chain. |
+| Vault keyword retrieval | Source revision `89b9156`; built-in local provider | Five separate clean-state processes; blinded provider input; isolated SQLite databases; fixed keyword configuration; full initialization included in index timing | Five clean, digest-bound repeats completed; every applicable release gate passed and the repeat summary reports `publishable: true`. |
+| mem0 controlled retrieval | `mem0ai==2.0.12`; direct dependency lock above | Five separate clean-state processes; blinded provider input; explicit FastEmbed model/dimensions; isolated Qdrant, history, collection, namespace, and mem0 state; telemetry off; `infer=False`; full initialization included in index timing | Five clean, digest-bound current-adapter repeats completed from source revision `89b9156`; native retrieval, gold-isolation, clean-state execution, source-binding, and ranking-stability gates passed. The repeat summary reports `publishable: true`. |
 | Letta / MemGPT Archive/Passages | Letta server `0.16.8`; `letta-client==1.12.1` | Reachable pinned server with PostgreSQL/pgvector; blinded provider input; explicit embedding configuration; one fresh Archive per repeat; verify Archive deletion; include server/client/image/model versions and complete initialization timing | Adapter is implemented; local live run is blocked because this host has no Docker or PostgreSQL runtime. Missing is not scored as zero. |
 | `rohitg00/agentmemory` | Repository owner `rohitg00`, release `v0.9.27` | Pin the exact repository release and full npm tree; use a blinded provider input and one fresh isolated store per repeat; map result `obsId` back to fixture source before trusting `sessionId`; split index and query timing; bind zero-count/readiness/teardown evidence to each raw run digest | Five fresh-store developer-diagnostic repeats completed and their execution evidence validated. Publication remains blocked because the runs predate the blind-input gate and the run-time benchmark source chain was dirty/not fully recorded. |
 
@@ -376,9 +379,9 @@ If a prerequisite is unavailable, report the provider track as blocked or not
 measured. Never substitute zero latency, zero cost, or an empty result for a
 missing live run.
 
-### 2026-07-19 blinded local mem0 validation snapshot (not yet publishable)
+### 2026-07-19 clean Vault and mem0 publication snapshot
 
-This dated snapshot is engineering evidence for the harness, not an official
+This dated snapshot is reproducible evidence for the harness, not an official
 LoCoMo, LongMemEval, or vendor leaderboard result. It used the six-case
 VaultGovBench retrieval contract fixture (12 documents, fixture digest
 `sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f`),
@@ -387,7 +390,17 @@ processes. Each provider process received only the redacted input digest
 `sha256:ddd3a0799c4640c71bff63d86ead20da2c4a5fa5344840f41da828141c6f4fc4`;
 the full fixture remained in the policy replay and scorer processes.
 
-The provider profile was mem0 `2.0.12` controlled raw insertion
+Both tracks ran five distinct sequential clean-state process repeats from
+committed source revision
+`89b9156f501b74ddc48b689386eb159246b4b1db`. The exact provider input, five
+raw/guard/pair chains per track, and digest-bound repeat summaries are checked
+in under
+[`benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156`](../benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156/README.md).
+These repeated processes check reproducibility over one public fixture and,
+for mem0, one warm pinned model cache; they are not independent statistical
+samples.
+
+The mem0 provider profile was mem0 `2.0.12` controlled raw insertion
 (`infer=False`), FastEmbed `0.8.0`, `thenlper/gte-large` at 1024 dimensions,
 Qdrant `1.18.0`, ONNX Runtime `1.27.0`, spaCy `3.8.14`, and
 `en-core-web-sm==3.8.0`. The fail-closed preflight passed in all five repeats:
@@ -399,14 +412,25 @@ dimensions were all available. The dense and BM25 cache revisions were
 | Paired top-1 result | mem0 only | mem0 + Vault guard | Delta |
 |---|---:|---:|---:|
 | Valid hit rate | 0.666667 | 1.000000 | +0.333333 |
+| Valid Recall@1 | 0.666667 (4/6) | 1.000000 (6/6) | +0.333333 |
 | Valid MRR | 0.666667 | 1.000000 | +0.333333 |
-| Forbidden-exposure case rate | 0.333333 | 0.000000 | -0.333333 |
-| Mean query latency across repeat means | 742.7222 ms | 742.9284 ms | +0.2062 ms |
+| Forbidden-exposure case rate | 0.333333 (2/6) | 0.000000 (0/6) | -0.333333 |
+| Mean query latency across repeat means | 747.7018 ms | 747.8500 ms | +0.1482 ms |
+| Mean of paired per-repeat P95 values | 1,138.8622 ms | 1,138.9214 ms | +0.0592 ms |
 
 All six provider rankings were identical across all five repeats. Mean complete
-provider index time was 10,264.2258 ms (3,568.8642 ms setup and 6,695.3520 ms
-ingestion). The mean of the five per-repeat query P95 values was 1,103.1714 ms;
+provider index time was 10,009.3916 ms (3,295.5360 ms setup and 6,713.8464 ms
+ingestion). The mean of the five per-repeat baseline query P95 values was
+1,138.8622 ms and the guarded mean was 1,138.9214 ms;
 do not reinterpret that aggregate as a pooled P95.
+
+The Vault keyword track scored 0.833333 Valid Recall@1, valid hit rate, and MRR
+before and after the guard, with zero forbidden-exposure cases in both arms.
+Its mean query latency changed from 0.3950 ms to 0.5428 ms (+0.1478 ms), and its
+complete mean index time was 13.1312 ms. The mean of its paired per-repeat P95
+values changed from 1.0154 ms to 1.5566 ms (+0.5412 ms). All six Vault rankings
+were also identical across all five repeats. Provider/API cost was not measured
+for either local track and remains unavailable; it is not zero.
 
 An earlier pre-blind keyword-Vault RRF fusion diagnostic reached the same
 top-1 quality and zero-exposure result, but it is not part of this blinded
@@ -414,12 +438,16 @@ snapshot and cannot be combined with these latency rows. The blinded
 guard-only result supports the governance-foundation claim; it does not claim
 that fusion always improves recall.
 
-The final digest-bound repeat summary passes blinded-input provenance,
-provider clean-state execution, native retrieval, unique-artifact, unique
-clean-state, zero-index-failure, and five-repeat gates. It still marks
-`publishable: false` because the run-time source chain was dirty and not bound
-to one clean committed revision. A clean committed rerun with the same method
-is required before these numbers can be used in promotion.
+Both final digest-bound repeat summaries pass blinded-input provenance,
+provider clean-state execution, provider retrieval integrity, unique-artifact,
+unique clean-state, clean source-chain, zero-index-failure, and five-repeat
+gates. The mem0 native-retrieval preflight also passed all five repeats; that
+gate is not applicable to the built-in Vault track. Both summaries report
+`publishable: true` with no release-gate reasons.
+
+“Publishable” applies only to this frozen six-case contract row and its stated
+claim boundary. It does not turn these numbers into end-to-end memory QA or
+prove that Vault improves every engine.
 
 ### 2026-07-19 local AgentMemory validation snapshot (not yet publishable)
 

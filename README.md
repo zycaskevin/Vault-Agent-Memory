@@ -300,8 +300,11 @@ contract:
 - **[Memory-foundation benchmark](docs/memory_foundation_benchmarks.md)**:
   paired external-engine `A` versus engine-plus-Vault `A+B` Valid Recall,
   forbidden-exposure, latency, and cost deltas, plus a fixed-clock dynamic
-  governance suite. Synthetic contract data is kept separate from live provider
-  claims.
+  governance suite. Synthetic contract evidence is labelled separately from
+  full provider-product claims. A retrieval-only VaultGovBench bundle with five
+  distinct clean-state repeats per track for Vault keyword retrieval and mem0
+  2.0.12 controlled raw insertion is published under
+  [`benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156`](benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156/README.md).
 - **README command smoke**: public README commands are exercised so install and
   quickstart examples do not drift.
 - **Release gates**: pytest, release parity, public-boundary checks, package

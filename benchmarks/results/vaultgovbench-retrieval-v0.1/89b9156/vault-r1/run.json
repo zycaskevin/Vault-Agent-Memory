@@ -1,0 +1,451 @@
+{
+  "allow_hash": false,
+  "artifact_type": "external_memory_comparison_run",
+  "benchmark": "vaultgovbench-retrieval-v0.1",
+  "candidate_pool_k": 4,
+  "cases": [
+    {
+      "candidate_pool": [
+        {
+          "id": 2,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.648,
+          "source": "gov/office/current",
+          "title": "Current office"
+        },
+        {
+          "id": 1,
+          "mode": "keyword_fts",
+          "rank": 2,
+          "score": 0.36800000000000005,
+          "source": "gov/office/old",
+          "title": "Former office"
+        }
+      ],
+      "candidate_pool_returned": 2,
+      "case_id": "temporal-correction",
+      "cost_usd": null,
+      "id": "temporal-correction",
+      "latency_ms": 1.082,
+      "policy_context": {
+        "agent_id": "work-agent",
+        "as_of": "2026-07-19T00:00:00Z",
+        "include_expired_temporal_candidates": true,
+        "include_future_temporal_candidates": true,
+        "include_private": false,
+        "max_sensitivity": ""
+      },
+      "query": "Where is the office now?",
+      "results": [
+        {
+          "id": 2,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.648,
+          "source": "gov/office/current",
+          "title": "Current office"
+        },
+        {
+          "id": 1,
+          "mode": "keyword_fts",
+          "rank": 2,
+          "score": 0.36800000000000005,
+          "source": "gov/office/old",
+          "title": "Former office"
+        }
+      ]
+    },
+    {
+      "candidate_pool": [
+        {
+          "id": 4,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.5,
+          "source": "gov/access/shared",
+          "title": "Shared meeting note"
+        }
+      ],
+      "candidate_pool_returned": 1,
+      "case_id": "private-access",
+      "cost_usd": null,
+      "id": "private-access",
+      "latency_ms": 0.27,
+      "policy_context": {
+        "agent_id": "work-agent",
+        "as_of": "2026-07-19T00:00:00Z",
+        "include_expired_temporal_candidates": true,
+        "include_future_temporal_candidates": true,
+        "include_private": false,
+        "max_sensitivity": ""
+      },
+      "query": "What is the shared meeting time?",
+      "results": [
+        {
+          "id": 4,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.5,
+          "source": "gov/access/shared",
+          "title": "Shared meeting note"
+        }
+      ]
+    },
+    {
+      "candidate_pool": [
+        {
+          "id": 6,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.6666666666666666,
+          "source": "gov/status/active",
+          "title": "Active deployment target"
+        },
+        {
+          "id": 5,
+          "mode": "keyword_fts",
+          "rank": 2,
+          "score": 0.6666666666666666,
+          "source": "gov/status/deleted",
+          "title": "Deleted deployment target"
+        }
+      ],
+      "candidate_pool_returned": 2,
+      "case_id": "deleted-ghost",
+      "cost_usd": null,
+      "id": "deleted-ghost",
+      "latency_ms": 0.271,
+      "policy_context": {
+        "agent_id": "work-agent",
+        "as_of": "2026-07-19T00:00:00Z",
+        "include_expired_temporal_candidates": true,
+        "include_future_temporal_candidates": true,
+        "include_private": false,
+        "max_sensitivity": ""
+      },
+      "query": "Which cluster is the deployment target?",
+      "results": [
+        {
+          "id": 6,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.6666666666666666,
+          "source": "gov/status/active",
+          "title": "Active deployment target"
+        },
+        {
+          "id": 5,
+          "mode": "keyword_fts",
+          "rank": 2,
+          "score": 0.6666666666666666,
+          "source": "gov/status/deleted",
+          "title": "Deleted deployment target"
+        }
+      ]
+    },
+    {
+      "candidate_pool": [
+        {
+          "id": 8,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.4,
+          "source": "gov/ttl/current",
+          "title": "Current incident command"
+        },
+        {
+          "id": 7,
+          "mode": "keyword_fts",
+          "rank": 2,
+          "score": 0.4,
+          "source": "gov/ttl/expired",
+          "title": "Expired incident command"
+        }
+      ],
+      "candidate_pool_returned": 2,
+      "case_id": "ttl-expiry",
+      "cost_usd": null,
+      "id": "ttl-expiry",
+      "latency_ms": 0.213,
+      "policy_context": {
+        "agent_id": "work-agent",
+        "as_of": "2026-07-19T00:00:00Z",
+        "include_expired_temporal_candidates": true,
+        "include_future_temporal_candidates": true,
+        "include_private": false,
+        "max_sensitivity": ""
+      },
+      "query": "Where should incident command meet?",
+      "results": [
+        {
+          "id": 8,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.4,
+          "source": "gov/ttl/current",
+          "title": "Current incident command"
+        },
+        {
+          "id": 7,
+          "mode": "keyword_fts",
+          "rank": 2,
+          "score": 0.4,
+          "source": "gov/ttl/expired",
+          "title": "Expired incident command"
+        }
+      ]
+    },
+    {
+      "candidate_pool": [
+        {
+          "id": 10,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.6,
+          "source": "gov/revision/v2",
+          "title": "Runbook revision two"
+        },
+        {
+          "id": 9,
+          "mode": "keyword_fts",
+          "rank": 2,
+          "score": 0.552,
+          "source": "gov/revision/v1",
+          "title": "Runbook revision one"
+        }
+      ],
+      "candidate_pool_returned": 2,
+      "case_id": "superseded-revision",
+      "cost_usd": null,
+      "id": "superseded-revision",
+      "latency_ms": 0.212,
+      "policy_context": {
+        "agent_id": "work-agent",
+        "as_of": "2026-07-19T00:00:00Z",
+        "include_expired_temporal_candidates": true,
+        "include_future_temporal_candidates": true,
+        "include_private": false,
+        "max_sensitivity": ""
+      },
+      "query": "Which service should restart first?",
+      "results": [
+        {
+          "id": 10,
+          "mode": "keyword_fts",
+          "rank": 1,
+          "score": 0.6,
+          "source": "gov/revision/v2",
+          "title": "Runbook revision two"
+        },
+        {
+          "id": 9,
+          "mode": "keyword_fts",
+          "rank": 2,
+          "score": 0.552,
+          "source": "gov/revision/v1",
+          "title": "Runbook revision one"
+        }
+      ]
+    },
+    {
+      "candidate_pool": [],
+      "candidate_pool_returned": 0,
+      "case_id": "privacy-block",
+      "cost_usd": null,
+      "id": "privacy-block",
+      "latency_ms": 0.118,
+      "policy_context": {
+        "agent_id": "work-agent",
+        "as_of": "2026-07-19T00:00:00Z",
+        "include_expired_temporal_candidates": true,
+        "include_future_temporal_candidates": true,
+        "include_private": false,
+        "max_sensitivity": ""
+      },
+      "query": "Where should credentials be retrieved?",
+      "results": []
+    }
+  ],
+  "cases_total": 6,
+  "documents_total": 12,
+  "embed_model": null,
+  "embed_provider": null,
+  "engineering": {
+    "audit": {
+      "evidence": "Source provenance is retained; the audit lifecycle is not exercised.",
+      "measured": false,
+      "supported": true
+    },
+    "local_first": {
+      "evidence": "This run creates and searches a local temporary SQLite Vault.",
+      "measured": true,
+      "supported": true
+    },
+    "multi_agent_shared_memory": {
+      "evidence": "This retrieval run does not exercise shared-agent setup.",
+      "measured": false,
+      "supported": true
+    },
+    "report": {
+      "evidence": "This retrieval run does not generate an operations report.",
+      "measured": false,
+      "supported": true
+    },
+    "sync": {
+      "evidence": "This retrieval run does not exercise remote sync.",
+      "measured": false,
+      "supported": true
+    }
+  },
+  "fixture_digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+  "generated_at": "2026-07-19T05:15:09.578372+00:00",
+  "hash_dim": null,
+  "index_latency_ms": 14.806,
+  "ingest_latency_ms": 2.611,
+  "manifest": {
+    "benchmark_source": {
+      "adapter_digest": "sha256:b107e822eac1010f4b0c5fb0550ea8dc85d7b574fc5bd11b3c447c3f2102fe75",
+      "adapter_file": "vault_fixture_run.py",
+      "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+      "git_dirty": false,
+      "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db"
+    },
+    "database": {
+      "backend": "SQLite",
+      "ephemeral": true,
+      "lifecycle": "fresh temporary database deleted after the run",
+      "path": "redacted-temporary-path",
+      "reuse": false,
+      "vault_schema_version": 14
+    },
+    "dependencies": {
+      "onnxruntime": null,
+      "sentence-transformers": null,
+      "sqlite-vec": "0.1.9",
+      "vault-for-llm": "0.10.2"
+    },
+    "fixture": {
+      "benchmark": "vaultgovbench-retrieval-v0.1",
+      "cases_total": 6,
+      "digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+      "documents_total": 12,
+      "file_name": "provider-input.json",
+      "fixed_clock": "2026-07-19T00:00:00Z",
+      "frozen_candidate_pool_used": false,
+      "input": "fixture.documents"
+    },
+    "governance_materialization": {
+      "canonical_only_fields": [
+        "privacy_status",
+        "approval_state"
+      ],
+      "downstream_guard_source": "fixture canonical snapshot",
+      "stored_fields": [
+        "scope",
+        "sensitivity",
+        "owner_agent",
+        "allowed_agents",
+        "memory_type",
+        "expires_at",
+        "valid_from",
+        "valid_until",
+        "supersedes_id",
+        "status"
+      ]
+    },
+    "provider_input": {
+      "evaluation_fixture_digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+      "gold_labels_excluded": true,
+      "provider_input_digest": "sha256:ddd3a0799c4640c71bff63d86ead20da2c4a5fa5344840f41da828141c6f4fc4"
+    },
+    "provider_quality_gate": {
+      "checks": {
+        "exact_source_provenance": true,
+        "expected_labels_excluded_from_run_cases": true,
+        "fresh_ephemeral_database": true,
+        "live_search_execution": true
+      },
+      "passed": true
+    },
+    "redaction": "expected labels and content are omitted by default; fixture inputs require separate review",
+    "retrieval": {
+      "allow_hash": false,
+      "candidate_pool_k": 4,
+      "content_in_run_artifact": false,
+      "embed_model": null,
+      "embed_provider": null,
+      "hash_dim": null,
+      "implementation": "vault.search.VaultSearch.search",
+      "mode": "keyword",
+      "publishable": true,
+      "query_expansion": false,
+      "rerank": false,
+      "search_scope": "fixture-global",
+      "seed": null,
+      "seed_status": "not_set; provider determinism must be documented separately",
+      "semantic_vector_kind": "node"
+    },
+    "runner": {
+      "module": "benchmarks.vault_fixture_run",
+      "version": "0.1.0"
+    },
+    "runtime": {
+      "architecture": "arm64",
+      "os": "Darwin",
+      "os_release": "25.5.0",
+      "python": "3.12.12",
+      "python_implementation": "CPython",
+      "sqlite": "3.50.4"
+    },
+    "source_control": {
+      "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+      "git_dirty": false,
+      "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db"
+    },
+    "timing_scope": {
+      "cost": "unavailable; local compute cost was not estimated",
+      "index": "DB initialization, document writes, and semantic index preparation",
+      "retrieval": "VaultSearch.search wall time per case",
+      "run_wall": "benchmark work from before temporary DB creation through retrieval; manifest construction and output serialization are excluded"
+    }
+  },
+  "notes": [
+    "Retrieval-only candidate pool; no reader model or final-answer judge was run.",
+    "Every candidate came from live VaultSearch over documents indexed in this run.",
+    "No frozen or pre-ranked candidate pool was read.",
+    "Expected answers and expected/forbidden source labels are never copied into the run artifact.",
+    "Retrieved content is omitted by default and only included with an explicit debug flag.",
+    "Expired and future temporal candidates remain retrieval-eligible so the downstream Vault read guard can measure policy filtering on the same pool.",
+    "Deterministic hash embeddings are non-publishable plumbing test doubles."
+  ],
+  "retrieval_mode": "keyword",
+  "run_id": "vault-fixture-ab428414fe844e3589b6b9c9e91c9f71",
+  "runner": "benchmarks.vault_fixture_run",
+  "runner_version": "0.1.0",
+  "schema_version": 1,
+  "search_scope": "fixture-global",
+  "semantic_index_latency_ms": 0.0,
+  "semantic_vector_kind": "node",
+  "setup_latency_ms": 12.195,
+  "storage_index_latency_ms": 14.806,
+  "system": "vault",
+  "system_version": "0.10.2",
+  "timings": {
+    "database_init_ms": 12.195,
+    "document_index_ms": 2.611,
+    "index_total_ms": 14.806,
+    "retrieval": {
+      "available": true,
+      "count": 6,
+      "max_ms": 1.082,
+      "mean_ms": 0.361,
+      "min_ms": 0.118,
+      "p50_ms": 0.241,
+      "p95_ms": 0.879
+    },
+    "run_wall_ms": 23.932,
+    "semantic_index_ms": 0.0
+  },
+  "top_k": 4
+}

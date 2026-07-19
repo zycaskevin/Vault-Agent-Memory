@@ -73,6 +73,10 @@ developer diagnostic，不能用零值補齊。
 input 只防止 provider process 意外讀到 gold，不等於 hidden test。正式推廣
 的比較性主張還需要由獨立 scorer 保管、定期輪替的 hidden holdout。
 
+第一份通過完整 publication gate 的 Vault 與 mem0 五次 clean-state
+artifacts、repeat summaries 與清楚的 claim boundary 位於
+[`results/vaultgovbench-retrieval-v0.1/89b9156`](results/vaultgovbench-retrieval-v0.1/89b9156/README.md)。
+
 ### `search_benchmark.py` - 搜尋品質與效能基準測試
 
 比較不同搜尋策略的效果與效能：

@@ -1,0 +1,501 @@
+{
+  "artifact_bindings": {
+    "engine_run_digest": "sha256:3d811330a3a94ce08ec00782d2e7af6ade009388dcdc200c684f3ba35e04d411",
+    "engine_system": "mem0",
+    "engine_system_version": "2.0.12",
+    "vault_run_digest": null,
+    "vault_system": ""
+  },
+  "artifact_type": "external_memory_comparison_run",
+  "augmentation": {
+    "engine_system": "mem0",
+    "fixed_candidate_pool": true,
+    "guard": "vault.governance_read_guard.evaluate_governed_read",
+    "mode": "guard-only",
+    "rrf_k": null,
+    "source_of_truth": "fixture canonical snapshot (policy replay)",
+    "vault_system": ""
+  },
+  "benchmark": "vaultgovbench-retrieval-v0.1",
+  "candidate_pool_k": 4,
+  "cases": [
+    {
+      "augmentation_latency_ms": 0.653,
+      "blocked_by_reason": {
+        "deleted": 1,
+        "temporal_past": 1
+      },
+      "candidate_pool_returned": 4,
+      "cost_usd": null,
+      "engine_latency_ms": 552.717,
+      "fusion_retrieval_latency_ms": 0.0,
+      "id": "temporal-correction",
+      "latency_ms": 553.37,
+      "policy_decisions": [
+        {
+          "allowed": false,
+          "canonical_id": 1,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 1,
+          "reason_codes": [
+            "temporal_past"
+          ],
+          "source": "gov/office/old",
+          "temporal_state": "past"
+        },
+        {
+          "allowed": true,
+          "canonical_id": 2,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 2,
+          "reason_codes": [],
+          "source": "gov/office/current",
+          "temporal_state": "current"
+        },
+        {
+          "allowed": true,
+          "canonical_id": 8,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 3,
+          "reason_codes": [],
+          "source": "gov/ttl/current",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 5,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 4,
+          "reason_codes": [
+            "deleted"
+          ],
+          "source": "gov/status/deleted",
+          "temporal_state": "timeless"
+        }
+      ],
+      "query": "Where is the office now?",
+      "results": [
+        {
+          "governance": {
+            "allowed": true,
+            "canonical_id": 2,
+            "evaluated_at": "2026-07-19T00:00:00+00:00"
+          },
+          "id": "1bf13e72-747b-4fc7-ac35-85c301366c93",
+          "original_rank": 2,
+          "rank": 1,
+          "score": 0.7053130224512142,
+          "source": "gov/office/current",
+          "title": "Current office"
+        }
+      ]
+    },
+    {
+      "augmentation_latency_ms": 0.065,
+      "blocked_by_reason": {
+        "private": 1
+      },
+      "candidate_pool_returned": 4,
+      "cost_usd": null,
+      "engine_latency_ms": 1101.838,
+      "fusion_retrieval_latency_ms": 0.0,
+      "id": "private-access",
+      "latency_ms": 1101.903,
+      "policy_decisions": [
+        {
+          "allowed": true,
+          "canonical_id": 4,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 1,
+          "reason_codes": [],
+          "source": "gov/access/shared",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 3,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 2,
+          "reason_codes": [
+            "private"
+          ],
+          "source": "gov/access/private",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": true,
+          "canonical_id": 8,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 3,
+          "reason_codes": [],
+          "source": "gov/ttl/current",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": true,
+          "canonical_id": 2,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 4,
+          "reason_codes": [],
+          "source": "gov/office/current",
+          "temporal_state": "current"
+        }
+      ],
+      "query": "What is the shared meeting time?",
+      "results": [
+        {
+          "governance": {
+            "allowed": true,
+            "canonical_id": 4,
+            "evaluated_at": "2026-07-19T00:00:00+00:00"
+          },
+          "id": "c2efeb95-e1c9-4192-b126-0119914156d0",
+          "original_rank": 1,
+          "rank": 1,
+          "score": 0.9579774860143877,
+          "source": "gov/access/shared",
+          "title": "Shared meeting note"
+        }
+      ]
+    },
+    {
+      "augmentation_latency_ms": 0.055,
+      "blocked_by_reason": {
+        "deleted": 1,
+        "superseded": 1
+      },
+      "candidate_pool_returned": 4,
+      "cost_usd": null,
+      "engine_latency_ms": 1115.886,
+      "fusion_retrieval_latency_ms": 0.0,
+      "id": "deleted-ghost",
+      "latency_ms": 1115.941,
+      "policy_decisions": [
+        {
+          "allowed": true,
+          "canonical_id": 6,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 1,
+          "reason_codes": [],
+          "source": "gov/status/active",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 5,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 2,
+          "reason_codes": [
+            "deleted"
+          ],
+          "source": "gov/status/deleted",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 9,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 3,
+          "reason_codes": [
+            "superseded"
+          ],
+          "source": "gov/revision/v1",
+          "temporal_state": "past"
+        },
+        {
+          "allowed": true,
+          "canonical_id": 10,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 4,
+          "reason_codes": [],
+          "source": "gov/revision/v2",
+          "temporal_state": "timeless"
+        }
+      ],
+      "query": "Which cluster is the deployment target?",
+      "results": [
+        {
+          "governance": {
+            "allowed": true,
+            "canonical_id": 6,
+            "evaluated_at": "2026-07-19T00:00:00+00:00"
+          },
+          "id": "8dc3af44-9f01-411b-b7fd-6117da9795bd",
+          "original_rank": 1,
+          "rank": 1,
+          "score": 0.9630729759923286,
+          "source": "gov/status/active",
+          "title": "Active deployment target"
+        }
+      ]
+    },
+    {
+      "augmentation_latency_ms": 0.052,
+      "blocked_by_reason": {
+        "deleted": 1,
+        "expired": 1
+      },
+      "candidate_pool_returned": 4,
+      "cost_usd": null,
+      "engine_latency_ms": 557.905,
+      "fusion_retrieval_latency_ms": 0.0,
+      "id": "ttl-expiry",
+      "latency_ms": 557.957,
+      "policy_decisions": [
+        {
+          "allowed": true,
+          "canonical_id": 8,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 1,
+          "reason_codes": [],
+          "source": "gov/ttl/current",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 7,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 2,
+          "reason_codes": [
+            "expired"
+          ],
+          "source": "gov/ttl/expired",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": true,
+          "canonical_id": 4,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 3,
+          "reason_codes": [],
+          "source": "gov/access/shared",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 5,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 4,
+          "reason_codes": [
+            "deleted"
+          ],
+          "source": "gov/status/deleted",
+          "temporal_state": "timeless"
+        }
+      ],
+      "query": "Where should incident command meet?",
+      "results": [
+        {
+          "governance": {
+            "allowed": true,
+            "canonical_id": 8,
+            "evaluated_at": "2026-07-19T00:00:00+00:00"
+          },
+          "id": "bea1f1b1-339c-4c40-9db5-ef0239b96edc",
+          "original_rank": 1,
+          "rank": 1,
+          "score": 0.9226765427251145,
+          "source": "gov/ttl/current",
+          "title": "Current incident command"
+        }
+      ]
+    },
+    {
+      "augmentation_latency_ms": 0.048,
+      "blocked_by_reason": {
+        "deleted": 1,
+        "expired": 1,
+        "superseded": 1
+      },
+      "candidate_pool_returned": 4,
+      "cost_usd": null,
+      "engine_latency_ms": 558.844,
+      "fusion_retrieval_latency_ms": 0.0,
+      "id": "superseded-revision",
+      "latency_ms": 558.892,
+      "policy_decisions": [
+        {
+          "allowed": false,
+          "canonical_id": 9,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 1,
+          "reason_codes": [
+            "superseded"
+          ],
+          "source": "gov/revision/v1",
+          "temporal_state": "past"
+        },
+        {
+          "allowed": true,
+          "canonical_id": 10,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 2,
+          "reason_codes": [],
+          "source": "gov/revision/v2",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 7,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 3,
+          "reason_codes": [
+            "expired"
+          ],
+          "source": "gov/ttl/expired",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 5,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 4,
+          "reason_codes": [
+            "deleted"
+          ],
+          "source": "gov/status/deleted",
+          "temporal_state": "timeless"
+        }
+      ],
+      "query": "Which service should restart first?",
+      "results": [
+        {
+          "governance": {
+            "allowed": true,
+            "canonical_id": 10,
+            "evaluated_at": "2026-07-19T00:00:00+00:00"
+          },
+          "id": "34ae8905-9616-465f-bf92-3fc7de707496",
+          "original_rank": 2,
+          "rank": 1,
+          "score": 0.9002076102948018,
+          "source": "gov/revision/v2",
+          "title": "Runbook revision two"
+        }
+      ]
+    },
+    {
+      "augmentation_latency_ms": 0.047,
+      "blocked_by_reason": {
+        "deleted": 1,
+        "expired": 1
+      },
+      "candidate_pool_returned": 4,
+      "cost_usd": null,
+      "engine_latency_ms": 556.294,
+      "fusion_retrieval_latency_ms": 0.0,
+      "id": "privacy-block",
+      "latency_ms": 556.341,
+      "policy_decisions": [
+        {
+          "allowed": true,
+          "canonical_id": 12,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 1,
+          "reason_codes": [],
+          "source": "gov/privacy/clean",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 7,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 2,
+          "reason_codes": [
+            "expired"
+          ],
+          "source": "gov/ttl/expired",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": false,
+          "canonical_id": 5,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 3,
+          "reason_codes": [
+            "deleted"
+          ],
+          "source": "gov/status/deleted",
+          "temporal_state": "timeless"
+        },
+        {
+          "allowed": true,
+          "canonical_id": 2,
+          "evaluated_at": "2026-07-19T00:00:00+00:00",
+          "raw_rank": 4,
+          "reason_codes": [],
+          "source": "gov/office/current",
+          "temporal_state": "current"
+        }
+      ],
+      "query": "Where should credentials be retrieved?",
+      "results": [
+        {
+          "governance": {
+            "allowed": true,
+            "canonical_id": 12,
+            "evaluated_at": "2026-07-19T00:00:00+00:00"
+          },
+          "id": "1865b013-9885-464f-bc43-cc50c6c9925d",
+          "original_rank": 1,
+          "rank": 1,
+          "score": 0.9459350692436219,
+          "source": "gov/privacy/clean",
+          "title": "Clean credential guidance"
+        }
+      ]
+    }
+  ],
+  "cases_total": 6,
+  "engineering": {
+    "audit": {
+      "evidence": "The run measures source traceability only; mem0 audit lifecycle behavior is not measured.",
+      "measured": false,
+      "supported": true
+    },
+    "local_first": {
+      "evidence": "Adapter config uses a local Qdrant vector-store path by default.",
+      "measured": true,
+      "supported": true
+    },
+    "multi_agent_shared_memory": {
+      "evidence": "mem0 supports user/agent/run ids; shared multi-agent install wiring is not measured here.",
+      "measured": false,
+      "supported": true
+    },
+    "report": {
+      "evidence": "No daily report surface is exercised by this local adapter.",
+      "measured": false,
+      "supported": false
+    },
+    "sync": {
+      "evidence": "No sync surface is exercised by this local adapter.",
+      "measured": false,
+      "supported": false
+    }
+  },
+  "fixture_digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+  "generated_at": "2026-07-19T05:15:47.962395+00:00",
+  "manifest": {
+    "adapter_digest": "sha256:3d5c84f9d2dc73062e71478c73ede990bd32d23d11874d85ce0c98a49f6808c1",
+    "architecture": "arm64",
+    "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+    "fixed_clock": "2026-07-19T00:00:00Z",
+    "git_dirty": false,
+    "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db",
+    "os": "Darwin",
+    "python": "3.12.12",
+    "redaction": "default artifact fields omit credentials and local paths; fixtures require separate input review",
+    "seed": null,
+    "seed_status": "not_applicable_to_deterministic_policy_replay"
+  },
+  "notes": [
+    "This artifact is a deterministic policy replay over a frozen candidate pool.",
+    "Guard-only and RRF-fusion are separate modes and must be reported as separate rows.",
+    "Provider lifecycle claims require governance-run or a live-provider track in addition to this artifact."
+  ],
+  "schema_version": 1,
+  "system": "mem0+vault",
+  "system_version": "2.0.12",
+  "top_k": 1
+}

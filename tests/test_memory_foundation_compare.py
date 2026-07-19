@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -20,10 +21,92 @@ from vault.governance_read_guard import evaluate_governed_read, superseded_ids_f
 
 
 REPO_ROOT = Path(__file__).parent.parent
+PUBLISHED_RESULT_ROOT = (
+    REPO_ROOT / "benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156"
+)
+PUBLISHED_SOURCE_SHA = "89b9156f501b74ddc48b689386eb159246b4b1db"
 
 
 def _write(path, payload):
     path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def test_checked_in_publication_bundle_checksums_cover_every_file():
+    checksum_path = PUBLISHED_RESULT_ROOT / "SHA256SUMS"
+    listed_paths = set()
+    for line in checksum_path.read_text(encoding="utf-8").splitlines():
+        expected, relative_path = line.split("  ", maxsplit=1)
+        artifact_path = PUBLISHED_RESULT_ROOT / relative_path.removeprefix("./")
+        listed_paths.add(artifact_path)
+        assert hashlib.sha256(artifact_path.read_bytes()).hexdigest() == expected
+
+    expected_paths = {
+        path
+        for path in PUBLISHED_RESULT_ROOT.rglob("*")
+        if path.is_file() and path != checksum_path
+    }
+    assert listed_paths == expected_paths
+
+
+@pytest.mark.parametrize("system", ["vault", "mem0"])
+def test_checked_in_publication_bundle_revalidates(system):
+    fixture_path = REPO_ROOT / "benchmarks/vault_gov_bench/retrieval_v0.1.json"
+    provider_input = json.loads(
+        (PUBLISHED_RESULT_ROOT / "provider-input.json").read_text(encoding="utf-8")
+    )
+    stored_summary = json.loads(
+        (PUBLISHED_RESULT_ROOT / f"{system}-guard-summary.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    run_paths = [
+        PUBLISHED_RESULT_ROOT / f"{system}-r{repeat}/run.json" for repeat in range(1, 6)
+    ]
+    pair_paths = [
+        PUBLISHED_RESULT_ROOT / f"{system}-r{repeat}/pair.json" for repeat in range(1, 6)
+    ]
+
+    assert fixture_digest(provider_input) == provider_input["provider_input_digest"]
+    assert stored_summary["publishable"] is True
+    assert stored_summary["release_gate_reasons"] == []
+    assert stored_summary["repeats"] == 5
+    assert all(
+        value is True
+        for key, value in stored_summary["quality_gates"].items()
+        if not key.startswith("provider_native_preflight")
+    )
+    if system == "vault":
+        assert stored_summary["quality_gates"]["provider_native_preflight_applicable"] is False
+        assert (
+            stored_summary["quality_gates"]["provider_native_preflight_passed_all_repeats"]
+            is None
+        )
+    else:
+        assert stored_summary["quality_gates"]["provider_native_preflight_applicable"] is True
+        assert (
+            stored_summary["quality_gates"]["provider_native_preflight_passed_all_repeats"]
+            is True
+        )
+
+    for run_path in run_paths:
+        run = json.loads(run_path.read_text(encoding="utf-8"))
+        assert run["manifest"]["benchmark_source"]["git_sha"] == PUBLISHED_SOURCE_SHA
+        assert run["manifest"]["benchmark_source"]["git_dirty"] is False
+
+    recomputed = summarize_repeats(
+        fixture_path=fixture_path,
+        pair_paths=pair_paths,
+        run_paths=run_paths,
+    )
+    assert recomputed["baseline"] == stored_summary["baseline"]
+    assert recomputed["augmented"] == stored_summary["augmented"]
+    assert recomputed["delta"] == stored_summary["delta"]
+    assert recomputed["latency"] == stored_summary["latency"]
+    assert recomputed["ranking_stability"] == stored_summary["ranking_stability"]
+    assert recomputed["quality_gates"] == stored_summary["quality_gates"]
+    assert set(recomputed["release_gate_reasons"]) <= {
+        "benchmark_harness_worktree_dirty"
+    }
 
 
 def _fixture():

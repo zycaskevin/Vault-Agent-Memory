@@ -1,0 +1,353 @@
+{
+  "artifact_type": "external_memory_comparison_run",
+  "benchmark": "vaultgovbench-retrieval-v0.1",
+  "candidate_pool_k": 4,
+  "cases": [
+    {
+      "id": "temporal-correction",
+      "latency_ms": 559.547,
+      "query": "Where is the office now?",
+      "results": [
+        {
+          "id": "8cef1832-2d22-418a-b2fb-4108113bcd44",
+          "rank": 1,
+          "score": 0.7086356762856896,
+          "source": "gov/office/old",
+          "title": "Former office"
+        },
+        {
+          "id": "c90e65d7-30f8-48ad-a852-e4bcb31c5146",
+          "rank": 2,
+          "score": 0.7053130224512142,
+          "source": "gov/office/current",
+          "title": "Current office"
+        },
+        {
+          "id": "82690193-2877-4957-9ff9-96cf56afa38b",
+          "rank": 3,
+          "score": 0.4059890707122533,
+          "source": "gov/ttl/current",
+          "title": "Current incident command"
+        },
+        {
+          "id": "02eb1f6c-175f-465e-80d8-331af82b1845",
+          "rank": 4,
+          "score": 0.3980008527095955,
+          "source": "gov/status/deleted",
+          "title": "Deleted deployment target"
+        }
+      ]
+    },
+    {
+      "id": "private-access",
+      "latency_ms": 1090.215,
+      "query": "What is the shared meeting time?",
+      "results": [
+        {
+          "id": "99e3d4ab-d2cd-4841-9a1c-bf801c7830f8",
+          "rank": 1,
+          "score": 0.9579774860143877,
+          "source": "gov/access/shared",
+          "title": "Shared meeting note"
+        },
+        {
+          "id": "20a3be6d-c4de-4ff8-b6d1-68ca5a1e0539",
+          "rank": 2,
+          "score": 0.601238524816178,
+          "source": "gov/access/private",
+          "title": "Private profile note"
+        },
+        {
+          "id": "82690193-2877-4957-9ff9-96cf56afa38b",
+          "rank": 3,
+          "score": 0.3964607756786608,
+          "source": "gov/ttl/current",
+          "title": "Current incident command"
+        },
+        {
+          "id": "c90e65d7-30f8-48ad-a852-e4bcb31c5146",
+          "rank": 4,
+          "score": 0.3928444473454751,
+          "source": "gov/office/current",
+          "title": "Current office"
+        }
+      ]
+    },
+    {
+      "id": "deleted-ghost",
+      "latency_ms": 1106.863,
+      "query": "Which cluster is the deployment target?",
+      "results": [
+        {
+          "id": "ec71d831-dd44-4b2d-858b-192c2396ec21",
+          "rank": 1,
+          "score": 0.9630729759923286,
+          "source": "gov/status/active",
+          "title": "Active deployment target"
+        },
+        {
+          "id": "02eb1f6c-175f-465e-80d8-331af82b1845",
+          "rank": 2,
+          "score": 0.94833679671924,
+          "source": "gov/status/deleted",
+          "title": "Deleted deployment target"
+        },
+        {
+          "id": "0f5ce55d-b78d-4200-bcc8-a3077d941967",
+          "rank": 3,
+          "score": 0.4029757956291978,
+          "source": "gov/revision/v1",
+          "title": "Runbook revision one"
+        },
+        {
+          "id": "ffc4bc35-1685-4414-a6f3-50fe5099619e",
+          "rank": 4,
+          "score": 0.4011194031626083,
+          "source": "gov/revision/v2",
+          "title": "Runbook revision two"
+        }
+      ]
+    },
+    {
+      "id": "ttl-expiry",
+      "latency_ms": 554.145,
+      "query": "Where should incident command meet?",
+      "results": [
+        {
+          "id": "82690193-2877-4957-9ff9-96cf56afa38b",
+          "rank": 1,
+          "score": 0.9226765427251145,
+          "source": "gov/ttl/current",
+          "title": "Current incident command"
+        },
+        {
+          "id": "a225c008-8e02-4429-9bb3-badb760d8a1b",
+          "rank": 2,
+          "score": 0.9225539444067552,
+          "source": "gov/ttl/expired",
+          "title": "Expired incident command"
+        },
+        {
+          "id": "99e3d4ab-d2cd-4841-9a1c-bf801c7830f8",
+          "rank": 3,
+          "score": 0.8063374410696973,
+          "source": "gov/access/shared",
+          "title": "Shared meeting note"
+        },
+        {
+          "id": "02eb1f6c-175f-465e-80d8-331af82b1845",
+          "rank": 4,
+          "score": 0.4024592521141313,
+          "source": "gov/status/deleted",
+          "title": "Deleted deployment target"
+        }
+      ]
+    },
+    {
+      "id": "superseded-revision",
+      "latency_ms": 555.714,
+      "query": "Which service should restart first?",
+      "results": [
+        {
+          "id": "0f5ce55d-b78d-4200-bcc8-a3077d941967",
+          "rank": 1,
+          "score": 0.9080636408258682,
+          "source": "gov/revision/v1",
+          "title": "Runbook revision one"
+        },
+        {
+          "id": "ffc4bc35-1685-4414-a6f3-50fe5099619e",
+          "rank": 2,
+          "score": 0.9002076102948018,
+          "source": "gov/revision/v2",
+          "title": "Runbook revision two"
+        },
+        {
+          "id": "a225c008-8e02-4429-9bb3-badb760d8a1b",
+          "rank": 3,
+          "score": 0.39671938380802396,
+          "source": "gov/ttl/expired",
+          "title": "Expired incident command"
+        },
+        {
+          "id": "02eb1f6c-175f-465e-80d8-331af82b1845",
+          "rank": 4,
+          "score": 0.3939667675469711,
+          "source": "gov/status/deleted",
+          "title": "Deleted deployment target"
+        }
+      ]
+    },
+    {
+      "id": "privacy-block",
+      "latency_ms": 552.498,
+      "query": "Where should credentials be retrieved?",
+      "results": [
+        {
+          "id": "2deb1967-93ef-43df-958d-87ef01ab29a2",
+          "rank": 1,
+          "score": 0.9459350692436219,
+          "source": "gov/privacy/clean",
+          "title": "Clean credential guidance"
+        },
+        {
+          "id": "a225c008-8e02-4429-9bb3-badb760d8a1b",
+          "rank": 2,
+          "score": 0.4075032172801638,
+          "source": "gov/ttl/expired",
+          "title": "Expired incident command"
+        },
+        {
+          "id": "02eb1f6c-175f-465e-80d8-331af82b1845",
+          "rank": 3,
+          "score": 0.40474731946220877,
+          "source": "gov/status/deleted",
+          "title": "Deleted deployment target"
+        },
+        {
+          "id": "c90e65d7-30f8-48ad-a852-e4bcb31c5146",
+          "rank": 4,
+          "score": 0.40172918949562186,
+          "source": "gov/office/current",
+          "title": "Current office"
+        }
+      ]
+    }
+  ],
+  "cases_total": 6,
+  "collection_name": "vaultgov_clean_89b9156_mem0_r4",
+  "documents_attempted": 12,
+  "documents_failed": 0,
+  "documents_indexed": 12,
+  "documents_total": 12,
+  "embed_model": "thenlper/gte-large",
+  "embedding_dims": 1024,
+  "engineering": {
+    "audit": {
+      "evidence": "The run measures source traceability only; mem0 audit lifecycle behavior is not measured.",
+      "measured": false,
+      "supported": true
+    },
+    "local_first": {
+      "evidence": "Adapter config uses a local Qdrant vector-store path by default.",
+      "measured": true,
+      "supported": true
+    },
+    "multi_agent_shared_memory": {
+      "evidence": "mem0 supports user/agent/run ids; shared multi-agent install wiring is not measured here.",
+      "measured": false,
+      "supported": true
+    },
+    "report": {
+      "evidence": "No daily report surface is exercised by this local adapter.",
+      "measured": false,
+      "supported": false
+    },
+    "sync": {
+      "evidence": "No sync surface is exercised by this local adapter.",
+      "measured": false,
+      "supported": false
+    }
+  },
+  "fixture_digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+  "generated_at": "2026-07-19T05:16:32.648339+00:00",
+  "index_latency_ms": 9868.172,
+  "ingest_latency_ms": 6857.308,
+  "llm_provider": "ollama",
+  "manifest": {
+    "benchmark_source": {
+      "adapter_digest": "sha256:1e44dfe05e125a24a5a16f562431fec39c902688776914d02928cabdcd2b376b",
+      "adapter_file": "external_memory_compare.py",
+      "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+      "git_dirty": false,
+      "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db"
+    },
+    "effective_retrieval": {
+      "bm25_available": true,
+      "bm25_slot_available": true,
+      "effective_retrieval_mode": "mem0:semantic+bm25+entity",
+      "embedding_dimensions_actual": 1024,
+      "embedding_dimensions_expected": 1024,
+      "embedding_dimensions_verified": true,
+      "entity_boost_available": true,
+      "lemmatization_available": true,
+      "missing_assets": [],
+      "preflight_status": "passed",
+      "provider_internal_candidate_pool_k": 60
+    },
+    "isolation": {
+      "clean_state_paths_absent_before_run": true,
+      "clean_state_paths_checked_before_run": true,
+      "collection_name": "vaultgov_clean_89b9156_mem0_r4",
+      "history_db_identity_digest": "sha256:b0721c7b17f900f821efee7afd7a60a000a4a34963218f71b861a2d6bd50ee10",
+      "mem0_dir_identity_digest": "sha256:7542e2848f761255fe63123d6413eb11c8751425ecd864856a3533e983d3c594",
+      "provider_handles_closed": true,
+      "run_namespace": "vaultgov-clean-89b9156-mem0-r4",
+      "vector_store_identity_digest": "sha256:2d613fcbacc33ce8ecacdaa8dc8e8d481e98e696ea1805f5f3fdd8430e0f4ca2"
+    },
+    "machine": "arm64",
+    "model_cache": {
+      "revisions_after_run": {
+        "models--Qdrant--bm25": "e499a1f8d6bec960aab5533a0941bf914e70faf9",
+        "models--qdrant--gte-large-onnx": "770e825c74a004f165b78793f7c8fc4a95280878"
+      },
+      "revisions_before_run": {
+        "models--Qdrant--bm25": "e499a1f8d6bec960aab5533a0941bf914e70faf9",
+        "models--qdrant--gte-large-onnx": "770e825c74a004f165b78793f7c8fc4a95280878"
+      },
+      "state_before_run": "warm"
+    },
+    "os": "Darwin",
+    "os_release": "25.5.0",
+    "provider_config": {
+      "content_in_run_artifact": false,
+      "embed_model": "thenlper/gte-large",
+      "embedder": "fastembed",
+      "embedding_dims": 1024,
+      "history_db_isolated": true,
+      "index_latency_includes_initialization": true,
+      "infer": false,
+      "llm_provider": "ollama",
+      "llm_used_for_ingestion": false,
+      "mem0_dir_isolated": true,
+      "require_native_retrieval_assets": true,
+      "retrieval_text_template": "title: {title}\\ncontent: {content}",
+      "telemetry_enabled": false,
+      "vector_store": "qdrant-local"
+    },
+    "provider_dependencies": {
+      "en-core-web-sm": "3.8.0",
+      "fastembed": "0.8.0",
+      "mem0ai": "2.0.12",
+      "ollama": "0.6.2",
+      "onnxruntime": "1.27.0",
+      "qdrant-client": "1.18.0",
+      "spacy": "3.8.14"
+    },
+    "provider_input": {
+      "evaluation_fixture_digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+      "gold_labels_excluded": true,
+      "provider_input_digest": "sha256:ddd3a0799c4640c71bff63d86ead20da2c4a5fa5344840f41da828141c6f4fc4"
+    },
+    "python_version": "3.12.12"
+  },
+  "native_memory_features_exercised": false,
+  "notes": [
+    "mem0 adapter run artifact. Score with score-run against the same fixture.",
+    "Documents are inserted with infer=False so retrieval-only runs do not require an LLM extraction pass.",
+    "This controlled raw-insert track does not measure mem0 extraction, consolidation, deduplication, or lifecycle decisions.",
+    "Each run uses an isolated namespace and does not reset or delete an existing collection.",
+    "Index latency includes embedder/vector-store initialization, model loading, and document ingestion.",
+    "The default benchmark path isolates MEM0_DIR and the history SQLite database; telemetry is disabled unless explicitly enabled.",
+    "Publish runs fail closed when mem0 native Qdrant BM25 or spaCy retrieval assets are unavailable."
+  ],
+  "retrieval_mode": "mem0:semantic+bm25+entity",
+  "run_namespace": "vaultgov-clean-89b9156-mem0-r4",
+  "schema_version": 1,
+  "search_scope": "global",
+  "setup_latency_ms": 3010.851,
+  "system": "mem0",
+  "system_version": "2.0.12",
+  "top_k": 4,
+  "track": "controlled_retrieval_raw_insert"
+}
