@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://zycaskevin.github.io/Vault-Agent-Memory/sitemap.xml

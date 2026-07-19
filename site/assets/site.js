@@ -1,1 +1,0 @@
-const root=document.documentElement;document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{root.lang=b.dataset.lang;document.querySelectorAll('[data-zh][data-en]').forEach(n=>n.textContent=n.dataset[root.lang.startsWith('zh')?'zh':'en'])}));
