@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import pytest
+import benchmarks.memory_foundation_compare as memory_foundation_compare
 
 from benchmarks.external_memory_compare import fixture_digest
 from benchmarks.memory_foundation_compare import (
@@ -683,7 +684,12 @@ def test_pair_metrics_use_only_eligible_retrieval_and_exposure_denominators(tmp_
     assert paired["baseline"]["forbidden_exposure_case_rate"] == 1.0
 
 
-def test_summarize_repeats_validates_configuration_and_preserves_missing_values(tmp_path):
+def test_summarize_repeats_validates_configuration_and_preserves_missing_values(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        memory_foundation_compare,
+        "_environment_manifest",
+        lambda **_kwargs: {"git_dirty": True},
+    )
     fixture = _fixture()
     fixture_path = tmp_path / "fixture.json"
     _write(fixture_path, fixture)
