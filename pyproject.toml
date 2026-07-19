@@ -32,6 +32,8 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://zycaskevin.github.io/Vault-Agent-Memory/"
+Documentation = "https://zycaskevin.github.io/Vault-Agent-Memory/architecture/"
+Benchmarks = "https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/"
 Repository = "https://github.com/zycaskevin/Vault-Agent-Memory"
 Issues = "https://github.com/zycaskevin/Vault-Agent-Memory/issues"
 

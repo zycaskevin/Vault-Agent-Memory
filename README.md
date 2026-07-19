@@ -2,6 +2,8 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
+[Website](https://zycaskevin.github.io/Vault-Agent-Memory/) · [Live evidence](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/) · [Methodology](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/methodology/) · [Install](#install)
+
 Vault is a local-first, backend-agnostic memory governance layer for AI agents.
 
 Vault Agent Memory gives Codex, Claude Code, Hermes, OpenClaw, n8n, Coze, and
@@ -33,8 +35,7 @@ Vault is for people already building or working with agents. The main interface
 should still not be a long CLI manual: ask an agent to install Vault, answer a
 few setup questions, then read a short daily memory report.
 
-New here? Start with the visual demo:
-[`docs/landing/index.html`](docs/landing/index.html).
+New here? Start with the [public website](https://zycaskevin.github.io/Vault-Agent-Memory/). It explains why Vault is a memory foundation—not merely another memory system—and publishes paired A vs A + Vault evidence with the full method and raw artifacts.
 
 ## Release Maturity
 

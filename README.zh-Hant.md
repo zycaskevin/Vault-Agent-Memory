@@ -2,6 +2,8 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
+[官方網站](https://zycaskevin.github.io/Vault-Agent-Memory/) · [公開測試](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/) · [測試方法](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/methodology/) · [安裝](#安裝)
+
 給 AI Agent 用的本地優先、後端無關記憶治理層。
 
 它讓 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 等不同 Agent，
@@ -27,8 +29,7 @@ Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 這類工具的 builder。
 你仍然不需要先學一堆指令。最簡單的用法是：把下面那段話貼給你的
 Agent，讓它幫你安裝、設定、測試，之後你每天只看一份很短的記憶報告。
 
-第一次看這個專案，可以先打開視覺 Demo：
-[`docs/landing/index.html`](docs/landing/index.html)。
+第一次看這個專案，請先看[官方網站](https://zycaskevin.github.io/Vault-Agent-Memory/)。它用白話解釋 Vault 為什麼是「記憶地基」，並公開 A 與 A + Vault 的配對結果、完整方法及原始證據。
 
 ## 30 秒版
 

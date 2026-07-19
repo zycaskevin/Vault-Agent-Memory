@@ -1,0 +1,47 @@
+{
+  "claim_boundary": "Six-case public synthetic controlled retrieval-only governance contract; not end-to-end answer quality or an official LoCoMo/LongMemEval leaderboard.",
+  "evidence_revision": "89b9156f501b74ddc48b689386eb159246b4b1db",
+  "generated_from": "vaultgovbench-retrieval-v0.1/89b9156",
+  "headline": {
+    "augmented_forbidden_exposure": 0.0,
+    "augmented_recall": 1.0,
+    "baseline_forbidden_exposure": 0.333333,
+    "baseline_recall": 0.666667,
+    "paired_mean_overhead_ms": 0.1482,
+    "paired_p95_delta_ms": 0.0592,
+    "system": "mem0",
+    "system_version": "2.0.12"
+  },
+  "protocol": {
+    "candidate_pool_k": 4,
+    "cases": 6,
+    "repeat_policy": "five distinct sequential clean-state process repeats per track",
+    "repeats": 5,
+    "top_k": 1
+  },
+  "schema_version": 1,
+  "tracks": [
+    {
+      "evidence": "mem0-guard-summary.json",
+      "name": "mem0 + Vault",
+      "status": "published"
+    },
+    {
+      "augmented_recall": 0.833333,
+      "baseline_recall": 0.833333,
+      "evidence": "vault-guard-summary.json",
+      "name": "Vault standalone",
+      "status": "published"
+    },
+    {
+      "evidence": null,
+      "name": "AgentMemory + Vault",
+      "status": "diagnostic"
+    },
+    {
+      "evidence": null,
+      "name": "Letta / MemGPT + Vault",
+      "status": "unmeasured"
+    }
+  ]
+}
