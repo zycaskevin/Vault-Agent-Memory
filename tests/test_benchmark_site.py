@@ -58,7 +58,21 @@ def test_institutional_site_contract():
     assert all('class="skip"' in p.read_text() and 'id="main"' in p.read_text()
                for p in (ROOT / "site").glob("**/*.html"))
     assert (ROOT / "site/robots.txt").exists()
-    assert (ROOT / "site/sitemap.xml").read_text().count("<url>") == 8
+    assert (ROOT / "site/sitemap.xml").read_text().count("<url>") == 10
+
+def test_bilingual_integration_and_search_contract():
+    english = (ROOT / "site/en/integrations/index.html").read_text()
+    chinese = (ROOT / "site/integrations/index.html").read_text()
+    assert "Keep the engine. Add a trust layer." in english
+    assert "保留原本的引擎，加上一層信任地基。" in chinese
+    for label in ("Published", "Diagnostic", "Unmeasured"):
+        assert label in english and label in chinese
+    pages = list((ROOT / "site").glob("**/*.html"))
+    assert len(pages) == 10
+    assert all('rel="canonical"' in page.read_text() for page in pages)
+    assert all('hreflang="en"' in page.read_text() for page in pages)
+    assert all('hreflang="zh-Hant"' in page.read_text() for page in pages)
+    assert 'application/ld+json' in (ROOT / "site/en/index.html").read_text()
 
 def test_social_preview_dimensions():
     import struct

@@ -16,7 +16,7 @@ This review asks whether the public site can survive a skeptical technical scan,
 | First-screen clarity | 9/10 | Category, replacement objection, three product invariants, and published proof are visible before deep detail | Validate with five-second comprehension testing |
 | Technical credibility | 8/10 | Paired A versus A + Vault method, denominators, case-level outcomes, checksummed artifacts, explicit claim boundaries | Independent reproduction and at least two additional published providers |
 | Investor narrative | 8/10 | Why now, horizontal control-plane category, provider neutrality, lifecycle and evidence defensibility | Traction, team, distribution, market sizing, customer references, commercial model |
-| Search and traffic foundation | 7/10 | Static fast pages, bilingual stable URLs, semantic headings, sitemap, robots policy, social preview | Canonical/hreflang metadata, structured data, analytics, content program, earned links |
+| Search and traffic foundation | 8/10 | Static fast pages, bilingual stable URLs, semantic headings, canonical/hreflang metadata, structured data, sitemap, robots policy, social preview, provider-integration discovery route | Privacy-respecting analytics, content program, integration-specific case studies, earned links |
 
 ## What a skeptical evaluator can now verify
 
