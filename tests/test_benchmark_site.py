@@ -21,8 +21,8 @@ def test_data_is_checksummed_and_fail_closed():
 def test_claim_and_accessibility_contract():
     pages = list((ROOT / "site").glob("**/*.html")); assert len(pages) >= 4
     text = "\n".join(p.read_text(encoding="utf-8") for p in pages)
-    assert "retrieval-only" in text and "LoCoMo / LongMemEval" in text
-    assert "N/A — 不當成零分" in text
+    assert "retrieval-only" in text and "LoCoMo" in text and "LongMemEval" in text
+    assert "Unmeasured" in text and "不做品質主張" in text
     assert "prefers-reduced-motion" in (ROOT / "site/assets/site.css").read_text()
     assert all('name="viewport"' in p.read_text() for p in pages)
 
@@ -41,10 +41,30 @@ def test_english_site_is_complete_and_has_stable_routes():
     assert all(path.exists() for path in routes)
     text = "\n".join(path.read_text(encoding="utf-8") for path in routes)
     assert all('<html lang="en">' in path.read_text() for path in routes)
-    assert "Keep the memory engine you like" in text
-    assert "Compare A with A + Vault" in text
-    assert "Fix the question first" in text
+    assert "Memory engines retrieve. Vault decides" in text
+    assert "Trust claims should be inspectable" in text
+    assert "Fix the question. Blind the provider" in text
     assert "架構" not in text and "測試結果" not in text and "測試方法" not in text
+
+def test_institutional_site_contract():
+    css = (ROOT / "site/assets/site.css").read_text()
+    english = (ROOT / "site/en/benchmarks/index.html").read_text()
+    chinese = (ROOT / "site/benchmarks/index.html").read_text()
+    assert english.count('class="bar') >= 4
+    assert 'class="heatmap"' in english and 'class="heatmap"' in chinese
+    assert "Stale temporal fact" in english and "Superseded revision" in english
+    assert "33.3%" in english and "+0.1482" in english and "ms" in english
+    assert "overflow-x:auto" in css and ":focus-visible" in css
+    assert all('class="skip"' in p.read_text() and 'id="main"' in p.read_text()
+               for p in (ROOT / "site").glob("**/*.html"))
+    assert (ROOT / "site/robots.txt").exists()
+    assert (ROOT / "site/sitemap.xml").read_text().count("<url>") == 8
+
+def test_social_preview_dimensions():
+    import struct
+    payload = (ROOT / "site/assets/og.png").read_bytes()
+    assert payload[:8] == b"\x89PNG\r\n\x1a\n"
+    assert struct.unpack(">II", payload[16:24]) == (1200, 630)
 
 if __name__ == "__main__":
     test_data_is_checksummed_and_fail_closed()
