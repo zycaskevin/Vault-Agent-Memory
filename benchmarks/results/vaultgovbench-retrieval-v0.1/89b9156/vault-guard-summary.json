@@ -1,0 +1,291 @@
+{
+  "artifact_type": "memory_foundation_repeat_summary",
+  "augmented": {
+    "forbidden_exposure_case_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "stdev": 0.0
+    },
+    "query_latency_mean_ms": {
+      "available": true,
+      "count": 5,
+      "max": 0.583,
+      "mean": 0.5428,
+      "min": 0.483,
+      "stdev": 0.03477
+    },
+    "query_latency_p95_ms": {
+      "available": true,
+      "count": 5,
+      "max": 1.763,
+      "mean": 1.5566,
+      "min": 1.304,
+      "stdev": 0.151304
+    },
+    "valid_hit_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.833333,
+      "mean": 0.833333,
+      "min": 0.833333,
+      "stdev": 0.0
+    },
+    "valid_mrr": {
+      "available": true,
+      "count": 5,
+      "max": 0.833333,
+      "mean": 0.833333,
+      "min": 0.833333,
+      "stdev": 0.0
+    },
+    "valid_precision": {
+      "available": true,
+      "count": 5,
+      "max": 0.833333,
+      "mean": 0.833333,
+      "min": 0.833333,
+      "stdev": 0.0
+    },
+    "valid_recall": {
+      "available": true,
+      "count": 5,
+      "max": 0.833333,
+      "mean": 0.833333,
+      "min": 0.833333,
+      "stdev": 0.0
+    }
+  },
+  "baseline": {
+    "forbidden_exposure_case_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "stdev": 0.0
+    },
+    "query_latency_mean_ms": {
+      "available": true,
+      "count": 5,
+      "max": 0.436,
+      "mean": 0.395,
+      "min": 0.361,
+      "stdev": 0.027393
+    },
+    "query_latency_p95_ms": {
+      "available": true,
+      "count": 5,
+      "max": 1.19,
+      "mean": 1.0154,
+      "min": 0.879,
+      "stdev": 0.119339
+    },
+    "valid_hit_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.833333,
+      "mean": 0.833333,
+      "min": 0.833333,
+      "stdev": 0.0
+    },
+    "valid_mrr": {
+      "available": true,
+      "count": 5,
+      "max": 0.833333,
+      "mean": 0.833333,
+      "min": 0.833333,
+      "stdev": 0.0
+    },
+    "valid_precision": {
+      "available": true,
+      "count": 5,
+      "max": 0.833333,
+      "mean": 0.833333,
+      "min": 0.833333,
+      "stdev": 0.0
+    },
+    "valid_recall": {
+      "available": true,
+      "count": 5,
+      "max": 0.833333,
+      "mean": 0.833333,
+      "min": 0.833333,
+      "stdev": 0.0
+    }
+  },
+  "benchmark": "vaultgovbench-retrieval-v0.1",
+  "cases_per_repeat": 6,
+  "delta": {
+    "forbidden_exposure_case_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "stdev": 0.0
+    },
+    "latency_mean_ms": {
+      "available": true,
+      "count": 5,
+      "max": 0.208,
+      "mean": 0.1478,
+      "min": 0.112,
+      "stdev": 0.036929
+    },
+    "latency_p95_ms": {
+      "available": true,
+      "count": 5,
+      "max": 0.744,
+      "mean": 0.5412,
+      "min": 0.398,
+      "stdev": 0.137712
+    },
+    "valid_hit_rate": {
+      "available": true,
+      "count": 5,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "stdev": 0.0
+    },
+    "valid_mrr": {
+      "available": true,
+      "count": 5,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "stdev": 0.0
+    },
+    "valid_precision": {
+      "available": true,
+      "count": 5,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "stdev": 0.0
+    },
+    "valid_recall": {
+      "available": true,
+      "count": 5,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "stdev": 0.0
+    }
+  },
+  "fixture_digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+  "generated_at": "2026-07-19T05:15:11.851269+00:00",
+  "latency": {
+    "index_total_ms": {
+      "available": true,
+      "count": 5,
+      "max": 19.62,
+      "mean": 13.1312,
+      "min": 9.98,
+      "stdev": 3.67518
+    },
+    "ingest_ms": {
+      "available": true,
+      "count": 5,
+      "max": 6.786,
+      "mean": 3.5144,
+      "min": 2.611,
+      "stdev": 1.638893
+    },
+    "setup_ms": {
+      "available": true,
+      "count": 5,
+      "max": 12.834,
+      "mean": 9.6168,
+      "min": 7.09,
+      "stdev": 2.402621
+    }
+  },
+  "manifest": {
+    "adapter_digest": "sha256:3d5c84f9d2dc73062e71478c73ede990bd32d23d11874d85ce0c98a49f6808c1",
+    "architecture": "arm64",
+    "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+    "fixed_clock": "2026-07-19T00:00:00Z",
+    "git_dirty": false,
+    "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db",
+    "os": "Darwin",
+    "python": "3.12.12",
+    "redaction": "default artifact fields omit credentials and local paths; fixtures require separate input review",
+    "seed": null,
+    "seed_status": "not_applicable_to_deterministic_policy_replay"
+  },
+  "notes": [
+    "All quality deltas are paired on the same case ids and frozen candidate pool per repeat.",
+    "This is a controlled retrieval-only track, not a full agent answer-quality leaderboard.",
+    "Missing latency or cost values remain unavailable and are never converted to zero."
+  ],
+  "publishable": true,
+  "quality_gates": {
+    "artifact_source_chain_clean_and_bound_all_repeats": true,
+    "clean_state_repeats_minimum_met": true,
+    "missing_metrics_are_not_zero": true,
+    "provider_clean_state_execution_verified_all_repeats": true,
+    "provider_gold_labels_excluded_all_repeats": true,
+    "provider_native_preflight_applicable": false,
+    "provider_native_preflight_passed_all_repeats": null,
+    "provider_retrieval_integrity_passed_all_repeats": true,
+    "same_provider_configuration": true,
+    "unique_clean_state_identities": true,
+    "unique_pair_artifacts": true,
+    "unique_run_artifacts": true,
+    "zero_index_failures_all_repeats": true
+  },
+  "ranking_stability": {
+    "cases": [
+      {
+        "full_ranking_stable": true,
+        "id": "temporal-correction",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "private-access",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "deleted-ghost",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "ttl-expiry",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "superseded-revision",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      },
+      {
+        "full_ranking_stable": true,
+        "id": "privacy-block",
+        "top1_agreement_rate": 1.0,
+        "unique_full_rankings": 1
+      }
+    ],
+    "full_ranking_stable_case_rate": 1.0,
+    "mean_top1_agreement_rate": 1.0,
+    "min_top1_agreement_rate": 1.0
+  },
+  "release_gate_reasons": [],
+  "repeats": 5,
+  "retrieval_mode": "keyword",
+  "schema_version": 1,
+  "system": "vault",
+  "system_version": "0.10.2",
+  "track": ""
+}

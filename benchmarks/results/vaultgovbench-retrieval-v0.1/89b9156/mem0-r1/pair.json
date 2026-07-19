@@ -1,0 +1,489 @@
+{
+  "artifact_bindings": {
+    "augmented_engine_run_digest": "sha256:3d811330a3a94ce08ec00782d2e7af6ade009388dcdc200c684f3ba35e04d411",
+    "augmented_run_digest": "sha256:dbd7753361be2babbed2e4188774a52713777c4979e694f9b8beeaa206f2b5a5",
+    "baseline_run_digest": "sha256:3d811330a3a94ce08ec00782d2e7af6ade009388dcdc200c684f3ba35e04d411"
+  },
+  "artifact_type": "memory_foundation_paired_score",
+  "augmentation_mode": "guard-only",
+  "augmented": {
+    "abstention_cases": 0,
+    "at_k": {
+      "1": {
+        "correct_abstention_rate": null,
+        "forbidden_exposure_case_rate": 0.0,
+        "forbidden_exposures": 0,
+        "valid_hit_rate": 1.0,
+        "valid_mrr": 1.0,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0
+      }
+    },
+    "cases_total": 6,
+    "correct_abstention_rate": null,
+    "cost": {
+      "available": false,
+      "count": 0,
+      "mean_usd": null,
+      "total_usd": null
+    },
+    "forbidden_exposure_case_rate": 0.0,
+    "forbidden_exposure_cases": 0,
+    "forbidden_exposure_eligible_cases": 6,
+    "forbidden_exposures": 0,
+    "forbidden_exposures_by_reason": {},
+    "latency": {
+      "available": true,
+      "count": 6,
+      "mean_ms": 740.734,
+      "p50_ms": 558.425,
+      "p95_ms": 1112.432
+    },
+    "relevant_blocked_by_policy": 0,
+    "relevant_blocked_case_rate": 0.0,
+    "retrieval_eligible_cases": 6,
+    "system": "mem0+vault",
+    "valid_hit_rate": 1.0,
+    "valid_mrr": 1.0,
+    "valid_precision": 1.0,
+    "valid_recall": 1.0
+  },
+  "augmented_system": "mem0+vault",
+  "baseline": {
+    "abstention_cases": 0,
+    "at_k": {
+      "1": {
+        "correct_abstention_rate": null,
+        "forbidden_exposure_case_rate": 0.333333,
+        "forbidden_exposures": 2,
+        "valid_hit_rate": 0.666667,
+        "valid_mrr": 0.666667,
+        "valid_precision": 0.666667,
+        "valid_recall": 0.666667
+      }
+    },
+    "cases_total": 6,
+    "correct_abstention_rate": null,
+    "cost": {
+      "available": false,
+      "count": 0,
+      "mean_usd": null,
+      "total_usd": null
+    },
+    "forbidden_exposure_case_rate": 0.333333,
+    "forbidden_exposure_cases": 2,
+    "forbidden_exposure_eligible_cases": 6,
+    "forbidden_exposures": 2,
+    "forbidden_exposures_by_reason": {
+      "superseded": 1,
+      "temporal_past": 1
+    },
+    "latency": {
+      "available": true,
+      "count": 6,
+      "mean_ms": 740.581,
+      "p50_ms": 558.375,
+      "p95_ms": 1112.374
+    },
+    "relevant_blocked_by_policy": 0,
+    "relevant_blocked_case_rate": 0.0,
+    "retrieval_eligible_cases": 6,
+    "system": "mem0",
+    "valid_hit_rate": 0.666667,
+    "valid_mrr": 0.666667,
+    "valid_precision": 0.666667,
+    "valid_recall": 0.666667
+  },
+  "baseline_system": "mem0",
+  "baseline_system_version": "2.0.12",
+  "benchmark": "vaultgovbench-retrieval-v0.1",
+  "candidate_pool_k": 4,
+  "cases": [
+    {
+      "augmented": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/office/current"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "baseline": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {
+          "temporal_past": 1
+        },
+        "forbidden_exposures": 1,
+        "forbidden_sources_returned": [
+          "gov/office/old"
+        ],
+        "raw_hit": false,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/office/old"
+        ],
+        "valid_hit": false,
+        "valid_hit_rank": null,
+        "valid_precision": 0.0,
+        "valid_recall": 0.0,
+        "valid_reciprocal_rank": 0.0
+      },
+      "delta": {
+        "cost_usd": null,
+        "forbidden_exposures": -1,
+        "latency_ms": 0.653,
+        "reciprocal_rank": 1.0,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0
+      },
+      "id": "temporal-correction"
+    },
+    {
+      "augmented": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/access/shared"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "baseline": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/access/shared"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "delta": {
+        "cost_usd": null,
+        "forbidden_exposures": 0,
+        "latency_ms": 0.065,
+        "reciprocal_rank": 0.0,
+        "valid_precision": 0.0,
+        "valid_recall": 0.0
+      },
+      "id": "private-access"
+    },
+    {
+      "augmented": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/status/active"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "baseline": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/status/active"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "delta": {
+        "cost_usd": null,
+        "forbidden_exposures": 0,
+        "latency_ms": 0.055,
+        "reciprocal_rank": 0.0,
+        "valid_precision": 0.0,
+        "valid_recall": 0.0
+      },
+      "id": "deleted-ghost"
+    },
+    {
+      "augmented": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/ttl/current"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "baseline": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/ttl/current"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "delta": {
+        "cost_usd": null,
+        "forbidden_exposures": 0,
+        "latency_ms": 0.052,
+        "reciprocal_rank": 0.0,
+        "valid_precision": 0.0,
+        "valid_recall": 0.0
+      },
+      "id": "ttl-expiry"
+    },
+    {
+      "augmented": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/revision/v2"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "baseline": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {
+          "superseded": 1
+        },
+        "forbidden_exposures": 1,
+        "forbidden_sources_returned": [
+          "gov/revision/v1"
+        ],
+        "raw_hit": false,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/revision/v1"
+        ],
+        "valid_hit": false,
+        "valid_hit_rank": null,
+        "valid_precision": 0.0,
+        "valid_recall": 0.0,
+        "valid_reciprocal_rank": 0.0
+      },
+      "delta": {
+        "cost_usd": null,
+        "forbidden_exposures": -1,
+        "latency_ms": 0.048,
+        "reciprocal_rank": 1.0,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0
+      },
+      "id": "superseded-revision"
+    },
+    {
+      "augmented": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/privacy/clean"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "baseline": {
+        "correct_abstention": null,
+        "expected_valid_total": 1,
+        "forbidden_exposure_eligible": true,
+        "forbidden_exposure_reasons": {},
+        "forbidden_exposures": 0,
+        "forbidden_sources_returned": [],
+        "raw_hit": true,
+        "relevant_blocked_by_policy": 0,
+        "relevant_blocked_sources": [],
+        "retrieval_eligible": true,
+        "returned_sources": [
+          "gov/privacy/clean"
+        ],
+        "valid_hit": true,
+        "valid_hit_rank": 1,
+        "valid_precision": 1.0,
+        "valid_recall": 1.0,
+        "valid_reciprocal_rank": 1.0
+      },
+      "delta": {
+        "cost_usd": null,
+        "forbidden_exposures": 0,
+        "latency_ms": 0.047,
+        "reciprocal_rank": 0.0,
+        "valid_precision": 0.0,
+        "valid_recall": 0.0
+      },
+      "id": "privacy-block"
+    }
+  ],
+  "cases_total": 6,
+  "delta": {
+    "at_k": {
+      "1": {
+        "forbidden_exposure_case_rate": -0.333333,
+        "valid_hit_rate": 0.333333,
+        "valid_mrr": 0.333333,
+        "valid_precision": 0.333333,
+        "valid_recall": 0.333333
+      }
+    },
+    "cost_available": false,
+    "cost_mean_usd": null,
+    "cost_paired_cases": 0,
+    "cost_total_usd": null,
+    "forbidden_exposure_case_rate": -0.333333,
+    "forbidden_exposures": -2,
+    "latency_available": true,
+    "latency_mean_ms": 0.153,
+    "latency_p95_ms": 0.058,
+    "latency_paired_cases": 6,
+    "relevant_blocked_by_policy": 0,
+    "valid_hit_rate": 0.333333,
+    "valid_mrr": 0.333333,
+    "valid_precision": 0.333333,
+    "valid_recall": 0.333333
+  },
+  "fixture_digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+  "generated_at": "2026-07-19T05:15:48.115781+00:00",
+  "manifest": {
+    "adapter_digest": "sha256:3d5c84f9d2dc73062e71478c73ede990bd32d23d11874d85ce0c98a49f6808c1",
+    "architecture": "arm64",
+    "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+    "fixed_clock": "2026-07-19T00:00:00Z",
+    "git_dirty": false,
+    "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db",
+    "os": "Darwin",
+    "python": "3.12.12",
+    "redaction": "default artifact fields omit credentials and local paths; fixtures require separate input review",
+    "seed": null,
+    "seed_status": "not_applicable_to_deterministic_policy_replay"
+  },
+  "notes": [
+    "Valid Recall requires an expected source to remain policy-valid for the case.",
+    "Forbidden-source exposure and latency are reported separately from quality.",
+    "This scorer is retrieval-only and is not an official LoCoMo or LongMemEval QA score."
+  ],
+  "schema_version": 1,
+  "stage_source_state": {
+    "augmentation": {
+      "adapter_digest": "sha256:3d5c84f9d2dc73062e71478c73ede990bd32d23d11874d85ce0c98a49f6808c1",
+      "adapter_file": "memory_foundation_compare.py",
+      "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+      "git_dirty": false,
+      "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db"
+    },
+    "baseline": {
+      "adapter_digest": "sha256:1e44dfe05e125a24a5a16f562431fec39c902688776914d02928cabdcd2b376b",
+      "adapter_file": "external_memory_compare.py",
+      "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+      "git_dirty": false,
+      "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db"
+    },
+    "scorer": {
+      "adapter_digest": "sha256:3d5c84f9d2dc73062e71478c73ede990bd32d23d11874d85ce0c98a49f6808c1",
+      "adapter_file": "memory_foundation_compare.py",
+      "dependency_lock_digest": "sha256:f5194b3e83dae9dcefdca87fdebe7ed4f5a23542434bbe097faf5dc09026693c",
+      "git_dirty": false,
+      "git_sha": "89b9156f501b74ddc48b689386eb159246b4b1db"
+    }
+  },
+  "top_k": 1
+}

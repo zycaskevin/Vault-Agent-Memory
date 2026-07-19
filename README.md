@@ -2,6 +2,8 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
+[Website](https://zycaskevin.github.io/Vault-Agent-Memory/) · [Live evidence](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/) · [Methodology](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/methodology/) · [Install](#install)
+
 Vault is a local-first, backend-agnostic memory governance layer for AI agents.
 
 Vault Agent Memory gives Codex, Claude Code, Hermes, OpenClaw, n8n, Coze, and
@@ -33,8 +35,7 @@ Vault is for people already building or working with agents. The main interface
 should still not be a long CLI manual: ask an agent to install Vault, answer a
 few setup questions, then read a short daily memory report.
 
-New here? Start with the visual demo:
-[`docs/landing/index.html`](docs/landing/index.html).
+New here? Start with the [public website](https://zycaskevin.github.io/Vault-Agent-Memory/). It explains why Vault is a memory foundation—not merely another memory system—and publishes paired A vs A + Vault evidence with the full method and raw artifacts.
 
 ## Release Maturity
 
@@ -297,6 +298,14 @@ contract:
 
 - **Search QA**: source-hit, MRR, no-result, and citation-boundary checks for
   retrieval evidence, not final answer quality.
+- **[Memory-foundation benchmark](docs/memory_foundation_benchmarks.md)**:
+  paired external-engine `A` versus engine-plus-Vault `A+B` Valid Recall,
+  forbidden-exposure, latency, and cost deltas, plus a fixed-clock dynamic
+  governance suite. Synthetic contract evidence is labelled separately from
+  full provider-product claims. A retrieval-only VaultGovBench bundle with five
+  distinct clean-state repeats per track for Vault keyword retrieval and mem0
+  2.0.12 controlled raw insertion is published under
+  [`benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156`](benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156/README.md).
 - **README command smoke**: public README commands are exercised so install and
   quickstart examples do not drift.
 - **Release gates**: pytest, release parity, public-boundary checks, package

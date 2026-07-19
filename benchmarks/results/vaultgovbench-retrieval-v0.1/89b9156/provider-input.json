@@ -1,0 +1,170 @@
+{
+  "artifact_type": "external_memory_comparison_fixture",
+  "benchmark": "vaultgovbench-retrieval-v0.1",
+  "cases": [
+    {
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "id": "temporal-correction",
+      "query": "Where is the office now?"
+    },
+    {
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "id": "private-access",
+      "include_private": false,
+      "query": "What is the shared meeting time?"
+    },
+    {
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "id": "deleted-ghost",
+      "query": "Which cluster is the deployment target?"
+    },
+    {
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "id": "ttl-expiry",
+      "query": "Where should incident command meet?"
+    },
+    {
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "id": "superseded-revision",
+      "query": "Which service should restart first?"
+    },
+    {
+      "agent_id": "work-agent",
+      "as_of": "2026-07-19T00:00:00Z",
+      "id": "privacy-block",
+      "query": "Where should credentials be retrieved?"
+    }
+  ],
+  "cases_total": 6,
+  "documents": [
+    {
+      "content": "The office was in Kaohsiung.",
+      "governance": {
+        "valid_until": "2026-07-01T00:00:00Z"
+      },
+      "id": 1,
+      "source": "gov/office/old",
+      "title": "Former office"
+    },
+    {
+      "content": "The office is in Taipei.",
+      "governance": {
+        "valid_from": "2026-07-01T00:00:00Z"
+      },
+      "id": 2,
+      "source": "gov/office/current",
+      "title": "Current office"
+    },
+    {
+      "content": "A profile-only note that must not be shared.",
+      "governance": {
+        "owner_agent": "profile-agent",
+        "scope": "private"
+      },
+      "id": 3,
+      "source": "gov/access/private",
+      "title": "Private profile note"
+    },
+    {
+      "content": "The shared meeting starts at 10:00.",
+      "governance": {
+        "scope": "shared"
+      },
+      "id": 4,
+      "source": "gov/access/shared",
+      "title": "Shared meeting note"
+    },
+    {
+      "content": "Deploy to the retired blue cluster.",
+      "governance": {
+        "status": "deleted"
+      },
+      "id": 5,
+      "source": "gov/status/deleted",
+      "title": "Deleted deployment target"
+    },
+    {
+      "content": "Deploy to the green cluster.",
+      "governance": {
+        "status": "active"
+      },
+      "id": 6,
+      "source": "gov/status/active",
+      "title": "Active deployment target"
+    },
+    {
+      "content": "Use the temporary incident bridge.",
+      "governance": {
+        "expires_at": "2026-07-18T00:00:00Z"
+      },
+      "id": 7,
+      "source": "gov/ttl/expired",
+      "title": "Expired incident command"
+    },
+    {
+      "content": "Use the permanent operations room.",
+      "governance": {
+        "expires_at": "2026-08-01T00:00:00Z"
+      },
+      "id": 8,
+      "source": "gov/ttl/current",
+      "title": "Current incident command"
+    },
+    {
+      "content": "Restart service alpha first.",
+      "governance": {
+        "status": "active"
+      },
+      "id": 9,
+      "source": "gov/revision/v1",
+      "title": "Runbook revision one"
+    },
+    {
+      "content": "Restart service beta first.",
+      "governance": {
+        "status": "active",
+        "supersedes_id": 9
+      },
+      "id": 10,
+      "source": "gov/revision/v2",
+      "title": "Runbook revision two"
+    },
+    {
+      "content": "A redacted secret-bearing memory.",
+      "governance": {
+        "privacy_status": "fail"
+      },
+      "id": 11,
+      "source": "gov/privacy/blocked",
+      "title": "Blocked secret memory"
+    },
+    {
+      "content": "Retrieve credentials from the approved secret manager.",
+      "governance": {
+        "privacy_status": "pass"
+      },
+      "id": 12,
+      "source": "gov/privacy/clean",
+      "title": "Clean credential guidance"
+    }
+  ],
+  "documents_total": 12,
+  "fixed_clock": "2026-07-19T00:00:00Z",
+  "fixture_digest": "sha256:017c0629a5611a571ce4088af5b2474d18d8672e12169a2c70d05bc92c3b0b5f",
+  "fixture_version": null,
+  "generated_at": "2026-07-19T05:15:09.458556+00:00",
+  "gold_labels_excluded": true,
+  "granularity": "synthetic-governance-case",
+  "notes": [
+    "Provider-process input only; expected answers, expected sources, forbidden sources, and scorer metadata are excluded.",
+    "fixture_digest identifies the separate gold evaluation fixture; provider_input_digest identifies this redacted file."
+  ],
+  "provider_input": true,
+  "provider_input_digest": "sha256:ddd3a0799c4640c71bff63d86ead20da2c4a5fa5344840f41da828141c6f4fc4",
+  "schema_version": 1
+}

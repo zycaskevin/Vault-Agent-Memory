@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zycaskevin/Vault-Agent-Memory/benchmarks/schemas/external_memory_comparison_run.v1.schema.json",
+  "title": "External Memory Comparison Run v1",
+  "description": "Provider-neutral frozen candidate-pool artifact accepted by the Vault memory-foundation benchmark.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_type",
+    "benchmark",
+    "fixture_digest",
+    "system",
+    "top_k",
+    "candidate_pool_k",
+    "cases_total",
+    "cases"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "artifact_type": {"const": "external_memory_comparison_run"},
+    "benchmark": {"type": "string", "minLength": 1},
+    "fixture_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "system": {"type": "string", "minLength": 1},
+    "system_version": {"type": "string"},
+    "top_k": {"type": "integer", "minimum": 1},
+    "candidate_pool_k": {"type": "integer", "minimum": 1},
+    "cases_total": {"type": "integer", "minimum": 0},
+    "cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "results"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "query": {"type": "string"},
+          "latency_ms": {"type": ["number", "null"], "minimum": 0},
+          "cost_usd": {"type": ["number", "null"], "minimum": 0},
+          "error": {"type": ["string", "null"]},
+          "timed_out": {"type": "boolean"},
+          "results": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["rank", "source"],
+              "properties": {
+                "rank": {"type": "integer", "minimum": 1},
+                "source": {"type": "string", "minLength": 1},
+                "id": {},
+                "title": {"type": "string"},
+                "score": {"type": ["number", "null"], "minimum": 0}
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "manifest": {"type": "object"},
+    "engineering": {"type": "object"},
+    "notes": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": true
+}

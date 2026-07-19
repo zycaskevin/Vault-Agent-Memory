@@ -9,6 +9,10 @@ on:
       - "index.html"
       - "README.md"
       - "docs/**"
+      - "site/**"
+      - "benchmarks/results/**"
+      - "scripts/build_benchmark_site_data.py"
+      - "tests/test_benchmark_site.py"
       - ".github/workflows/pages.yml"
 
 permissions:
@@ -22,7 +26,7 @@ concurrency:
 
 jobs:
   deploy:
-    name: Deploy static landing demo
+    name: Deploy evidence website
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -40,9 +44,14 @@ jobs:
         run: |
           set -euo pipefail
           site_dir="${RUNNER_TEMP}/site"
-          mkdir -p "${site_dir}/docs"
-          cp index.html "${site_dir}/index.html"
-          cp -R docs/landing "${site_dir}/docs/landing"
+          python scripts/build_benchmark_site_data.py
+          cp -R site "${site_dir}"
+          evidence="${site_dir}/evidence/vaultgovbench-retrieval-v0.1/89b9156"
+          mkdir -p "${evidence}"
+          cp -R benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156/. "${evidence}/"
+
+      - name: Verify website contract
+        run: python tests/test_benchmark_site.py
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v5

@@ -4,6 +4,79 @@
 
 ## 可用的基準測試
 
+### `memory_foundation_compare.py` - 外部記憶引擎 + Vault 配對測試
+
+把 mem0、Letta/MemGPT、AgentMemory 或其他引擎輸出的 frozen candidate
+pool 視為 `A`，再用 Vault read guard 產生 `A+B`，分開量測 Valid Recall、
+forbidden exposure、latency 與 cost delta。另有 fixed-clock
+`VaultGovBench` 動態治理 suite；完整契約與命令見
+[`docs/memory_foundation_benchmarks.md`](../docs/memory_foundation_benchmarks.md)。
+
+```bash
+python3 benchmarks/memory_foundation_compare.py governance-run \
+  --fixture benchmarks/vault_gov_bench/v0.1.json \
+  --output /tmp/vault-gov-bench-v0.1.json
+```
+
+公開 synthetic fixture 只驗證 contract/scorer，不代表任何 live provider
+的產品成績。
+
+Live provider 必須先取得不含 scorer gold 的 input。Vault 本身也走同一條
+blind path：
+
+```bash
+python3 benchmarks/external_memory_compare.py export-provider-input \
+  --fixture benchmarks/vault_gov_bench/retrieval_v0.1.json \
+  --output /tmp/vaultgov-provider-input.json
+
+python3 benchmarks/vault_fixture_run.py \
+  --fixture /tmp/vaultgov-provider-input.json \
+  --candidate-pool-k 4 \
+  --mode keyword \
+  --output /tmp/vault-provider-run.json
+```
+
+舊的 `external_memory_compare.py vault-run` / `vault-mode-compare` 會在同一
+process 解析 raw benchmark 與 gold，只能當 non-blind diagnostic，不能通過
+目前的 publication gate。
+
+### `agentmemory_compare.py` - rohitg00/agentmemory v0.9.27 adapter
+
+以官方 `remember` / `smart-search` REST surface 產生 neutral run artifact。
+因 v0.9.27 的 `project` 不會過濾一般 memory results，每次執行都必須搭配
+全新的隔離 server store；任何無法映射回本次 fixture source 的 `obsId`
+都會 fail closed。
+
+```bash
+python3 benchmarks/agentmemory_compare.py \
+  --fixture /tmp/vaultgov-provider-input.json \
+  --fresh-store-id agentmemory-run-001 \
+  --provider-version 0.9.27 \
+  --limit 4 \
+  --output /tmp/agentmemory-run-001.json
+```
+
+這個 adapter 只支援 global fixture。Server 啟停、iii-engine 與 store
+隔離由 provider sandbox 負責；adapter 會分開記錄 index 和 query latency，
+且用 `memory.id -> fixture source` mapping 修正官方 compact result 固定回傳
+`sessionId: "memory"` 的 provenance 問題。
+
+所有 live provider（Vault、mem0、Letta、AgentMemory）都只能讀
+`export-provider-input` 產生的 blind input；完整 gold fixture 只交給後續
+`augment-run`、`score-pair` 與 scorer。可公開的 provider row 還必須具備：
+同一個 clean committed source/lock/adapter/scorer chain、至少五次獨立
+clean-state repeats、raw/pair/provider-input digest binding，以及每次執行的
+empty-store/teardown evidence binding。缺少任何一項就是 `not measured` 或
+developer diagnostic，不能用零值補齊。
+
+公開 fixture 能讓任何人重現與 code review，但也能被事先研究；blind
+input 只防止 provider process 意外讀到 gold，不等於 hidden test。正式推廣
+的比較性主張還需要由獨立 scorer 保管、定期輪替的 hidden holdout。
+
+第一份通過完整 publication gate 的 Vault 與 mem0 五次 clean-state
+artifacts、repeat summaries 與清楚的 claim boundary 位於
+[`results/vaultgovbench-retrieval-v0.1/89b9156`](results/vaultgovbench-retrieval-v0.1/89b9156/README.md)。
+
 ### `search_benchmark.py` - 搜尋品質與效能基準測試
 
 比較不同搜尋策略的效果與效能：

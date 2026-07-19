@@ -1,0 +1,511 @@
+{
+  "schema_version": 1,
+  "artifact_type": "vault_governance_benchmark_fixture",
+  "fixture_id": "vault-gov-bench",
+  "fixture_version": "0.1",
+  "benchmark": "VaultGovBench",
+  "fixed_clock": "2026-07-19T12:00:00+00:00",
+  "description": "Public-safe, deterministic governance scenarios for Vault as a memory foundation.",
+  "execution_contract": {
+    "case_statuses": [
+      "pass",
+      "expected_gap",
+      "fail"
+    ],
+    "expected_gap_counts_as_failure": false,
+    "policy_replay_must_be_disclosed": true,
+    "raw_external_memory_is_never_canonical": true,
+    "fixed_clock_required": true
+  },
+  "claim_boundaries": [
+    "A passing case proves only the published scenario and fixture version.",
+    "Policy replay is deterministic helper coverage, not a live provider integration.",
+    "Tombstone reactivation is not content-revision rollback.",
+    "An expected capability gap is evidence of missing behavior, not a passing product capability."
+  ],
+  "cases": [
+    {
+      "id": "candidate-first-promotion-visibility",
+      "kind": "candidate_visibility_transition",
+      "description": "A proposal stays outside active recall until it is explicitly promoted.",
+      "execution_mode": "real_sqlite_provider",
+      "fixed_clock": "2026-07-19T12:00:00+00:00",
+      "query": "foundation candidate",
+      "candidate": {
+        "title": "Foundation candidate transition",
+        "content": "Decision: foundation candidate stays hidden until explicit promotion.",
+        "reason": "Verify the candidate-first visibility boundary.",
+        "tags": "governance,candidate,promotion",
+        "category": "decision",
+        "trust": 0.9,
+        "source": "vault_gov_bench",
+        "source_ref": "vault-gov:v0.1:candidate-visibility",
+        "scope": "project",
+        "sensitivity": "low",
+        "owner_agent": "work-agent",
+        "memory_type": "governance_fixture"
+      },
+      "expected_outcome": "blocked_then_visible",
+      "expected": {
+        "outcome": "blocked_then_visible",
+        "candidate_status": "candidate_created",
+        "promotion_status": "promoted",
+        "before_count": 0,
+        "after_count": 1
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "private-read-policy-replay",
+      "kind": "read_policy",
+      "description": "A private row is blocked when the caller has not enabled private reads.",
+      "execution_mode": "policy_replay",
+      "as_of": "2026-07-19T12:00:00+00:00",
+      "row": {
+        "id": 101,
+        "title": "Private governance fixture",
+        "content_raw": "Private memory used only for a deterministic access-policy replay.",
+        "status": "active",
+        "approval_state": "approved",
+        "scope": "private",
+        "sensitivity": "high",
+        "owner_agent": "profile-agent",
+        "allowed_agents": [
+          "work-agent"
+        ],
+        "source": "vault-gov-bench/private-policy"
+      },
+      "policy": {
+        "agent_id": "work-agent",
+        "include_private": false,
+        "max_sensitivity": "high",
+        "allowed_statuses": [
+          "active"
+        ]
+      },
+      "expected_allowed": false,
+      "expected_reason": "private",
+      "expected": {
+        "allowed": false,
+        "reason_codes": [
+          "private"
+        ]
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "shared-write-capability-replay",
+      "kind": "write_policy",
+      "description": "A shared candidate write is blocked without the explicit shared-write capability.",
+      "execution_mode": "policy_replay",
+      "metadata": {
+        "content": "A synthetic shared-memory proposal without elevated write capability.",
+        "scope": "shared",
+        "sensitivity": "low",
+        "owner_agent": "work-agent"
+      },
+      "policy": {
+        "agent_id": "work-agent"
+      },
+      "expected_allowed": false,
+      "expected": {
+        "allowed": false,
+        "write_policy_allowed": false,
+        "write_policy_reason": "shared/public writes require allow_shared=true",
+        "privacy_status": "pass"
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "restricted-read-policy-replay",
+      "kind": "read_policy",
+      "description": "A restricted row is blocked for an agent outside its owner/allow list.",
+      "execution_mode": "policy_replay",
+      "as_of": "2026-07-19T12:00:00+00:00",
+      "row": {
+        "id": 102,
+        "title": "Restricted governance fixture",
+        "status": "active",
+        "approval_state": "approved",
+        "scope": "shared",
+        "sensitivity": "restricted",
+        "owner_agent": "profile-agent",
+        "allowed_agents": ["admin-agent"],
+        "source": "vault-gov-bench/restricted-policy"
+      },
+      "policy": {
+        "agent_id": "work-agent",
+        "include_private": false,
+        "max_sensitivity": "restricted"
+      },
+      "expected_allowed": false,
+      "expected_reason": "restricted",
+      "expected": {
+        "allowed": false,
+        "reason_codes": ["restricted"]
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "private-high-write-capability-replay",
+      "kind": "write_policy",
+      "description": "A private high-sensitivity write needs both private and high-sensitivity capabilities.",
+      "execution_mode": "policy_replay",
+      "metadata": {
+        "content": "Synthetic private high-sensitivity proposal.",
+        "scope": "private",
+        "sensitivity": "high",
+        "owner_agent": "work-agent"
+      },
+      "policy": {
+        "agent_id": "work-agent",
+        "allow_private": true,
+        "allow_high_sensitivity": false
+      },
+      "expected_allowed": false,
+      "expected": {
+        "allowed": false,
+        "write_policy_allowed": false,
+        "write_policy_reason": "high-sensitivity writes require allow_high_sensitivity=true",
+        "privacy_status": "pass"
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "restricted-write-capability-replay",
+      "kind": "write_policy",
+      "description": "A restricted shared write is allowed only for an authorized agent with both flags.",
+      "execution_mode": "policy_replay",
+      "metadata": {
+        "content": "Synthetic authorized restricted proposal.",
+        "scope": "shared",
+        "sensitivity": "restricted",
+        "owner_agent": "profile-agent",
+        "allowed_agents": ["work-agent"]
+      },
+      "policy": {
+        "agent_id": "work-agent",
+        "allow_shared": true,
+        "allow_restricted": true
+      },
+      "expected_allowed": true,
+      "expected": {
+        "allowed": true,
+        "write_policy_allowed": true,
+        "write_policy_reason": "",
+        "privacy_status": "pass"
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "sensitivity-cap-policy-replay",
+      "kind": "read_policy",
+      "description": "A high-sensitivity row is blocked by a medium read cap.",
+      "execution_mode": "policy_replay",
+      "as_of": "2026-07-19T12:00:00+00:00",
+      "row": {
+        "id": 103,
+        "title": "High sensitivity governance fixture",
+        "status": "active",
+        "approval_state": "approved",
+        "scope": "shared",
+        "sensitivity": "high",
+        "source": "vault-gov-bench/sensitivity-cap"
+      },
+      "policy": {
+        "agent_id": "work-agent",
+        "max_sensitivity": "medium"
+      },
+      "expected_allowed": false,
+      "expected_reason": "sensitivity_capped",
+      "expected": {
+        "allowed": false,
+        "reason_codes": ["sensitivity_capped"]
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "future-temporal-policy-replay",
+      "kind": "read_policy",
+      "description": "A future fact is not valid at the fixed query clock.",
+      "execution_mode": "policy_replay",
+      "as_of": "2026-07-19T12:00:00+00:00",
+      "row": {
+        "id": 104,
+        "title": "Future governance fixture",
+        "status": "active",
+        "approval_state": "approved",
+        "scope": "shared",
+        "sensitivity": "low",
+        "valid_from": "2026-08-01T00:00:00+00:00",
+        "source": "vault-gov-bench/future"
+      },
+      "policy": {"agent_id": "work-agent"},
+      "expected_allowed": false,
+      "expected_reason": "temporal_future",
+      "expected": {
+        "allowed": false,
+        "reason_codes": ["temporal_future"]
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "unapproved-candidate-policy-replay",
+      "kind": "read_policy",
+      "description": "A candidate row is not valid canonical memory before promotion.",
+      "execution_mode": "policy_replay",
+      "as_of": "2026-07-19T12:00:00+00:00",
+      "row": {
+        "id": 105,
+        "title": "Unapproved governance fixture",
+        "status": "candidate",
+        "approval_state": "candidate",
+        "scope": "project",
+        "sensitivity": "low",
+        "source": "vault-gov-bench/unapproved"
+      },
+      "policy": {"agent_id": "work-agent"},
+      "expected_allowed": false,
+      "expected_reason": "unapproved",
+      "expected": {
+        "allowed": false,
+        "reason_codes": ["unapproved", "inactive"]
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "privacy-secret-policy-replay",
+      "kind": "privacy_gate",
+      "description": "A plainly synthetic password-shaped value is rejected by the real privacy helper.",
+      "execution_mode": "policy_replay",
+      "content": "Synthetic benchmark only: password=fixture-only-not-a-secret",
+      "expected_status": "fail",
+      "expected": {
+        "privacy_status": "fail",
+        "findings_total": 1
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "missing-provenance-policy-replay",
+      "kind": "read_policy",
+      "description": "A derived result without canonical provenance fails closed.",
+      "execution_mode": "policy_replay",
+      "as_of": "2026-07-19T12:00:00+00:00",
+      "row": {
+        "id": 106,
+        "title": "Untraceable derived result",
+        "status": "active",
+        "approval_state": "approved",
+        "scope": "project",
+        "sensitivity": "low"
+      },
+      "policy": {"agent_id": "work-agent"},
+      "require_provenance": true,
+      "expected_allowed": false,
+      "expected_reason": "missing_provenance",
+      "expected": {
+        "allowed": false,
+        "reason_codes": ["missing_provenance"]
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "malformed-lifecycle-policy-replay",
+      "kind": "read_policy",
+      "description": "Malformed expiry and temporal metadata fail closed in the strict guard.",
+      "execution_mode": "policy_replay",
+      "as_of": "2026-07-19T12:00:00+00:00",
+      "row": {
+        "id": 107,
+        "title": "Malformed lifecycle fixture",
+        "status": "active",
+        "approval_state": "approved",
+        "scope": "project",
+        "sensitivity": "low",
+        "expires_at": "not-a-timestamp",
+        "valid_from": "also-not-a-timestamp",
+        "source": "vault-gov-bench/malformed-lifecycle"
+      },
+      "policy": {"agent_id": "work-agent"},
+      "expected_allowed": false,
+      "expected_reason": "invalid_expiry",
+      "expected": {
+        "allowed": false,
+        "reason_codes": ["invalid_expiry", "invalid_temporal_metadata"]
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "privacy-candidate-real-rejection",
+      "kind": "privacy_candidate_rejected",
+      "description": "A secret-bearing proposal is rejected by the real candidate path and never becomes active memory.",
+      "execution_mode": "real_sqlite_provider",
+      "fixed_clock": "2026-07-19T12:00:00+00:00",
+      "query": "foundation secret candidate",
+      "candidate": {
+        "title": "Foundation secret candidate",
+        "content": "Synthetic fixture only: password=fixture-only-not-a-secret",
+        "reason": "Verify real candidate privacy rejection.",
+        "tags": "governance,privacy,rejection",
+        "category": "security",
+        "trust": 0.9,
+        "source": "vault_gov_bench",
+        "source_ref": "vault-gov:v0.1:privacy-rejection",
+        "scope": "project",
+        "sensitivity": "low",
+        "owner_agent": "work-agent",
+        "memory_type": "governance_fixture"
+      },
+      "expected_outcome": "rejected_not_visible",
+      "expected": {
+        "outcome": "rejected_not_visible",
+        "candidate_status": "rejected",
+        "stored_candidate_status": "rejected",
+        "privacy_status": "fail",
+        "active_results": 0,
+        "knowledge_id": null
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "temporal-supersession-current-only",
+      "kind": "temporal_supersession",
+      "description": "A newer canonical memory supersedes the prior fact while the old row remains auditable.",
+      "execution_mode": "real_sqlite_plus_read_guard",
+      "fixed_clock": "2026-07-19T12:00:00+00:00",
+      "expected_outcome": "old_blocked_new_visible",
+      "expected": {
+        "outcome": "old_blocked_new_visible",
+        "old_reason_codes": [
+          "superseded"
+        ],
+        "new_reason_codes": []
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "ttl-strict-block-and-lifecycle-archive",
+      "kind": "ttl_lifecycle_enforcement",
+      "description": "The strict read guard blocks an expired active row and the lifecycle job then archives it.",
+      "execution_mode": "real_sqlite_plus_read_guard",
+      "fixed_clock": "2026-07-19T12:00:00+00:00",
+      "expires_at": "2026-07-18T00:00:00+00:00",
+      "memory": {
+        "title": "Temporary governance deployment window",
+        "content_raw": "This temporary governance deployment window expired before the fixed clock.",
+        "tags": "governance,ttl,temporary",
+        "category": "temporary",
+        "trust": 0.9,
+        "source": "vault-gov-bench/ttl-expired",
+        "scope": "project",
+        "sensitivity": "low",
+        "owner_agent": "automation-agent",
+        "memory_type": "governance_fixture"
+      },
+      "expected_outcome": "strict_block_and_archived",
+      "expected": {
+        "outcome": "strict_block_and_archived",
+        "before_reason_codes": [
+          "expired"
+        ],
+        "after_reason_codes": [
+          "inactive",
+          "expired"
+        ],
+        "archived_count": 1,
+        "native_provider_immediate_ttl_filter": false
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "stale-derived-ghost-after-soft-delete",
+      "kind": "stale_derived_ghost_soft_delete",
+      "description": "A stale derived-index hit survives externally, but the read guard rejects its deleted canonical row.",
+      "execution_mode": "real_sqlite_with_derived_result_replay",
+      "fixed_clock": "2026-07-19T12:00:00+00:00",
+      "memory": {
+        "title": "Stale derived ghost policy",
+        "content_raw": "A derived hit must be checked against canonical Vault status before use.",
+        "tags": "governance,derived-index,delete",
+        "category": "policy",
+        "trust": 0.95,
+        "source": "vault-gov-bench/derived-ghost",
+        "scope": "project",
+        "sensitivity": "low",
+        "owner_agent": "work-agent",
+        "memory_type": "governance_fixture"
+      },
+      "expected_outcome": "ghost_blocked",
+      "expected": {
+        "outcome": "ghost_blocked",
+        "reason_codes": [
+          "deleted"
+        ],
+        "audit_events": 1
+      },
+      "expected_capability_gap": null
+    },
+    {
+      "id": "reactivate-tombstone-rollback",
+      "kind": "tombstone_reactivation",
+      "description": "A soft-deleted row can be reactivated through the provider's deleted-to-active transition.",
+      "execution_mode": "real_sqlite_provider",
+      "fixed_clock": "2026-07-19T12:00:00+00:00",
+      "memory": {
+        "title": "Reactivate rollback policy",
+        "content_raw": "Soft-delete remains reversible through explicit administrator reactivation.",
+        "tags": "governance,rollback,tombstone",
+        "category": "policy",
+        "trust": 0.95,
+        "source": "vault-gov-bench/reactivate",
+        "scope": "project",
+        "sensitivity": "low",
+        "owner_agent": "admin-agent",
+        "memory_type": "governance_fixture"
+      },
+      "expected_outcome": "reactivated",
+      "expected": {
+        "outcome": "reactivated",
+        "audit_events": 2
+      },
+      "not_claimed": [
+        "content_revision_rollback",
+        "atomic_multi-memory_rollback"
+      ],
+      "expected_capability_gap": null
+    },
+    {
+      "id": "duplicate-candidate-idempotency-gap",
+      "kind": "duplicate_candidate_idempotency_gap",
+      "description": "The provider has no public external event-id idempotency precondition.",
+      "execution_mode": "declared_provider_capability_gap",
+      "expected_outcome": "capability_gap",
+      "expected": {
+        "outcome": "capability_gap",
+        "capability": "event_id_idempotency"
+      },
+      "expected_capability_gap": {
+        "capability": "idempotent_candidate_submit_by_external_event_id",
+        "expected_observation": "the public provider contract has no replay-safe external event-id outcome reuse",
+        "required_future_contract": "an explicit idempotency key with replay-safe outcome reuse"
+      }
+    },
+    {
+      "id": "out-of-order-update-guard-gap",
+      "kind": "out_of_order_update_gap",
+      "description": "The provider has no public parent-revision or monotonic external-sequence precondition.",
+      "execution_mode": "declared_provider_capability_gap",
+      "expected_outcome": "capability_gap",
+      "expected": {
+        "outcome": "capability_gap",
+        "capability": "revision_precondition"
+      },
+      "expected_capability_gap": {
+        "capability": "external_revision_compare_and_swap",
+        "expected_observation": "update_memory accepts no parent revision or external sequence precondition",
+        "required_future_contract": "parent revision or monotonic external sequence precondition"
+      }
+    }
+  ]
+}

@@ -2,6 +2,8 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
+[官方网站](https://zycaskevin.github.io/Vault-Agent-Memory/) · [公开测试](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/) · [测试方法](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/methodology/)
+
 给 AI Agent 用的本地优先、后端无关记忆治理层。
 
 它让 Codex、Claude Code、Hermes、OpenClaw、n8n、Coze 等不同 Agent，
@@ -234,6 +236,9 @@ Vault 目前不宣称自己有 LoCoMo / LongMemEval 类 leaderboard 分数。这
 Vault 现在公开的是可重现的产品契约验证：
 
 - **Search QA**：source hit、MRR、no-result、citation boundary；衡量 retrieval evidence，不是 final answer 品质。
+- **[记忆地基 benchmark](docs/memory_foundation_benchmarks.md)**：在同一 frozen candidate pool
+  比较外部引擎 `A` 与引擎加 Vault `A+B` 的 Valid Recall、forbidden exposure、latency、cost，
+  并运行 fixed-clock 动态治理 suite；synthetic contract data 不混充 live provider 成绩。
 - **README command smoke**：确认 README 里的公开命令没有漂移。
 - **Release gates**：pytest、release parity、public-boundary checks、package build checks、clean-install smoke。
 - **Integration smoke**：依 release scope 验证 MCP/CLI、本地路径，以及可选的 Supabase、Gateway、OpenClaw、Coze read-only hosted reader。
