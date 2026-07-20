@@ -78,6 +78,30 @@
         "ports_closed": {"const": true}
       },
       "additionalProperties": true
+    },
+    "security_audit": {
+      "description": "Dependency audit bound to the same provider lock and complete dependency tree. Required by provider-specific publication gates when applicable.",
+      "type": "object",
+      "required": ["tool", "report_digest", "provider_lock_digest", "provider_tree_digest", "vulnerabilities"],
+      "properties": {
+        "tool": {"const": "npm audit"},
+        "report_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "provider_lock_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "provider_tree_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+        "vulnerabilities": {
+          "type": "object",
+          "required": ["critical", "high", "moderate", "low", "total"],
+          "properties": {
+            "critical": {"type": "integer", "minimum": 0},
+            "high": {"type": "integer", "minimum": 0},
+            "moderate": {"type": "integer", "minimum": 0},
+            "low": {"type": "integer", "minimum": 0},
+            "total": {"type": "integer", "minimum": 0}
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": true

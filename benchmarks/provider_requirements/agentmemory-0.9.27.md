@@ -29,3 +29,19 @@ server, and stop the server afterward. Bind that evidence to the raw run using
 [`provider_execution_evidence.v1.schema.json`](../schemas/provider_execution_evidence.v1.schema.json).
 The repeat summary must reject duplicate raw artifacts, duplicate clean-state
 identities, missing teardown evidence, and dirty or mismatched source chains.
+
+## Dependency security publication gate
+
+An isolated install audited on 2026-07-20 reported 17 advisories: 1 critical,
+6 high, and 10 moderate. The critical path is
+`@xenova/transformers -> onnxruntime-web -> onnx-proto -> protobufjs@6.11.6`.
+The current npm advisory identifies arbitrary code execution in affected
+`protobufjs` versions. AgentMemory 0.9.28 retained the same vulnerable path, so
+upgrading one patch release did not clear the gate.
+
+Do not run this pinned provider directly on a trusted host merely to obtain a
+publishable row. A future AgentMemory repeat must include `npm audit` evidence
+bound to the exact lock and complete dependency-tree digests. The publication
+gate requires zero critical and zero high vulnerabilities. Until the upstream
+tree clears that threshold or the provider runs inside an approved disposable
+isolation boundary, the track remains `Diagnostic`.

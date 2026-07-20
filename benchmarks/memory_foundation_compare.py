@@ -546,6 +546,13 @@ def summarize_repeats(
         )
         for run, run_digest in zip(runs, run_digests, strict=True)
     )
+    provider_dependency_security_passed = all(
+        _provider_dependency_security_passed(
+            run,
+            evidence=execution_evidence.get(run_digest),
+        )
+        for run, run_digest in zip(runs, run_digests, strict=True)
+    )
     source_chain_clean = all(
         _source_chain_is_clean_and_bound(pair, run)
         for pair, run in zip(pairs, runs, strict=True)
@@ -568,6 +575,8 @@ def summarize_repeats(
         release_gate_reasons.append("provider_gold_labels_not_isolated")
     if not provider_execution_verified:
         release_gate_reasons.append("provider_clean_state_execution_not_verified")
+    if not provider_dependency_security_passed:
+        release_gate_reasons.append("provider_dependency_security_not_passed")
     if not source_chain_clean:
         release_gate_reasons.append("artifact_source_chain_not_clean_or_not_bound")
     if not zero_index_failures:
@@ -600,6 +609,11 @@ def summarize_repeats(
             "provider_retrieval_integrity_passed_all_repeats": provider_integrity_passed,
             "provider_gold_labels_excluded_all_repeats": provider_gold_isolated,
             "provider_clean_state_execution_verified_all_repeats": provider_execution_verified,
+            **(
+                {"provider_dependency_security_passed_all_repeats": provider_dependency_security_passed}
+                if str(runs[0].get("system") or "") == "rohitg00/agentmemory"
+                else {}
+            ),
             "artifact_source_chain_clean_and_bound_all_repeats": source_chain_clean,
             "provider_native_preflight_applicable": native_preflight_applicable,
             "provider_native_preflight_passed_all_repeats": native_preflight_passed,
@@ -753,6 +767,35 @@ def _provider_execution_evidence_passed(
         and observed.get("embedding_model") == provider_config.get("embedding_model")
         and int(observed.get("embedding_dims") or 0)
         == int(provider_config.get("embedding_dims") or 0)
+    )
+
+
+def _provider_dependency_security_passed(
+    run: dict[str, Any],
+    *,
+    evidence: dict[str, Any] | None,
+) -> bool:
+    """Require an audit-bound dependency tree for AgentMemory publication.
+
+    The pinned AgentMemory runtime executes a large Node dependency tree. A
+    clean retrieval result does not override a known critical or high severity
+    runtime advisory. Other providers retain their existing gates until their
+    publication profiles define an equivalent dependency-audit contract.
+    """
+    if str(run.get("system") or "") != "rohitg00/agentmemory":
+        return True
+    if evidence is None:
+        return False
+    audit = evidence.get("security_audit") or {}
+    vulnerabilities = audit.get("vulnerabilities") or {}
+    dependencies = evidence.get("dependencies") or {}
+    return (
+        audit.get("tool") == "npm audit"
+        and _valid_sha256_digest(str(audit.get("report_digest") or ""))
+        and audit.get("provider_lock_digest") == dependencies.get("provider_lock_digest")
+        and audit.get("provider_tree_digest") == dependencies.get("provider_tree_digest")
+        and int(vulnerabilities.get("critical", -1)) == 0
+        and int(vulnerabilities.get("high", -1)) == 0
     )
 
 
