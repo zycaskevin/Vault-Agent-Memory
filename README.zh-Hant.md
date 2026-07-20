@@ -2,7 +2,7 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
-[官方網站](https://zycaskevin.github.io/Vault-Agent-Memory/) · [公開測試](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/) · [測試方法](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/methodology/) · [安裝](#安裝)
+[官方網站](https://zycaskevin.github.io/Vault-Agent-Memory/) · [公開測試](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/) · [第三方獨立重跑](https://zycaskevin.github.io/Vault-Agent-Memory/reproduce/) · [測試方法](https://zycaskevin.github.io/Vault-Agent-Memory/benchmarks/methodology/) · [安裝](#安裝)
 
 給 AI Agent 用的本地優先、後端無關記憶治理層。
 

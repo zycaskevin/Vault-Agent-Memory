@@ -415,6 +415,14 @@ and repeat summary. A pass proves artifact integrity and internal contract
 consistency. It does **not** prove that an independent party reran the provider,
 recreated the environment, or confirmed the benchmark's external validity.
 
+Independent operators can perform that stronger test with the
+[`External Reproduction Kit`](../benchmarks/external_reproduction/README.md).
+The v1 kit pins mem0 `2.0.12`, runs five blinded fresh-store repeats, records
+the resolved environment, writes exhaustive checksums, validates a public
+operator attestation, and provides a GitHub submission form plus CI gate.
+Until a submitted bundle is contract-valid and maintainer-reviewed, the public
+site continues to report zero accepted external reproductions.
+
 The mem0 provider profile was mem0 `2.0.12` controlled raw insertion
 (`infer=False`), FastEmbed `0.8.0`, `thenlper/gte-large` at 1024 dimensions,
 Qdrant `1.18.0`, ONNX Runtime `1.27.0`, spaCy `3.8.14`, and

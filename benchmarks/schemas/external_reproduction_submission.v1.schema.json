@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/zycaskevin/Vault-Agent-Memory/benchmarks/schemas/external_reproduction_submission.v1.schema.json",
+  "title": "External Reproduction Submission v1",
+  "description": "A third-party attestation and artifact index for an independently operated Vault memory-foundation reproduction.",
+  "type": "object",
+  "required": ["schema_version", "artifact_type", "reproduction_id", "benchmark", "provider", "operator", "source", "protocol", "artifacts", "attestation", "claim_boundary"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "artifact_type": {"const": "external_reproduction_submission"},
+    "reproduction_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{7,79}$"},
+    "benchmark": {"const": "vaultgovbench-retrieval-v0.1"},
+    "provider": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {"name": {"const": "mem0"}, "version": {"const": "2.0.12"}},
+      "additionalProperties": true
+    },
+    "operator": {
+      "type": "object",
+      "required": ["github_handle"],
+      "properties": {
+        "github_handle": {"type": "string", "pattern": "^[A-Za-z0-9-]{1,39}$"},
+        "affiliation": {"type": "string", "maxLength": 120},
+        "conflicts": {"type": "string", "maxLength": 500}
+      },
+      "additionalProperties": false
+    },
+    "source": {
+      "type": "object",
+      "required": ["revision", "git_dirty"],
+      "properties": {
+        "revision": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "git_dirty": {"const": false}
+      },
+      "additionalProperties": true
+    },
+    "protocol": {
+      "type": "object",
+      "required": ["repeats", "blinded_provider_input", "top_k", "candidate_pool_k"],
+      "properties": {
+        "repeats": {"const": 5},
+        "blinded_provider_input": {"const": true},
+        "top_k": {"const": 1},
+        "candidate_pool_k": {"const": 4}
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "object",
+      "required": ["repeat_summary", "provider_input", "environment_freeze"],
+      "properties": {
+        "repeat_summary": {"type": "string", "pattern": "^[^/].*\\.json$"},
+        "provider_input": {"type": "string", "pattern": "^[^/].*\\.json$"},
+        "environment_freeze": {"type": "string", "pattern": "^[^/].*\\.txt$"}
+      },
+      "additionalProperties": true
+    },
+    "attestation": {
+      "type": "object",
+      "required": ["independent_operator", "provider_never_received_gold_labels", "fresh_store_each_repeat", "no_secrets_or_private_data", "public_review_consent"],
+      "properties": {
+        "independent_operator": {"const": true},
+        "provider_never_received_gold_labels": {"const": true},
+        "fresh_store_each_repeat": {"const": true},
+        "no_secrets_or_private_data": {"const": true},
+        "public_review_consent": {"const": true}
+      },
+      "additionalProperties": false
+    },
+    "claim_boundary": {"type": "string", "minLength": 40}
+  },
+  "additionalProperties": true
+}

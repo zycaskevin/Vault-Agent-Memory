@@ -1,0 +1,64 @@
+name: External reproduction submission
+description: Submit an independently operated benchmark bundle for public review.
+title: "[External reproduction]: "
+labels: ["benchmark", "external-reproduction", "needs-validation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for independently testing the Vault memory-foundation contract. Run the validator before submitting. Do not include secrets, private memory, customer data, or large artifacts directly in this issue.
+  - type: input
+    id: reproduction_id
+    attributes:
+      label: Reproduction ID
+      placeholder: "githubhandle-20260720-120000"
+    validations:
+      required: true
+  - type: input
+    id: bundle_url
+    attributes:
+      label: Public immutable bundle URL
+      description: Link to a fork commit, release asset, or content-addressed public archive.
+    validations:
+      required: true
+  - type: input
+    id: source_revision
+    attributes:
+      label: Vault source revision
+      placeholder: "40-character commit SHA"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment summary
+      description: OS, architecture, Python version, and any material deviations.
+    validations:
+      required: true
+  - type: textarea
+    id: result
+    attributes:
+      label: Validator output
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: conflicts
+    attributes:
+      label: Conflicts and affiliation
+      description: Disclose employment, funding, contribution, or other relationships with Vault or the compared provider. Write none if none.
+    validations:
+      required: true
+  - type: checkboxes
+    id: attestation
+    attributes:
+      label: Public attestation
+      options:
+        - label: I operated this reproduction independently and did not receive evaluation gold labels in the provider process.
+          required: true
+        - label: Every repeat used a fresh isolated provider store and I did not modify artifacts after checksums were generated.
+          required: true
+        - label: I removed secrets, private data, and local-sensitive information and consent to public technical review.
+          required: true
+        - label: I understand contract validation is not endorsement or proof of universal superiority.
+          required: true

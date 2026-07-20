@@ -14,7 +14,7 @@ This review asks whether the public site can survive a skeptical technical scan,
 | Visual quality | 9/10 | Deliberate infrastructure visual system, restrained color, responsive hierarchy, custom social card, no stock imagery | External brand critique and broader device matrix |
 | Information density | 9/10 | Proof strip, architecture flow, lifecycle, charts, case matrix, publication states, limitations | Progressive disclosure for future larger evidence catalogs |
 | First-screen clarity | 9/10 | Category, replacement objection, three product invariants, and published proof are visible before deep detail | Validate with five-second comprehension testing |
-| Technical credibility | 8.5/10 | Paired A versus A + Vault method, denominators, case-level outcomes, checksummed artifacts, one-command fail-closed bundle verification, explicit claim boundaries | Independent provider rerun and at least two additional published providers |
+| Technical credibility | 8.5/10 | Paired A versus A + Vault method, denominators, case-level outcomes, checksummed artifacts, one-command fail-closed bundle verification, public external-reproduction kit and CI contract, explicit claim boundaries | First accepted independent provider rerun and at least two additional published providers |
 | Investor narrative | 8/10 | Why now, horizontal control-plane category, provider neutrality, lifecycle and evidence defensibility | Traction, team, distribution, market sizing, customer references, commercial model |
 | Search and traffic foundation | 8/10 | Static fast pages, bilingual stable URLs, semantic headings, canonical/hreflang metadata, structured data, sitemap, robots policy, social preview, provider-integration discovery route | Privacy-respecting analytics, content program, integration-specific case studies, earned links |
 
@@ -27,6 +27,7 @@ This review asks whether the public site can survive a skeptical technical scan,
 5. The mean paired guard overhead is +0.1482 ms under this frozen harness.
 6. AgentMemory remains diagnostic and Letta / MemGPT remains unmeasured; neither is presented as a published win.
 7. A standalone verifier checks all 36 bundle files, checksum coverage, safe paths, artifact-index structure, and publishable track declarations without requiring the website or provider runtime.
+8. The external-reproduction program exposes a pinned runner, submission schema, operator/conflict attestation, issue form, evidence-state ladder, and CI validator while honestly reporting zero accepted reproductions.
 
 ## Evidence still required before an institutional fundraising claim
 
@@ -44,6 +45,6 @@ A website can improve conversion and shareability; it cannot guarantee one milli
 
 ## Next evidence program
 
-P0: publish one independent reproduction and a second external-provider track.  
+P0: recruit and publish the first contract-valid, maintainer-reviewed independent reproduction; then complete a second external-provider track.
 P1: add structured SEO metadata, privacy-respecting analytics, a public adoption dashboard, and integration-specific landing pages.  
 P2: commission five-second comprehension and enterprise security-review studies, then revise the narrative from observed objections.
