@@ -400,6 +400,21 @@ These repeated processes check reproducibility over one public fixture and,
 for mem0, one warm pinned model cache; they are not independent statistical
 samples.
 
+Anyone can independently verify the checked-in publication bundle's integrity
+and release-gate declarations without installing mem0 or trusting the website:
+
+```bash
+python scripts/verify_publication_bundle.py \
+  benchmarks/results/vaultgovbench-retrieval-v0.1/89b9156
+```
+
+The verifier fails closed if a file is changed, omitted from `SHA256SUMS`, or
+added without a checksum; if a path escapes the bundle; if the artifact index
+is invalid; or if a published track is not marked publishable by both its index
+and repeat summary. A pass proves artifact integrity and internal contract
+consistency. It does **not** prove that an independent party reran the provider,
+recreated the environment, or confirmed the benchmark's external validity.
+
 The mem0 provider profile was mem0 `2.0.12` controlled raw insertion
 (`infer=False`), FastEmbed `0.8.0`, `thenlper/gte-large` at 1024 dimensions,
 Qdrant `1.18.0`, ONNX Runtime `1.27.0`, spaCy `3.8.14`, and
