@@ -29,3 +29,15 @@ Each language has stable product, architecture, evidence, and methodology routes
 The bilingual integration route applies the same rule to provider-specific discovery. It may explain how mem0, AgentMemory, Letta / MemGPT, and custom RAG fit the augmentation contract, but every provider carries its current evidence state. Adapter existence alone is never presented as benchmark validation.
 
 The site can support fundraising and distribution, but it cannot claim traction, market demand, third-party validation, or investment interest until those facts have their own verifiable sources. Those are business-evidence tracks, not design copy.
+
+## Independent artifact verification
+
+The repository provides `scripts/verify_publication_bundle.py` so a skeptical
+reader can validate the frozen bundle locally with one command. The verifier
+checks exhaustive checksum coverage, content digests, path safety, the index
+contract, summary identity, repeat counts, and fail-closed publication state.
+
+This creates a self-service integrity proof, not third-party reproduction.
+Only a separately operated provider run with its own environment evidence can
+satisfy the independent-reproduction roadmap item. The site and fundraising
+materials must preserve that distinction.

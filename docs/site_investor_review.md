@@ -14,7 +14,7 @@ This review asks whether the public site can survive a skeptical technical scan,
 | Visual quality | 9/10 | Deliberate infrastructure visual system, restrained color, responsive hierarchy, custom social card, no stock imagery | External brand critique and broader device matrix |
 | Information density | 9/10 | Proof strip, architecture flow, lifecycle, charts, case matrix, publication states, limitations | Progressive disclosure for future larger evidence catalogs |
 | First-screen clarity | 9/10 | Category, replacement objection, three product invariants, and published proof are visible before deep detail | Validate with five-second comprehension testing |
-| Technical credibility | 8/10 | Paired A versus A + Vault method, denominators, case-level outcomes, checksummed artifacts, explicit claim boundaries | Independent reproduction and at least two additional published providers |
+| Technical credibility | 8.5/10 | Paired A versus A + Vault method, denominators, case-level outcomes, checksummed artifacts, one-command fail-closed bundle verification, explicit claim boundaries | Independent provider rerun and at least two additional published providers |
 | Investor narrative | 8/10 | Why now, horizontal control-plane category, provider neutrality, lifecycle and evidence defensibility | Traction, team, distribution, market sizing, customer references, commercial model |
 | Search and traffic foundation | 8/10 | Static fast pages, bilingual stable URLs, semantic headings, canonical/hreflang metadata, structured data, sitemap, robots policy, social preview, provider-integration discovery route | Privacy-respecting analytics, content program, integration-specific case studies, earned links |
 
@@ -26,10 +26,11 @@ This review asks whether the public site can survive a skeptical technical scan,
 4. The 33.3% to 0% forbidden-exposure movement is attributable to the temporal-correction and superseded-revision cases.
 5. The mean paired guard overhead is +0.1482 ms under this frozen harness.
 6. AgentMemory remains diagnostic and Letta / MemGPT remains unmeasured; neither is presented as a published win.
+7. A standalone verifier checks all 36 bundle files, checksum coverage, safe paths, artifact-index structure, and publishable track declarations without requiring the website or provider runtime.
 
 ## Evidence still required before an institutional fundraising claim
 
-- Independent reproduction of the published bundle.
+- Independent provider rerun of the published experiment; artifact verification alone is not reproduction.
 - Published A versus A + Vault tracks for at least two more memory engines.
 - End-to-end answer-quality evaluation on an established long-term-memory benchmark.
 - Real workload scale tests, concurrent writers, large corpora, and failure recovery.

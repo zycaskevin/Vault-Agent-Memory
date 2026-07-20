@@ -60,6 +60,17 @@ def test_institutional_site_contract():
     assert (ROOT / "site/robots.txt").exists()
     assert (ROOT / "site/sitemap.xml").read_text().count("<url>") == 10
 
+def test_bilingual_independent_bundle_verification_contract():
+    english = (ROOT / "site/en/benchmarks/methodology/index.html").read_text()
+    chinese = (ROOT / "site/benchmarks/methodology/index.html").read_text()
+    command = "python scripts/verify_publication_bundle.py"
+    assert command in english and command in chinese
+    assert "all 36 evidence files" in english
+    assert "全部 36 個證據檔案" in chinese
+    assert "not an independent provider rerun" in english
+    assert "不代表第三方已獨立重跑 provider" in chinese
+    assert (ROOT / "scripts/verify_publication_bundle.py").exists()
+
 def test_bilingual_integration_and_search_contract():
     english = (ROOT / "site/en/integrations/index.html").read_text()
     chinese = (ROOT / "site/integrations/index.html").read_text()
