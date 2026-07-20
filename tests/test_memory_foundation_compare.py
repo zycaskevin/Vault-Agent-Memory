@@ -10,6 +10,7 @@ import benchmarks.memory_foundation_compare as memory_foundation_compare
 from benchmarks.external_memory_compare import fixture_digest
 from benchmarks.memory_foundation_compare import (
     _generic_digest,
+    _provider_dependency_security_passed,
     _provider_execution_evidence_passed,
     _provider_gold_labels_isolated,
     _provider_retrieval_integrity_passed,
@@ -870,11 +871,28 @@ def test_agentmemory_execution_evidence_requires_observed_runtime_and_teardown()
             "server_stopped": True,
             "ports_closed": True,
         },
+        "security_audit": {
+            "tool": "npm audit",
+            "report_digest": f"sha256:{'f' * 64}",
+            "provider_lock_digest": f"sha256:{'d' * 64}",
+            "provider_tree_digest": f"sha256:{'e' * 64}",
+            "vulnerabilities": {
+                "critical": 0,
+                "high": 0,
+                "moderate": 0,
+                "low": 0,
+                "total": 0,
+            },
+        },
     }
 
     assert _provider_execution_evidence_passed(
         run, run_digest=run_digest, evidence=evidence
     ) is True
+    assert _provider_dependency_security_passed(run, evidence=evidence) is True
+    evidence["security_audit"]["vulnerabilities"]["critical"] = 1
+    assert _provider_dependency_security_passed(run, evidence=evidence) is False
+    evidence["security_audit"]["vulnerabilities"]["critical"] = 0
     evidence["lifecycle"]["ports_closed"] = False
     assert _provider_execution_evidence_passed(
         run, run_digest=run_digest, evidence=evidence
