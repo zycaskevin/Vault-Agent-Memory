@@ -26,4 +26,6 @@ The site must explain the category before asking visitors to inspect implementat
 
 Each language has stable product, architecture, evidence, and methodology routes. Quantitative charts show denominators and test scope near the metric. Case-level outcomes remain inspectable. Diagnostic and unmeasured integrations stay visible because hiding them would create a stronger but misleading story.
 
+The bilingual integration route applies the same rule to provider-specific discovery. It may explain how mem0, AgentMemory, Letta / MemGPT, and custom RAG fit the augmentation contract, but every provider carries its current evidence state. Adapter existence alone is never presented as benchmark validation.
+
 The site can support fundraising and distribution, but it cannot claim traction, market demand, third-party validation, or investment interest until those facts have their own verifiable sources. Those are business-evidence tracks, not design copy.
