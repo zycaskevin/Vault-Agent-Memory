@@ -12,6 +12,8 @@ on:
       - "site/**"
       - "benchmarks/results/**"
       - "scripts/build_benchmark_site_data.py"
+      - "scripts/run_external_reproduction.py"
+      - "scripts/validate_external_reproduction.py"
       - "tests/test_benchmark_site.py"
       - ".github/workflows/pages.yml"
 

@@ -58,7 +58,7 @@ def test_institutional_site_contract():
     assert all('class="skip"' in p.read_text() and 'id="main"' in p.read_text()
                for p in (ROOT / "site").glob("**/*.html"))
     assert (ROOT / "site/robots.txt").exists()
-    assert (ROOT / "site/sitemap.xml").read_text().count("<url>") == 10
+    assert (ROOT / "site/sitemap.xml").read_text().count("<url>") == 12
 
 def test_bilingual_independent_bundle_verification_contract():
     english = (ROOT / "site/en/benchmarks/methodology/index.html").read_text()
@@ -71,6 +71,18 @@ def test_bilingual_independent_bundle_verification_contract():
     assert "不代表第三方已獨立重跑 provider" in chinese
     assert (ROOT / "scripts/verify_publication_bundle.py").exists()
 
+def test_bilingual_external_reproduction_program_contract():
+    english = (ROOT / "site/en/reproduce/index.html").read_text()
+    chinese = (ROOT / "site/reproduce/index.html").read_text()
+    assert "Don’t trust the chart. Run the contract." in english
+    assert "不要相信圖表。親自重跑合約。" in chinese
+    assert "No third-party reproduction has been accepted yet" in english
+    assert "目前尚未接受任何第三方獨立重跑" in chinese
+    assert "0 accepted" in english and "0 accepted" in chinese
+    assert "run_external_reproduction.py" in english and "run_external_reproduction.py" in chinese
+    assert "Contract validated" in english and "Contract validated" in chinese
+    assert "Maintainer reviewed" in english and "Maintainer reviewed" in chinese
+
 def test_bilingual_integration_and_search_contract():
     english = (ROOT / "site/en/integrations/index.html").read_text()
     chinese = (ROOT / "site/integrations/index.html").read_text()
@@ -79,7 +91,7 @@ def test_bilingual_integration_and_search_contract():
     for label in ("Published", "Diagnostic", "Unmeasured"):
         assert label in english and label in chinese
     pages = list((ROOT / "site").glob("**/*.html"))
-    assert len(pages) == 10
+    assert len(pages) == 12
     assert all('rel="canonical"' in page.read_text() for page in pages)
     assert all('hreflang="en"' in page.read_text() for page in pages)
     assert all('hreflang="zh-Hant"' in page.read_text() for page in pages)

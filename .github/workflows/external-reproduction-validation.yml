@@ -1,0 +1,35 @@
+name: External reproduction validation
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "benchmarks/external_reproductions/**"
+      - "benchmarks/schemas/external_reproduction_submission.v1.schema.json"
+      - "scripts/validate_external_reproduction.py"
+      - "tests/test_external_reproduction.py"
+      - ".github/workflows/external-reproduction-validation.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Test the fail-closed validator
+        run: python -m pytest -q tests/test_external_reproduction.py
+      - name: Validate submitted manifests
+        run: |
+          set -euo pipefail
+          found=0
+          while IFS= read -r manifest; do
+            found=1
+            python scripts/validate_external_reproduction.py "$(dirname "${manifest}")" --json
+          done < <(find benchmarks/external_reproductions -mindepth 2 -name submission.json -print)
+          if [[ "${found}" -eq 0 ]]; then
+            echo "No checked-in external reproduction submission to validate."
+          fi
