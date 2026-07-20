@@ -20,6 +20,12 @@ jobs:
       - uses: actions/checkout@v6
         with:
           persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install validation dependencies
+        run: python -m pip install -e ".[dev]"
       - name: Test the fail-closed validator
         run: python -m pytest -q tests/test_external_reproduction.py
       - name: Validate submitted manifests
