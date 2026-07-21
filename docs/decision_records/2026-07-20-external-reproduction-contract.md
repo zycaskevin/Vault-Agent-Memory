@@ -16,13 +16,16 @@ and publication gate before entering this contract.
 
 ## Evidence states
 
-1. `Submitted`: an operator has supplied a public bundle; no technical claim.
-2. `Contract validated`: checksums, schema, protocol, and release gates pass.
-3. `Maintainer reviewed`: maintainers inspected attribution, conflicts,
+1. `Environment blocked`: setup or partial execution reached a disclosed stage,
+   but an external network, runtime, storage, memory, or platform prerequisite
+   prevented five repeats and a valid bundle. Diagnostic evidence only.
+2. `Submitted`: an operator has supplied a public bundle; no technical claim.
+3. `Contract validated`: checksums, schema, protocol, and release gates pass.
+4. `Maintainer reviewed`: maintainers inspected attribution, conflicts,
    environment evidence, and deviations.
-4. `Published external reproduction`: the reviewed record is linked publicly
+5. `Published external reproduction`: the reviewed record is linked publicly
    with its operator and immutable source.
-5. `Rejected`: the bundle is invalid, unsafe, incomplete, or overclaims.
+6. `Rejected`: the bundle is invalid, unsafe, incomplete, or overclaims.
 
 Contract validation is not identity verification, endorsement, statistical
 independence, or proof of external validity. The website must continue to say
@@ -37,3 +40,9 @@ input. A clean 40-character source revision, fixed provider version, exact
 repeat count, public operator handle, conflicts disclosure, and artifact
 checksums are mandatory. Maintainers may reject a technically valid bundle if
 its provenance or disclosure is insufficient.
+
+The documented virtual environment and output directory must remain outside
+the checkout. Ignoring an in-repository environment would hide source-tree
+noise instead of preserving the clean-source invariant. The pinned FastEmbed
+prewarm requires access to Hugging Face; an allowlist denial is classified as
+`Environment blocked`, not provider failure and not a reproduction result.

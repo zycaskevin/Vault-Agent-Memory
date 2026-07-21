@@ -10,6 +10,9 @@ from scripts import run_external_reproduction as runner
 from scripts.validate_external_reproduction import validate_submission
 
 
+ROOT = Path(__file__).resolve().parents[1]
+
+
 def _sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -171,3 +174,53 @@ def test_runner_orchestrates_five_fresh_repeats_and_emits_valid_bundle(tmp_path,
     assert len(mem0_commands) == 5
     assert len({command[command.index("--vector-store-path") + 1] for command in mem0_commands}) == 5
     assert validate_submission(bundle)["ok"] is True
+
+
+def test_reproduction_docs_keep_environment_outside_clean_checkout():
+    guide = (ROOT / "benchmarks/external_reproduction/README.md").read_text(encoding="utf-8")
+    assert "python -m venv ../vault-repro-venv" in guide
+    assert "../vault-repro-venv/bin/python scripts/run_external_reproduction.py" in guide
+    assert "python -m venv .repro-venv" not in guide
+    assert ".repro-venv/bin/python" not in guide
+    assert "huggingface.co" in guide
+    assert "Environment blocked" in guide
+
+
+def test_blocked_attempt_has_separate_non_submission_issue_form():
+    form = (ROOT / ".github/ISSUE_TEMPLATE/external_reproduction_blocked.yml").read_text(encoding="utf-8")
+    assert "External reproduction blocked attempt" in form
+    assert "FastEmbed model prewarm" in form
+    assert "No complete five-repeat bundle or Contract validated claim" in form
+
+
+def test_model_prewarm_failure_explains_environment_blocked_state(tmp_path, monkeypatch):
+    def fake_git(*args):
+        return {("rev-parse", "HEAD"): "b" * 40, ("status", "--porcelain"): ""}[args]
+
+    def fake_run(command, *, env=None, capture=False):
+        if command[1:4] == ["-m", "pip", "freeze"]:
+            return "mem0ai==2.0.12\n"
+        if "export-provider-input" in command:
+            output = Path(command[command.index("--output") + 1])
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text("{}", encoding="utf-8")
+            return ""
+        if command[1:2] == ["-c"]:
+            raise runner.subprocess.CalledProcessError(1, command)
+        return ""
+
+    monkeypatch.setattr(runner, "_git", fake_git)
+    monkeypatch.setattr(runner, "_run", fake_run)
+    monkeypatch.setattr(runner.importlib.metadata, "version", lambda name: "2.0.12")
+    args = type(
+        "Args",
+        (),
+        {
+            "output_dir": str(tmp_path / "bundle"),
+            "github_handle": "external-tester",
+            "affiliation": "independent",
+            "conflicts": "none disclosed",
+        },
+    )()
+    with pytest.raises(RuntimeError, match="Environment blocked"):
+        runner.run(args)

@@ -76,10 +76,19 @@ def run(args: argparse.Namespace) -> Path:
     env = os.environ.copy()
     env["FASTEMBED_CACHE_PATH"] = str(model_cache)
     env["PYTHONPATH"] = str(ROOT)
-    _run(
-        [sys.executable, "-c", "from fastembed import TextEmbedding, SparseTextEmbedding; list(TextEmbedding(model_name='thenlper/gte-large').embed(['prewarm'])); list(SparseTextEmbedding(model_name='Qdrant/bm25').embed(['prewarm']))"],
-        env=env,
-    )
+    try:
+        _run(
+            [sys.executable, "-c", "from fastembed import TextEmbedding, SparseTextEmbedding; list(TextEmbedding(model_name='thenlper/gte-large').embed(['prewarm'])); list(SparseTextEmbedding(model_name='Qdrant/bm25').embed(['prewarm']))"],
+            env=env,
+        )
+    except subprocess.CalledProcessError as exc:
+        state_temp.cleanup()
+        raise RuntimeError(
+            "FastEmbed model prewarm failed. Confirm outbound HTTPS access to "
+            "huggingface.co and available disk/memory. If an external environment "
+            "constraint caused the failure, report Environment blocked; this is not "
+            "a Contract validated result."
+        ) from exc
 
     pairs: list[Path] = []
     runs: list[Path] = []

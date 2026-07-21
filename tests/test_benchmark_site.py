@@ -82,6 +82,9 @@ def test_bilingual_external_reproduction_program_contract():
     assert "run_external_reproduction.py" in english and "run_external_reproduction.py" in chinese
     assert "Contract validated" in english and "Contract validated" in chinese
     assert "Maintainer reviewed" in english and "Maintainer reviewed" in chinese
+    assert "Environment blocked" in english and "Environment blocked" in chinese
+    assert "external_reproduction_blocked.yml" in english
+    assert "external_reproduction_blocked.yml" in chinese
 
 def test_bilingual_integration_and_search_contract():
     english = (ROOT / "site/en/integrations/index.html").read_text()
