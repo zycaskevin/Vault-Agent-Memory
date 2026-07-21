@@ -1,0 +1,60 @@
+name: External reproduction blocked attempt
+description: Report an environment or runtime constraint that prevented a complete reproduction bundle.
+title: "[External reproduction blocked]: "
+labels: ["benchmark", "external-reproduction", "environment-blocked"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form when setup or execution started but no five-repeat validated bundle was produced. A blocked attempt is diagnostic evidence, not an accepted reproduction. Remove secrets, private paths, tokens, and unrelated environment data.
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Last completed stage
+      options:
+        - Base package installation
+        - Pinned provider installation
+        - Blinded provider input export
+        - FastEmbed model prewarm
+        - Provider retrieval repeat
+        - Vault guard and scoring
+        - Repeat summary and validation
+    validations:
+      required: true
+  - type: input
+    id: source_revision
+    attributes:
+      label: Vault source revision
+      placeholder: "40-character commit SHA"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment and constraint
+      description: OS, architecture, Python version, sandbox/container, network allowlist, available memory/storage, and other relevant limits.
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: Redacted failure output
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: completed
+    attributes:
+      label: What completed successfully?
+      description: Report observed stages and counts without converting missing results to zero.
+    validations:
+      required: true
+  - type: checkboxes
+    id: boundary
+    attributes:
+      label: Evidence boundary
+      options:
+        - label: No complete five-repeat bundle or Contract validated claim is being submitted.
+          required: true
+        - label: I removed credentials, private data, local-sensitive paths, and unrelated environment information.
+          required: true
