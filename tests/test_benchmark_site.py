@@ -61,7 +61,21 @@ def test_institutional_site_contract():
     assert all('class="skip"' in p.read_text() and 'id="main"' in p.read_text()
                for p in (ROOT / "site").glob("**/*.html"))
     assert (ROOT / "site/robots.txt").exists()
-    assert (ROOT / "site/sitemap.xml").read_text().count("<url>") == 12
+    assert (ROOT / "site/sitemap.xml").read_text().count("<url>") == 14
+
+
+def test_challenge_pages_are_bilingual_and_outcome_neutral():
+    english = (ROOT / "site/en/challenge/index.html").read_text()
+    chinese = (ROOT / "site/challenge/index.html").read_text()
+    for page in (english, chinese):
+        assert 'rel="canonical"' in page
+        assert "challenge_registration.yml" in page
+        assert "external_reproduction.yml" in page
+        assert "external_reproduction_blocked.yml" in page
+        assert "Bring Your Memory" in page
+        assert "14" in page
+    assert "No cash prize is promised" in english
+    assert "沒有現金獎金承諾" in chinese
 
 def test_bilingual_independent_bundle_verification_contract():
     english = (ROOT / "site/en/benchmarks/methodology/index.html").read_text()
@@ -102,7 +116,7 @@ def test_bilingual_integration_and_search_contract():
     for label in ("Published", "Diagnostic", "Unmeasured"):
         assert label in english and label in chinese
     pages = list((ROOT / "site").glob("**/*.html"))
-    assert len(pages) == 12
+    assert len(pages) == 14
     assert all('rel="canonical"' in page.read_text() for page in pages)
     assert all('hreflang="en"' in page.read_text() for page in pages)
     assert all('hreflang="zh-Hant"' in page.read_text() for page in pages)

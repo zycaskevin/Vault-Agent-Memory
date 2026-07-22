@@ -2,7 +2,7 @@
 
 [English](README.md) | [繁體中文](README.zh-Hant.md) | [简体中文](README.zh-CN.md)
 
-[Website](https://zycaskevin.github.io/Vault-Agent-Memory/en/) · [Live evidence](https://zycaskevin.github.io/Vault-Agent-Memory/en/benchmarks/) · [Reproduce independently](https://zycaskevin.github.io/Vault-Agent-Memory/en/reproduce/) · [Methodology](https://zycaskevin.github.io/Vault-Agent-Memory/en/benchmarks/methodology/) · [Install](#install)
+[Website](https://zycaskevin.github.io/Vault-Agent-Memory/en/) · [Founding 10 challenge](https://zycaskevin.github.io/Vault-Agent-Memory/en/challenge/) · [Live evidence](https://zycaskevin.github.io/Vault-Agent-Memory/en/benchmarks/) · [Reproduce independently](https://zycaskevin.github.io/Vault-Agent-Memory/en/reproduce/) · [Methodology](https://zycaskevin.github.io/Vault-Agent-Memory/en/benchmarks/methodology/) · [Install](#install)
 
 Vault is a local-first, backend-agnostic memory governance layer for AI agents.
 
