@@ -11,7 +11,8 @@ def builder():
     return module
 
 def test_data_is_checksummed_and_fail_closed():
-    module = builder(); data = module.build(module.BUNDLE)
+    module = builder()
+    data = module.build(module.BUNDLE)
     assert data["headline"]["baseline_recall"] == 0.666667
     assert data["headline"]["augmented_recall"] == 1.0
     assert data["headline"]["augmented_forbidden_exposure"] == 0.0
@@ -19,7 +20,8 @@ def test_data_is_checksummed_and_fail_closed():
     assert data["tracks"][2]["evidence"] is None
 
 def test_claim_and_accessibility_contract():
-    pages = list((ROOT / "site").glob("**/*.html")); assert len(pages) >= 4
+    pages = list((ROOT / "site").glob("**/*.html"))
+    assert len(pages) >= 4
     text = "\n".join(p.read_text(encoding="utf-8") for p in pages)
     assert "retrieval-only" in text and "LoCoMo" in text and "LongMemEval" in text
     assert "Unmeasured" in text and "不做品質主張" in text
@@ -27,7 +29,8 @@ def test_claim_and_accessibility_contract():
     assert all('name="viewport"' in p.read_text() for p in pages)
 
 def test_generated_catalog_is_deterministic():
-    module = builder(); expected = json.dumps(module.build(module.BUNDLE), indent=2, sort_keys=True) + "\n"
+    module = builder()
+    expected = json.dumps(module.build(module.BUNDLE), indent=2, sort_keys=True) + "\n"
     assert (ROOT / "site/data/benchmark-catalog.v1.json").read_text() == expected
 
 def test_english_site_is_complete_and_has_stable_routes():
@@ -80,6 +83,9 @@ def test_bilingual_external_reproduction_program_contract():
     assert "目前尚未接受任何第三方獨立重跑" in chinese
     assert "0 accepted" in english and "0 accepted" in chinese
     assert "run_external_reproduction.py" in english and "run_external_reproduction.py" in chinese
+    assert "--preflight-only --json" in english and "--preflight-only --json" in chinese
+    assert "Environment readiness" in english
+    assert "只代表環境符合執行條件" in chinese
     assert "Contract validated" in english and "Contract validated" in chinese
     assert "Maintainer reviewed" in english and "Maintainer reviewed" in chinese
     assert "Environment blocked" in english and "Environment blocked" in chinese
