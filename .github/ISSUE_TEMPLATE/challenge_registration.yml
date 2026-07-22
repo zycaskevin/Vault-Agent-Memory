@@ -1,0 +1,60 @@
+name: Founding 10 challenge registration
+description: Join the small independent reproduction cohort before running the protocol.
+title: "[Founding 10]: "
+labels: ["benchmark"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Join the Founding 10 independent challenge. Each accepted operator gets a 14-day window. Positive, negative, blocked, and protocol-bug results are equally welcome. Do not include secrets, private memory, customer data, or credentials.
+  - type: dropdown
+    id: track
+    attributes:
+      label: Challenge track
+      options:
+        - Reproduce — run the frozen mem0 contract unchanged
+        - Break It — test the protocol, documentation, or claim boundaries
+        - Bring Your Memory — compare another memory engine alone and with Vault
+    validations:
+      required: true
+  - type: input
+    id: provider
+    attributes:
+      label: Memory engine or provider
+      description: For example mem0, Letta, AgentMemory, a RAG stack, or "frozen mem0 track".
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Planned environment
+      description: OS, architecture, Python version, and material network or compute constraints. Estimates are fine at registration.
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: What will you test?
+      description: State the comparison, deviation, or failure mode you plan to examine in 3-8 sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: conflicts
+    attributes:
+      label: Conflicts and affiliation
+      description: Disclose employment, funding, contributions, or relationships with Vault or the compared provider. Write none if none.
+    validations:
+      required: true
+  - type: checkboxes
+    id: agreement
+    attributes:
+      label: Evidence agreement
+      options:
+        - label: I understand rewards in this pilot are public attribution and contributor recognition; no cash prize is promised.
+          required: true
+        - label: I will report a positive, negative, blocked, or protocol-issue outcome without selecting only favorable runs.
+          required: true
+        - label: I will remove secrets and private data before publishing logs or artifacts.
+          required: true
+        - label: I understand acceptance into the cohort is not endorsement of Vault or my result.
+          required: true
