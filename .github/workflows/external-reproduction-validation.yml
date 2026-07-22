@@ -8,6 +8,7 @@ on:
       - "benchmarks/schemas/external_reproduction_submission.v1.schema.json"
       - "scripts/validate_external_reproduction.py"
       - "scripts/preflight_external_reproduction.py"
+      - "scripts/external_reproduction_models.py"
       - "scripts/run_external_reproduction.py"
       - "tests/test_external_reproduction.py"
       - ".github/workflows/external-reproduction-validation.yml"

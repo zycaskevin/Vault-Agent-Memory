@@ -18,8 +18,10 @@ from pathlib import Path
 
 try:
     from scripts.preflight_external_reproduction import run_preflight
+    from scripts.external_reproduction_models import prepare_pinned_model_cache
 except ModuleNotFoundError:  # Direct execution from the scripts directory.
     from preflight_external_reproduction import run_preflight
+    from external_reproduction_models import prepare_pinned_model_cache
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -90,11 +92,13 @@ def run(args: argparse.Namespace) -> Path:
     env["FASTEMBED_CACHE_PATH"] = str(model_cache)
     env["PYTHONPATH"] = str(ROOT)
     try:
+        model_identity = prepare_pinned_model_cache(model_cache)
+        env["HF_HUB_OFFLINE"] = "1"
         _run(
             [sys.executable, "-c", "from fastembed import TextEmbedding, SparseTextEmbedding; list(TextEmbedding(model_name='thenlper/gte-large').embed(['prewarm'])); list(SparseTextEmbedding(model_name='Qdrant/bm25').embed(['prewarm']))"],
             env=env,
         )
-    except subprocess.CalledProcessError as exc:
+    except (subprocess.CalledProcessError, RuntimeError, OSError, ValueError) as exc:
         state_temp.cleanup()
         raise RuntimeError(
             "FastEmbed model prewarm failed. Confirm outbound HTTPS access to "
@@ -144,6 +148,7 @@ def run(args: argparse.Namespace) -> Path:
     reproduction_id = f"{args.github_handle.lower()}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
     operator_mode = getattr(args, "operator_mode", "independent")
     independent = operator_mode == "independent"
+    public_model_identity = {"exact": model_identity["exact"], "models": model_identity["models"]}
     manifest = {
         "schema_version": 1,
         "artifact_type": "external_reproduction_submission" if independent else "owner_operated_reproduction_smoke",
@@ -153,6 +158,7 @@ def run(args: argparse.Namespace) -> Path:
         "operator": {"github_handle": args.github_handle, "affiliation": args.affiliation, "conflicts": args.conflicts},
         "source": {"revision": revision, "git_dirty": False, "repository": _git("remote", "get-url", "origin")},
         "environment": {"python": platform.python_version(), "platform": platform.platform(), "machine": platform.machine()},
+        "model_assets": public_model_identity,
         "protocol": {"repeats": 5, "blinded_provider_input": True, "top_k": 1, "candidate_pool_k": 4},
         "artifacts": {"repeat_summary": "repeat-summary.json", "provider_input": "provider-input.json", "environment_freeze": "environment.freeze.txt"},
         "attestation": {

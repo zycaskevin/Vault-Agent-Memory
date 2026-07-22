@@ -8,6 +8,8 @@ import pytest
 
 from scripts import run_external_reproduction as runner
 from scripts import preflight_external_reproduction as preflight
+from scripts import external_reproduction_models as model_assets
+from scripts.external_reproduction_models import MODEL_PINS
 from scripts.validate_external_reproduction import validate_submission
 
 
@@ -35,6 +37,22 @@ def _make_submission(root: Path) -> Path:
         "benchmark": "vaultgovbench-retrieval-v0.1",
         "provider": {"name": "mem0", "version": "2.0.12"},
         "operator": {"github_handle": "external-tester"},
+        "model_assets": {
+            "exact": True,
+            "models": {
+                slot: {
+                    "repo_id": pin["repo_id"],
+                    "expected_revision": pin["revision"],
+                    "observed_revision": pin["revision"],
+                    "expected_tree_sha256": pin["tree_sha256"],
+                    "observed_tree_sha256": pin["tree_sha256"],
+                    "expected_files": pin["files"],
+                    "observed_files": pin["files"],
+                    "exact": True,
+                }
+                for slot, pin in MODEL_PINS.items()
+            },
+        },
         "source": {"revision": "a" * 40, "git_dirty": False},
         "protocol": {"repeats": 5, "blinded_provider_input": True, "top_k": 1, "candidate_pool_k": 4},
         "artifacts": {"repeat_summary": "repeat-summary.json", "provider_input": "provider-input.json", "environment_freeze": "environment.freeze.txt"},
@@ -124,6 +142,38 @@ def test_non_publishable_summary_is_rejected(tmp_path):
         validate_submission(root)
 
 
+def test_drifted_model_asset_manifest_is_rejected(tmp_path):
+    root = _make_submission(tmp_path / "submission")
+    manifest_path = root / "submission.json"
+    manifest = json.loads(manifest_path.read_text())
+    manifest["model_assets"]["models"]["dense"]["observed_revision"] = "0" * 40
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    lines = []
+    for name in ("environment.freeze.txt", "provider-input.json", "repeat-summary.json", "submission.json"):
+        lines.append(f"{_sha(root / name)}  {name}\n")
+    (root / "SHA256SUMS").write_text("".join(lines), encoding="utf-8")
+    with pytest.raises(ValueError, match="dense model asset identity"):
+        validate_submission(root)
+
+
+def test_model_cache_identity_verifies_revision_and_tree_digest(tmp_path, monkeypatch):
+    snapshot = tmp_path / "cache/models--example--dense/snapshots" / ("a" * 40)
+    snapshot.mkdir(parents=True)
+    (snapshot / "model.onnx").write_bytes(b"fixed model")
+    ref = tmp_path / "cache/models--example--dense/refs/main"
+    ref.parent.mkdir(parents=True)
+    ref.write_text("a" * 40)
+    tree_digest, files = model_assets.snapshot_tree_identity(snapshot)
+    monkeypatch.setattr(model_assets, "MODEL_PINS", {"dense": {
+        "logical_name": "example/dense", "repo_id": "example/dense",
+        "cache_key": "models--example--dense", "revision": "a" * 40,
+        "tree_sha256": tree_digest, "files": files,
+    }})
+    assert model_assets.inspect_model_cache(tmp_path / "cache")["exact"] is True
+    (snapshot / "model.onnx").write_bytes(b"drifted model")
+    assert model_assets.inspect_model_cache(tmp_path / "cache")["exact"] is False
+
+
 def test_runner_orchestrates_five_fresh_repeats_and_emits_valid_bundle(tmp_path, monkeypatch):
     commands: list[list[str]] = []
 
@@ -160,6 +210,7 @@ def test_runner_orchestrates_five_fresh_repeats_and_emits_valid_bundle(tmp_path,
     monkeypatch.setattr(runner, "_git", fake_git)
     monkeypatch.setattr(runner, "_run", fake_run)
     monkeypatch.setattr(runner, "run_preflight", lambda **kwargs: {"ok": True, "blocked_checks": []})
+    monkeypatch.setattr(runner, "prepare_pinned_model_cache", lambda path: {"cache_dir": str(path), "exact": True, "models": _make_submission_model_assets()})
     monkeypatch.setattr(runner.importlib.metadata, "version", lambda name: "2.0.12")
     args = type(
         "Args",
@@ -217,6 +268,7 @@ def test_model_prewarm_failure_explains_environment_blocked_state(tmp_path, monk
     monkeypatch.setattr(runner, "_git", fake_git)
     monkeypatch.setattr(runner, "_run", fake_run)
     monkeypatch.setattr(runner, "run_preflight", lambda **kwargs: {"ok": True, "blocked_checks": []})
+    monkeypatch.setattr(runner, "prepare_pinned_model_cache", lambda path: {"cache_dir": str(path), "exact": True, "models": _make_submission_model_assets()})
     monkeypatch.setattr(runner.importlib.metadata, "version", lambda name: "2.0.12")
     args = type(
         "Args",
@@ -246,6 +298,23 @@ def _preflight_kwargs(tmp_path):
         "git_dirty": False,
         "network_probe": lambda url, timeout: (True, "HTTP 200"),
         "python_version": (3, 13),
+        "model_cache_identity": {"cache_dir": str(tmp_path / "cache"), "complete": False, "exact": False, "models": {}},
+    }
+
+
+def _make_submission_model_assets():
+    return {
+        slot: {
+            "repo_id": pin["repo_id"],
+            "expected_revision": pin["revision"],
+            "observed_revision": pin["revision"],
+            "expected_tree_sha256": pin["tree_sha256"],
+            "observed_tree_sha256": pin["tree_sha256"],
+            "expected_files": pin["files"],
+            "observed_files": pin["files"],
+            "exact": True,
+        }
+        for slot, pin in MODEL_PINS.items()
     }
 
 
@@ -297,17 +366,23 @@ def test_preflight_blocks_cold_cache_when_hugging_face_is_unreachable(tmp_path):
 
 def test_preflight_allows_complete_cache_when_hugging_face_is_unreachable(tmp_path):
     kwargs = _preflight_kwargs(tmp_path)
-    cache = kwargs["model_cache_dir"]
-    for marker in preflight.REQUIRED_CACHE_MARKERS:
-        (cache / marker).mkdir(parents=True)
+    kwargs["model_cache_identity"] = {"cache_dir": str(kwargs["model_cache_dir"]), "complete": True, "exact": True, "models": {}}
     kwargs["network_probe"] = lambda url, timeout: (False, "offline")
     result = preflight.run_preflight(**kwargs)
     assert result["ok"] is True
     assert "hugging_face_access" in result["warnings"]
 
 
+def test_preflight_blocks_complete_but_drifted_model_cache(tmp_path):
+    kwargs = _preflight_kwargs(tmp_path)
+    kwargs["model_cache_identity"] = {"cache_dir": str(kwargs["model_cache_dir"]), "complete": True, "exact": False, "models": {}}
+    result = preflight.run_preflight(**kwargs)
+    assert "pinned_model_cache" in result["blocked_checks"]
+
+
 def test_owner_smoke_bundle_cannot_be_mistaken_for_external_submission(tmp_path, monkeypatch):
     monkeypatch.setattr(runner, "run_preflight", lambda **kwargs: {"ok": True, "blocked_checks": []})
+    monkeypatch.setattr(runner, "prepare_pinned_model_cache", lambda path: {"cache_dir": str(path), "exact": True, "models": _make_submission_model_assets()})
     monkeypatch.setattr(runner, "_git", lambda *args: {("rev-parse", "HEAD"): "d" * 40, ("status", "--porcelain"): "", ("remote", "get-url", "origin"): "local"}[args])
     monkeypatch.setattr(runner.importlib.metadata, "version", lambda name: "2.0.12")
 
