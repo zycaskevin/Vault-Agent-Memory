@@ -13,11 +13,14 @@ the pinned provider requirements, and keep the worktree clean. The runner
 intentionally rejects tracked and untracked source changes:
 
 ```bash
-python -m venv ../vault-repro-venv
+python3.13 -m venv ../vault-repro-venv
 ../vault-repro-venv/bin/python -m pip install -e .
 ../vault-repro-venv/bin/python -m pip install \
   -r benchmarks/provider_requirements/mem0-2.0.12.txt
 ```
+
+Use Python `>=3.10,<3.14`. The pinned spaCy environment does not install on
+Python 3.14. Confirm the selected interpreter before creating the environment.
 
 Do not substitute `.repro-venv` inside the checkout: an untracked environment
 correctly makes the source identity dirty. The model prewarm needs outbound
@@ -27,11 +30,31 @@ is required. Expect the complete five-repeat run to take time and several GB of
 model/cache space. Put the output outside the repository too, so generated
 files do not change the source identity.
 
-## 2. Run the frozen protocol
+## 2. Run the machine-readable preflight
+
+Check source identity, environment isolation, pinned dependencies, disk, memory,
+model cache, and Hugging Face access before spending time on five repeats:
 
 ```bash
 ../vault-repro-venv/bin/python scripts/run_external_reproduction.py \
   --output-dir /tmp/vault-external-reproduction \
+  --model-cache-dir ../vault-repro-model-cache \
+  --preflight-only --json
+```
+
+Exit `0` with status `pass` means the environment is ready. Exit `2` with
+status `environment_blocked` names every blocking check. A cold model cache is
+only a warning when Hugging Face is reachable; an unreachable model host blocks
+the run unless both pinned cache entries already exist. A preflight pass is
+environment readiness only—not a benchmark result, external reproduction, or
+provider security audit.
+
+## 3. Run the frozen protocol
+
+```bash
+../vault-repro-venv/bin/python scripts/run_external_reproduction.py \
+  --output-dir /tmp/vault-external-reproduction \
+  --model-cache-dir ../vault-repro-model-cache \
   --github-handle YOUR_GITHUB_HANDLE \
   --affiliation independent \
   --accept-public-attestation
@@ -42,7 +65,7 @@ creates five distinct stores, runs native mem0 retrieval, applies the Vault
 guard to the same candidates, scores both arms, checks publication gates,
 records the environment, and writes exhaustive SHA-256 checksums.
 
-## 3. Validate before submitting
+## 4. Validate before submitting
 
 ```bash
 ../vault-repro-venv/bin/python scripts/validate_external_reproduction.py \
@@ -62,7 +85,7 @@ That status is useful diagnostic evidence, but it is not `Submitted`,
 stage, redacted error, OS/Python details, source revision, and network/runtime
 constraint in the blocked-attempt issue form.
 
-## 4. Submit for public review
+## 5. Submit for public review
 
 Open an **External reproduction submission** issue first. Link a public fork or
 release containing the complete bundle; do not paste large artifacts into the

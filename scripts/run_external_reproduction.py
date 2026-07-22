@@ -16,6 +16,11 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
+try:
+    from scripts.preflight_external_reproduction import run_preflight
+except ModuleNotFoundError:  # Direct execution from the scripts directory.
+    from preflight_external_reproduction import run_preflight
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "benchmarks/vault_gov_bench/retrieval_v0.1.json"
@@ -55,6 +60,14 @@ def run(args: argparse.Namespace) -> Path:
     if not re.fullmatch(r"[A-Za-z0-9-]{1,39}", args.github_handle):
         raise ValueError("github handle must use GitHub-compatible letters, numbers, or hyphens")
     output = Path(args.output_dir).resolve()
+    preflight = run_preflight(
+        output_dir=output,
+        model_cache_dir=getattr(args, "model_cache_dir", None),
+        min_free_disk_gb=getattr(args, "min_free_disk_gb", 8.0),
+        min_memory_gb=getattr(args, "min_memory_gb", 4.0),
+    )
+    if not preflight["ok"]:
+        raise ValueError(f"external reproduction preflight blocked: {preflight['blocked_checks']}")
     if output.exists() and any(output.iterdir()):
         raise ValueError(f"output directory must be absent or empty: {output}")
     revision = _git("rev-parse", "HEAD")
@@ -72,7 +85,7 @@ def run(args: argparse.Namespace) -> Path:
 
     state_temp = tempfile.TemporaryDirectory(prefix="vault-external-reproduction-state-")
     state_root = Path(state_temp.name)
-    model_cache = state_root / "model-cache"
+    model_cache = Path(getattr(args, "model_cache_dir", None) or state_root / "model-cache").resolve()
     env = os.environ.copy()
     env["FASTEMBED_CACHE_PATH"] = str(model_cache)
     env["PYTHONPATH"] = str(ROOT)
@@ -129,9 +142,11 @@ def run(args: argparse.Namespace) -> Path:
     state_temp.cleanup()
 
     reproduction_id = f"{args.github_handle.lower()}-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}"
+    operator_mode = getattr(args, "operator_mode", "independent")
+    independent = operator_mode == "independent"
     manifest = {
         "schema_version": 1,
-        "artifact_type": "external_reproduction_submission",
+        "artifact_type": "external_reproduction_submission" if independent else "owner_operated_reproduction_smoke",
         "reproduction_id": reproduction_id,
         "benchmark": "vaultgovbench-retrieval-v0.1",
         "provider": {"name": "mem0", "version": "2.0.12"},
@@ -141,12 +156,13 @@ def run(args: argparse.Namespace) -> Path:
         "protocol": {"repeats": 5, "blinded_provider_input": True, "top_k": 1, "candidate_pool_k": 4},
         "artifacts": {"repeat_summary": "repeat-summary.json", "provider_input": "provider-input.json", "environment_freeze": "environment.freeze.txt"},
         "attestation": {
-            "independent_operator": True,
+            "independent_operator": independent,
             "provider_never_received_gold_labels": True,
             "fresh_store_each_repeat": True,
             "no_secrets_or_private_data": True,
             "public_review_consent": True,
         },
+        "review_state": "external_submission_pending_review" if independent else "owner_operated_not_external_evidence",
         "claim_boundary": CLAIM_BOUNDARY,
     }
     (output / "submission.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -157,14 +173,35 @@ def run(args: argparse.Namespace) -> Path:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", required=True, help="New or empty directory outside the repository")
-    parser.add_argument("--github-handle", required=True)
+    parser.add_argument("--github-handle")
     parser.add_argument("--affiliation", default="independent")
     parser.add_argument("--conflicts", default="none disclosed")
-    parser.add_argument("--accept-public-attestation", action="store_true", required=True)
+    parser.add_argument("--operator-mode", choices=("independent", "owner-smoke"), default="independent")
+    parser.add_argument("--accept-public-attestation", action="store_true")
+    parser.add_argument("--model-cache-dir")
+    parser.add_argument("--min-free-disk-gb", type=float, default=8.0)
+    parser.add_argument("--min-memory-gb", type=float, default=4.0)
+    parser.add_argument("--preflight-only", action="store_true")
+    parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
+    if args.preflight_only:
+        result = run_preflight(
+            output_dir=args.output_dir,
+            model_cache_dir=args.model_cache_dir,
+            min_free_disk_gb=args.min_free_disk_gb,
+            min_memory_gb=args.min_memory_gb,
+        )
+        print(json.dumps(result, indent=2, sort_keys=True) if args.json else f"{result['status'].upper()}: blocked={result['blocked_checks']} warnings={result['warnings']}")
+        return 0 if result["ok"] else 2
+    if not args.github_handle or not args.accept_public_attestation:
+        parser.error("a full run requires --github-handle and --accept-public-attestation")
     result = run(args)
-    print(f"PASS: reproduction bundle created at {result}")
-    print(f"Validate: {sys.executable} scripts/validate_external_reproduction.py {result}")
+    if args.operator_mode == "independent":
+        print(f"PASS: reproduction bundle created at {result}")
+        print(f"Validate: {sys.executable} scripts/validate_external_reproduction.py {result}")
+    else:
+        print(f"PASS: owner-operated portability smoke created at {result}")
+        print("Claim boundary: this is not an independent external reproduction submission.")
     return 0
 
 

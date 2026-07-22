@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from scripts import run_external_reproduction as runner
+from scripts import preflight_external_reproduction as preflight
 from scripts.validate_external_reproduction import validate_submission
 
 
@@ -158,6 +159,7 @@ def test_runner_orchestrates_five_fresh_repeats_and_emits_valid_bundle(tmp_path,
 
     monkeypatch.setattr(runner, "_git", fake_git)
     monkeypatch.setattr(runner, "_run", fake_run)
+    monkeypatch.setattr(runner, "run_preflight", lambda **kwargs: {"ok": True, "blocked_checks": []})
     monkeypatch.setattr(runner.importlib.metadata, "version", lambda name: "2.0.12")
     args = type(
         "Args",
@@ -178,12 +180,15 @@ def test_runner_orchestrates_five_fresh_repeats_and_emits_valid_bundle(tmp_path,
 
 def test_reproduction_docs_keep_environment_outside_clean_checkout():
     guide = (ROOT / "benchmarks/external_reproduction/README.md").read_text(encoding="utf-8")
-    assert "python -m venv ../vault-repro-venv" in guide
+    assert "python3.13 -m venv ../vault-repro-venv" in guide
+    assert ">=3.10,<3.14" in guide
     assert "../vault-repro-venv/bin/python scripts/run_external_reproduction.py" in guide
     assert "python -m venv .repro-venv" not in guide
     assert ".repro-venv/bin/python" not in guide
     assert "huggingface.co" in guide
     assert "Environment blocked" in guide
+    assert "--preflight-only --json" in guide
+    assert "environment readiness only" in guide
 
 
 def test_blocked_attempt_has_separate_non_submission_issue_form():
@@ -211,6 +216,7 @@ def test_model_prewarm_failure_explains_environment_blocked_state(tmp_path, monk
 
     monkeypatch.setattr(runner, "_git", fake_git)
     monkeypatch.setattr(runner, "_run", fake_run)
+    monkeypatch.setattr(runner, "run_preflight", lambda **kwargs: {"ok": True, "blocked_checks": []})
     monkeypatch.setattr(runner.importlib.metadata, "version", lambda name: "2.0.12")
     args = type(
         "Args",
@@ -224,3 +230,102 @@ def test_model_prewarm_failure_explains_environment_blocked_state(tmp_path, monk
     )()
     with pytest.raises(RuntimeError, match="Environment blocked"):
         runner.run(args)
+
+
+def _preflight_kwargs(tmp_path):
+    return {
+        "output_dir": tmp_path / "output",
+        "model_cache_dir": tmp_path / "cache",
+        "root": tmp_path / "repo",
+        "prefix": tmp_path / "venv",
+        "base_prefix": tmp_path / "system-python",
+        "package_versions": dict(preflight.PINNED_PACKAGES),
+        "disk_free_bytes": 20 * preflight.GIB,
+        "memory_bytes": 16 * preflight.GIB,
+        "git_revision": "c" * 40,
+        "git_dirty": False,
+        "network_probe": lambda url, timeout: (True, "HTTP 200"),
+        "python_version": (3, 13),
+    }
+
+
+def test_preflight_passes_with_cold_cache_and_reachable_model_host(tmp_path):
+    result = preflight.run_preflight(**_preflight_kwargs(tmp_path))
+    assert result["ok"] is True
+    assert result["status"] == "pass"
+    assert "pinned_model_cache" in result["warnings"]
+    assert "not a benchmark run" in result["claim_boundary"]
+
+
+@pytest.mark.parametrize("change,blocked", [
+    ({"git_dirty": True}, "clean_worktree"),
+    ({"disk_free_bytes": preflight.GIB}, "free_disk"),
+    ({"memory_bytes": preflight.GIB}, "system_memory"),
+])
+def test_preflight_blocks_invalid_environment(tmp_path, change, blocked):
+    kwargs = _preflight_kwargs(tmp_path)
+    kwargs.update(change)
+    result = preflight.run_preflight(**kwargs)
+    assert result["ok"] is False
+    assert blocked in result["blocked_checks"]
+
+
+def test_preflight_blocks_python_314_before_dependency_install(tmp_path):
+    kwargs = _preflight_kwargs(tmp_path)
+    kwargs["python_version"] = (3, 14)
+    result = preflight.run_preflight(**kwargs)
+    assert "python_version" in result["blocked_checks"]
+
+
+def test_preflight_blocks_environment_inside_repo_and_package_drift(tmp_path):
+    kwargs = _preflight_kwargs(tmp_path)
+    repo = kwargs["root"]
+    kwargs["prefix"] = repo / "venv"
+    kwargs["output_dir"] = repo / "output"
+    kwargs["package_versions"] = {**preflight.PINNED_PACKAGES, "mem0ai": "2.0.13"}
+    result = preflight.run_preflight(**kwargs)
+    assert {"isolated_environment", "output_location", "pinned_dependencies"} <= set(result["blocked_checks"])
+
+
+def test_preflight_blocks_cold_cache_when_hugging_face_is_unreachable(tmp_path):
+    kwargs = _preflight_kwargs(tmp_path)
+    kwargs["network_probe"] = lambda url, timeout: (False, "Host not in allowlist")
+    result = preflight.run_preflight(**kwargs)
+    assert result["status"] == "environment_blocked"
+    assert "hugging_face_access" in result["blocked_checks"]
+
+
+def test_preflight_allows_complete_cache_when_hugging_face_is_unreachable(tmp_path):
+    kwargs = _preflight_kwargs(tmp_path)
+    cache = kwargs["model_cache_dir"]
+    for marker in preflight.REQUIRED_CACHE_MARKERS:
+        (cache / marker).mkdir(parents=True)
+    kwargs["network_probe"] = lambda url, timeout: (False, "offline")
+    result = preflight.run_preflight(**kwargs)
+    assert result["ok"] is True
+    assert "hugging_face_access" in result["warnings"]
+
+
+def test_owner_smoke_bundle_cannot_be_mistaken_for_external_submission(tmp_path, monkeypatch):
+    monkeypatch.setattr(runner, "run_preflight", lambda **kwargs: {"ok": True, "blocked_checks": []})
+    monkeypatch.setattr(runner, "_git", lambda *args: {("rev-parse", "HEAD"): "d" * 40, ("status", "--porcelain"): "", ("remote", "get-url", "origin"): "local"}[args])
+    monkeypatch.setattr(runner.importlib.metadata, "version", lambda name: "2.0.12")
+
+    def fake_run(command, *, env=None, capture=False):
+        if command[1:4] == ["-m", "pip", "freeze"]:
+            return "mem0ai==2.0.12\n"
+        if "--output" in command:
+            path = Path(command[command.index("--output") + 1])
+            path.parent.mkdir(parents=True, exist_ok=True)
+            payload = {"publishable": True, "release_gate_reasons": []} if "summarize-repeats" in command else {}
+            path.write_text(json.dumps(payload), encoding="utf-8")
+        return ""
+
+    monkeypatch.setattr(runner, "_run", fake_run)
+    args = type("Args", (), {"output_dir": str(tmp_path / "owner"), "github_handle": "project-owner", "affiliation": "owner", "conflicts": "maintainer", "operator_mode": "owner-smoke"})()
+    bundle = runner.run(args)
+    manifest = json.loads((bundle / "submission.json").read_text())
+    assert manifest["artifact_type"] == "owner_operated_reproduction_smoke"
+    assert manifest["attestation"]["independent_operator"] is False
+    with pytest.raises(ValueError):
+        validate_submission(bundle)

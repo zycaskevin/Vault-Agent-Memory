@@ -46,3 +46,10 @@ the checkout. Ignoring an in-repository environment would hide source-tree
 noise instead of preserving the clean-source invariant. The pinned FastEmbed
 prewarm requires access to Hugging Face; an allowlist denial is classified as
 `Environment blocked`, not provider failure and not a reproduction result.
+
+Before execution, the stdlib-only machine-readable preflight must fail closed
+on dirty source, an in-repository virtual environment or output path, dependency
+drift, Python outside `>=3.10,<3.14`, insufficient disk or memory, and an unavailable model host without a
+complete pinned cache. A preflight pass proves environment readiness only. An
+owner-operated portability smoke must set `independent_operator` to false and
+use a distinct artifact type, so it cannot enter the external evidence ladder.
