@@ -53,3 +53,9 @@ drift, Python outside `>=3.10,<3.14`, insufficient disk or memory, and an unavai
 complete pinned cache. A preflight pass proves environment readiness only. An
 owner-operated portability smoke must set `independent_operator` to false and
 use a distinct artifact type, so it cannot enter the external evidence ladder.
+
+Package pins alone are insufficient because model repositories can move
+independently. The mem0 track therefore freezes both FastEmbed Hub commit SHAs
+and snapshot tree SHA-256 values. The runner prepares those exact snapshots,
+verifies every file before execution, switches the five repeats to Hub-offline
+mode, and records the expected and observed identities in the public manifest.

@@ -15,6 +15,11 @@ from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+try:
+    from scripts.external_reproduction_models import inspect_model_cache
+except ModuleNotFoundError:
+    from external_reproduction_models import inspect_model_cache
+
 
 ROOT = Path(__file__).resolve().parents[1]
 HUGGING_FACE_URL = "https://huggingface.co"
@@ -30,7 +35,6 @@ PINNED_PACKAGES = {
 }
 SUPPORTED_PYTHON_MIN = (3, 10)
 SUPPORTED_PYTHON_MAX_EXCLUSIVE = (3, 14)
-REQUIRED_CACHE_MARKERS = ("models--qdrant--gte-large-onnx", "models--qdrant--bm25")
 CLAIM_BOUNDARY = (
     "Environment readiness only; a pass is not a benchmark run, Contract validated result, "
     "third-party reproduction, or provider security audit."
@@ -80,14 +84,6 @@ def _network_reachable(url: str, timeout: float) -> tuple[bool, str]:
         return False, f"{type(exc).__name__}: {exc}"
 
 
-def _cache_state(cache_dir: Path) -> tuple[bool, list[str]]:
-    if not cache_dir.is_dir():
-        return False, []
-    names = {path.name.lower() for path in cache_dir.rglob("*")}
-    found = [marker for marker in REQUIRED_CACHE_MARKERS if marker in names]
-    return len(found) == len(REQUIRED_CACHE_MARKERS), found
-
-
 def run_preflight(
     *,
     output_dir: str | Path,
@@ -105,6 +101,7 @@ def run_preflight(
     git_dirty: bool | None = None,
     network_probe: Callable[[str, float], tuple[bool, str]] = _network_reachable,
     python_version: tuple[int, int] | None = None,
+    model_cache_identity: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     root = root.resolve()
     output = Path(output_dir).resolve()
@@ -166,8 +163,19 @@ def run_preflight(
     else:
         add("system_memory", "pass" if total_memory >= min_memory_gb * GIB else "block", f"At least {min_memory_gb:g} GiB system memory is required.", memory_gb=round(total_memory / GIB, 2), required_gb=min_memory_gb)
 
-    cache_ready, cache_markers = _cache_state(cache)
-    add("pinned_model_cache", "pass" if cache_ready else "warn", "Both pinned FastEmbed cache entries are present." if cache_ready else "Pinned model cache is cold or incomplete; network download will be required.", cache_dir=str(cache), markers_found=cache_markers)
+    cache_identity = model_cache_identity or inspect_model_cache(cache)
+    cache_ready = cache_identity["exact"]
+    cache_status = "pass" if cache_ready else ("block" if cache_identity["complete"] else "warn")
+    cache_detail = (
+        "Pinned FastEmbed revisions and tree digests match."
+        if cache_ready
+        else (
+            "Model snapshots exist but do not match the immutable revision and tree-digest contract."
+            if cache_identity["complete"]
+            else "Pinned model cache is cold or incomplete; exact revisions must be downloaded."
+        )
+    )
+    add("pinned_model_cache", cache_status, cache_detail, **cache_identity)
     network_ok, network_detail = network_probe(HUGGING_FACE_URL, network_timeout_seconds)
     network_status = "pass" if network_ok else ("warn" if cache_ready else "block")
     add("hugging_face_access", network_status, network_detail, url=HUGGING_FACE_URL, cache_ready=cache_ready)

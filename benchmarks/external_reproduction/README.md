@@ -65,6 +65,13 @@ creates five distinct stores, runs native mem0 retrieval, applies the Vault
 guard to the same candidates, scores both arms, checks publication gates,
 records the environment, and writes exhaustive SHA-256 checksums.
 
+The model layer is frozen independently of the Python lock: the runner fetches
+the exact `qdrant/gte-large-onnx` and `Qdrant/bm25` Hub commit SHAs, verifies
+their complete snapshot tree SHA-256 values, then sets `HF_HUB_OFFLINE=1` for
+all five repeats. A moved `main` branch, partial cache, altered file, or wrong
+snapshot therefore fails before any publishable result is produced. The exact
+revisions and observed tree digests are included in `submission.json`.
+
 ## 4. Validate before submitting
 
 ```bash

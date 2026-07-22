@@ -86,6 +86,8 @@ def test_bilingual_external_reproduction_program_contract():
     assert "--preflight-only --json" in english and "--preflight-only --json" in chinese
     assert "Environment readiness" in english
     assert "只代表環境符合執行條件" in chinese
+    assert "snapshot-tree digests" in english
+    assert "snapshot tree digest" in chinese
     assert "Contract validated" in english and "Contract validated" in chinese
     assert "Maintainer reviewed" in english and "Maintainer reviewed" in chinese
     assert "Environment blocked" in english and "Environment blocked" in chinese

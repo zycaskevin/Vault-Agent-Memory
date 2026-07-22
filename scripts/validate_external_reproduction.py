@@ -10,6 +10,11 @@ import re
 from pathlib import Path
 from typing import Any
 
+try:
+    from scripts.external_reproduction_models import MODEL_PINS
+except ModuleNotFoundError:
+    from external_reproduction_models import MODEL_PINS
+
 
 EXPECTED_BENCHMARK = "vaultgovbench-retrieval-v0.1"
 EXPECTED_CLAIM_BOUNDARY = "public synthetic controlled retrieval-only governance contract"
@@ -71,6 +76,24 @@ def validate_submission(directory: str | Path) -> dict[str, Any]:
     provider = manifest.get("provider") or {}
     if provider.get("name") != "mem0" or provider.get("version") != "2.0.12":
         raise ValueError("v1 kit accepts only the pinned mem0 2.0.12 track")
+    model_assets = manifest.get("model_assets") or {}
+    models = model_assets.get("models") or {}
+    if model_assets.get("exact") is not True:
+        raise ValueError("model assets were not verified against immutable pins")
+    for slot, pin in MODEL_PINS.items():
+        observed = models.get(slot) or {}
+        required = {
+            "repo_id": pin["repo_id"],
+            "expected_revision": pin["revision"],
+            "observed_revision": pin["revision"],
+            "expected_tree_sha256": pin["tree_sha256"],
+            "observed_tree_sha256": pin["tree_sha256"],
+            "expected_files": pin["files"],
+            "observed_files": pin["files"],
+            "exact": True,
+        }
+        if any(observed.get(key) != value for key, value in required.items()):
+            raise ValueError(f"{slot} model asset identity does not match the frozen contract")
     source = manifest.get("source") or {}
     if source.get("git_dirty") is not False or not re.fullmatch(r"[0-9a-f]{40}", str(source.get("revision") or "")):
         raise ValueError("source revision must be a clean 40-character commit")

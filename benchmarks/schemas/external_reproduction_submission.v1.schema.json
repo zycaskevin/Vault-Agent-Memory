@@ -4,7 +4,7 @@
   "title": "External Reproduction Submission v1",
   "description": "A third-party attestation and artifact index for an independently operated Vault memory-foundation reproduction.",
   "type": "object",
-  "required": ["schema_version", "artifact_type", "reproduction_id", "benchmark", "provider", "operator", "source", "protocol", "artifacts", "attestation", "claim_boundary"],
+  "required": ["schema_version", "artifact_type", "reproduction_id", "benchmark", "provider", "model_assets", "operator", "source", "protocol", "artifacts", "attestation", "claim_boundary"],
   "properties": {
     "schema_version": {"const": 1},
     "artifact_type": {"const": "external_reproduction_submission"},
@@ -15,6 +15,15 @@
       "required": ["name", "version"],
       "properties": {"name": {"const": "mem0"}, "version": {"const": "2.0.12"}},
       "additionalProperties": true
+    },
+    "model_assets": {
+      "type": "object",
+      "required": ["exact", "models"],
+      "properties": {
+        "exact": {"const": true},
+        "models": {"type": "object", "required": ["dense", "sparse"]}
+      },
+      "additionalProperties": false
     },
     "operator": {
       "type": "object",
