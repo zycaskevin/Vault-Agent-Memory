@@ -6,6 +6,29 @@ from pathlib import Path
 from scripts import artifact_audit, artifact_cleanup, public_pr_gate
 
 
+def test_release_readiness_workflow_trigger_and_concurrency_contract():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+    ).read_text(encoding="utf-8")
+    trigger_block = workflow.split("on:\n", 1)[1].split("\npermissions:\n", 1)[0]
+    push_block = trigger_block.split("  push:\n", 1)[1].split("  pull_request:\n", 1)[0]
+    pull_request_block = trigger_block.split("  pull_request:\n", 1)[1]
+    concurrency_block = workflow.split("\nconcurrency:\n", 1)[1].split("\njobs:\n", 1)[0]
+
+    assert "  workflow_dispatch:\n" in trigger_block
+    assert "    branches:\n      - 'main'\n" in push_block
+    assert "      - '**'\n" not in push_block
+    assert "    tags:\n      - 'v*'\n" in push_block
+    assert "      - 'specs/**'\n" in push_block
+    assert "    branches:\n      - 'main'\n" in pull_request_block
+    assert "      - 'specs/**'\n" in pull_request_block
+    assert (
+        "  group: release-readiness-${{ github.event.pull_request.number || github.ref }}\n"
+        in concurrency_block
+    )
+    assert "  cancel-in-progress: true\n" in concurrency_block
+
+
 def test_artifact_audit_classifies_safe_generated_cache(tmp_path: Path):
     pycache = tmp_path / "pkg" / "__pycache__"
     pycache.mkdir(parents=True)
