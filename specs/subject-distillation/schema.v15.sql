@@ -673,6 +673,35 @@ CREATE TABLE subject_evaluation_events (
 
 CREATE INDEX ix_subject_eval_event_case ON subject_evaluation_events(gate_id, evaluation_case_id, event_type);
 
+CREATE TABLE subject_evaluation_prediction_assessments (
+    prediction_assessment_id TEXT PRIMARY KEY,
+    gate_id TEXT NOT NULL,
+    evaluation_case_id TEXT NOT NULL,
+    assessment_status TEXT NOT NULL CHECK (assessment_status IN ('not_emitted','reviewed')),
+    predicted_choice_sha256 TEXT CHECK (predicted_choice_sha256 IS NULL OR (length(predicted_choice_sha256) = 64 AND predicted_choice_sha256 = lower(predicted_choice_sha256) AND predicted_choice_sha256 NOT GLOB '*[^0-9a-f]*')),
+    prediction_confidence REAL CHECK (prediction_confidence IS NULL OR prediction_confidence BETWEEN 0.0 AND 1.0),
+    actual_choice_sha256 TEXT CHECK (actual_choice_sha256 IS NULL OR (length(actual_choice_sha256) = 64 AND actual_choice_sha256 = lower(actual_choice_sha256) AND actual_choice_sha256 NOT GLOB '*[^0-9a-f]*')),
+    prediction_correct INTEGER CHECK (prediction_correct IS NULL OR prediction_correct IN (0,1)),
+    subject_principal_id TEXT NOT NULL REFERENCES subject_principals(principal_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+    source_ref TEXT NOT NULL CHECK (length(source_ref) BETWEEN 1 AND 128 AND source_ref NOT GLOB '*[^a-z0-9_.:-]*'),
+    assessed_at TEXT NOT NULL,
+    reviewed_at TEXT NOT NULL,
+    audit_id TEXT NOT NULL UNIQUE,
+    CHECK (reviewed_at >= assessed_at),
+    CHECK (
+        (assessment_status = 'not_emitted' AND predicted_choice_sha256 IS NULL AND prediction_confidence IS NULL
+            AND actual_choice_sha256 IS NULL AND prediction_correct IS NULL)
+        OR
+        (assessment_status = 'reviewed' AND predicted_choice_sha256 IS NOT NULL AND prediction_confidence IS NOT NULL
+            AND actual_choice_sha256 IS NOT NULL AND prediction_correct IS NOT NULL
+            AND prediction_correct = (predicted_choice_sha256 = actual_choice_sha256))
+    ),
+    FOREIGN KEY (gate_id, evaluation_case_id) REFERENCES subject_evaluation_cases(gate_id, evaluation_case_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
+    UNIQUE(gate_id, evaluation_case_id)
+);
+
+CREATE INDEX ix_subject_eval_prediction_case ON subject_evaluation_prediction_assessments(gate_id, evaluation_case_id);
+
 CREATE TABLE subject_evaluation_signoffs (
     signoff_id TEXT PRIMARY KEY,
     gate_id TEXT NOT NULL REFERENCES subject_evaluation_gates(gate_id) ON UPDATE RESTRICT ON DELETE RESTRICT,
@@ -718,6 +747,16 @@ SELECT
                    COALESCE(CAST(e.passed AS TEXT),'~') || char(31) || COALESCE(e.reason_code,'~') || char(31) ||
                    e.actor_principal_id || char(31) || e.source_ref || char(31) || e.occurred_at || char(31) || e.audit_id AS row_value
             FROM subject_evaluation_events e WHERE e.gate_id = g.gate_id ORDER BY e.evaluation_case_id, e.event_type, e.evaluation_event_id
+        )), '') || char(30) ||
+        COALESCE((SELECT group_concat(row_value, char(30)) FROM (
+            SELECT 'P' || char(31) || p.prediction_assessment_id || char(31) || p.evaluation_case_id || char(31) ||
+                   p.assessment_status || char(31) || COALESCE(p.predicted_choice_sha256,'~') || char(31) ||
+                   COALESCE(printf('%!.17g',p.prediction_confidence),'~') || char(31) ||
+                   COALESCE(p.actual_choice_sha256,'~') || char(31) || COALESCE(CAST(p.prediction_correct AS TEXT),'~') || char(31) ||
+                   p.subject_principal_id || char(31) || p.source_ref || char(31) || p.assessed_at || char(31) ||
+                   p.reviewed_at || char(31) || p.audit_id AS row_value
+            FROM subject_evaluation_prediction_assessments p WHERE p.gate_id = g.gate_id
+            ORDER BY p.evaluation_case_id, p.prediction_assessment_id
         )), '')
     ) AS scorecard_sha256
 FROM subject_evaluation_gates g;
@@ -2450,6 +2489,12 @@ WHEN NOT (
             WHERE s.gate_id = OLD.gate_id
               AND (s.signed_at < OLD.frozen_at OR s.signed_at > NEW.closed_at)
         )
+        AND NOT EXISTS (
+            SELECT 1 FROM subject_evaluation_prediction_assessments p
+            WHERE p.gate_id = OLD.gate_id
+              AND (p.assessed_at < OLD.frozen_at OR p.assessed_at > NEW.closed_at
+                   OR p.reviewed_at < OLD.frozen_at OR p.reviewed_at > NEW.closed_at)
+        )
         AND NEW.scorecard_sha256 = (
             SELECT scorecard_sha256 FROM subject_evaluation_scorecard_v1 WHERE gate_id = OLD.gate_id
         )
@@ -2459,6 +2504,12 @@ WHEN NOT (
         )
         AND (SELECT COUNT(*) FROM subject_evaluation_cases c
              WHERE c.gate_id = OLD.gate_id AND c.eligible = 1 AND c.completion_state = 'completed') >= OLD.minimum_n
+        AND NOT EXISTS (
+            SELECT 1 FROM subject_evaluation_cases c
+            WHERE c.gate_id = OLD.gate_id AND c.eligible = 1 AND c.completion_state = 'completed'
+              AND (SELECT COUNT(*) FROM subject_evaluation_prediction_assessments p
+                   WHERE p.gate_id = c.gate_id AND p.evaluation_case_id = c.evaluation_case_id) <> 1
+        )
         AND NOT EXISTS (
             SELECT 1 FROM subject_evaluation_cases c
             WHERE c.gate_id = OLD.gate_id AND c.eligible = 1 AND c.completion_state = 'completed'
@@ -2501,6 +2552,12 @@ WHEN NOT (
             AND NOT EXISTS (
                 SELECT 1 FROM subject_evaluation_events e
                 WHERE e.gate_id=OLD.gate_id AND e.event_type='hard_failure' AND e.passed=0
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM subject_evaluation_prediction_assessments p
+                WHERE p.gate_id=OLD.gate_id AND p.assessment_status='reviewed'
+                  AND p.prediction_confidence > OLD.high_confidence_threshold
+                  AND p.prediction_correct=0
             )
         ))
         AND EXISTS (
@@ -2558,6 +2615,24 @@ WHEN COALESCE((SELECT state FROM subject_evaluation_gates WHERE gate_id = NEW.ga
       AND (NEW.authority_role <> 'fresh_reviewer' OR rg.authority_scope = g.reviewer_authority_code)
  )
 BEGIN SELECT RAISE(ABORT,'subject_evaluation_signoff_outside_frozen_window'); END;
+CREATE TRIGGER trg_subject_eval_prediction_insert_guard
+BEFORE INSERT ON subject_evaluation_prediction_assessments
+WHEN COALESCE((SELECT state FROM subject_evaluation_gates WHERE gate_id = NEW.gate_id), 'missing') <> 'frozen'
+ OR NOT EXISTS (
+    SELECT 1 FROM subject_evaluation_gates g
+    JOIN subject_evaluation_cases c ON c.gate_id = g.gate_id AND c.evaluation_case_id = NEW.evaluation_case_id
+    JOIN subject_role_grants rg ON rg.subject_id = g.subject_id
+      AND rg.principal_id = NEW.subject_principal_id AND rg.role = 'subject'
+      AND rg.effective_from <= NEW.assessed_at
+      AND (rg.expires_at IS NULL OR rg.expires_at > NEW.assessed_at)
+      AND (rg.revoked_at IS NULL OR rg.revoked_at > NEW.assessed_at)
+      AND rg.effective_from <= NEW.reviewed_at
+      AND (rg.expires_at IS NULL OR rg.expires_at > NEW.reviewed_at)
+      AND (rg.revoked_at IS NULL OR rg.revoked_at > NEW.reviewed_at)
+    WHERE g.gate_id = NEW.gate_id AND c.eligible = 1 AND c.completion_state = 'completed'
+      AND NEW.assessed_at >= g.frozen_at AND NEW.reviewed_at >= g.frozen_at
+ )
+BEGIN SELECT RAISE(ABORT,'subject_evaluation_prediction_assessment_invalid_or_unauthorized'); END;
 CREATE TRIGGER trg_subject_eval_case_update_guard
 BEFORE UPDATE ON subject_evaluation_cases
 WHEN NOT (
@@ -2595,3 +2670,5 @@ CREATE TRIGGER trg_subject_eval_event_no_update BEFORE UPDATE ON subject_evaluat
 CREATE TRIGGER trg_subject_eval_event_no_delete BEFORE DELETE ON subject_evaluation_events BEGIN SELECT RAISE(ABORT,'subject_evaluation_event_history_retained'); END;
 CREATE TRIGGER trg_subject_eval_signoff_no_update BEFORE UPDATE ON subject_evaluation_signoffs BEGIN SELECT RAISE(ABORT,'subject_evaluation_signoff_append_only'); END;
 CREATE TRIGGER trg_subject_eval_signoff_no_delete BEFORE DELETE ON subject_evaluation_signoffs BEGIN SELECT RAISE(ABORT,'subject_evaluation_signoff_history_retained'); END;
+CREATE TRIGGER trg_subject_eval_prediction_no_update BEFORE UPDATE ON subject_evaluation_prediction_assessments BEGIN SELECT RAISE(ABORT,'subject_evaluation_prediction_assessment_append_only'); END;
+CREATE TRIGGER trg_subject_eval_prediction_no_delete BEFORE DELETE ON subject_evaluation_prediction_assessments BEGIN SELECT RAISE(ABORT,'subject_evaluation_prediction_assessment_append_only'); END;

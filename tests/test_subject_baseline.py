@@ -43,6 +43,7 @@ EXPECTED = {
         "subject_evaluation_cases",
         "subject_evaluation_events",
         "subject_evaluation_gates",
+        "subject_evaluation_prediction_assessments",
         "subject_evaluation_signoffs",
         "subject_events",
         "subject_evidence",
@@ -72,6 +73,7 @@ EXPECTED = {
         "ix_subject_delegation_lookup",
         "ix_subject_eval_case_domain",
         "ix_subject_eval_event_case",
+        "ix_subject_eval_prediction_case",
         "ix_subject_events_actor_time",
         "ix_subject_events_subject_time",
         "ix_subject_evidence_subject_state",
@@ -198,7 +200,7 @@ def test_full_schema_exact_inventory_empty_and_foreign_keys_on() -> None:
         }
         assert actual == EXPECTED[kind]
     triggers = {r[0] for r in db.execute("SELECT name FROM sqlite_master WHERE type='trigger'")}
-    assert len(triggers) == 96
+    assert len(triggers) == 99
     assert all(
         db.execute(f'SELECT count(*) FROM "{table}"').fetchone() == (0,)
         for table in EXPECTED["table"]
@@ -567,12 +569,85 @@ def test_evaluation_gate_positive_freeze_and_missing_hash_udf_fails_closed() -> 
     for index in range(20):
         case_id = f"c{index:02d}"
         for event_type in ("utility", "reason_alignment"):
-            events.append((f"{case_id}-{event_type}", "pass", case_id, event_type, 1.0, 1, "ok", "subject", "fixture", "t2", f"audit-{case_id}-{event_type}"))
+            rejected_rationale = index == 1 and event_type == "reason_alignment"
+            events.append((f"{case_id}-{event_type}", "pass", case_id, event_type,
+                           0.0 if rejected_rationale else 1.0, 0 if rejected_rationale else 1,
+                           "rejected" if rejected_rationale else "ok", "subject", "fixture", "t2",
+                           f"audit-{case_id}-{event_type}"))
         events.append((f"{case_id}-hard", "pass", case_id, "hard_failure", None, 1, "none", "subject", "fixture", "t2", f"audit-{case_id}-hard"))
         if index < 5:
             events.append((f"{case_id}-abstain", "pass", case_id, "abstention", 1.0, 1, "ok", "subject", "fixture", "t2", f"audit-{case_id}-abstain"))
     earned.executemany("INSERT INTO subject_evaluation_events VALUES(?,?,?,?,?,?,?,?,?,?,?)", events)
+    earned.execute("SAVEPOINT missing_prediction_assessments")
+    missing_score = earned.execute(
+        "SELECT scorecard_sha256 FROM subject_evaluation_scorecard_v1 WHERE gate_id='pass'"
+    ).fetchone()[0]
+    earned.executemany(
+        "INSERT INTO subject_evaluation_signoffs VALUES(?,?,?,?,?,?,?)",
+        (("missing-sign-subject", "pass", "subject", "subject", "approve", missing_score, "t3"),
+         ("missing-sign-reviewer", "pass", "fresh_reviewer", "reviewer", "approve", missing_score, "t3")),
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="invalid_or_incomplete"):
+        earned.execute(
+            "UPDATE subject_evaluation_gates SET state='closed',closed_at='t4',scorecard_sha256=?,verdict='pass' WHERE gate_id='pass'",
+            (missing_score,),
+        )
+    earned.execute("ROLLBACK TO missing_prediction_assessments")
+    earned.execute("RELEASE missing_prediction_assessments")
+    choice_a, choice_b = "a" * 64, "b" * 64
+    with pytest.raises(sqlite3.IntegrityError):
+        earned.execute(
+            "INSERT INTO subject_evaluation_prediction_assessments VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            ("bad-correctness", "pass", "c00", "reviewed", choice_a, 0.9, choice_b, 1,
+             "subject", "fixture", "t2", "t2", "audit-bad-correctness"),
+        )
+    with pytest.raises(sqlite3.IntegrityError, match="invalid_or_unauthorized"):
+        earned.execute(
+            "INSERT INTO subject_evaluation_prediction_assessments VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            ("unauthorized", "pass", "c00", "not_emitted", None, None, None, None,
+             "reviewer", "fixture", "t2", "t2", "audit-unauthorized"),
+        )
+    earned.execute("INSERT INTO subject_principals VALUES('expired-reviewer','human','active',NULL,'t0','t0')")
+    earned.execute(
+        "INSERT INTO subject_events VALUES('role-expired-reviewer','auth.role_grant.issued','s','subject','subject',NULL,NULL,'t0','t0','audit-expired-reviewer')"
+    )
+    earned.execute(
+        """INSERT INTO subject_role_grants VALUES(
+        'grant-expired-reviewer','expired-reviewer','s','subject','','fresh',1,
+        'subject','role-expired-reviewer','t0','t3',NULL,NULL,'t0')"""
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="invalid_or_unauthorized"):
+        earned.execute(
+            "INSERT INTO subject_evaluation_prediction_assessments VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            ("expired-at-review", "pass", "c00", "reviewed", choice_a, 0.9, choice_a, 1,
+             "expired-reviewer", "fixture", "t2", "t3", "audit-expired-at-review"),
+        )
+    assessments = []
+    for index in range(20):
+        common = (f"prediction-{index:02d}", "pass", f"c{index:02d}")
+        if index == 1:  # high-confidence correct
+            evidence = ("reviewed", choice_a, 0.9, choice_a, 1)
+        elif index == 2:  # low-confidence wrong
+            evidence = ("reviewed", choice_a, 0.5, choice_b, 0)
+        elif index == 3:  # exactly-threshold wrong is legal: the rule is strictly above
+            evidence = ("reviewed", choice_a, 0.8, choice_b, 0)
+        else:  # no prediction is reported but excluded from the hard-failure denominator
+            evidence = ("not_emitted", None, None, None, None)
+        assessments.append((*common, *evidence, "subject", "fixture", "t2", "t2", f"audit-prediction-{index:02d}"))
+    earned.executemany(
+        "INSERT INTO subject_evaluation_prediction_assessments VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        assessments,
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="append_only"):
+        earned.execute(
+            "UPDATE subject_evaluation_prediction_assessments SET source_ref='changed' WHERE prediction_assessment_id='prediction-00'"
+        )
+    with pytest.raises(sqlite3.IntegrityError, match="append_only"):
+        earned.execute(
+            "DELETE FROM subject_evaluation_prediction_assessments WHERE prediction_assessment_id='prediction-00'"
+        )
     score = earned.execute("SELECT scorecard_sha256 FROM subject_evaluation_scorecard_v1 WHERE gate_id='pass'").fetchone()[0]
+    assert score != missing_score
     earned.executemany(
         "INSERT INTO subject_evaluation_signoffs VALUES(?,?,?,?,?,?,?)",
         (("sign-subject", "pass", "subject", "subject", "approve", score, "t3"),
@@ -581,6 +656,52 @@ def test_evaluation_gate_positive_freeze_and_missing_hash_udf_fails_closed() -> 
     earned.execute("UPDATE subject_evaluation_gates SET state='closed',closed_at='t4',scorecard_sha256=?,verdict='pass' WHERE gate_id='pass'", (score,))
     assert earned.execute("SELECT state,scorecard_sha256,verdict FROM subject_evaluation_gates").fetchone() == ("closed", score, "pass")
     assert earned.execute("SELECT scorecard_sha256 FROM subject_evaluation_scorecard_v1").fetchone() == (score,)
+
+    # A second otherwise-earned gate cannot close PASS with one mechanically wrong
+    # subject-choice prediction strictly above the frozen threshold.
+    earned.execute(
+        """INSERT INTO subject_evaluation_gates(
+        gate_id,subject_id,gate_version,manifest_sha256,eligibility_rules_version,
+        eligibility_rules_sha256,exclusion_rules_version,exclusion_rules_sha256,rounding_rule,
+        hard_failure_rules_version,hard_failure_rules_sha256,scoring_definitions_version,
+        scoring_definitions_sha256,reviewer_authority_code,created_at)
+        VALUES('bad','s',2,?,'v1',?,'v1',?,'ceil','v1',?,'v1',?,'fresh','t0')""",
+        (sha, sha, sha, sha, sha),
+    )
+    bad_cases = [
+        (f"b{index:02d}", "bad", f"badmac{index:02d}", ("health", "finance", "travel")[min(index // 5, 2)],
+         int(index < 5), int(index < 3), 0, 0, 1, None, "preregistered", None, "t0")
+        for index in range(20)
+    ]
+    earned.executemany("INSERT INTO subject_evaluation_cases VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", bad_cases)
+    earned.execute("UPDATE subject_evaluation_gates SET state='frozen',frozen_at='t1' WHERE gate_id='bad'")
+    earned.execute("UPDATE subject_evaluation_cases SET completion_state='completed',disposition_at='t2' WHERE gate_id='bad'")
+    bad_events = []
+    for index in range(20):
+        case_id = f"b{index:02d}"
+        for event_type in ("utility", "reason_alignment"):
+            bad_events.append((f"{case_id}-{event_type}", "bad", case_id, event_type, 1.0, 1, "ok", "subject", "fixture", "t2", f"audit-{case_id}-{event_type}"))
+        bad_events.append((f"{case_id}-hard", "bad", case_id, "hard_failure", None, 1, "none", "subject", "fixture", "t2", f"audit-{case_id}-hard"))
+        if index < 5:
+            bad_events.append((f"{case_id}-abstain", "bad", case_id, "abstention", 1.0, 1, "ok", "subject", "fixture", "t2", f"audit-{case_id}-abstain"))
+    earned.executemany("INSERT INTO subject_evaluation_events VALUES(?,?,?,?,?,?,?,?,?,?,?)", bad_events)
+    bad_assessments = []
+    for index in range(20):
+        evidence = ("reviewed", choice_a, 0.81, choice_b, 0) if index == 0 else ("not_emitted", None, None, None, None)
+        bad_assessments.append((f"bad-prediction-{index:02d}", "bad", f"b{index:02d}", *evidence,
+                                "subject", "fixture", "t2", "t2", f"audit-bad-prediction-{index:02d}"))
+    earned.executemany("INSERT INTO subject_evaluation_prediction_assessments VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", bad_assessments)
+    bad_score = earned.execute("SELECT scorecard_sha256 FROM subject_evaluation_scorecard_v1 WHERE gate_id='bad'").fetchone()[0]
+    earned.executemany(
+        "INSERT INTO subject_evaluation_signoffs VALUES(?,?,?,?,?,?,?)",
+        (("bad-sign-subject", "bad", "subject", "subject", "approve", bad_score, "t3"),
+         ("bad-sign-reviewer", "bad", "fresh_reviewer", "reviewer", "approve", bad_score, "t3")),
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="invalid_or_incomplete"):
+        earned.execute(
+            "UPDATE subject_evaluation_gates SET state='closed',closed_at='t4',scorecard_sha256=?,verdict='pass' WHERE gate_id='bad'",
+            (bad_score,),
+        )
 
     missing_udf = connection()
     missing_udf.execute("INSERT INTO subject_principals VALUES('p','human','active',NULL,'t0','t0')")
