@@ -5,6 +5,7 @@ import json
 import tempfile
 import os
 from pathlib import Path
+from unittest.mock import patch
 
 
 # === Fixtures ===
@@ -98,15 +99,17 @@ class TestMcpErrorHandling:
     def test_vault_remote_map_show_invalid_id(self):
         """Test vault_remote_map_show with invalid id."""
         from vault.mcp import vault_remote_map_show
-        
-        result = vault_remote_map_show("invalid", compact=False)
+
+        with patch("vault.mcp._get_supabase_client", side_effect=AssertionError("client resolution must be lazy")):
+            result = vault_remote_map_show("invalid", compact=False)
         assert "error" in result
 
     def test_vault_remote_read_range_invalid_id(self):
         """Test vault_remote_read_range with invalid id."""
         from vault.mcp import vault_remote_read_range
-        
-        result = vault_remote_read_range("bad", "node1", 1, 10)
+
+        with patch("vault.mcp._get_supabase_client", side_effect=AssertionError("client resolution must be lazy")):
+            result = vault_remote_read_range("bad", "node1", 1, 10)
         assert "error" in result
 
 

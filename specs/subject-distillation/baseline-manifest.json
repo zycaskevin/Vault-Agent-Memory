@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "artifact_kind": "subject-distillation-baseline",
+  "algorithm": {
+    "name": "subject-distillation-baseline-v1",
+    "domain_separator_utf8_hex": "7375626a6563742d64697374696c6c6174696f6e2d626173656c696e652d76310a",
+    "digest": "sha256",
+    "baseline_id_hex_length": 16
+  },
+  "baseline_state": "frozen",
+  "scope": {
+    "generic_subject_core": true,
+    "person_v1": true,
+    "organization": "contract-only"
+  },
+  "files": [
+    {
+      "path": "specs/subject-distillation/requirements.md",
+      "sha256": "f1b25173c5deb1519f1513e375a3064dd20d1e1417f9801eb4e5c5ec5b4af40b",
+      "size_bytes": 66154
+    },
+    {
+      "path": "specs/subject-distillation/design.md",
+      "sha256": "c337eb8d65bf09c002489fb9553ebd3aea2af8f2376418648ec1990d83d561f9",
+      "size_bytes": 77991
+    },
+    {
+      "path": "specs/subject-distillation/tasks.md",
+      "sha256": "7629a06751c7e62871b5852fddfc888d31248f4d91f065347098ab557effbbab",
+      "size_bytes": 101596
+    },
+    {
+      "path": "specs/subject-distillation/traceability.md",
+      "sha256": "e11ea6e4a72d32cabdf730f71aa96bb6ca401efabac48d01e5619edfc3b45ee7",
+      "size_bytes": 17527
+    },
+    {
+      "path": "specs/subject-distillation/schema.v15.sql",
+      "sha256": "021a3dd72411f6c6ae05086c12ec270555f4ae797539b38ba027c3124d145fca",
+      "size_bytes": 157566
+    }
+  ],
+  "closure": {
+    "full_digest": "d2b883e518cbc49568b4811405135bfbde7bd71fb57b9fd27bba1dac3bb015ff",
+    "baseline_id": "d2b883e518cbc495"
+  }
+}

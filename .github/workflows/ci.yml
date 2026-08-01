@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - '**'
+      - 'main'
     tags:
       - 'v*'
     paths:
@@ -17,12 +17,15 @@ on:
       - '.gitignore'
       - '.github/workflows/**'
       - 'docs/**'
+      - 'specs/**'
       - 'vault/**'
       - 'tests/**'
       - 'scripts/**'
       - 'raw/**'
       - 'benchmarks/**'
   pull_request:
+    branches:
+      - 'main'
     paths:
       - 'README*.md'
       - 'CONTRIBUTING.md'
@@ -33,11 +36,16 @@ on:
       - '.gitignore'
       - '.github/workflows/**'
       - 'docs/**'
+      - 'specs/**'
       - 'vault/**'
       - 'tests/**'
       - 'scripts/**'
       - 'raw/**'
       - 'benchmarks/**'
+
+concurrency:
+  group: release-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read

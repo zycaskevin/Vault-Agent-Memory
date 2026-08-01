@@ -20,6 +20,7 @@ REMOTE_ID_ERROR = "knowledge_id must be a positive integer or UUID"
 REMOTE_UUID_RE = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 )
+_SB_CLIENT_OMITTED = object()
 
 
 def _clamp_int(value, *, default: int, minimum: int, maximum: int) -> int:
@@ -619,14 +620,15 @@ def _vault_remote_map_show_payload(
     agent_id: str = "",
     include_private: bool = False,
     max_sensitivity: str = "medium",
-    sb_client=None,
+    sb_client=_SB_CLIENT_OMITTED,
 ) -> dict:
     normalized_id = _normalize_remote_knowledge_id(knowledge_id)
     if normalized_id is None:
         return _remote_error("invalid_knowledge_id", REMOTE_ID_ERROR)
     knowledge_id = normalized_id
 
-    sb_client = sb_client or _get_supabase_client()
+    if sb_client is _SB_CLIENT_OMITTED:
+        sb_client = _get_supabase_client()
     if sb_client is None:
         return _remote_error(
             "remote_client_missing",
@@ -780,7 +782,7 @@ def _vault_remote_read_range_payload(
     agent_id: str = "",
     include_private: bool = False,
     max_sensitivity: str = "medium",
-    sb_client=None,
+    sb_client=_SB_CLIENT_OMITTED,
 ) -> dict:
     normalized_id = _normalize_remote_knowledge_id(knowledge_id)
     if normalized_id is None:
@@ -794,7 +796,8 @@ def _vault_remote_read_range_payload(
     if max_lines <= 0:
         max_lines = 80
 
-    sb_client = sb_client or _get_supabase_client()
+    if sb_client is _SB_CLIENT_OMITTED:
+        sb_client = _get_supabase_client()
     if sb_client is None:
         return _remote_error(
             "remote_client_missing",
