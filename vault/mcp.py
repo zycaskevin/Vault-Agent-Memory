@@ -36,6 +36,7 @@ from vault.mcp_search import (
     shape_search_results as _shape_search_results,
 )
 from vault.search_utils import validate_search_query
+from vault.search import UnsupportedSearchModeError
 from vault.mcp_tools import (
     TOOLS,
     TOOL_PROFILES,
@@ -228,25 +229,29 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
                 maximum=MCP_SEARCH_MAX_OFFSET,
             )
             db, search = _get_search()
-            results = search.search(
-                query=query,
-                mode=arguments.get("mode", "auto"),
-                limit=limit,
-                offset=offset,
-                normalize_scores=arguments.get("normalize_scores", False),
-                include_snippet=arguments.get("include_snippet", False),
-                fields=None,
-                min_trust=0.0,
-                compact=False,
-                agent_id=arguments.get("agent_id", ""),
-                include_private=bool(arguments.get("include_private", False)),
-                max_sensitivity=arguments.get("max_sensitivity") or "medium",
-                include_expired_temporal=bool(arguments.get("include_expired_temporal", True)),
-                include_future_temporal=bool(arguments.get("include_future_temporal", True)),
-                temporal_as_of=arguments.get("temporal_as_of", ""),
-            )
-            output = _shape_search_results(results, compact=compact, field_set=field_set)
-            db.close()
+            try:
+                results = search.search(
+                    query=query,
+                    mode=arguments.get("mode", "auto"),
+                    limit=limit,
+                    offset=offset,
+                    normalize_scores=arguments.get("normalize_scores", False),
+                    include_snippet=arguments.get("include_snippet", False),
+                    fields=None,
+                    min_trust=0.0,
+                    compact=False,
+                    agent_id=arguments.get("agent_id", ""),
+                    include_private=bool(arguments.get("include_private", False)),
+                    max_sensitivity=arguments.get("max_sensitivity") or "medium",
+                    include_expired_temporal=bool(arguments.get("include_expired_temporal", True)),
+                    include_future_temporal=bool(arguments.get("include_future_temporal", True)),
+                    temporal_as_of=arguments.get("temporal_as_of", ""),
+                )
+                output = _shape_search_results(
+                    results, compact=compact, field_set=field_set
+                )
+            finally:
+                db.close()
             return {"result": json.dumps(output, ensure_ascii=False, indent=2)}
 
         memory_payload = handle_memory_tool_call(name, arguments)
@@ -525,6 +530,16 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
                 "next_action": {"tool": "tools/list", "arguments": {}},
             }
 
+    except UnsupportedSearchModeError as e:
+        return {
+            "error": str(e)[:240],
+            "failure_mode": "unsupported_search_mode",
+            "supported_modes": list(e.supported_modes),
+            "next_action": {
+                "tool": "vault_search",
+                "arguments": {"query": "<search query>", "mode": "auto"},
+            },
+        }
     except Exception as e:
         return {
             "error": f"Error: {str(e)}",
@@ -534,6 +549,21 @@ def handle_tool_call(name: str, arguments: dict) -> dict:
 
 
 # ── stdio MCP Server ──────────────────────────────────
+
+def _format_mcp_wire_result(result: dict) -> dict:
+    """Format a dispatcher envelope as a standard MCP tool result."""
+    if "result" in result:
+        return {
+            "content": [{"type": "text", "text": result["result"]}],
+        }
+    if result.get("failure_mode") == "unsupported_search_mode":
+        text = json.dumps(result, ensure_ascii=False, sort_keys=True)
+    else:
+        text = result.get("error", "")
+    return {
+        "content": [{"type": "text", "text": text}],
+        "isError": True,
+    }
 
 def run_stdio():
     """作為 stdio MCP server 運行。"""
@@ -588,11 +618,7 @@ def run_stdio():
             response = {
                 "jsonrpc": "2.0",
                 "id": msg_id,
-                "result": {
-                    "content": [
-                        {"type": "text", "text": result.get("result", result.get("error", ""))}
-                    ]
-                },
+                "result": _format_mcp_wire_result(result),
             }
             print(json.dumps(response), flush=True)
 

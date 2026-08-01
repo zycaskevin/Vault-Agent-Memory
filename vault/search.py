@@ -41,6 +41,28 @@ from .search_utils import (
 from .semantic import SemanticProviderError, provider_dimension, provider_id
 
 
+SUPPORTED_SEARCH_MODES = (
+    "auto",
+    "basic",
+    "keyword",
+    "vector",
+    "semantic",
+    "hybrid",
+)
+
+
+class UnsupportedSearchModeError(ValueError):
+    """Raised when a search mode is outside the public runtime contract."""
+
+    def __init__(self, mode: str):
+        self.mode = mode
+        self.supported_modes = SUPPORTED_SEARCH_MODES
+        super().__init__(
+            "無效的搜尋模式。支援的模式: "
+            + ", ".join(self.supported_modes)
+        )
+
+
 class VaultSearch(SearchQueryMixin, SearchCacheMixin, SearchResultMixin, SearchSemanticMixin):
     """Vault Agent Memory 搜尋引擎。"""
 
@@ -554,11 +576,8 @@ class VaultSearch(SearchQueryMixin, SearchCacheMixin, SearchResultMixin, SearchS
             max_sensitivity=max_sensitivity,
         )
         # 驗證 mode 參數
-        valid_modes = {"auto", "basic", "keyword", "vector", "semantic", "hybrid"}
-        if mode not in valid_modes:
-            raise ValueError(
-                f"無效的搜尋模式: {mode!r}. 有效模式: {sorted(valid_modes)}"
-            )
+        if mode not in SUPPORTED_SEARCH_MODES:
+            raise UnsupportedSearchModeError(mode)
         # 向後相容：basic 是 auto 的別名
         if mode == "basic":
             mode = "auto"
