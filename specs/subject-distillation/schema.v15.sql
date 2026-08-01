@@ -2495,6 +2495,57 @@ WHEN NOT (
               AND (p.assessed_at < OLD.frozen_at OR p.assessed_at > NEW.closed_at
                    OR p.reviewed_at < OLD.frozen_at OR p.reviewed_at > NEW.closed_at)
         )
+        AND NOT EXISTS (
+            SELECT 1 FROM subject_evaluation_events e
+            WHERE e.gate_id = OLD.gate_id
+              AND (NOT EXISTS (
+                    SELECT 1 FROM subject_principals sp
+                    WHERE sp.principal_id = e.actor_principal_id AND sp.status = 'active'
+                  ) OR NOT EXISTS (
+                    SELECT 1 FROM subject_role_grants rg
+                    WHERE rg.subject_id = OLD.subject_id
+                      AND rg.principal_id = e.actor_principal_id
+                      AND rg.role IN ('subject','controller','reviewer')
+                      AND rg.effective_from <= e.occurred_at
+                      AND (rg.expires_at IS NULL OR rg.expires_at > e.occurred_at)
+                      AND (rg.revoked_at IS NULL OR rg.revoked_at > e.occurred_at)
+                  ))
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM subject_evaluation_prediction_assessments p
+            WHERE p.gate_id = OLD.gate_id
+              AND (NOT EXISTS (
+                    SELECT 1 FROM subject_principals sp
+                    WHERE sp.principal_id = p.subject_principal_id AND sp.status = 'active'
+                  ) OR NOT EXISTS (
+                    SELECT 1 FROM subject_role_grants rg
+                    WHERE rg.subject_id = OLD.subject_id
+                      AND rg.principal_id = p.subject_principal_id AND rg.role = 'subject'
+                      AND rg.effective_from <= p.assessed_at
+                      AND (rg.expires_at IS NULL OR rg.expires_at > p.assessed_at)
+                      AND (rg.revoked_at IS NULL OR rg.revoked_at > p.assessed_at)
+                      AND rg.effective_from <= p.reviewed_at
+                      AND (rg.expires_at IS NULL OR rg.expires_at > p.reviewed_at)
+                      AND (rg.revoked_at IS NULL OR rg.revoked_at > p.reviewed_at)
+                  ))
+        )
+        AND NOT EXISTS (
+            SELECT 1 FROM subject_evaluation_signoffs s
+            WHERE s.gate_id = OLD.gate_id
+              AND (NOT EXISTS (
+                    SELECT 1 FROM subject_principals sp
+                    WHERE sp.principal_id = s.principal_id AND sp.status = 'active'
+                  ) OR NOT EXISTS (
+                    SELECT 1 FROM subject_role_grants rg
+                    WHERE rg.subject_id = OLD.subject_id
+                      AND rg.principal_id = s.principal_id
+                      AND rg.role = CASE WHEN s.authority_role = 'fresh_reviewer' THEN 'reviewer' ELSE s.authority_role END
+                      AND rg.effective_from <= s.signed_at
+                      AND (rg.expires_at IS NULL OR rg.expires_at > s.signed_at)
+                      AND (rg.revoked_at IS NULL OR rg.revoked_at > s.signed_at)
+                      AND (s.authority_role <> 'fresh_reviewer' OR rg.authority_scope = OLD.reviewer_authority_code)
+                  ))
+        )
         AND NEW.scorecard_sha256 = (
             SELECT scorecard_sha256 FROM subject_evaluation_scorecard_v1 WHERE gate_id = OLD.gate_id
         )
@@ -2586,6 +2637,8 @@ BEFORE INSERT ON subject_evaluation_events
 WHEN COALESCE((SELECT state FROM subject_evaluation_gates WHERE gate_id = NEW.gate_id), 'missing') <> 'frozen'
  OR NOT EXISTS (
     SELECT 1 FROM subject_evaluation_gates eg
+    JOIN subject_principals sp
+      ON sp.principal_id = NEW.actor_principal_id AND sp.status = 'active'
     JOIN subject_role_grants rg
       ON rg.subject_id = eg.subject_id
      AND rg.principal_id = NEW.actor_principal_id
@@ -2603,6 +2656,8 @@ WHEN COALESCE((SELECT state FROM subject_evaluation_gates WHERE gate_id = NEW.ga
  OR NOT EXISTS (
     SELECT 1
     FROM subject_evaluation_gates g
+    JOIN subject_principals sp
+      ON sp.principal_id = NEW.principal_id AND sp.status = 'active'
     JOIN subject_role_grants rg
       ON rg.subject_id = g.subject_id
      AND rg.principal_id = NEW.principal_id
@@ -2621,6 +2676,8 @@ WHEN COALESCE((SELECT state FROM subject_evaluation_gates WHERE gate_id = NEW.ga
  OR NOT EXISTS (
     SELECT 1 FROM subject_evaluation_gates g
     JOIN subject_evaluation_cases c ON c.gate_id = g.gate_id AND c.evaluation_case_id = NEW.evaluation_case_id
+    JOIN subject_principals sp
+      ON sp.principal_id = NEW.subject_principal_id AND sp.status = 'active'
     JOIN subject_role_grants rg ON rg.subject_id = g.subject_id
       AND rg.principal_id = NEW.subject_principal_id AND rg.role = 'subject'
       AND rg.effective_from <= NEW.assessed_at

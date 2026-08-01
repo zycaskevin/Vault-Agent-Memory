@@ -536,10 +536,10 @@ def test_evaluation_gate_positive_freeze_and_missing_hash_udf_fails_closed() -> 
     )
     earned.executemany(
         "INSERT INTO subject_principals VALUES(?,?,'active',NULL,'t0','t0')",
-        (("subject", "human"), ("reviewer", "human")),
+        (("subject", "human"), ("controller", "human"), ("reviewer", "human")),
     )
     earned.execute("INSERT INTO subjects VALUES('s','person','canonical',0,'active',NULL,'t0',NULL,'t0')")
-    for principal, role in (("subject", "subject"), ("reviewer", "reviewer")):
+    for principal, role in (("subject", "subject"), ("controller", "controller"), ("reviewer", "reviewer")):
         issuer = "subject"
         earned.execute(
             "INSERT INTO subject_events VALUES(?, 'auth.role_grant.issued','s',?,?,NULL,NULL,'t0','t0',?)",
@@ -565,6 +565,43 @@ def test_evaluation_gate_positive_freeze_and_missing_hash_udf_fails_closed() -> 
     earned.executemany("INSERT INTO subject_evaluation_cases VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", cases)
     earned.execute("UPDATE subject_evaluation_gates SET state='frozen',frozen_at='t1' WHERE gate_id='pass'")
     earned.execute("UPDATE subject_evaluation_cases SET completion_state='completed',disposition_at='t2' WHERE gate_id='pass'")
+
+    # Evaluation evidence is accepted only from a currently active principal, even
+    # when that principal still has an event-time-valid same-subject grant.
+    earned.execute("SAVEPOINT inactive_insert_guards")
+    for principal in ("subject", "reviewer"):
+        earned.execute(
+            "INSERT INTO subject_events VALUES(?, 'auth.binding.issued','s','subject','subject',NULL,NULL,'t05','t05',?)",
+            (f"binding-{principal}", f"audit-binding-{principal}"),
+        )
+        earned.execute(
+            "INSERT INTO subject_auth_bindings VALUES(?,?, 'subject','cli_capability','scrypt',?,?,16384,8,1,?,?,'active',NULL,NULL,NULL,'t05')",
+            (f"binding-{principal}", principal, "s" * 22, "d" * 43,
+             f"fingerprint-{principal}", f"binding-{principal}"),
+        )
+        earned.execute(
+            "INSERT INTO subject_events VALUES(?, 'principal.suspended',NULL,?,'subject',NULL,NULL,'t15','t15',?)",
+            (f"suspend-{principal}", principal, f"audit-suspend-{principal}"),
+        )
+        earned.execute(
+            "UPDATE subject_principals SET status='suspended',status_event_id=?,updated_at='t15' WHERE principal_id=?",
+            (f"suspend-{principal}", principal),
+        )
+    with pytest.raises(sqlite3.IntegrityError, match="unauthorized"):
+        earned.execute(
+            "INSERT INTO subject_evaluation_events VALUES('inactive-event','pass','c00','utility',1,1,'ok','subject','fixture','t2','audit-inactive-event')"
+        )
+    with pytest.raises(sqlite3.IntegrityError, match="invalid_or_unauthorized"):
+        earned.execute(
+            "INSERT INTO subject_evaluation_prediction_assessments VALUES('inactive-assessment','pass','c00','not_emitted',NULL,NULL,NULL,NULL,'subject','fixture','t2','t2','audit-inactive-assessment')"
+        )
+    with pytest.raises(sqlite3.IntegrityError, match="signoff"):
+        earned.execute(
+            "INSERT INTO subject_evaluation_signoffs VALUES('inactive-signoff','pass','fresh_reviewer','reviewer','approve',?,'t2')",
+            (sha,),
+        )
+    earned.execute("ROLLBACK TO inactive_insert_guards")
+    earned.execute("RELEASE inactive_insert_guards")
     events = []
     for index in range(20):
         case_id = f"c{index:02d}"
@@ -650,8 +687,49 @@ def test_evaluation_gate_positive_freeze_and_missing_hash_udf_fails_closed() -> 
     assert score != missing_score
     earned.executemany(
         "INSERT INTO subject_evaluation_signoffs VALUES(?,?,?,?,?,?,?)",
-        (("sign-subject", "pass", "subject", "subject", "approve", score, "t3"),
+        (("sign-controller", "pass", "controller", "controller", "approve", score, "t3"),
          ("sign-reviewer", "pass", "fresh_reviewer", "reviewer", "approve", score, "t3")),
+    )
+
+    # Later grant edits must be reinterpreted on the final timeline at close.
+    earned.execute("SAVEPOINT retroactive_grant_revocation")
+    earned.execute(
+        "INSERT INTO subject_events VALUES('revoke-subject-retro','auth.role_grant.revoked','s','controller','controller',NULL,NULL,'t2','t2','audit-revoke-subject-retro')"
+    )
+    earned.execute(
+        "UPDATE subject_role_grants SET revoked_at='t2',revocation_event_id='revoke-subject-retro' WHERE role_grant_id='grant-subject'"
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="invalid_or_incomplete"):
+        earned.execute("UPDATE subject_evaluation_gates SET state='closed',closed_at='t4',scorecard_sha256=?,verdict='pass' WHERE gate_id='pass'", (score,))
+    earned.execute("ROLLBACK TO retroactive_grant_revocation")
+    earned.execute("RELEASE retroactive_grant_revocation")
+
+    earned.execute("SAVEPOINT inactive_principal_at_close")
+    earned.execute(
+        "INSERT INTO subject_events VALUES('binding-subject-close','auth.binding.issued','s','subject','subject',NULL,NULL,'t05','t05','audit-binding-subject-close')"
+    )
+    earned.execute(
+        "INSERT INTO subject_auth_bindings VALUES('binding-subject-close','subject','subject','cli_capability','scrypt',?,?,16384,8,1,'fingerprint-subject-close','binding-subject-close','active',NULL,NULL,NULL,'t05')",
+        ("s" * 22, "d" * 43),
+    )
+    earned.execute(
+        "INSERT INTO subject_events VALUES('suspend-subject-close','principal.suspended',NULL,'subject','subject',NULL,NULL,'t35','t35','audit-suspend-subject-close')"
+    )
+    earned.execute(
+        "UPDATE subject_principals SET status='suspended',status_event_id='suspend-subject-close',updated_at='t35' WHERE principal_id='subject'"
+    )
+    with pytest.raises(sqlite3.IntegrityError, match="invalid_or_incomplete"):
+        earned.execute("UPDATE subject_evaluation_gates SET state='closed',closed_at='t4',scorecard_sha256=?,verdict='pass' WHERE gate_id='pass'", (score,))
+    earned.execute("ROLLBACK TO inactive_principal_at_close")
+    earned.execute("RELEASE inactive_principal_at_close")
+
+    # Revocation strictly after the subject's evidence times preserves historical
+    # authority; the independent controller signoff remains valid for closure.
+    earned.execute(
+        "INSERT INTO subject_events VALUES('revoke-subject-later','auth.role_grant.revoked','s','controller','controller',NULL,NULL,'t25','t25','audit-revoke-subject-later')"
+    )
+    earned.execute(
+        "UPDATE subject_role_grants SET revoked_at='t25',revocation_event_id='revoke-subject-later' WHERE role_grant_id='grant-subject'"
     )
     earned.execute("UPDATE subject_evaluation_gates SET state='closed',closed_at='t4',scorecard_sha256=?,verdict='pass' WHERE gate_id='pass'", (score,))
     assert earned.execute("SELECT state,scorecard_sha256,verdict FROM subject_evaluation_gates").fetchone() == ("closed", score, "pass")
@@ -694,7 +772,7 @@ def test_evaluation_gate_positive_freeze_and_missing_hash_udf_fails_closed() -> 
     bad_score = earned.execute("SELECT scorecard_sha256 FROM subject_evaluation_scorecard_v1 WHERE gate_id='bad'").fetchone()[0]
     earned.executemany(
         "INSERT INTO subject_evaluation_signoffs VALUES(?,?,?,?,?,?,?)",
-        (("bad-sign-subject", "bad", "subject", "subject", "approve", bad_score, "t3"),
+        (("bad-sign-controller", "bad", "controller", "controller", "approve", bad_score, "t3"),
          ("bad-sign-reviewer", "bad", "fresh_reviewer", "reviewer", "approve", bad_score, "t3")),
     )
     with pytest.raises(sqlite3.IntegrityError, match="invalid_or_incomplete"):

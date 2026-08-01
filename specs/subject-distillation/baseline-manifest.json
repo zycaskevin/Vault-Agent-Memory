@@ -21,8 +21,8 @@
     },
     {
       "path": "specs/subject-distillation/design.md",
-      "sha256": "4f6b45fd64b304fef7f139fac2b7c77efdf1acdc05423ad48eb3895fccef00c2",
-      "size_bytes": 76823
+      "sha256": "c337eb8d65bf09c002489fb9553ebd3aea2af8f2376418648ec1990d83d561f9",
+      "size_bytes": 77991
     },
     {
       "path": "specs/subject-distillation/tasks.md",
@@ -36,12 +36,12 @@
     },
     {
       "path": "specs/subject-distillation/schema.v15.sql",
-      "sha256": "6fc416a9fd6d1621df2eb3a233f654071c718ff36d55c43570261938064e78b4",
-      "size_bytes": 154367
+      "sha256": "021a3dd72411f6c6ae05086c12ec270555f4ae797539b38ba027c3124d145fca",
+      "size_bytes": 157566
     }
   ],
   "closure": {
-    "full_digest": "e1c4b168bbff6bf4ddf7815099e0471847b32664b52a58fc63f920e62a3d5619",
-    "baseline_id": "e1c4b168bbff6bf4"
+    "full_digest": "d2b883e518cbc49568b4811405135bfbde7bd71fb57b9fd27bba1dac3bb015ff",
+    "baseline_id": "d2b883e518cbc495"
   }
 }
