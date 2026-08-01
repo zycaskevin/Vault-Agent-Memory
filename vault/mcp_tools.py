@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
+from vault.mcp_gateway import MCP_GATEWAY_TOOL_NAMES, MCP_GATEWAY_TOOLS
 from vault.mcp_memory import (
     MCP_MEMORY_CANDIDATE_MAX_LIMIT,
     MCP_MEMORY_LOOP_TOOL_NAMES,
     MCP_MEMORY_LOOP_TOOLS,
 )
-from vault.mcp_gateway import MCP_GATEWAY_TOOL_NAMES, MCP_GATEWAY_TOOLS
 from vault.mcp_search import MCP_SEARCH_MAX_LIMIT, MCP_SEARCH_MAX_OFFSET
-from vault.search_utils import MAX_SEARCH_QUERY_CHARS
 from vault.mcp_skill import (
     MCP_SKILL_READ_TOOL_NAMES,
     MCP_SKILL_SYNC_TOOL_NAMES,
@@ -18,7 +17,17 @@ from vault.mcp_skill import (
 )
 from vault.mcp_sync import MCP_SYNC_TOOL_NAMES, MCP_SYNC_TOOLS
 from vault.mcp_task import MCP_TASK_TOOL_NAMES, MCP_TASK_TOOLS
+from vault.search import SUPPORTED_SEARCH_MODES
+from vault.search_utils import MAX_SEARCH_QUERY_CHARS
 
+PUBLIC_MEMORY_CONTRACT_TOOL_NAMES = (
+    "vault_search",
+    "vault_read_range",
+    "vault_memory_propose",
+    "vault_memory_candidates",
+    "vault_memory_promote",
+    "vault_memory_review",
+)
 
 TOOLS = [
     {
@@ -34,7 +43,7 @@ TOOLS = [
                 },
                 "mode": {
                     "type": "string",
-                    "enum": ["auto", "keyword", "vector", "semantic", "hybrid"],
+                    "enum": list(SUPPORTED_SEARCH_MODES),
                     "description": "搜尋模式（預設 auto）",
                     "default": "auto"
                 },
