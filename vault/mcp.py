@@ -150,13 +150,15 @@ def _vault_remote_doctor_payload(*args, **kwargs) -> dict:
 
 
 def _vault_remote_map_show_payload(*args, **kwargs) -> dict:
-    if kwargs.get("sb_client") is None:
+    knowledge_id = args[0] if args else kwargs.get("knowledge_id")
+    if _mcp_remote._normalize_remote_knowledge_id(knowledge_id) is not None and "sb_client" not in kwargs:
         kwargs["sb_client"] = _get_supabase_client()
     return _mcp_remote._vault_remote_map_show_payload(*args, **kwargs)
 
 
 def _vault_remote_read_range_payload(*args, **kwargs) -> dict:
-    if kwargs.get("sb_client") is None:
+    knowledge_id = args[0] if args else kwargs.get("knowledge_id")
+    if _mcp_remote._normalize_remote_knowledge_id(knowledge_id) is not None and "sb_client" not in kwargs:
         kwargs["sb_client"] = _get_supabase_client()
     return _mcp_remote._vault_remote_read_range_payload(*args, **kwargs)
 

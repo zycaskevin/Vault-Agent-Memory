@@ -22,7 +22,7 @@ def security_doctor(
     project_dir: str | Path | None = None,
 ) -> dict[str, Any]:
     """Return a compact security posture report for CLI and setup smoke tests."""
-    env_map = env or os.environ
+    env_map = os.environ if env is None else env
     require_hmac = _truthy(env_map.get("VAULT_MCP_REQUIRE_AGENT_SIGNATURE", ""))
     agent_secret_keys = sorted(key for key in env_map if key.startswith("VAULT_MCP_AGENT_SECRET"))
     gui_auth_configured = bool(str(env_map.get("VAULT_GUI_TOKEN", "")).strip())

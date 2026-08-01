@@ -852,20 +852,23 @@ class TestVaultRemoteReadRangePayloadValidation:
     def test_invalid_knowledge_id_non_numeric(self):
         """Test non-numeric knowledge_id returns error."""
         from vault.mcp import _vault_remote_read_range_payload
-        result = _vault_remote_read_range_payload("not-a-number", sb_client=MagicMock())
+        with patch("vault.mcp._get_supabase_client", side_effect=AssertionError("client resolution must be lazy")):
+            result = _vault_remote_read_range_payload("not-a-number")
         assert "error" in result
         assert result["error"] == "invalid_knowledge_id"
 
     def test_invalid_knowledge_id_zero(self):
         """Test zero knowledge_id returns error."""
         from vault.mcp import _vault_remote_read_range_payload
-        result = _vault_remote_read_range_payload(0, sb_client=MagicMock())
+        with patch("vault.mcp._get_supabase_client", side_effect=AssertionError("client resolution must be lazy")):
+            result = _vault_remote_read_range_payload(0)
         assert result["error"] == "invalid_knowledge_id"
 
     def test_invalid_knowledge_id_negative(self):
         """Test negative knowledge_id returns error."""
         from vault.mcp import _vault_remote_read_range_payload
-        result = _vault_remote_read_range_payload(-1, sb_client=MagicMock())
+        with patch("vault.mcp._get_supabase_client", side_effect=AssertionError("client resolution must be lazy")):
+            result = _vault_remote_read_range_payload(-1)
         assert result["error"] == "invalid_knowledge_id"
 
     def test_max_lines_invalid_string(self):
@@ -931,13 +934,15 @@ class TestVaultRemoteMapShowPayload:
     def test_invalid_knowledge_id(self):
         """Test invalid knowledge_id returns error."""
         from vault.mcp import _vault_remote_map_show_payload
-        result = _vault_remote_map_show_payload("bad")
+        with patch("vault.mcp._get_supabase_client", side_effect=AssertionError("client resolution must be lazy")):
+            result = _vault_remote_map_show_payload("bad")
         assert "error" in result
 
     def test_negative_knowledge_id(self):
         """Test negative knowledge_id returns error."""
         from vault.mcp import _vault_remote_map_show_payload
-        result = _vault_remote_map_show_payload(-1)
+        with patch("vault.mcp._get_supabase_client", side_effect=AssertionError("client resolution must be lazy")):
+            result = _vault_remote_map_show_payload(-1)
         assert "error" in result
 
     def test_no_supabase_client_map(self):

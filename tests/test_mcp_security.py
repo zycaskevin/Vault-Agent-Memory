@@ -76,10 +76,14 @@ def test_mcp_agent_signature_optional_rejects_bad_signature(monkeypatch):
     assert denied["failure_mode"] == "agent_signature_required"
 
 
-def test_security_doctor_reports_hmac_posture():
+def test_security_doctor_reports_hmac_posture(monkeypatch):
+    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "live-process-service-role-secret")
+
     loose = security_doctor({})
     assert loose["ok"] is False
     assert loose["warning_count"] == 2
+    assert loose["supabase"]["service_role_key_present"] is False
+    assert "live-process-service-role-secret" not in str(loose)
     assert any(check["id"] == "mcp_hmac_required" and not check["ok"] for check in loose["checks"])
 
     strict = security_doctor(
