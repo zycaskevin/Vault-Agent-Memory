@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vault-agent-memory.invalid/subject-distillation/implementation-authorization.schema.json",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "artifact_kind": {
+      "type": "string",
+      "const": "subject-distillation-implementation-authorization"
+    },
+    "baseline_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$"
+    },
+    "baseline_full_digest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "authorizing_principal": {
+      "type": "string",
+      "const": "github:zycaskevin"
+    },
+    "authorized_task": {
+      "type": "string",
+      "pattern": "^T-[0-9]{3}$"
+    },
+    "scope_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "authorization_verifier_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "authorization_schema_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "issued_at_utc": {
+      "type": "string"
+    },
+    "expires_at_utc": {
+      "type": "string"
+    },
+    "authorization_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_kind",
+    "baseline_id",
+    "baseline_full_digest",
+    "authorizing_principal",
+    "authorized_task",
+    "scope_sha256",
+    "authorization_verifier_sha256",
+    "authorization_schema_sha256",
+    "issued_at_utc",
+    "expires_at_utc",
+    "authorization_id"
+  ],
+  "additionalProperties": false
+}

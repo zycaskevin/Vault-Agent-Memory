@@ -1,13 +1,13 @@
 # Subject Distillation — Technical Design
 
 **Status:** Canonical product contract; frozen bytes record integrity only
-**Public repository baseline:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
+**Source reference commit:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
 **Integrity binding:** `baseline-manifest.json` binds the exact five canonical files, their order, byte sizes, SHA-256 values, full digest, and baseline ID. Integrity does not imply review approval, implementation authorization, migration registration, or release authorization.
 **Implementation status:** Not implemented and not authorized by this artifact.
 **Product:** Vault Agent Memory
 **Requirements binding:** subject to the five-file hash-bound manifest contract below；this file declares no requirements verdict
 **Target slice:** Generic Subject Core + Person v1；Organization 僅契約與機械相容性
-**Repository baseline:** public base `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`（current public package）
+**Repository source reference:** public commit `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27` used for the original inventory；it is not the normative baseline ID、delivery base、reviewed tree或implementation base。
 
 ## 1. 設計結論
 
@@ -27,6 +27,7 @@ Subject Distillation 採用「**受治理的Subject領域層**」，而不是把
 10. **Dependent-first relationship closure**：alias、`relationship_experience`／`perspective` assertion、counterparty control先關閉，再關relationship；只有在endpoint前由有效request切入fail-closed `purge_pending`的deletion cleanup可於relationship結束後完成，endpoint後不得新開request。
 11. **Dual-time top-level sealing**：model policy在model generation有效；pack不論entry數量都要在generated/sealed兩時點重驗exact model/model-policy＋grant/access-policy chain。
 12. **Complete canonical evaluation header**：scorecard digest以固定欄序/型別綁定explicit eligibility/exclusion/hard-failure/scoring rule versions＋hashes、`created_at`、`frozen_at`、其餘frozen gate semantics及case/event rows；rationale metric沒有reviewable reason/source不得PASS。
+13. **Long-term persona alignment without a second SSOT**：Evidence／Memory／Persona-Policy／Runtime是責任與projection邊界，不是四套可互相寫入的資料庫。Behavioral Diff只能成為typed candidate；approved behavior／decision boundary只能由既有Subject policy/model authority封存；persona/session snapshot是無authority的derived projection。Human、agent、model與third-party authorship必須分離，AI-produced material不得因approval/publish直接冒充human-explicit evidence。Dual retrieval、Persona IR、training export與LoRA維持future roadmap，不能擴張B-000或T-001。
 
 ## 2. Scope與非Scope
 
@@ -485,9 +486,9 @@ OpenAPI `x-vault-subject-safety`必須揭露：candidate-first、principal bindi
 1. `quickstart`完成既有agent setup。
 2. 顯示用途與privacy boundary，不掃描任何既有來源。
 3. 使用者明確提供subject type、controller principal與subject principal關係。
-4. 建立principal、auth binding、root subject、subject/controller role grants、default-private policy。
-5. 建立empty sealed model v1，coverage為empty/unknown；不產生人格內容。
-6. 回傳minimal proposal與Context Pack surface；無grant時pack只有安全metadata或deny。
+4. 建立principal、auth binding、root subject、subject/controller role grants、一份sealed `privacy` default-private policy及一份sealed `model` policy；兩者皆是empty-safe、同Subject、具獨立version與approval event。
+5. 先把installation切到`initialized_empty`，再以exact sealed `model` policy建立empty sealed model v1（coverage為empty/unknown；不產生人格內容），最後在同一setup transaction切到`active`；任何中途失敗整體rollback，因此成功setup不對外停留在`initialized_empty`。
+6. 回傳minimal proposal與Context Pack surface；無access grant時pack只有安全metadata或deny。
 
 ### 11.2 Agent observation proposal
 
@@ -571,13 +572,20 @@ db.require_schema(15, capability="subject")
 
 `inspect`以SQLite immutable/readonly URI或等價的無寫入方式開啟：missing path回`missing`且不得建立檔案；empty path回`empty`；一致v14/v15回版本與capability；unsupported或三個version signals／manifest不一致回明確error。任何`inspect`／`vault db status`路徑都不得建立sidecar、切換journal mode、執行DDL、commit、寫migration row或改變DB bytes；pre/post SHA-256與missing-file測試必須證明此點。WAL-mode DB的inspect與backup必須用SQLite connection snapshot語義，不能只複製主`.db`檔。
 
+`backup_path`是caller選定的new-file target：migration開始前若任何filesystem
+object已存在即回`backup_exists`且不得開啟、覆寫、截斷、替換或刪除。每個
+attempt建立backup後保留其opened descriptor identity；cleanup只可unlink該
+attempt新建且pathname仍解析為同一regular-file identity的backup。Identity
+不符、pathname被替換或任何pre-existing target一律停止並保留現況，回
+`backup_cleanup_unsafe`；不得以清理失敗為理由操作不屬於本attempt的path。
+
 Schema version authority集中於`vault/db_schema.py::SCHEMA_MANIFESTS`。每個受支援version明列table、column、index、trigger與migration IDs；`db_migrations.py`、`db_backup.py`與status共同import。`config.schema_version`、`PRAGMA user_version`與applied migration rows必須全部一致；禁止現行`max(...)`容錯。任何缺值、超前、分歧、manifest shape不符回`schema_metadata_inconsistent`，不得自動修正。
 
 所有`VaultDB` read-write connection生命週期持有`vault.db.schema.lock`的shared OS advisory lock；explicit migrate取得exclusive lock並等待既有connection結束。鎖內流程：
 
 1. 在同一條source connection上做readonly manifest preflight確認一致v14，記`PRAGMA data_version=d0`；
 2. 在exclusive advisory lock仍持有時，以WAL-aware SQLite online backup建立v14 snapshot並依v14 manifest驗證；不得以raw file copy取代；
-3. 在同一條source connection取得`BEGIN IMMEDIATE`，再讀`data_version=d1`；若`d1 != d0`，代表有不遵守advisory lock的外部writer，立即rollback、刪除該backup並bounded retry，絕不migration；
+3. 在同一條source connection取得`BEGIN IMMEDIATE`，再讀`data_version=d1`；若`d1 != d0`，代表有不遵守advisory lock的外部writer，立即rollback、依上述identity rule只刪除本attempt新建backup並重試整個snapshot/preflight cycle，絕不migration；每次explicit migrate最多三次attempt（initial + two retries），第三次race後回stable `migration_source_raced`，不得有任何migrator-authoredDDL/version/migration-row變更且不得保留本attempt backup；外部writer已提交的合法資料變化原樣保留，不宣稱source全檔byte-identical；不得無限重試或在race後繼續DDL；
 4. 同一transaction建立additive tables、indexes、triggers與`subject_installation=available_uninitialized`；最後才寫migration/config/`PRAGMA user_version`；
 5. commit後仍持有exclusive lock，跑v15 manifest/integrity verification；失敗即停止並保留verified v14 backup，不切runtime；
 6. 釋放lock後，`subject status`回`available_uninitialized`。不修改舊knowledge/candidate/task、不建立root subject、不掃描檔案。
@@ -649,7 +657,7 @@ Synthetic pass但shadow未pass時只能標`experimental`；不宣稱「理解」
 4. **Legacy regression**：existing compile/search/read/propose/promote、backup/restore、full pytest。
 5. **Private live/shadow**：僅operator private Vault；不進repo，不在synthetic gate前執行。
 
-Current contract alignment要求bounded direct-SQL DENY＋legal ALLOW pairs涵蓋既有authority／temporal矩陣，並補：Subject lifecycle exact target-kind/authority/replay/timestamp；global principal NULL-Subject self-event、same-principal event-time binding及no-global-admin negative；access policy同時在issuance與grant `effective_from`有效；closure同時阻擋`relationship_experience`與`perspective`跨endpoint窗；只有endpoint前valid request的`purge_pending`可使parent close且立即deny use；endpoint後new request DENY但pre-endpoint request later completion ALLOW；四組explicit evaluation rule version/hash freeze及digest對version、`created_at`、`frozen_at`的paired divergence。Manifest只供mechanical byte identity；任何fresh-review結論都必須來自綁定exact baseline ID、full digest與reviewed diff/tree hash的separate review evidence，本設計不自行宣告其結果。每個negative fixture必須對準目標guard，不能先被無關FK/time check擋下。
+Current contract alignment要求bounded direct-SQL DENY＋legal ALLOW pairs涵蓋既有authority／temporal矩陣，並補：Subject lifecycle exact target-kind/authority/replay/timestamp；global principal NULL-Subject self-event、same-principal event-time binding及no-global-admin negative；access policy同時在issuance與grant `effective_from`有效；closure同時阻擋`relationship_experience`與`perspective`跨endpoint窗；只有endpoint前valid request的`purge_pending`可使parent close且立即deny use；endpoint後new request DENY但pre-endpoint request later completion ALLOW；四組explicit evaluation rule version/hash freeze及digest對version、`created_at`、`frozen_at`的paired divergence。Manifest只供mechanical byte identity；review結論必須綁定exact baseline或changed-path diff並依§20.1風險規則記錄，本設計不自行宣告其結果。每個negative fixture必須對準目標guard，不能先被無關FK/time check擋下。
 
 最低命令：
 
@@ -732,11 +740,11 @@ Fresh design closure需同時hash-lock `requirements.md`、`design.md`、`tasks.
 
 ## 20. Design approval gate
 
-本節不自行宣告technical-design verdict。`baseline-manifest.json`只機械驗證top-level五檔hash、canonical full digest、baseline ID與frozen state；design verdict必須由綁定exact baseline ID、full digest與reviewed diff/tree hash的separate fresh review evidence供應。任一binding或review evidence失敗時，這些bytes是unreviewed remediation並維持`NOT_AUTHORIZED`／`implementation_authorized=false`；即使review PASS，仍須designated release authority的separate explicit authorization receipt。
+本節不自行宣告technical-design verdict。`baseline-manifest.json`只機械驗證top-level五檔hash、canonical full digest、baseline ID與frozen state；review結論記錄於PR、task return packet或其他owner-visible work record，並綁定被審查的baseline或diff。Review PASS不等於implementation、merge、release或production授權。
 
-Design completion conditions（normative；verdict只由separately recorded review evidence評估）：
+Design completion conditions（normative；review深度依風險選擇）：
 
-- fresh reviewer確認P0=0、P1=0；
+- 風險適當的review確認P0=0、P1=0；
 - schema能機械表達Person v1與Organization fixture，無person-only core column；
 - principal authentication與role authorization無自我聲明漏洞；
 - migration、interrupt recovery、backup rollback具可測試路徑；
@@ -744,3 +752,210 @@ Design completion conditions（normative；verdict只由separately recorded revi
 - tasks.md只描述待授權implementation，不把文件PASS誤當coding批准。
 
 Technical design verdict: `NOT_SELF_DECLARED`
+
+### 20.1 Risk-based review record
+
+The review record must identify the exact baseline or changed paths, reviewer,
+verdict, P0/P1/P2 counts and unresolved findings. It may live in the PR, task
+return packet or another owner-visible work record; a canonical repo-external
+JSON body, locator and digest are not required.
+
+Docs-only process changes require mechanical validation plus one focused review.
+Changes to authentication, authorization, security controls, migration, privacy,
+public interfaces or production behavior require one independent reviewer. Final
+merge, release and production gates may require broader review under their own
+contracts. No agent may use its own review record to create owner authority.
+
+## 21. Pre-implementation bootstrap and receipt protocol
+
+The first executable pre-task is B-000, before T-001. It is a local-only,
+non-product bootstrap that may create exactly:
+
+- `scripts/verify_subject_implementation_authorization.py`
+- `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`
+- `tests/test_subject_authorization_bootstrap.py`
+
+B-000 is not a T-task, is absent from `implementation-progress.json`, and cannot
+authorize itself. Its trusted operator channel and exact repository-owner
+instruction form the sole explicit human bootstrap trust root; the repository
+cannot cryptographically prove that private channel. Neither B-000 nor any
+implementation agent may self-authorize, infer authority from integrity/review
+PASS, or create/rewrite that instruction. B-000 permits no product/runtime/data,
+production migration, deployment, release, private-live-data or destructive
+operation. Git publishing is outside B-000 and requires separate explicit owner
+authorization.
+
+The receipt schema is JSON Schema 2020-12 with `additionalProperties:false` at
+every object layer and exactly these required top-level fields: `schema_version`
+(non-Boolean integer, const `1`), `artifact_kind` (string, const
+`subject-distillation-implementation-authorization`), `baseline_id` (string,
+`^[0-9a-f]{16}$`), `baseline_full_digest` (string, `^[0-9a-f]{64}$`),
+`authorizing_principal` (string, const `github:zycaskevin`), `authorized_task`
+(string, `^T-[0-9]{3}$`), `scope_sha256`, `authorization_verifier_sha256`, and
+`authorization_schema_sha256` (each string, `^[0-9a-f]{64}$`),
+`issued_at_utc` and `expires_at_utc` (semantic RFC3339 UTC `Z`; expiry strictly
+later than issue and unexpired at verification), and `authorization_id`
+(string, `^[0-9a-f]{64}$`). No other top-level field is allowed.
+
+B-000 may not modify package metadata or add a runtime dependency. The canonical
+schema therefore uses only this fixed JSON Schema 2020-12 subset: `$schema`,
+`$id`, `type`, `properties`, `required`, `additionalProperties`, `const`, and
+`pattern`. The verifier implements and tests that exact closed subset with the
+Python standard library; it does not import `jsonschema`, resolve remote `$ref`,
+or claim to be a general JSON Schema evaluator. Schema-shape tests reject every
+keyword outside the subset and prove the fixed receipt checker accepts/rejects
+the same required/property/type/const/pattern/additional-property matrix.
+Semantic timestamps, canonical bytes, cross-field digests and freshness remain
+explicit verifier checks outside JSON Schema.
+
+`authorization_id` is SHA-256 of UTF-8 canonical JSON for the receipt with only
+`authorization_id` omitted, using `sort_keys=True`, separators `(',', ':')`,
+and `ensure_ascii=True`. It is an integrity identifier, not a signature.
+Authenticity is parent-bound: the parent supplies the expected full receipt-file
+SHA-256 from the trusted operator channel through
+`--expected-receipt-sha256`. The verifier recomputes and exactly matches the
+receipt bytes, scope file, its own script, canonical schema, current baseline ID
+and full digest, semantic timestamps, and authorization ID. It proves exact
+byte identity to trusted parent inputs, rejects self-generated substitutions,
+and does not claim independent proof of the human identity or channel.
+
+There are two separate scope boundaries. B-000 has no receipt or persisted
+bootstrap-scope artifact. Its exact write allowlist is:
+
+1. `scripts/verify_subject_implementation_authorization.py`
+2. `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`
+3. `tests/test_subject_authorization_bootstrap.py`
+
+The preflight derives and verifies the baseline ID、full digest and this allowlist
+from the selected commit. A valid trusted owner instruction contains exactly the
+decision-bearing values `lane=B-000` and `implementation_base_commit=<lowercase
+40-or-64-hex commit>`；the selected commit must be clean and contain the validated
+canonical bytes. Derived manifest or scope hashes need not be repeated in chat.
+The owner message itself is the instruction；a hash, review PASS or agent-created
+replacement cannot authorize B-000.
+
+The T-task receipt scope-file contract alone is the inline
+`subject-distillation-implementation-scope` contract here; B-000 must not add a
+scope schema file. It is one object with exactly these required fields and no
+others (`additionalProperties:false` semantically at every object layer):
+`schema_version` (exact builtin integer `1`, not Boolean), `artifact_kind`
+(const `subject-distillation-implementation-scope`), `baseline_id`
+(`^[0-9a-f]{16}$`), `baseline_full_digest` (`^[0-9a-f]{64}$`),
+`authorized_task` (`^T-[0-9]{3}$`), `allowed_repo_relative_paths`, `non_goals`,
+and `prohibited_operations`. The baseline values byte-match the verified
+manifest and the task byte-matches both receipt and `--expected-task`.
+`allowed_repo_relative_paths` has 1..64 unique, strictly Unicode-code-point
+sorted 1..256-character ASCII strings. Each is a normalized POSIX
+repo-relative path: no leading slash, backslash, control, empty/`.`/`..`
+component, duplicate separator, or trailing slash. T-001 lists only paths that
+T-001 expressly owns and grants nothing to T-002+. `non_goals` has 1..16
+unique, strictly sorted 1..128-character ASCII values matching
+`^[a-z][a-z0-9]*(?:[._:-][a-z0-9]+)*$`. `prohibited_operations` has 1..16
+unique, strictly sorted members of this closed vocabulary: `commit`, `deploy`,
+`github`, `live_private_data`, `migration`, `pr`, `product_runtime`, `push`,
+`release`, `remote_network`, `stage`. T-001 contains all except it may omit
+`migration` or `product_runtime` solely for an operation
+expressly required by T-001, which grants no broader operation.
+
+The `remote_network` task prohibition governs product/service calls and access to
+remote or private data during the authorized task. It does not prohibit the
+public dependency installation described by tasks §0 before task execution；that
+setup may not use a private index, credential or private source without separate
+authority. Dependency or package-metadata changes remain outside B-000/T-001
+unless expressly scoped.
+
+The scope rejects duplicate keys, non-exact builtin types, non-finite numbers,
+missing/unknown fields, and unsorted/duplicate/out-of-bound arrays. Its bytes
+must equal UTF-8 encoding of `json.dumps(value, sort_keys=True,
+separators=(',', ':'), ensure_ascii=True) + '\n'`; `scope_sha256` hashes those
+exact bytes.
+
+Operator-private `--receipt` and `--scope` accept only normalized absolute paths
+outside the repository, supplied by the trusted parent; their files, paths and
+contents must never be copied into the repo/evidence or echoed. Canonical
+`--manifest` and `--schema` accept only the exact repo-relative strings
+`specs/subject-distillation/baseline-manifest.json` and
+`specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`.
+Production starts at repo root, discovered once by `git rev-parse
+--show-toplevel`; its strict-decoded absolute physical result must byte-match
+the no-symlink physical cwd. The verifier self-hashes its own regular bytes at
+fixed repo path `scripts/verify_subject_implementation_authorization.py`; no
+caller path can replace it.
+
+Lexical validation precedes access. Operator-private receipt/scope arguments
+must be absolute normalized POSIX paths and reject NUL, backslash, and any
+empty, `.`, or `..` component. Start from an opened `/` directory fd. Repo
+canonical input arguments must byte-equal their fixed repo-relative paths;
+start from an opened repo-root directory fd and apply the same component
+rejections. For both classes, open each component relative to the prior dirfd
+with Linux/Python descriptor APIs (`os.open(..., dir_fd=prior_fd)`) and
+`O_NOFOLLOW`; require each ancestor to be a directory and the final object to
+be a regular file. The three fixed repo inputs are the manifest, schema, and
+verifier paths stated above. Mount points and bind mounts are not independently
+forbidden: security derives from descriptor lineage, no symlink following,
+fixed lexical components for repo inputs, bounded reads from the same final fd,
+and stable identity.
+
+The explicit byte cap is 1,048,576 bytes separately for each receipt, scope,
+manifest, schema, and verifier file. Reject a pre-read `st_size` over its cap,
+then read at most cap+1 bytes from that same final fd and reject an extra byte or
+a length inconsistent with the audited size. The exact pre/post `fstat` tuple
+is `(st_dev, st_ino, st_mode, st_size, st_mtime_ns)` and any change is DENY;
+repeat the comparison immediately before PASS while retaining all descriptors.
+No `Path.resolve`, `realpath`, pathname reopen, undefined physical/lexical alias
+comparison, or mount-device comparison is an authorization decision. Mutation,
+replacement, short/extra data, non-regular input, or any race is DENY. One
+central cleanup closes descriptors in reverse acquisition order.
+
+After byte-bounded parsing, each JSON artifact also has deterministic structural
+limits: maximum nesting depth 32, maximum 32,768 aggregate JSON values/object
+members/array elements visited by the duplicate-key-safe parser and scanner, and
+maximum 4,096 members in any one object or array. Exceeding a limit is DENY, not
+an internal recursion error. Tests must include exact-boundary ALLOW and one-over
+DENY controls without allocating attacker-proportional secondary copies.
+
+Parsing is duplicate-key-safe and checks exact builtin JSON types. Recursively
+scan receipt, scope, manifest and schema using the sole public-safety scanner
+grammar normative in `tasks.md` §1. That section exclusively defines recursive
+key/value traversal, normalized forbidden keys, exact regexes, digest-field
+handling, the private-shadow namespace exception, and one fixed manifest-domain
+exception. That manifest exception applies only when the direct owning key is
+byte-exact `domain_separator_utf8_hex` and the value is byte-exact
+`7375626a6563742d64697374696c6c6174696f6e2d626173656c696e652d76310a`；
+it is not a generic 66-hex allowance. Any key spelling/separator/case mutation or
+value prefix/suffix/case/content mutation is DENY. Named DENY and ALLOW fixtures
+required there are reused by progress and authorization, alongside path/no-follow/
+race and no-echo tests. No copied or second scanner grammar is permitted here.
+
+Local development and focused tests may run on any supported host. The
+descriptor/no-follow/race suite must also pass on Linux with supported Python
+3.10+ in CI before merge or release. The return packet names OS and Python
+versions for each gate run so local evidence is not confused with the Linux gate.
+
+Missing, unknown or duplicate CLI arguments (including repeated flags), absent
+mandatory `--json`, and all caller-controlled absent/unreadable/malformed/
+mismatched/expired/unsafe/racing inputs are DENY. Only unexpected internal
+programmer or harness faults after safe classification are ERROR. No raw
+exception/path/key/value/content is echoed. `--json` is mandatory and the only
+production verification output mode; help/version/discovery cannot emit PASS.
+The trusted clock is local OS UTC wall time read as timezone-aware UTC. Both
+timestamps are semantic canonical RFC3339 UTC `Z`, issue is strictly before
+expiry, and `now >= expires_at_utc` is DENY. Production has no caller-controlled
+clock override; a non-CLI test seam may inject one.
+
+Success is exit `0`, empty stderr, and exactly one LF-terminated compact JSON
+stdout object with exact keys `authorization_id`, `authorized_task`,
+`baseline_id`, `status`, where `status` is `PASS` and values match the verified
+receipt/current baseline. The object uses `json.dumps(..., sort_keys=True,
+separators=(',', ':'),
+ensure_ascii=True) + '\n'`, so its exact key order is `authorization_id`,
+`authorized_task`, `baseline_id`, `status`. A deny is exit `2`, empty stdout,
+and exactly
+`SUBJECT_IMPLEMENTATION_AUTHORIZATION_DENY\n` on stderr. Unexpected internal or
+harness failure is exit `3`, empty stdout, and exactly
+`SUBJECT_IMPLEMENTATION_AUTHORIZATION_ERROR\n` on stderr. No path, hostile
+key/value, token-shaped value, or receipt content may be echoed.
+
+After exact-tree B-000 testing and its independent security review, no T-001 authority is implied.
+T-001 requires its actual verified receipt. Old baseline, review, and
+authorization evidence does not transfer after canonical byte changes.

@@ -1,12 +1,12 @@
 # Subject Distillation — Requirements and SBE Contract
 
 **Status:** Canonical product contract; frozen bytes record integrity only
-**Public repository baseline:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
+**Source reference commit:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
 **Integrity binding:** `baseline-manifest.json` binds the exact five canonical files, their order, byte sizes, SHA-256 values, full digest, and baseline ID. Integrity does not imply review approval, implementation authorization, migration registration, or release authorization.
 **Implementation status:** Not implemented and not authorized by this artifact.
 **Product:** Vault Agent Memory
 **Target slice:** Generic Subject Core + Person v1; Organization contract/SBE only
-**Repository baseline:** public base `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27` (current public package)
+**Repository source reference:** public commit `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27` used for the original inventory; it is not the normative baseline ID, delivery base, reviewed tree, or implementation base.
 
 ## 1. Product intent
 
@@ -1136,6 +1136,7 @@ start while any material decision below remains OPEN.
 | D-SD-007 | What third-party personal data may enter Person v1? | Relationship-first governed inclusion: the primary subject/controller may privately retain the minimum relationship context needed for their own model; relationships are first-class, directional, temporal, and alias-capable; counterparty hypotheses remain perspective-bound rather than canonical models. Full counterparty self-models require independent subject governance. Generic Core reserves a consented, purpose-limited Subject Fragment contract for future cross-Vault sharing, but live synchronization is outside Person v1. | APPROVED |
 | D-SD-008 | Should Subject Distillation be core or optional package surface in v1? | Default-on Safe Envelope: Subject capability is part of the required new-install journey; root subject initialization plus minimal Context Pack/proposal surfaces are available by default. Collection, raw evidence copy, model use, broad sharing, promotion, and cross-Vault sync retain independent gates. Existing upgrades remain `available_uninitialized` until setup. | APPROVED |
 | D-SD-009 | What exact private shadow pilot pass rule and authority close the third evaluation gate? | Balanced v1 gate over every completed eligible preregistered case (`N >= 20`): at least three primary domains and five cases per domain; at least five abstention and three correction/counter-evidence/context cases; zero hard safety failures, unresolved material misrepresentation, or incorrect subject-choice predictions above 0.80 confidence; at least `ceil(0.80 * N)` usefulness and reason-alignment passes, 80% abstention quality, and 60% usefulness per primary domain; missing rationale is unaligned; subject/controller plus fresh-reviewer sign-off. Results may adjust only a later version through a governed feedback loop; safety invariants never relax. | APPROVED |
+| D-SD-010 | How does the long-term persona/behavior-governance plan enter the current Subject contract? | Map it onto the existing Subject SSOT instead of creating a parallel persona store. Person-subject assertions/preferences、project/organization policy、consumer-agent role/grant and model/rendering style are orthogonal planes with distinct actor/authority/lifecycle; none inherits from, rewrites, or supplies evidence for another without an explicit typed bridge and grant. Immutable source observations remain evidence/events; behavioral differences enter only as typed candidates; approved behavior rules and decision boundaries are sealed policy/model entries with scope, exceptions, counter-evidence, temporal validity, confidence/unknown semantics, provenance and explicit authority; persona/session snapshots are deterministic derived projections with no independent authority. AI-produced material must retain producer/model/authorship metadata and cannot be upgraded to human-explicit evidence merely because a user viewed, accepted, or published it. Future evaluation reports Evidence Grounding、Decision Agreement、Constraint Violation Rate、Boundary Consistency、Context Sensitivity、Persona Drift、Cross-model Portability and Abstention Quality separately, never as one score. Dual retrieval, session productization, Canonical Persona IR, training export, SFT/DPO/LoRA and cross-model deployment remain future roadmap work after the governed Subject control plane and evaluation gates pass. | APPROVED |
 
 ## 11. SBE gate and approval record
 
@@ -1143,11 +1144,11 @@ start while any material decision below remains OPEN.
 |---|---|---|
 | Product vision | APPROVED | Generic open-source subject-distillation foundation for people and organizations. |
 | v1 slice | APPROVED | Generic Subject Core + Person v1; Organization contract/SBE only. |
-| Person business policy | APPROVED | D-SD-001 through D-SD-009, including prospective evaluation-loop governance. |
-| Requirements/SBE review | SEPARATE-EVIDENCE-REQUIRED | No verdict is declared by this artifact or manifest. A fresh review PASS with P0=0/P1=0 applies only when separate review evidence binds the exact baseline ID, full digest, and reviewed diff/tree hash. |
-| Technical design | SEPARATE-EVIDENCE-REQUIRED | No design verdict is declared here or inferred from integrity validation；only separate exact-baseline review evidence may supply it. |
-| Implementation plan | SEPARATE-EVIDENCE-REQUIRED | No plan verdict is declared here；review PASS remains distinct from an explicit implementation-authorization receipt. |
-| Coding | `NOT_AUTHORIZED` | No coding or implementation may start; requirements approval and any later design/task PASS do not change this without the designated release authority's explicit authorization. |
+| Person business/behavior policy | APPROVED | D-SD-001 through D-SD-010, including prospective evaluation-loop and long-term persona-governance boundaries. |
+| Requirements/SBE review | RISK-BASED | Review is recorded in the PR、task return packet or other owner-visible work record and binds the baseline/diff being judged. Docs-only process changes need mechanical validation plus one focused review；security、auth、migration、privacy or public-surface changes require an independent reviewer. A separate repo-external evidence body is not mandatory. |
+| Technical design | RISK-BASED | Integrity validation does not declare design quality. Material design changes require a focused review appropriate to their risk；routine wording/planning changes do not require two ordered reviewers. |
+| Implementation plan | APPROVED-WITH-GATES | B-000 may execute after an owner instruction names its lane and exact base commit；T-tasks remain receipt-authorized under design §21. Tests and scope checks remain mandatory，and review depth is selected by change risk. |
+| Coding | OWNER-AUTHORIZATION-REQUIRED | B-000 coding starts only after the two-value owner instruction；T-task coding starts only after its required receipt verifies. Repeating B-000 manifest and scope hashes in chat is not required because preflight derives them from the selected commit. |
 
 ## 12. Completion definition for requirements approval
 
@@ -1155,7 +1156,50 @@ This requirements artifact is approved only when:
 
 - every `R-SD-*` rule is accepted or explicitly revised;
 - every `E-P-*`, `E-O-*`, and `E-F-*` example has an expected behavior;
-- D-SD-001 through D-SD-009 are decided or explicitly deferred outside v1;
+- D-SD-001 through D-SD-010 are decided or explicitly deferred outside v1;
 - non-goals are accepted;
 - public/private boundaries are preserved;
-- a fresh reviewer finds no unresolved material behavior ambiguity.
+- risk-appropriate review finds no unresolved material behavior ambiguity.
+
+## 13. Pre-implementation bootstrap and authorization requirement
+
+The normative package remains phase-neutral and `NOT_AUTHORIZED`. Before T-001,
+the first executable pre-task is B-000, a local-only authority-bootstrap lane
+whose sole output is the strict implementation-authorization receipt schema,
+its fail-closed verifier, and the verifier's bootstrap test. B-000 is not a
+T-task, never appears in `implementation-progress.json`, cannot authorize
+itself, and creates no product behavior, runtime, migration, data, release, or
+GitHub operation.
+
+This pre-implementation bootstrap is governance-only and adds no product SBE.
+
+B-000 may begin after the current five-file baseline integrity validates, the
+worktree is clean at an exact commit containing those bytes, and the repository
+owner explicitly names both `lane=B-000` and that exact base commit through the
+trusted operator channel. The implementation preflight derives the baseline ID,
+full digest and exact three-path allowlist from the selected commit; the owner
+does not need to repeat derived hashes. That channel and instruction remain the
+explicit human bootstrap trust root. B-000 and all implementation agents must
+not self-authorize or create/rewrite the owner instruction.
+
+After B-000's exact tree passes its focused tests, parent readback, exact diff
+inventory and one independent security review, T-001 remains blocked until a
+separate, actual T-001 receipt verifies. Receipt
+integrity is not human authenticity: the verifier binds exact bytes to the
+trusted parent's inputs and never claims to prove the owner identity or channel
+independently. Canonical byte changes require manifest rebind before later
+implementation uses them, but planning-only edits and ordinary code iterations
+within an unchanged authorized scope do not require a new owner prompt.
+
+The authorization protocol has two distinct boundaries in design §21. B-000
+uses the exact three-path write allowlist declared by the canonical task and the
+two-value owner instruction (`lane` plus exact base commit); it has no receipt or
+persisted bootstrap-scope artifact. T-task receipts use the operator-private canonical
+`subject-distillation-implementation-scope` file with `authorized_task`.
+Operator-private receipt/scope inputs remain outside repo and evidence;
+manifest, schema, and verifier are exact canonical repo inputs. Verification
+uses retained-descriptor no-follow traversal and bounded same-descriptor reads,
+the sole key-aware scanner grammar in tasks §1, OS UTC time with equality at
+expiry denied, and mandatory `--json`. Caller/input faults DENY; only safely
+classified unexpected internal faults ERROR. Neither contract authorizes
+B-000, T-001, or implementation by itself.

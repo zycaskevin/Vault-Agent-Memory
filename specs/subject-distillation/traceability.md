@@ -1,7 +1,7 @@
 # Subject Distillation — Normative SBE Traceability
 
 **Status:** Canonical traceability contract; frozen bytes record integrity only
-**Public repository baseline:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
+**Source reference commit:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`（inventory reference only；not the normative baseline ID、delivery base、reviewed tree或implementation base）
 **Integrity binding:** `baseline-manifest.json`; integrity does not imply review approval, implementation authorization, migration registration, or release authorization.
 **Implementation status:** Not implemented and not authorized by this artifact.
 **Scope:** Exact mapping for the 43 approved examples in `requirements.md`.
@@ -76,6 +76,23 @@ This row assigns five paired cross-layer invariants without changing an approved
 | INV-EVENT-AUTHORITY-PAIRS | R-SD-004、006-007、012、018、022-023、025；E-P-016 remains T-021-owned and E-P-013 remains T-018-owned | Five paired categories are mandatory: (1) lifecycle backed only by a same-Subject controller grant or carrying `actor_role='controller'` DENY versus exact event-time-valid same-Subject `subject` role ALLOW；(2) principal `actor_role <> 'subject'` DENY versus exact NULL-Subject same-principal `actor_role='subject'` self-event ALLOW；(3) lifecycle/principal `recorded_at < occurred_at` DENY versus equality/later ALLOW, and principal same/regressing `updated_at` DENY versus strictly later `updated_at = occurred_at` ALLOW；(4) each relationship-bound `perspective` and `relationship_experience` assertion ending exactly at the parent endpoint ALLOW versus ending after it or remaining open DENY；(5) one deletion-request event replayed across two controls DENY versus distinct authorized, control-bound events ALLOW. | T-006 → `tests/test_subject_db_schema.py`; T-008 → `tests/test_subject_auth.py`; T-018 → `tests/test_subject_relationships.py`; T-021 → `tests/test_subject_setup.py` | `python -m pytest -q tests/test_subject_db_schema.py`<br>`python -m pytest -q tests/test_subject_auth.py`<br>`python -m pytest -q tests/test_subject_relationships.py`<br>`python -m pytest -q tests/test_subject_setup.py` |
 
 ## Mechanical closure rules
+
+### D-SD-010 long-term persona-governance crosswalk
+
+This crosswalk adds no SBE ID, runtime, storage plane or implementation authority.
+It prevents the long-term report from creating a second persona SSOT and routes
+only already-approved semantics to existing task owners.
+
+| Long-term concept | Existing canonical owner | Current-cycle acceptance | Deferred artifact |
+|---|---|---|---|
+| User persona vs project/agent/model role isolation | T-004 contracts + T-008 auth + T-009 policy | person assertion、project/org policy、consumer agent role/grant、model rendering style remain orthogonal；no implicit inheritance, evidence promotion or authority crossover；synthetic confusion matrix required before any behavior adapter | multi-plane product UI |
+| Evidence Plane / authorship | T-011 evidence metadata + T-013 provenance | human/agent/model/third-party producer remains typed；AI output cannot impersonate human-explicit evidence | ingestion weighting/calibration |
+| Behavioral Diff / Persona Candidate | T-010 candidate bridge + T-013 assertion transaction | diff is candidate-only, sourced, replay/stale-base safe；generic promotion DENY | automated diff UX |
+| Approved Persona Policy / Decision Boundary | T-009 policy + T-014 model + T-015/T-016 grants/context | sealed authority、scope、exceptions、counter-evidence、temporal validity、confidence/unknown semantics；no action authority without independent grant | reusable Policy Cards |
+| Task/decision feedback | T-017 append-only decision events | selected option/reason/outcome remain sourced events or candidates, never history rewrite | feedback assistant UX |
+| Persona/session snapshot | T-014 model + T-016 Context Pack | deterministic derived refs-only projection；no raw evidence or independent authority | Virtual Session productization |
+| Persona evaluation | T-025/T-026 frozen/prospective evaluation | exactly eight separately reported dimensions：Evidence Grounding、Decision Agreement、Constraint Violation Rate、Boundary Consistency、Context Sensitivity、Persona Drift、Cross-model Portability、Abstention Quality；definitions/denominators/thresholds freeze prospectively and never collapse to one score | cross-model portability suite |
+| Dual retrieval / Persona IR / training | No current T-task implementation owner | explicitly outside B-000/T-001 and current Person v1 runtime | roadmap LT-010/LT-020/LT-030/LT-040 after prerequisites |
 
 1. The exact ID set must equal `E-P-001..018 + E-O-001..005 + E-F-001..020` with no duplicates.
 2. Every fixture row must name one or more planned test files and only task IDs/section anchors that already exist.
