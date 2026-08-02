@@ -744,3 +744,176 @@ Design completion conditions（normative；verdict只由separately recorded revi
 - tasks.md只描述待授權implementation，不把文件PASS誤當coding批准。
 
 Technical design verdict: `NOT_SELF_DECLARED`
+
+## 21. Pre-implementation bootstrap and receipt protocol
+
+The first executable pre-task is B-000, before T-001. It is a local-only,
+non-product bootstrap that may create exactly:
+
+- `scripts/verify_subject_implementation_authorization.py`
+- `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`
+- `tests/test_subject_authorization_bootstrap.py`
+
+B-000 is not a T-task, is absent from `implementation-progress.json`, and cannot
+authorize itself. Its trusted operator channel and exact repository-owner
+instruction form the sole explicit human bootstrap trust root; the repository
+cannot cryptographically prove that private channel. Neither B-000 nor any
+implementation agent may self-authorize, infer authority from integrity/review
+PASS, or create/rewrite that instruction. The parent stores only a public-safe
+opaque audit reference outside the repo. B-000 permits no product/runtime/data,
+migration, GitHub, commit, release, or deployment operation.
+
+The receipt schema is JSON Schema 2020-12 with `additionalProperties:false` at
+every object layer and exactly these required top-level fields: `schema_version`
+(non-Boolean integer, const `1`), `artifact_kind` (string, const
+`subject-distillation-implementation-authorization`), `baseline_id` (string,
+`^[0-9a-f]{16}$`), `baseline_full_digest` (string, `^[0-9a-f]{64}$`),
+`authorizing_principal` (string, const `github:zycaskevin`), `authorized_task`
+(string, `^T-[0-9]{3}$`), `scope_sha256`, `authorization_verifier_sha256`, and
+`authorization_schema_sha256` (each string, `^[0-9a-f]{64}$`),
+`issued_at_utc` and `expires_at_utc` (semantic RFC3339 UTC `Z`; expiry strictly
+later than issue and unexpired at verification), and `authorization_id`
+(string, `^[0-9a-f]{64}$`). No other top-level field is allowed.
+
+`authorization_id` is SHA-256 of UTF-8 canonical JSON for the receipt with only
+`authorization_id` omitted, using `sort_keys=True`, separators `(',', ':')`,
+and `ensure_ascii=True`. It is an integrity identifier, not a signature.
+Authenticity is parent-bound: the parent supplies the expected full receipt-file
+SHA-256 from the trusted operator channel through
+`--expected-receipt-sha256`. The verifier recomputes and exactly matches the
+receipt bytes, scope file, its own script, canonical schema, current baseline ID
+and full digest, semantic timestamps, and authorization ID. It proves exact
+byte identity to trusted parent inputs, rejects self-generated substitutions,
+and does not claim independent proof of the human identity or channel.
+
+There are two separate scope contracts. The deterministic B-000 bootstrap scope
+projection is not a receipt, is constructed in memory, and does not use
+`authorized_task`. It is an exact canonical JSON object with no additional
+keys and these fields: `schema_version` (exact builtin non-Boolean integer `1`),
+`artifact_kind` (exact `subject-distillation-bootstrap-scope`),
+`authorized_lane` (exact `B-000`), `baseline_id` and
+`baseline_full_digest` (byte-equal to the exact verified manifest closure
+values), `write_paths` (this exact ordered list), and
+`prohibited_operations` (this exact sorted list):
+
+1. `scripts/verify_subject_implementation_authorization.py`
+2. `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`
+3. `tests/test_subject_authorization_bootstrap.py`
+
+`prohibited_operations` is exactly `commit`, `deployment`, `github_write`,
+`migration`, `private_live_data`, `product_runtime`, `pull_request`, `push`,
+`release`, `remote_network`, `stage`, in that order. Duplicate keys are
+impossible in the constructed object. Canonical bytes are UTF-8 encoding of
+`json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True) +
+'\n'`; `scope_sha256` is SHA-256 of those exact bytes. The parent may compute
+the bytes and digest in memory from the verified manifest plus these normative
+constants, but must not create/rewrite an owner instruction or persist a fake
+owner-supplied scope artifact. A valid trusted owner instruction must explicitly
+contain and byte-equal all four public values: lane `B-000`, exact baseline ID,
+exact baseline full digest, and exact B-000 `scope_sha256`. The trusted channel
+message itself is the instruction; the parent stores only an opaque public-safe
+audit reference outside the repo. A vague lane-only phrase, an old digest, or
+review/hash PASS cannot authorize B-000.
+
+The T-task receipt scope-file contract alone is the inline
+`subject-distillation-implementation-scope` contract here; B-000 must not add a
+scope schema file. It is one object with exactly these required fields and no
+others (`additionalProperties:false` semantically at every object layer):
+`schema_version` (exact builtin integer `1`, not Boolean), `artifact_kind`
+(const `subject-distillation-implementation-scope`), `baseline_id`
+(`^[0-9a-f]{16}$`), `baseline_full_digest` (`^[0-9a-f]{64}$`),
+`authorized_task` (`^T-[0-9]{3}$`), `allowed_repo_relative_paths`, `non_goals`,
+and `prohibited_operations`. The baseline values byte-match the verified
+manifest and the task byte-matches both receipt and `--expected-task`.
+`allowed_repo_relative_paths` has 1..64 unique, strictly Unicode-code-point
+sorted 1..256-character ASCII strings. Each is a normalized POSIX
+repo-relative path: no leading slash, backslash, control, empty/`.`/`..`
+component, duplicate separator, or trailing slash. T-001 lists only paths that
+T-001 expressly owns and grants nothing to T-002+. `non_goals` has 1..16
+unique, strictly sorted 1..128-character ASCII values matching
+`^[a-z][a-z0-9]*(?:[._:-][a-z0-9]+)*$`. `prohibited_operations` has 1..16
+unique, strictly sorted members of this closed vocabulary: `commit`, `deploy`,
+`github`, `live_private_data`, `migration`, `pr`, `product_runtime`, `push`,
+`release`, `remote_network`, `stage`. T-001 contains all except it may omit
+`migration` or `product_runtime` solely for an operation
+expressly required by T-001, which grants no broader operation.
+
+The scope rejects duplicate keys, non-exact builtin types, non-finite numbers,
+missing/unknown fields, and unsorted/duplicate/out-of-bound arrays. Its bytes
+must equal UTF-8 encoding of `json.dumps(value, sort_keys=True,
+separators=(',', ':'), ensure_ascii=True) + '\n'`; `scope_sha256` hashes those
+exact bytes.
+
+Operator-private `--receipt` and `--scope` accept only normalized absolute paths
+outside the repository, supplied by the trusted parent; their files, paths and
+contents must never be copied into the repo/evidence or echoed. Canonical
+`--manifest` and `--schema` accept only the exact repo-relative strings
+`specs/subject-distillation/baseline-manifest.json` and
+`specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`.
+Production starts at repo root, discovered once by `git rev-parse
+--show-toplevel`; its strict-decoded absolute physical result must byte-match
+the no-symlink physical cwd. The verifier self-hashes its own regular bytes at
+fixed repo path `scripts/verify_subject_implementation_authorization.py`; no
+caller path can replace it.
+
+Lexical validation precedes access. Operator-private receipt/scope arguments
+must be absolute normalized POSIX paths and reject NUL, backslash, and any
+empty, `.`, or `..` component. Start from an opened `/` directory fd. Repo
+canonical input arguments must byte-equal their fixed repo-relative paths;
+start from an opened repo-root directory fd and apply the same component
+rejections. For both classes, open each component relative to the prior dirfd
+with Linux/Python descriptor APIs (`os.open(..., dir_fd=prior_fd)`) and
+`O_NOFOLLOW`; require each ancestor to be a directory and the final object to
+be a regular file. The three fixed repo inputs are the manifest, schema, and
+verifier paths stated above. Mount points and bind mounts are not independently
+forbidden: security derives from descriptor lineage, no symlink following,
+fixed lexical components for repo inputs, bounded reads from the same final fd,
+and stable identity.
+
+The explicit byte cap is 1,048,576 bytes separately for each receipt, scope,
+manifest, schema, and verifier file. Reject a pre-read `st_size` over its cap,
+then read at most cap+1 bytes from that same final fd and reject an extra byte or
+a length inconsistent with the audited size. The exact pre/post `fstat` tuple
+is `(st_dev, st_ino, st_mode, st_size, st_mtime_ns)` and any change is DENY;
+repeat the comparison immediately before PASS while retaining all descriptors.
+No `Path.resolve`, `realpath`, pathname reopen, undefined physical/lexical alias
+comparison, or mount-device comparison is an authorization decision. Mutation,
+replacement, short/extra data, non-regular input, or any race is DENY. One
+central cleanup closes descriptors in reverse acquisition order.
+
+Parsing is duplicate-key-safe and checks exact builtin JSON types. Recursively
+scan receipt, scope, manifest and schema using the sole public-safety scanner
+grammar normative in `tasks.md` §1. That section exclusively defines recursive
+key/value traversal, normalized forbidden keys, exact regexes, digest-field
+handling, and the private-shadow namespace exception. Named DENY and ALLOW
+fixtures required there are reused by progress and authorization, alongside
+path/no-follow/race and no-echo tests. No copied or second scanner grammar is
+permitted here.
+
+Missing, unknown or duplicate CLI arguments (including repeated flags), absent
+mandatory `--json`, and all caller-controlled absent/unreadable/malformed/
+mismatched/expired/unsafe/racing inputs are DENY. Only unexpected internal
+programmer or harness faults after safe classification are ERROR. No raw
+exception/path/key/value/content is echoed. `--json` is mandatory and the only
+production verification output mode; help/version/discovery cannot emit PASS.
+The trusted clock is local OS UTC wall time read as timezone-aware UTC. Both
+timestamps are semantic canonical RFC3339 UTC `Z`, issue is strictly before
+expiry, and `now >= expires_at_utc` is DENY. Production has no caller-controlled
+clock override; a non-CLI test seam may inject one.
+
+Success is exit `0`, empty stderr, and exactly one LF-terminated compact JSON
+stdout object with exact keys `authorization_id`, `authorized_task`,
+`baseline_id`, `status`, where `status` is `PASS` and values match the verified
+receipt/current baseline. The object uses `json.dumps(..., sort_keys=True,
+separators=(',', ':'),
+ensure_ascii=True) + '\n'`, so its exact key order is `authorization_id`,
+`authorized_task`, `baseline_id`, `status`. A deny is exit `2`, empty stdout,
+and exactly
+`SUBJECT_IMPLEMENTATION_AUTHORIZATION_DENY\n` on stderr. Unexpected internal or
+harness failure is exit `3`, empty stdout, and exactly
+`SUBJECT_IMPLEMENTATION_AUTHORIZATION_ERROR\n` on stderr. No path, hostile
+key/value, token-shaped value, or receipt content may be echoed.
+
+After exact-tree B-000 testing and fresh reviews, no T-001 authority is implied.
+T-001 requires its actual verified receipt. Old baseline, review, and
+authorization evidence does not transfer after canonical byte changes.

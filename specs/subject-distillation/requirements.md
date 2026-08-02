@@ -1159,3 +1159,50 @@ This requirements artifact is approved only when:
 - non-goals are accepted;
 - public/private boundaries are preserved;
 - a fresh reviewer finds no unresolved material behavior ambiguity.
+
+## 13. Pre-implementation bootstrap and authorization requirement
+
+The normative package remains phase-neutral and `NOT_AUTHORIZED`. Before T-001,
+the first executable pre-task is B-000, a local-only authority-bootstrap lane
+whose sole output is the strict implementation-authorization receipt schema,
+its fail-closed verifier, and the verifier's bootstrap test. B-000 is not a
+T-task, never appears in `implementation-progress.json`, cannot authorize
+itself, and creates no product behavior, runtime, migration, data, release, or
+GitHub operation.
+
+This pre-implementation bootstrap is governance-only and adds no product SBE.
+
+B-000 may begin only after the current five-file baseline integrity validates,
+a fresh spec/design/plan review bound to that exact baseline reports PASS with
+P0=0/P1=0, clean branch/base/worktree preflight passes, and the repository owner
+issues an exact baseline- and scope-digest-bound B-000 instruction through the
+trusted operator channel. That channel and instruction are the one explicit
+human bootstrap trust root. The repository cannot cryptographically prove the
+private conversation or channel. B-000 and all implementation agents must not
+self-authorize, infer authorization from hashes or review PASS, or create or
+rewrite the owner instruction. The parent orchestrator retains only a
+public-safe opaque audit reference outside the repository.
+
+After B-000's exact tree passes its focused tests, parent readback and exact
+diff inventory, and fresh spec-compliance followed by quality/security review,
+T-001 remains blocked until a separate, actual T-001 receipt verifies. Receipt
+integrity is not human authenticity: the verifier binds exact bytes to the
+trusted parent's inputs and never claims to prove the owner identity or channel
+independently. Any byte change invalidates the old baseline, review, and
+authorization bindings; none transfers to a successor baseline.
+
+The authorization protocol has two distinct scope contracts in design §21.
+B-000 uses a deterministic in-memory bootstrap-scope projection with lane
+`B-000`, exact verified baseline identity, exact three-path write list, and
+fixed prohibited operations; it is not a receipt and has no `authorized_task`.
+The trusted owner instruction must explicitly contain and byte-equal its four
+public binding values, including the projection digest. T-task receipts alone
+use the operator-private canonical
+`subject-distillation-implementation-scope` file with `authorized_task`.
+Operator-private receipt/scope inputs remain outside repo and evidence;
+manifest, schema, and verifier are exact canonical repo inputs. Verification
+uses retained-descriptor no-follow traversal and bounded same-descriptor reads,
+the sole key-aware scanner grammar in tasks §1, OS UTC time with equality at
+expiry denied, and mandatory `--json`. Caller/input faults DENY; only safely
+classified unexpected internal faults ERROR. Neither contract authorizes
+B-000, T-001, or implementation by itself.

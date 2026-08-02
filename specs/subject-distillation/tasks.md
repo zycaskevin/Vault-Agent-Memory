@@ -8,11 +8,11 @@
 
 ## 0. 使用規則
 
-這份文件是hash-bound implementation plan，不是coding授權，也不自行宣告plan verdict。只有在以下條件同時成立後，T-001才可開始：
+這份文件是hash-bound implementation plan，不是coding授權，也不自行宣告plan verdict。B-000與T-001各自只能在其明列條件全部成立後開始；review PASS或hash本身從不授權implementation。
 
 1. `baseline-manifest.json`通過mechanical integrity validation，證明top-level five-file hash/full-digest/baseline-ID/frozen-state binding成立；
 2. separately recorded fresh spec/design/plan review evidence為`PASS`、P0=0、P1=0，並綁定exact `baseline_id`、full digest及reviewed diff/tree hash；
-3. separate fail-closed authorization verifier確認designated release authority簽發的explicit implementation authorization receipt，且receipt綁定exact `baseline_id`、full digest及authorized scope；
+3. B-000已在trusted operator channel的exact owner instruction下完成並通過exact-tree review，且separate fail-closed authorization verifier確認T-001的actual receipt綁定exact `baseline_id`、full digest、task及scope；
 4. worktree／branch／base重新核對為clean且符合reviewed diff/tree，沒有未解的外部變更。
 
 執行紀律：
@@ -28,6 +28,18 @@
 - 任何schema、auth、policy、migration、Gateway或MCP變更都需要fresh reviewer。
 
 所有task共用stop/checkpoint：RED測試若因normative contract缺失、互相矛盾或需新增business/security決策而無法寫出，立即停止並在progress ledger記錄`BLOCKED`；不得用implementation選擇補規格。每個task至少在「RED原因符合spec」「GREEN只改approved scope」「verify命令實跑」「fresh review適用時PASS」四個checkpoint留證據，未過checkpoint不得進下一task或phase。
+
+在任何B-000或T-001命令前，必須從repo root逐行原樣執行下列local-only setup：
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e ".[dev]"
+command -v python
+python --version
+```
+
+`.venv/`必須已gitignored；supported Python依package contract為`>=3.10`。啟用後每個normative `python ...`命令都必須可逐字執行。setup或`command -v python`失敗即阻塞該lane，不得silent interpreter substitution。
 
 ## 1. Closure artifacts
 
@@ -54,16 +66,56 @@ Implementation完成時至少交付：
 
 所有JSON必須分別通過固定schema：`environment.schema.json`、`migration.schema.json`、`backup-restore.schema.json`、`review-result.schema.json`、`fresh-review.schema.json`、`attestation.schema.json`（均位於`specs/subject-distillation/evidence-schemas/`，JSON Schema 2020-12，`additionalProperties:false`）與`python scripts/validate_subject_evidence.py --manifest specs/subject-distillation/baseline-manifest.json --evidence-dir "$EVIDENCE_DIR"`。共通required keys為`schema_version`（固定1）、`artifact_kind`、`baseline_id`、`source_commit`、`created_at_utc`、`producer_task`；`environment`另需`git_status/python/sqlite/schema_contract_version/normative_hashes`，migration/recovery另需`command/exit_code/input_hash/output_hash/rollback_path/result`，review另需`review_id/reviewer_principal/review_scope/reviewed_normative_hashes/reviewed_tree_sha256/p0/p1/p2/verdict/findings`，fresh-review與attestation亦必須帶同一`reviewed_tree_sha256`，attestation另需`artifact_sha256/release_label/implementation_authorization/reviewer_set/private_shadow_receipt_sha256`；`private_shadow_receipt_sha256`在`experimental`時固定為`null`，在`stable`時固定為經private evaluation verifier驗證的public-safe PASS receipt SHA-256。`reviewed_tree_sha256`由`hash_subject_review_tree.py`對task headers宣告的全部authorized source paths、五份normative files及evidence schemas建立按POSIX path byte-order排序的canonical JSON `[{"path":...,"sha256":...}]`後取SHA-256；腳本必須納入Git tracked與authorized untracked files、拒絕scope外dirty/untracked source，並排除generated evidence與private pilot資料。三份review input、aggregate與T-033重算值必須byte-equal，禁止只用commit SHA替代。四個stage TXT的首行固定為single-line canonical JSON header（同共通keys，另含`stage/requires/argv/started_at_utc/completed_at_utc/exit_code`），其後保留完整stdout/stderr，禁止截斷或以摘要替代。Evidence只能含public-safe／synthetic資料，不得提交private pilot內容。
 
-Progress contract固定為JSON Schema 2020-12，所有object層級均`additionalProperties:false`。Top-level required keys為`schema_version`（固定non-Boolean JSON integer `1`）、`baseline_id`、`baseline_full_digest`、`tasks_sha256`、`updated_at_utc`、`tasks`與`events`；`baseline_id`及`baseline_full_digest`必須byte-equal於hash-verified `baseline-manifest.json.baseline_id`及`baseline-manifest.json.closure.full_digest`，`tasks_sha256`必須等於當前reviewed `tasks.md` bytes的SHA-256。`tasks`是exact key set `T-001`..`T-033`，每個value只可為`PENDING|IN_PROGRESS|BLOCKED|COMPLETED`。`events`從implicit all-`PENDING` state開始，必須nonempty；`sequence`只接受non-Boolean JSON integer且恰為`1..len(events)`，每筆required keys為`sequence/task_id/from/to/at_utc/evidence_refs/blocker`，只允許`PENDING→IN_PROGRESS|BLOCKED`、`IN_PROGRESS→BLOCKED|COMPLETED`、`BLOCKED→IN_PROGRESS`，重播後必須與`tasks`完全一致，每個中間狀態最多一個`IN_PROGRESS`，且`COMPLETED`為terminal。除T-032明確`BLOCKED`後可啟動T-033的`experimental` closure例外外，較後task不得在較前task仍為`PENDING|IN_PROGRESS|BLOCKED`時進入`IN_PROGRESS|COMPLETED`；T-033只可在T-001..T-031全為`COMPLETED`且T-032為`COMPLETED|BLOCKED`時進入`IN_PROGRESS`。`BLOCKED` event的`blocker`必須是`^[A-Z][A-Z0-9_]{0,63}$`的public-safe code，其餘event的`blocker`固定為`null`；`COMPLETED` event至少一個evidence ref。`evidence_refs`每event為`0..16`個canonical-JSON-unique discriminated objects，只允許兩形：`{"kind":"repo_file","path":<normalized POSIX repo-relative path>,"sha256":<64 lowercase hex>}`或`{"kind":"opaque","id":<1..128 chars matching ^[A-Za-z0-9][A-Za-z0-9._:-]*$>}`；repo path最多256 chars、不得為absolute、不得含empty／`.`／`..`component或backslash，且validator必須重算present repo file SHA-256；同一event不得重複ref。`opaque.id`是public-safe identifier，不是credential／secret carrier；future schema與validator必須機械化以下fail-closed DENY＋legal-ALLOW controls，不得等到implementation自行解讀。DENY至少包含：(a) case-insensitive known token/key/credential prefixes（包含`ghp_`、`gho_`、`ghu_`、`ghs_`、`ghr_`、`github_pat_`、`glpat-`、`sk-`、`sk_live_`、`sk_test_`、`rk_live_`、`rk_test_`、`pk_live_`、`whsec_`、`xoxb-`、`xoxp-`、`xoxa-`、`xoxr-`、`AKIA`、`ASIA`、`AIza`、`ya29.`）；(b) case-insensitive `^bearer(?:[._:-]|$)`、three-segment base64url JWT-looking value，或由`token|secret|password|passwd|api[._-]?key|access[._-]?key|private[._-]?key|credential|client[._-]?secret|refresh[._-]?token|aws[._-]?secret[._-]?access[._-]?key`名稱加`:`／`=`（以及`._-` separator變體）與nonempty value構成的assignment；(c)任何`BEGIN...PRIVATE...KEY`／PEM marker；(d) bare 32..128 hex digest／HMAC-looking payload。所有遞迴掃描的public JSON object keys另須先把case轉lowercase並把每段`.`／`_`／`-`連續separator正規化為單一`_`，再拒絕exact expanded set `password|passwd|secret|token|api_key|access_key|private_key|client_secret|refresh_token|aws_secret_access_key|credential|capability_secret|raw|raw_evidence|content_raw|private_path|absolute_path`；因此例如`api.key`、`client-secret`、`aws.secret.access.key`和其dotted/dashed/underscored變體都DENY。唯一明確的receipt ALLOW control是exact `^private-shadow-pass:[0-9a-f]{64}$`，其64 lowercase hex是public receipt SHA-256；它必須在generic bare-digest DENY前作完整namespace match，prefix拼接、uppercase、額外suffix或其他裸64hex仍DENY。`repo_file.path`在lexical normalization後、讀取／hash前，validator必須從repo root開始對每個path component執行`lstat`並拒絕任何symlink（包含symlink parent／alias），要求resolved target仍位於resolved repo root內、是regular file，且resolved target相對repo root的POSIX path byte-equal於lexically normalized repo-relative path；任何missing component、alias、escape、non-regular target或physical／lexical mismatch都fail closed，只有全部檢查成功才hash該regular file bytes。Future schema／validator必須各有secret-shaped opaque DENY、symlink-parent／target／escape DENY，以及ordinary public-safe opaque、exact private-shadow receipt和in-repo non-symlink regular-file legal ALLOW controls，但本docs-only amendment不建立schema、validator或tests。所有timestamp必須通過semantic calendar/clock解析的UTC RFC3339 `Z`；events的`at_utc`不得倒退，top-level `updated_at_utc`必須byte-equal末筆event `at_utc`。Validator必須用duplicate-key-rejecting JSON parser讀取manifest、schema與ledger；任何ledger write/update都必須在同一operation後執行validator並取得`PASS`，否則update不構成有效status transition。當重播結果為`T-033=COMPLETED`時，validator必須自動執行完整fixed evidence、review-tree與implementation-authorization attestation gate，不接受caller跳過；final event必須含resolved fixed `attestation.json` repo path及其當前SHA-256的exact `repo_file` ref。
+Progress contract固定為JSON Schema 2020-12，所有object層級均`additionalProperties:false`。Top-level required keys為`schema_version`（固定non-Boolean JSON integer `1`）、`baseline_id`、`baseline_full_digest`、`tasks_sha256`、`updated_at_utc`、`tasks`與`events`；`baseline_id`及`baseline_full_digest`必須byte-equal於hash-verified `baseline-manifest.json.baseline_id`及`baseline-manifest.json.closure.full_digest`，`tasks_sha256`必須等於當前reviewed `tasks.md` bytes的SHA-256。`tasks`是exact key set `T-001`..`T-033`，每個value只可為`PENDING|IN_PROGRESS|BLOCKED|COMPLETED`。`events`從implicit all-`PENDING` state開始，必須nonempty；`sequence`只接受non-Boolean JSON integer且恰為`1..len(events)`，每筆required keys為`sequence/task_id/from/to/at_utc/evidence_refs/blocker`，只允許`PENDING→IN_PROGRESS|BLOCKED`、`IN_PROGRESS→BLOCKED|COMPLETED`、`BLOCKED→IN_PROGRESS`，重播後必須與`tasks`完全一致，每個中間狀態最多一個`IN_PROGRESS`，且`COMPLETED`為terminal。除T-032明確`BLOCKED`後可啟動T-033的`experimental` closure例外外，較後task不得在較前task仍為`PENDING|IN_PROGRESS|BLOCKED`時進入`IN_PROGRESS|COMPLETED`；T-033只可在T-001..T-031全為`COMPLETED`且T-032為`COMPLETED|BLOCKED`時進入`IN_PROGRESS`。`BLOCKED` event的`blocker`必須是`^[A-Z][A-Z0-9_]{0,63}$`的public-safe code，其餘event的`blocker`固定為`null`；`COMPLETED` event至少一個evidence ref。`evidence_refs`每event為`0..16`個canonical-JSON-unique discriminated objects，只允許兩形：`{"kind":"repo_file","path":<normalized POSIX repo-relative path>,"sha256":<64 lowercase hex>}`或`{"kind":"opaque","id":<1..128 chars matching ^[A-Za-z0-9][A-Za-z0-9._:-]*$>}`；repo path最多256 chars、不得為absolute、不得含empty／`.`／`..`component或backslash，且validator必須重算present repo file SHA-256；同一event不得重複ref。`opaque.id`是public-safe identifier，不是credential／secret carrier。
+
+以下是progress與authorization共同且唯一normative public-safety JSON scanner contract；不得另加match類別或separator變體。JSON必須先由duplicate-key-rejecting parser解析，再遞迴走訪每個object key與每個string value（包含array內string）；每個object key本身以無owning key的string執行下列全部regex規則。每個string value同時帶其直接owning object key，array element則沿用該array的owning key，無owning key時不得套digest-field例外。Key normalization固定為lowercase後把每個maximal `[._-]+` run折成一個`_`。Normalized key若exact屬於`password|passwd|secret|token|api_key|access_key|private_key|client_secret|refresh_token|aws_secret_access_key|credential|capability_secret|raw|raw_evidence|content_raw|private_path|absolute_path`即DENY。
+
+對每個string value依序執行下列Python regex規則；所示`fullmatch`／`search`語義是contract的一部分：
+
+1. `re.search(r'(?i)^(?:ghp_|gho_|ghu_|ghs_|ghr_|github_pat_|glpat-|sk-|sk_live_|sk_test_|rk_live_|rk_test_|pk_live_|whsec_|xoxb-|xoxp-|xoxa-|xoxr-|AKIA|ASIA|AIza|ya29\.)', value)`為DENY。
+2. `re.search(r'(?i)^bearer(?:[._:-]|$)', value)`為DENY。
+3. `re.fullmatch(r'[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+', value)`為DENY。
+4. `re.fullmatch(r'(?i)(?:token|secret|password|passwd|api[._-]?key|access[._-]?key|private[._-]?key|credential|client[._-]?secret|refresh[._-]?token|aws[._-]?secret[._-]?access[._-]?key)[.:=_-].+', value)`為DENY；分隔符恰為一個`.`、`:`、`=`、`_`或`-`，value至少一個character。
+5. `re.search(r'(?i)-----BEGIN [A-Z0-9 ]*PRIVATE[A-Z0-9 ]*KEY-----', value)`為DENY。
+6. 若`re.fullmatch(r'private-shadow-pass:[0-9a-f]{64}', value)`成功，ALLOW該value並停止其後generic digest rule；prefix、suffix或uppercase mutation不匹配。
+7. 在generic digest rule前，若normalized owning key exact屬於fixed set `artifact_sha256|authorization_id|authorization_schema_sha256|authorization_verifier_sha256|baseline_full_digest|full_digest|input_hash|output_hash|private_shadow_receipt_sha256|receipt_sha256|reviewed_tree_sha256|scope_sha256|sha256|tasks_sha256`，則必須`re.fullmatch(r'[0-9a-f]{64}', value)`；成功即ALLOW該value並停止其後generic digest rule，失敗立即DENY。這是field/type exception而非generic string exception；uppercase、wrong length或其他malformed digest一律DENY。`null`不作string scan，只可在owning schema允許時存在。
+8. `re.fullmatch(r'(?i)[0-9a-f]{32,128}', value)`為DENY。
+
+所有不命中DENY且不需digest exception的string才ALLOW。Required legal-ALLOW fixtures必須逐一覆蓋receipt的`baseline_full_digest`、`scope_sha256`、`authorization_verifier_sha256`、`authorization_schema_sha256`、`authorization_id`，scope的`baseline_full_digest`，progress的`baseline_full_digest`、`tasks_sha256`與repo ref `sha256`，manifest的每個file `sha256`及closure `full_digest`，evidence的`artifact_sha256`、`input_hash`、`output_hash`、`private_shadow_receipt_sha256`、`receipt_sha256`與`reviewed_tree_sha256`，以及exact private-shadow namespace。Required DENY fixtures必須證明32、64、128位bare hex置於其他key仍DENY，digest-field uppercase/wrong-length DENY，並覆蓋上述每個regex family、normalized forbidden-key separator variants與namespace prefix/suffix/uppercase mutations。通過digest-field exception的value不得再當generic bare string掃描。
+
+`repo_file.path`在lexical normalization後、讀取／hash前，validator必須從repo root開始對每個path component執行`lstat`並拒絕任何symlink（包含symlink parent／alias），要求resolved target仍位於resolved repo root內、是regular file，且resolved target相對repo root的POSIX path byte-equal於lexically normalized repo-relative path；任何missing component、alias、escape、non-regular target或physical／lexical mismatch都fail closed，只有全部檢查成功才hash該regular file bytes。Future schema／validator必須具有上述scanner fixtures、symlink-parent／target／escape DENY，以及ordinary public-safe opaque和in-repo non-symlink regular-file legal ALLOW controls，但本docs-only amendment不建立schema、validator或tests。所有timestamp必須通過semantic calendar/clock解析的UTC RFC3339 `Z`；events的`at_utc`不得倒退，top-level `updated_at_utc`必須byte-equal末筆event `at_utc`。Validator必須用duplicate-key-rejecting JSON parser讀取manifest、schema與ledger；任何ledger write/update都必須在同一operation後執行validator並取得`PASS`，否則update不構成有效status transition。當重播結果為`T-033=COMPLETED`時，validator必須自動執行完整fixed evidence、review-tree與implementation-authorization attestation gate，不接受caller跳過；final event必須含resolved fixed `attestation.json` repo path及其當前SHA-256的exact `repo_file` ref。
 
 `implementation-progress.json`是唯一mutable control-plane file，明確排除於T-031／T-033的`reviewed_tree_sha256`及`attestation.json.artifact_sha256`集合之外。`implementation-progress.schema.json`、`scripts/validate_subject_progress.py`與T-031先建立的`scripts/attest_subject_closure.py`則是authorized source paths，必須納入reviewed tree；其完整性由`reviewed_tree_sha256`覆蓋，不重複加入只用於固定closure evidence的`attestation.json.artifact_sha256`集合。Generated evidence及private pilot資料維持既有排除；`CHANGELOG.md`是T-030 reviewed source path，T-030完成後即freeze，T-031／T-033的status transition只能進progress ledger，因此不得造成post-review source drift。
 
 ## 2. Phase A — Contract、fixtures與baseline
 
+### B-000 — Bootstrap implementation-authorization gate
+
+B-000 is not a T-task，never appears in `implementation-progress.json`，and cannot authorize itself。其sole purpose是建立並獨立review以下exact三個paths：
+
+- `scripts/verify_subject_implementation_authorization.py`
+- `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`
+- `tests/test_subject_authorization_bootstrap.py`
+
+B-000只能在current five-file baseline integrity validates、該exact baseline fresh spec/design/plan review為PASS且P0=0/P1=0、repository owner透過trusted operator channel簽發design §21所定四個public values皆explicit且byte-equal的exact B-000 instruction、以及clean branch/base/worktree preflight全部成立後開始。Trusted operator channel message本身是repository-owner instruction與唯一explicit human bootstrap trust root；repo無法自行cryptographically prove private conversation/channel。B-000與所有implementation agents must not self-authorize、不得從lane-only phrase、old digest、hash或review PASS推論授權、不得create/rewrite owner instruction或persist fake owner-supplied scope artifact。Parent可從verified manifest與normative constants在memory計算bootstrap canonical bytes/digest，且只在repo外保存public-safe opaque audit reference。
+
+B-000 local-only且只能觸碰上述三paths；禁止product/runtime/data/migration、GitHub、commit、push、PR、release或deployment操作。先在`tests/test_subject_authorization_bootstrap.py`建立genuine RED，再實作schema/verifier。Schema/verifier必須完整實現design §21的exact fields、canonical authorization ID、parent-bound receipt byte digest、duplicate-key/type/time/path/public-safety/no-echo contract與全部negative/legal-positive controls。
+
+Verifier deny contract固定為exit `2`、empty stdout、stderr exact `SUBJECT_IMPLEMENTATION_AUTHORIZATION_DENY\n`；unexpected internal/harness failure固定為exit `3`、empty stdout、stderr exact `SUBJECT_IMPLEMENTATION_AUTHORIZATION_ERROR\n`。Success contract固定為exit `0`、empty stderr及exact compact LF-terminated JSON object，且不得echo path、hostile key/value、token-shaped value或receipt content。
+
+**B-000 acceptance（setup後，固定順序）：**
+
+```bash
+python -m pytest -q tests/test_subject_authorization_bootstrap.py
+python -m ruff check scripts/verify_subject_implementation_authorization.py tests/test_subject_authorization_bootstrap.py
+```
+
+完成還要求parent readback與exact diff inventory，並對同一exact B-000 tree依序取得fresh spec-compliance PASS及quality/security PASS。這不暗示或產生任何T-001 owner authorization；T-001仍須actual receipt verification。
+
 ### T-001 — Freeze implementation baseline
 
 **Requirements:** R-SD-015
-**Files:** no production changes；create `scripts/read_subject_baseline_id.py`、`scripts/verify_subject_implementation_authorization.py`、`scripts/validate_subject_evidence.py`、the explicit implementation-authorization receipt schema and per-artifact JSON schemas under `specs/subject-distillation/evidence-schemas/`、`specs/subject-distillation/implementation-progress.schema.json`、`specs/subject-distillation/implementation-progress.json`、`scripts/validate_subject_progress.py`、and `tests/test_subject_progress.py` as the sole `Create` owner for progress-ledger adversarial validation，then create `specs/subject-distillation/evidence/<baseline-id>/environment.json` using the Closure artifacts contract
+**Files:** no production changes；B-000 already owns the authorization schema/verifier/bootstrap test。Create `scripts/read_subject_baseline_id.py`、reuse existing `scripts/validate_subject_baseline.py`、Create `scripts/validate_subject_evidence.py`、per-artifact JSON schemas under `specs/subject-distillation/evidence-schemas/`、`tests/test_subject_baseline_control.py`、`specs/subject-distillation/implementation-progress.schema.json`、`specs/subject-distillation/implementation-progress.json`、`scripts/validate_subject_progress.py`、and existing planned `tests/test_subject_progress.py` solely for progress-ledger controls，then create `specs/subject-distillation/evidence/<baseline-id>/environment.json`。
 
 - [ ] Record `git status --short --branch`, `git rev-parse HEAD`, Python/SQLite versions and current schema status.
 - [ ] Verify every SHA-256 in `baseline-manifest.json` against bytes on disk; any mismatch blocks T-001 and requires a new fresh review, never an in-place manifest rewrite under old approval.
@@ -71,27 +123,73 @@ Progress contract固定為JSON Schema 2020-12，所有object層級均`additional
 - [ ] Create a temporary legacy v14 fixture through supported APIs, not by copying a private DB.
 - [ ] Verify no private path/secret enters captured evidence.
 
+Trust-artifact RED ownership is exact：`tests/test_subject_baseline_control.py` owns genuine RED-first coverage for baseline ID reader、baseline validator、evidence schemas/validator and `environment.json` controls；`tests/test_subject_progress.py` owns only progress-ledger RED controls。For every T-001-created trust artifact, its owner test must demonstrably fail before implementation and the corresponding focused/direct command below must pass afterward。T-001不得create或rewrite B-000的schema、verifier或bootstrap test。
+
 Progress-ledger obligations：
 
 - Create the strict schema and duplicate-key-safe validator before seeding the ledger；the schema/validator are reviewed source, while the ledger is the excluded mutable control plane defined in §1.
 - Seed exactly `T-001` as`IN_PROGRESS` and `T-002`..`T-033` as`PENDING`, binding the integrity-verified manifest `baseline_id`／`closure.full_digest` and the separately reviewed `tasks.md` SHA-256；immediately run the progress validator.
 - Define `attestation.json.implementation_authorization` only as the result of the separate release-authority receipt verifier, bound to the exact baseline ID、full digest and authorized scope；manifest integrity and review PASS cannot populate or imply it.
-- Append the `T-001: IN_PROGRESS→COMPLETED` event only after T-001 spec-compliance and code-quality reviews pass and every declared command has a real exit code with either PASS or the exact documented pre-existing non-blocking disposition permitted by this task's Done condition；immediately rerun the progress validator. Do not mark any T-001 checkbox.
+- Append the `T-001: IN_PROGRESS→COMPLETED` event only after T-001 spec-compliance and code-quality reviews pass and every mandatory command exits `0`；immediately rerun the progress validator. Any nonzero exit blocks T-001 and prevents its COMPLETED ledger event。Failure evidence is recorded public-safely，but recording is not a waiver。Only a separately owner-authorized normative amendment plus a new baseline and fresh review may change this rule。Do not mark any T-001 checkbox。
 
 `tests/test_subject_progress.py` is the one and only `Create` owner for the progress adversarial matrix. It must cover opaque token-prefix（including `sk_test_`、`rk_test_` and `whsec_` parity with the shared scanner）、Bearer、three-segment JWT、credential assignment、PEM/private-key marker、bare-digest and recursively scanned dotted/dashed/underscored forbidden-key variants plus the expanded `client_secret|refresh_token|aws_secret_access_key|capability_secret|raw|raw_evidence|content_raw|private_path|absolute_path` DENY controls；the sole receipt exception exact `private-shadow-pass:<64 lowercase hex>` legal ALLOW；and `repo_file` DENY controls for `..` components、absolute paths、symlink final targets、symlink ancestors、alias/physical-lexical mismatch、non-regular targets、and resolved targets outside the repo, plus the legal ALLOW for a regular non-symlink file whose canonical relative path remains inside the repo. T-029 must execute this concrete file in its unit stage, and T-031 must include its unchanged bytes in the authorized reviewed tree before hashing.
+
+**Trusted-channel handoff（normative, before Commands）：** The repository and
+agents must not create/rewrite the receipt, scope, owner instruction, or their
+values. The trusted parent supplies an absolute normalized operator-private
+receipt path outside the repo, the expected lowercase SHA-256 of its exact
+bytes, and an absolute normalized operator-private canonical scope path outside
+the repo, then exports them in its trusted shell:
+
+```bash
+export SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT='<trusted absolute receipt path>'
+export SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256='<trusted 64-lowercase-hex receipt digest>'
+export SUBJECT_IMPLEMENTATION_SCOPE='<trusted absolute scope path>'
+```
+
+These are explanatory placeholders, never literal values. No real value,
+private path, or secret enters the repo/evidence or output. Handoff alone is not
+authorization. The guards below are part of the literal command sequence and
+fail before verifier invocation when absent or malformed.
 
 **Commands:**
 
 ```bash
+set -euo pipefail
+: "${SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT:?trusted parent receipt path is required}"
+: "${SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256:?trusted parent receipt digest is required}"
+: "${SUBJECT_IMPLEMENTATION_SCOPE:?trusted parent scope path is required}"
+case "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT" in /*) ;; *) exit 2 ;; esac
+case "$SUBJECT_IMPLEMENTATION_SCOPE" in /*) ;; *) exit 2 ;; esac
+case "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT" in *//*|*/./*|*/../*|*/.|*/..) exit 2 ;; esac
+case "$SUBJECT_IMPLEMENTATION_SCOPE" in *//*|*/./*|*/../*|*/.|*/..) exit 2 ;; esac
+case "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256" in (*[!0-9a-f]*|'') exit 2 ;; esac
+[ "${#SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256}" -eq 64 ] || exit 2
+python scripts/validate_subject_baseline.py --manifest specs/subject-distillation/baseline-manifest.json --json
+BASELINE_ID="$(python scripts/read_subject_baseline_id.py --manifest specs/subject-distillation/baseline-manifest.json)"
+EVIDENCE_DIR="specs/subject-distillation/evidence/${BASELINE_ID}"
+python -m pytest -q tests/test_subject_authorization_bootstrap.py
+python scripts/verify_subject_implementation_authorization.py \
+  --receipt "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT" \
+  --expected-receipt-sha256 "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256" \
+  --scope "$SUBJECT_IMPLEMENTATION_SCOPE" \
+  --manifest specs/subject-distillation/baseline-manifest.json \
+  --schema specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json \
+  --expected-authority github:zycaskevin \
+  --expected-task T-001 \
+  --json
+python -m pytest -q tests/test_subject_baseline_control.py
+python scripts/validate_subject_evidence.py --manifest specs/subject-distillation/baseline-manifest.json --evidence-dir "$EVIDENCE_DIR" --require environment
+python -m pytest -q tests/test_subject_progress.py
+python scripts/validate_subject_progress.py --manifest specs/subject-distillation/baseline-manifest.json --schema specs/subject-distillation/implementation-progress.schema.json --tasks specs/subject-distillation/tasks.md --progress specs/subject-distillation/implementation-progress.json
 python -m pytest -q tests/test_db_migrations.py tests/test_db_backup.py tests/test_cli_json_contract.py tests/test_gateway.py
 python scripts/readme_command_smoke.py
 python scripts/check_release_parity.py
-python -m pytest -q tests/test_subject_progress.py
+python -m ruff check scripts/verify_subject_implementation_authorization.py scripts/validate_subject_baseline.py scripts/read_subject_baseline_id.py scripts/validate_subject_evidence.py scripts/validate_subject_progress.py tests/test_subject_authorization_bootstrap.py tests/test_subject_baseline_control.py tests/test_subject_progress.py
 git diff --check
-python scripts/validate_subject_progress.py --manifest specs/subject-distillation/baseline-manifest.json --schema specs/subject-distillation/implementation-progress.schema.json --tasks specs/subject-distillation/tasks.md --progress specs/subject-distillation/implementation-progress.json
 ```
 
-**Done when:** baseline commands have real exit codes, any pre-existing failure is documented before Subject code changes, the progress schema/validator/seed ledger pass T-001 spec and quality review, and the final `T-001=COMPLETED` ledger replay passes the real validator command.
+**Done when:** the actual T-001 receipt verifies；all trust artifacts show genuine RED-first ownership；all commands above pass in order with exit `0`；the progress schema/validator/seed ledger pass T-001 spec and quality review；and final `T-001=COMPLETED` replay passes the direct validator。No future T-002+ artifact is required by T-001 validation。
 
 ### T-002 — Add public synthetic fixture taxonomy
 
@@ -1030,4 +1128,6 @@ python scripts/validate_subject_progress.py --manifest specs/subject-distillatio
 - Normative current-truth contract: apply `baseline-manifest.json` mechanical identity only when its five recorded canonical hashes equal disk bytes, its canonical `closure.full_digest` and 16-hex `baseline_id` mechanically recompute from those hashes, and `baseline_state` is a manifest-validator-recognized frozen state. Otherwise the disk bytes are unreviewed remediation, no manifest verdict applies, and this section does not invent one.
 - Implementation authorization code: `NOT_AUTHORIZED` — no coding or implementation may start; only the designated release authority may explicitly change this after all fresh gates PASS.
 - Renderer-proof authorization remains `NOT_AUTHORIZED` in the normative package；a separate designated release authority receipt is applicable only when it binds the same successfully verified manifest `baseline_id`、`closure.full_digest` and authorized scope, and may never be inferred from review PASS.
-- First executable coding task: **T-001, BLOCKED unless the hash-bound current-truth contract, all section 0 gates, and exact digest-bound the designated release authority authorization receipt are simultaneously satisfied**
+- First executable pre-task: **B-000, BLOCKED until the exact baseline- and scope-digest-bound repository-owner instruction exists in the trusted operator channel and all B-000 preconditions pass**.
+- First product implementation task: **T-001, BLOCKED until the exact B-000 tree tests/reviews pass and the actual T-001 receipt verifies under the fixed protocol**.
+- No current baseline ID is hard-coded in these canonical docs。After any canonical byte change，old baseline/review/authorization evidence does not transfer；the parent must rebuild the manifest and obtain fresh reviews。
