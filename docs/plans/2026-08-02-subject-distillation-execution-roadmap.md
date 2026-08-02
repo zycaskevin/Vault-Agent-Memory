@@ -2,8 +2,8 @@
 
 **Date:** 2026-08-02
 **Repository:** `zycaskevin/Vault-Agent-Memory`
-**Current docs base:** `018a4d518f84783ecc2538f44aeb665c80a5112b` plus the owner-authorized local Simplification Rebaseline candidate
-**Status:** docs-only alignment；B-000 and T-001 are not part of this cycle
+**Current docs base:** `4ed4e2c611713a6fd3c472a43343c669b88ec00a`
+**Status:** docs-only owner-derived receipt alignment；T-001 implementation is not part of this cycle
 
 ## 1. Outcome
 
@@ -17,8 +17,11 @@ The simplified sequence is:
 
 ```text
 docs alignment → manifest validation → focused review → Git delivery if authorized
-→ owner selects exact B-000 base → B-000 → independent security review → stop
-→ separate T-001 receipt/authorization → T-001
+→ exact reviewed main commit → B-001 runner implementation/security review/delivery
+→ owner requests exact T-001/base proposal
+→ stateless runner returns canonical public-safe JSON without private files
+→ owner confirms exact proposal/receipt SHA
+→ one runner process re-derives/materializes/verifies/cleans → T-001
 ```
 
 ## 2. What changed
@@ -34,7 +37,9 @@ docs alignment → manifest validation → focused review → Git delivery if au
 
 ### Retained
 
-- an agent cannot self-authorize or create the owner's instruction;
+- an agent cannot self-authorize；the reviewed B-001 runner's first stage is
+  stateless and file-free, and only the owner's exact proposal/digest
+  confirmation permits its second stage to materialize、verify and clean;
 - private/live data, credentials and operator-private receipt/scope bytes stay
   outside the repository and logs;
 - B-000 and T-001 remain separate scopes and authorities;
@@ -65,18 +70,24 @@ The preflight derives the baseline ID, full digest and exact three-path allowlis
 from that commit. Derived values are returned for traceability but do not have to
 be copied by the owner into chat.
 
-T-task authorization remains receipt-based because it may govern broader and
-more sensitive scopes. Simplifying B-000 does not weaken the T-task receipt
-verifier or production/private-data boundaries.
+T-task authorization remains owner-confirmed and receipt-verified because it
+may govern broader and more sensitive scopes. The first owner message requests
+a proposal for an exact task/base only；stateless `propose` returns canonical
+public-safe JSON and creates no private artifact；the second owner message
+confirms that exact proposal. Only then may one `verify-confirmed` process
+re-derive、temporarily materialize、verify and clean the exact bytes. Generated
+bytes and hashes are integrity artifacts, not authority, and do not weaken the
+verifier、production or private-data boundaries.
 
 ## 4. Milestones
 
 | Milestone | Scope | Start gate | Acceptance / stop gate |
 |---|---|---|---|
-| M1 — Simplification Rebaseline | Requirements/design/tasks + roadmap/progress/handoff + manifest | Current owner docs-only authorization | Manifest PASS, focused safety review P0=0/P1=0, no implementation files |
-| M2 — Docs delivery | Commit/push/PR update for the reviewed docs unit | Separate Git-delivery authorization | Exact commit containing reviewed bytes; stop before B-000 |
-| M3 — B-000 bootstrap | Authorization schema, verifier and bootstrap test only | Owner names `lane=B-000` + exact base commit | RED/GREEN, focused tests/Ruff, exact three-path diff, independent security review; stop |
-| M4 — T-001 control plane | Baseline/evidence/progress controls | Accepted B-000 + actual T-001 receipt and separate authority | T-001 commands and risk-based reviews PASS; ledger records completion |
+| M1 — Owner-derived receipt rebaseline | Requirements/design/tasks + roadmap/handoff + manifest | Current owner SDD-adjustment instruction | Manifest PASS, auth-focused independent review P0=0/P1=0, no implementation files or private receipt/scope |
+| M2 — Docs delivery | Commit/push/PR for the reviewed docs unit | Separate Git-delivery authorization | Exact commit containing reviewed bytes；stop before T-001 proposal |
+| M3 — B-000 bootstrap | Completed historical authorization schema/verifier/bootstrap delivery | Merged PR #423 | Exact B-000 tree and independent security review accepted；no reopening in this docs cycle |
+| M3A — B-001 runner | Identity-safe proposal/verification/cleanup runner + hostile tests | Owner names `lane=B-001` + exact reviewed base | Exact two-path diff、focused tests/Ruff、independent security review and separate Git delivery PASS；stop before proposal |
+| M4 — T-001 control plane | Baseline/evidence/progress controls | Accepted B-001 + owner proposal request + file-free canonical proposal + separate owner exact proposal/digest confirmation + one-process re-derivation/verifier/cleanup PASS | T-001 commands and risk-based reviews PASS；ledger records completion |
 | M5 — Public Subject foundation | T-002/T-003 | T-001 complete | Public-safe fixture ownership and 43-example traceability PASS |
 | M6 — Subject runtime | T-004..T-031 | M5 complete | Core, policy, evidence, model/context, surfaces, recovery and closure PASS |
 | M7 — Private evaluation | T-032 | Separate private/live authority | Private receipt only; no raw/private repo artifact |
@@ -88,27 +99,37 @@ verifier or production/private-data boundaries.
 
 | ID | Owner | Inputs | Output | Success criteria | Parallelism |
 |---|---|---|---|---|---|
-| G-001 | Contract steward | Owner simplification instruction + current canonical docs | Aligned requirements/design/tasks | Old five-value, wheelhouse, external-body and double-review gates removed; safety boundaries unchanged | Complete first |
-| G-002 | Planning owner | G-001 diff + long-term report | Aligned roadmap/progress/handoff | Current-cycle vs roadmap decisions and stop boundaries agree | After G-001; planning files may be edited together |
+| G-001 | Contract steward | Owner SDD-adjustment instruction + current canonical docs | Aligned requirements/design/tasks | Owner instruction remains authority；proposal is stateless/file-free and confirmed execution is one-process、repo-external、no-echo and cleanup-required | Complete first |
+| G-002 | Planning owner | G-001 diff + existing roadmap/handoff | Aligned roadmap/handoff | Current-cycle vs T-001 boundaries agree；B-000 historical scope remains unchanged | After G-001；planning files may be edited together |
 | G-003 | Manifest owner | Exact five canonical bytes | Rebound manifest | Validator recomputes every file hash, full digest and baseline ID with PASS | After G-001 |
 | G-004 | Parent verifier | G-001..G-003 exact tree | Mechanical report | `git diff --check`, counts, stale-term scan and exact changed-path inventory PASS | After G-002/G-003 |
 | G-005 | Focused reviewer | Frozen local docs candidate | Safety-boundary verdict | P0=0/P1=0; simplification does not authorize implementation/production/private/destructive work | After G-004 |
 | G-006 | Parent reporter | Validated/reviewed candidate | Owner packet | New baseline values, exact changed paths and next authorization template; stop | After G-005 |
 
-### B-series — Future B-000 cycle
+### B-series — Completed historical B-000 cycle
 
 | ID | Owner | Inputs | Output | Success criteria |
 |---|---|---|---|---|
-| B-001 | Parent | Two-value owner instruction + clean selected commit | Derived preflight + usable `.venv` | Manifest/HEAD/three-path allowlist clean; standard dev install succeeds |
-| B-002 | Implementer | Canonical B-000 contract | Genuine RED bootstrap test | Focused test fails only because schema/verifier are absent |
-| B-003 | Implementer | RED test + design §21 | Schema, verifier and complete adversarial matrix | Focused pytest and Ruff PASS; no dependency/package metadata change |
-| B-004 | Parent + independent security reviewer | Exact three-path tree | Readback/review packet | Exact diff, no echo/resource/path controls and Linux-CI requirement accepted; stop before T-001 |
+| B0-001 | Parent | Two-value owner instruction + clean selected commit | Derived preflight + usable `.venv` | Manifest/HEAD/three-path allowlist clean; standard dev install succeeds |
+| B0-002 | Implementer | Canonical B-000 contract | Genuine RED bootstrap test | Focused test fails only because schema/verifier are absent |
+| B0-003 | Implementer | RED test + design §21 | Schema, verifier and complete adversarial matrix | Focused pytest and Ruff PASS; no dependency/package metadata change |
+| B0-004 | Parent + independent security reviewer | Exact three-path tree | Readback/review packet | Exact diff, no echo/resource/path controls and Linux-CI requirement accepted; stop before T-001 |
+
+### B1-series — Next B-001 runner cycle
+
+| ID | Owner | Inputs | Output | Success criteria |
+|---|---|---|---|---|
+| B1-001 | Parent | `lane=B-001` + exact clean reviewed commit | Scope/env preflight | Exact two-path allowlist、manifest/HEAD clean |
+| B1-002 | Test owner | Canonical B-001 contract | Genuine RED hostile lifecycle suite | Fails only because runner is absent |
+| B1-003 | Implementer | RED tests + existing verifier | Stateless proposal + identity-safe verification runner | Canonical proposal、restart/replay/concurrency、descriptor lifecycle、signals、cleanup tests and Ruff PASS |
+| B1-004 | Parent + independent security reviewer | Exact two-path tree | Readback/review packet | P0=0/P1=0；stop before proposal；Git delivery separately authorized |
 
 ### I-series — Future T-001 cycle
 
 | ID | Owner | Inputs | Output | Success criteria |
 |---|---|---|---|---|
-| I-001 | Parent | Accepted B-000 + actual T-001 receipt/scope | Verified authorization and environment | Receipt verifier PASS; private inputs remain outside repo/no echo |
+| I-001 | Reviewed runner | Accepted B-001 + owner proposal request for exact T-001/base | Canonical public-safe proposal JSON | No private file/state/daemon/IPC；owner can inspect exact arrays、timestamps and digests |
+| I-001A | Owner + parent | I-001 exact canonical JSON | Owner exact proposal/digest confirmation + one `verify-confirmed` process | Proposal re-derived against HEAD/base/manifest/task/schema/verifier；no-xtrace and `0700`/`0600` checks PASS；receipt verifier PASS；owned temp files cleaned and absent before implementation |
 | I-002 | Test owner | T-001 contract | Genuine RED baseline/evidence/progress tests | RED fails for missing control-plane artifacts |
 | I-003 | Control-plane implementer | RED tests | Readers, schemas, validators, atomic writer and ledger | Focused/hostile tests PASS; exact task scope only |
 | I-004 | Evidence owner | Validated implementation | Public-safe environment evidence | Hashes and runtime versions validate; no secret/private path |
@@ -149,9 +170,9 @@ runtime path or new SBE, and keep candidate-first/approved-policy authority inta
 
 | Risk | Severity | Control |
 |---|---:|---|
-| Process simplification accidentally weakens security | P1 | Focused diff review; receipt/no-echo/private/production/destructive contracts unchanged |
+| Proposal derivation is mistaken for authorization | P1 | First stage is stateless/file-free；second owner confirmation binds exact canonical JSON and receipt digest；ambiguous/stale/partial confirmation DENY |
 | Stale owner instruction applied to changed bytes | P1 | Exact base commit is owner-supplied; preflight derives and validates current manifest |
-| Agent self-authorizes from a PASS/hash | P1 | Owner instruction remains the trust root; review and hashes are never authority |
+| Agent self-authorizes from a PASS/hash | P1 | Only the second owner confirmation authorizes implementation；proposal derivation、materialization、review、receipt and hashes alone never do |
 | B-000 and T-001 get mixed | P1 | Separate milestones, artifacts, receipt and stop boundary |
 | AI-generated evidence contaminates persona | P1 | Authorship provenance + candidate-only Behavioral Diff; defer runtime until tested |
 | Private data reaches public artifacts | P0/P1 | Synthetic/public-safe fixtures; private receipt/scope no echo and repo exclusion |
@@ -165,13 +186,17 @@ runtime path or new SBE, and keep candidate-first/approved-policy authority inta
   baseline ID/full digest.
 - No B-000/T-001 implementation artifact, receipt, scope, private/live data,
   credential, migration, deployment or destructive side effect exists.
-- No remaining active instruction requires `SUBJECT_DEV_WHEELHOUSE`, a five-value
-  B-000 prompt, a repo-external review body or two ordered B-000 reviewers.
-- One focused review confirms P0=0/P1=0 on the frozen docs candidate.
+- No active instruction treats an agent-produced receipt/hash as owner authority
+  or permits implementation before owner confirmation of the complete proposal.
+- One auth-focused independent review confirms P0=0/P1=0 on the frozen docs
+  candidate.
 
 ## 9. Next action
 
-Finish G-001..G-006 and stop. Git delivery requires separate authorization. Once
-the reviewed docs bytes exist in an exact commit, the owner may authorize B-000
-with only `lane=B-000` and that commit SHA. B-000 must stop after its independent
-security review; T-001 still requires its own receipt and authorization.
+Finish the owner-derived-receipt docs rebaseline and stop. Git delivery requires
+separate authorization. Once the reviewed bytes exist in an exact commit on
+`main`, the owner may authorize `lane=B-001` at that exact commit. After B-001's
+exact two-path implementation、tests、independent security review and separately
+authorized Git delivery are accepted, the owner may request a `lane=T-001`
+proposal. Only a separate owner confirmation of the reviewed runner's complete
+proposal/receipt SHA permits verification and T-001.

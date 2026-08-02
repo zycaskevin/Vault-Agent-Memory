@@ -12,7 +12,7 @@
 
 1. `baseline-manifest.json`通過mechanical integrity validation，證明top-level five-file hash/full-digest/baseline-ID/frozen-state binding成立；
 2. docs-only process change完成mechanical validation與focused review；auth/security/migration/privacy/public-surface change完成一位independent reviewer的risk-based review，且P0=0、P1=0；
-3. B-000已在trusted operator channel的owner instruction（`lane=B-000`＋exact implementation base commit）下完成並通過exact-tree review，且separate fail-closed authorization verifier確認T-001的actual receipt綁定exact `baseline_id`、full digest、task及scope；
+3. B-000已完成並通過exact-tree review；B-001另在exact-base owner instruction下完成identity-safe runner與獨立security review後，owner才可要求exact T-001/base proposal；stateless runner只回傳canonical public-safe proposal且不落地private bytes，owner另行確認完整proposal與exact receipt SHA-256後，單一`verify-confirmed`程序才可重建、驗證actual bytes綁定exact `baseline_id`、full digest、task及scope並完成安全cleanup；
 4. worktree／branch／base重新核對為clean，`git rev-parse HEAD` byte-equal於owner-selected implementation base，該commit tree包含validated canonical bytes，沒有未解的外部變更。
 
 執行紀律：
@@ -20,7 +20,7 @@
 - SBE → SDD → TDD；每個behavior先有紅燈測試。
 - 一次只做一個task；不得把`BLOCKED`標成完成。
 - 每個behavior-bearing implementation slice的執行順序固定為：unit/contract → synthetic fixture behavior → surface contract → legacy regression → private live/shadow。T-002只建立public synthetic taxonomy並跑fixture privacy/schema unit gate，不執行Subject behavior或live資料，因此可在T-004前作preflight；不得把這個例外外推到behavior tests。
-- Implementation agent負責coding；parent verifier負責scope與mechanical verification；需要時由independent reviewer進行risk-based review；designated release authority獨立決定implementation authorization。
+- Implementation agent負責coding；reviewed runner可在owner要求後產生不含private locator的canonical public-safe proposal，但只有owner對完整proposal與exact receipt digest的第二次確認才能允許同一`verify-confirmed`程序materialize/verify/cleanup並授權implementation；需要時由independent reviewer進行risk-based review；designated release authority獨立決定implementation authorization。
 - 本檔所有checkbox是immutable contract bullets，永遠不表示execution status；baseline freeze後不得因task開始、阻塞或完成而改動checkbox。
 - 每個task的唯一current status只存在`specs/subject-distillation/implementation-progress.json`；完成必須先追加合法ledger transition、附public-safe evidence refs，並由`python scripts/validate_subject_progress.py`實跑`PASS`。所有`BLOCKED`狀態也只記入該ledger，不得改本檔。
 - `CHANGELOG.md`按coherent product／security／docs review unit更新，不按task status逐筆更新；不得以CHANGELOG取代progress ledger。
@@ -100,7 +100,7 @@ B-000 is not a T-task，never appears in `implementation-progress.json`，and ca
 
 B-000只能在current five-file baseline integrity validates、repository owner透過trusted operator channel簽發包含`lane=B-000`與exact `implementation_base_commit`的instruction、`git rev-parse HEAD`等於該clean commit且其tree包含validated canonical bytes、以及clean branch/worktree preflight成立後開始。Baseline ID、full digest與exact三-path allowlist由preflight從該commit機械導出，不要求owner在chat重複。Trusted operator channel message本身是repository-owner instruction與唯一explicit human bootstrap trust root；repo無法自行cryptographically prove private conversation/channel。B-000與所有implementation agents must not self-authorize、不得從hash或review PASS推論授權，也不得create/rewrite owner instruction。
 
-B-000 local-only且只能觸碰上述三paths；禁止product/runtime/data、production migration、deployment、release、private-live-data或destructive操作。Git commit/push/PR不由B-000本身授權，只能在owner另行授權Git delivery後執行。先在`tests/test_subject_authorization_bootstrap.py`建立genuine RED，再實作schema/verifier。Schema/verifier必須完整實現design §21的exact fields、canonical authorization ID、parent-bound receipt byte digest、duplicate-key/type/time/path/public-safety/no-echo contract與全部negative/legal-positive controls。
+B-000 local-only且只能觸碰上述三paths；禁止product/runtime/data、production migration、deployment、release、private-live-data或destructive操作。Git commit/push/PR不由B-000本身授權，只能在owner另行授權Git delivery後執行。先在`tests/test_subject_authorization_bootstrap.py`建立genuine RED，再實作schema/verifier。Schema/verifier必須完整實現design §21的exact fields、canonical authorization ID、post-instruction receipt byte binding、duplicate-key/type/time/path/public-safety/no-echo contract與全部negative/legal-positive controls。
 
 Schema validation不得新增dependency或修改package metadata：canonical schema只可使用design §21固定的JSON Schema 2020-12 keyword subset，verifier以Python standard library實作該exact closed subset；任何unknown keyword／remote `$ref` DENY，且schema-shape與receipt matrix證明fixed checker和canonical schema contract一致。不得silent import environment偶然存在的`jsonschema`。
 
@@ -117,10 +117,101 @@ python -m ruff check scripts/verify_subject_implementation_authorization.py test
 
 完成還要求parent readback、exact diff inventory及同一exact B-000 tree的一位independent security reviewer PASS。這不暗示或產生任何T-001 owner authorization；T-001仍須actual receipt verification。
 
+### B-001 — Bootstrap identity-safe authorization runner
+
+B-001 is a governance-only post-B-000 pre-task，not a T-task and never appears
+in `implementation-progress.json`. It may create exactly:
+
+- `scripts/run_subject_implementation_authorization.py`
+- `tests/test_subject_authorization_runner.py`
+
+B-001 starts only after an owner instruction names `lane=B-001` and the exact
+clean implementation base commit containing this validated baseline. It cannot
+create an owner instruction or authorize T-001. Its runner implements the
+two-stage proposal/confirmation protocol and invokes the unchanged B-000
+verifier only after exact owner confirmation.
+
+`propose` is stateless and read-only: it derives exact receipt/scope bytes in
+memory and emits only the LF-terminated canonical public-safe proposal defined
+in design §21. It creates no private file、registry、daemon、IPC endpoint、
+background process or locator. `proposal_id` is the SHA-256 of canonical
+proposal JSON with only `proposal_id` omitted. The proposal includes every
+closed field, including task/base、baseline and scope data、timestamps、scope and
+receipt digests、fixed `authorizing_principal`、derived `authorization_id` plus
+canonical schema/verifier digests.
+
+After the owner confirms that exact immediately preceding proposal and receipt
+digest, one `verify-confirmed` process re-derives all fields against current
+HEAD、validated baseline、fixed T-001 scope and schema/verifier bytes. It rejects
+unknown、partial、noncanonical、stale、expired、future-issued、cross-task、replayed-
+after-start or drifted input before private creation. Only then may it use
+descriptor-relative no-follow creation、retained parent/directory/file
+descriptors and exact device/inode identities；directory mode `0700`、file mode
+`0600` and exact two-member set；xtrace disabled before private expansion；
+byte/identity/mode recheck immediately before verifier；and one identity-safe
+lifecycle for PASS、DENY、ERROR、timeout、exception、HUP、INT and TERM. Cleanup may
+unlink only retained-identity owned entries and remove only the retained-
+identity directory through its parent descriptor. Replacement or identity drift
+must never trigger pathname deletion；return only bounded public-safe
+`private_cleanup_required` and stop. An identity-safe repo-external advisory
+lock is acquired nonblocking for the same repo/task/base, so exactly one of any
+concurrent calls may proceed and every concurrent loser is DENY；an unexpired pre-start replay may only
+reverify without an implementation side effect, and any existing T-001
+`IN_PROGRESS|BLOCKED|COMPLETED` state is DENY. No proposal state persists across
+processes. The runner repeats this progress check after verifier success but
+before PASS；a ledger that appears、becomes invalid or changes T-001 away from
+`PENDING` during verification requires cleanup and DENY. T-001 remains blocked
+until verifier PASS is followed by proven cleanup and absence.
+
+`tests/test_subject_authorization_runner.py` owns genuine RED-first coverage for
+legal proposal/confirmation plus restart、unknown/stale/cross-task/partial or
+noncanonical proposal、`proposal_id` mismatch、expired/future-issued input、
+pre-start replay、post-start replay DENY and concurrent verification；proof that
+`propose` creates no private file/registry/daemon/IPC；HEAD or baseline drift；
+mid-verification progress creation/state flip followed by cleanup and DENY；
+scope expansion/omission；xtrace inheritance；mode/member/digest drift；file/
+directory replacement before verify and cleanup；short write；verifier PASS/
+DENY/ERROR；timeout/exception/signals；cleanup failure/retry；no private marker in
+stdout/stderr/repo logs；and proof that no implementation command runs before
+verified cleanup. B-001 acceptance is focused pytest、Ruff、
+exact two-path diff、parent readback and one independent security review with
+P0=0/P1=0. Git delivery remains separately authorized；after delivery B-001
+stops before any T-001 proposal request or implementation.
+
 ### T-001 — Freeze implementation baseline
 
 **Requirements:** R-SD-015
 **Files:** no production changes；B-000 already owns the authorization schema/verifier/bootstrap test。Create `scripts/read_subject_baseline_id.py`、reuse existing `scripts/validate_subject_baseline.py`、Create `scripts/validate_subject_evidence.py`、per-artifact JSON schemas under `specs/subject-distillation/evidence-schemas/`、`tests/test_subject_baseline_control.py`、`specs/subject-distillation/implementation-progress.schema.json`、`specs/subject-distillation/implementation-progress.json`、`scripts/validate_subject_progress.py`、`scripts/update_subject_progress.py`、and existing planned `tests/test_subject_progress.py` solely for progress-ledger controls，then create `specs/subject-distillation/evidence/<baseline-id>/environment.json`。
+
+The B-001 runner's fixed T-001 template is normative and contains exactly the
+following Unicode-code-point sorted `allowed_repo_relative_paths`; `${baseline_id}`
+is replaced only by the hash-verified 16-hex manifest value:
+
+```text
+scripts/read_subject_baseline_id.py
+scripts/update_subject_progress.py
+scripts/validate_subject_evidence.py
+scripts/validate_subject_progress.py
+specs/subject-distillation/evidence-schemas/attestation.schema.json
+specs/subject-distillation/evidence-schemas/backup-restore.schema.json
+specs/subject-distillation/evidence-schemas/environment.schema.json
+specs/subject-distillation/evidence-schemas/fresh-review.schema.json
+specs/subject-distillation/evidence-schemas/migration.schema.json
+specs/subject-distillation/evidence-schemas/review-result.schema.json
+specs/subject-distillation/evidence/${baseline_id}/environment.json
+specs/subject-distillation/implementation-progress.json
+specs/subject-distillation/implementation-progress.schema.json
+tests/test_subject_baseline_control.py
+tests/test_subject_progress.py
+```
+
+Its exact sorted `non_goals` are `no.live.private.data`,
+`no.product.runtime`, `no.production.migration`, and `no.t002.plus.artifact`.
+Its exact sorted `prohibited_operations` are `commit`, `deploy`, `github`,
+`live_private_data`, `migration`, `pr`, `product_runtime`, `push`, `release`,
+`remote_network`, and `stage`. No wildcard、directory grant or inferred path is
+allowed. `scripts/validate_subject_baseline.py` and the B-000 files are read-only
+inputs, not T-001 write grants.
 
 - [ ] Record `git status --short --branch`, `git rev-parse HEAD`, Python/SQLite versions and current schema status.
 - [ ] Verify every SHA-256 in `baseline-manifest.json` against bytes on disk; any mismatch blocks T-001 and requires a new fresh review, never an in-place manifest rewrite under old approval.
@@ -140,50 +231,54 @@ Progress-ledger obligations：
 
 `tests/test_subject_progress.py` is the one and only `Create` owner for the progress adversarial matrix. It must cover opaque token-prefix（including `sk_test_`、`rk_test_` and `whsec_` parity with the shared scanner）、Bearer、three-segment JWT、credential assignment、PEM/private-key marker、bare-digest and recursively scanned dotted/dashed/underscored forbidden-key variants plus the expanded `client_secret|refresh_token|aws_secret_access_key|capability_secret|raw|raw_evidence|content_raw|private_path|absolute_path` DENY controls；the sole receipt exception exact `private-shadow-pass:<64 lowercase hex>` legal ALLOW；`repo_file` DENY controls for `..` components、absolute paths、symlink final targets、symlink ancestors、alias/physical-lexical mismatch、non-regular targets、and resolved targets outside the repo, plus the legal ALLOW for a regular non-symlink file whose canonical relative path remains inside the repo；以及atomic writer的stale expected state、invalid dependency、invalid temp bytes、short write、file-fsync、validator、replace、directory-fsync fault injection與crash/retry controls，逐一證明failure前一版ledger byte-identical且合法retry只追加一次transition。T-029 must execute this concrete file in its unit stage, and T-031 must include its unchanged bytes together with both progress scripts in the authorized reviewed tree before hashing.
 
-**Trusted-channel handoff（normative, before Commands）：** The repository and
-agents must not create/rewrite the receipt, scope, owner instruction, or their
-values. The trusted parent supplies an absolute normalized operator-private
-receipt path outside the repo, the expected lowercase SHA-256 of its exact
-bytes, and an absolute normalized operator-private canonical scope path outside
-the repo, then exports them in its trusted shell:
+**Trusted-channel handoff（normative, before Commands）：** B-001 must be accepted
+before proposal creation. The owner first asks the reviewed runner for a
+candidate proposal naming `lane=T-001` and an exact clean implementation base
+commit. This authorizes stateless proposal derivation only. `propose` creates no
+private object and returns the complete LF-terminated canonical public-safe
+proposal JSON required by design §21, including `proposal_id` and receipt
+SHA-256. The owner must then separately confirm that exact immediately preceding
+JSON and receipt SHA-256. Only after that confirmation may the unchanged JSON
+enter one runner `verify-confirmed` process:
 
 ```bash
-export SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT='<trusted absolute receipt path>'
+export SUBJECT_IMPLEMENTATION_PROPOSAL_JSON='<exact confirmed canonical public-safe proposal JSON>'
 export SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256='<trusted 64-lowercase-hex receipt digest>'
-export SUBJECT_IMPLEMENTATION_SCOPE='<trusted absolute scope path>'
+export SUBJECT_IMPLEMENTATION_BASE_COMMIT='<confirmed exact clean commit>'
 ```
 
-These are explanatory placeholders, never literal values. No real value,
-private path, or secret enters the repo/evidence or output. Handoff alone is not
-authorization. The guards below are part of the literal command sequence and
-fail before verifier invocation when absent or malformed.
+These are explanatory placeholders, never literal values. The runner owns every
+private path、descriptor、mode、identity、signal and cleanup operation required
+by B-001；the T-001 shell receives only public-safe confirmed values. Any
+proposal/base/digest drift requires a new proposal and confirmation. Runner
+absence、unaccepted B-001 bytes、private cleanup handoff or non-PASS runner result
+blocks T-001 before implementation. Materialization、verification、a hash or
+review PASS alone is not authority.
 
 **Commands:**
 
 ```bash
+set +x
 set -euo pipefail
-: "${SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT:?trusted parent receipt path is required}"
+: "${SUBJECT_IMPLEMENTATION_PROPOSAL_JSON:?confirmed canonical proposal JSON is required}"
 : "${SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256:?trusted parent receipt digest is required}"
-: "${SUBJECT_IMPLEMENTATION_SCOPE:?trusted parent scope path is required}"
-case "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT" in /*) ;; *) exit 2 ;; esac
-case "$SUBJECT_IMPLEMENTATION_SCOPE" in /*) ;; *) exit 2 ;; esac
-case "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT" in *//*|*/./*|*/../*|*/.|*/..) exit 2 ;; esac
-case "$SUBJECT_IMPLEMENTATION_SCOPE" in *//*|*/./*|*/../*|*/.|*/..) exit 2 ;; esac
+: "${SUBJECT_IMPLEMENTATION_BASE_COMMIT:?confirmed implementation base is required}"
 case "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256" in (*[!0-9a-f]*|'') exit 2 ;; esac
 [ "${#SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256}" -eq 64 ] || exit 2
+case "$SUBJECT_IMPLEMENTATION_BASE_COMMIT" in (*[!0-9a-f]*|'') exit 2 ;; esac
+case "${#SUBJECT_IMPLEMENTATION_BASE_COMMIT}" in 40|64) ;; *) exit 2 ;; esac
 python scripts/validate_subject_baseline.py --manifest specs/subject-distillation/baseline-manifest.json --json
 BASELINE_ID="$(python scripts/read_subject_baseline_id.py --manifest specs/subject-distillation/baseline-manifest.json)"
 EVIDENCE_DIR="specs/subject-distillation/evidence/${BASELINE_ID}"
 python -m pytest -q tests/test_subject_authorization_bootstrap.py
-python scripts/verify_subject_implementation_authorization.py \
-  --receipt "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_RECEIPT" \
+.venv/bin/python scripts/run_subject_implementation_authorization.py verify-confirmed \
+  --proposal-json "$SUBJECT_IMPLEMENTATION_PROPOSAL_JSON" \
+  --implementation-base-commit "$SUBJECT_IMPLEMENTATION_BASE_COMMIT" \
   --expected-receipt-sha256 "$SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256" \
-  --scope "$SUBJECT_IMPLEMENTATION_SCOPE" \
-  --manifest specs/subject-distillation/baseline-manifest.json \
-  --schema specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json \
-  --expected-authority github:zycaskevin \
   --expected-task T-001 \
+  --require-cleanup \
   --json
+unset SUBJECT_IMPLEMENTATION_PROPOSAL_JSON SUBJECT_IMPLEMENTATION_AUTHORIZATION_SHA256 SUBJECT_IMPLEMENTATION_BASE_COMMIT
 python -m pytest -q tests/test_subject_baseline_control.py
 python scripts/validate_subject_evidence.py --manifest specs/subject-distillation/baseline-manifest.json --evidence-dir "$EVIDENCE_DIR" --require environment
 python -m pytest -q tests/test_subject_progress.py
@@ -1139,8 +1234,9 @@ python scripts/validate_subject_progress.py --manifest specs/subject-distillatio
 ## 13. Current gate
 
 - Normative current-truth contract: apply `baseline-manifest.json` mechanical identity only when its five recorded canonical hashes equal disk bytes, its canonical `closure.full_digest` and 16-hex `baseline_id` mechanically recompute from those hashes, and `baseline_state` is a manifest-validator-recognized frozen state. Otherwise the disk bytes are unreviewed remediation, no manifest verdict applies, and this section does not invent one.
-- Implementation authorization code: `NOT_AUTHORIZED` — no coding or implementation may start；owner以lane與exact base commit明確授權B-000，T-task仍依receipt contract授權。
+- Implementation authorization code: `NOT_AUTHORIZED` — no coding or implementation may start from this artifact alone；B-001完成前不得產生proposal；其後`propose`仍不得建立private candidate，只有owner確認完整canonical proposal與exact receipt SHA-256且單一runner/verifier/cleanup PASS才授權T-task implementation。
 - Renderer-proof authorization remains `NOT_AUTHORIZED` in the normative package；a separate designated release authority receipt is applicable only when it binds the same successfully verified manifest `baseline_id`、`closure.full_digest` and authorized scope, and may never be inferred from review PASS.
-- First executable pre-task: **B-000, BLOCKED until a repository-owner instruction names `lane=B-000` and the exact clean implementation base commit, and all B-000 preconditions pass**.
-- First product implementation task: **T-001, BLOCKED until the exact B-000 tree tests/reviews pass and the actual T-001 receipt verifies under the fixed protocol**.
+- Completed historical pre-task: **B-000, merged through PR #423**.
+- Next executable pre-task: **B-001, BLOCKED until the owner names `lane=B-001` and the exact clean implementation base commit containing this validated baseline**.
+- First product implementation task: **T-001, BLOCKED until B-001 tests/review/delivery are accepted, owner requests an exact T-001/base proposal, stateless `propose` returns the complete canonical public-safe JSON without private materialization, owner separately confirms that exact proposal/digest, and one `verify-confirmed` process re-derives、verifies and identity-safely cleans the private objects**.
 - No current baseline ID is hard-coded in these canonical docs。After canonical byte changes，the parent rebinds the manifest and applies risk-based review；planning-only changes and ordinary implementation iterations within unchanged authorized scope do not require a repeated owner prompt。

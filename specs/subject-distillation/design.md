@@ -810,14 +810,21 @@ explicit verifier checks outside JSON Schema.
 
 `authorization_id` is SHA-256 of UTF-8 canonical JSON for the receipt with only
 `authorization_id` omitted, using `sort_keys=True`, separators `(',', ':')`,
-and `ensure_ascii=True`. It is an integrity identifier, not a signature.
-Authenticity is parent-bound: the parent supplies the expected full receipt-file
-SHA-256 from the trusted operator channel through
-`--expected-receipt-sha256`. The verifier recomputes and exactly matches the
-receipt bytes, scope file, its own script, canonical schema, current baseline ID
-and full digest, semantic timestamps, and authorization ID. It proves exact
-byte identity to trusted parent inputs, rejects self-generated substitutions,
-and does not claim independent proof of the human identity or channel.
+and `ensure_ascii=True`. It is an integrity identifier, not a signature. Human
+authenticity is owner-confirmation-bound, not hash-generated: after B-001 is
+accepted, the trusted operator channel requests a candidate proposal for an
+exact task/base. The reviewed runner's stateless `propose` mode derives the
+candidate canonical receipt/scope bytes in memory, creates no private object,
+and returns their complete canonical public-safe proposal. The owner separately
+confirms that exact proposal and full receipt-file SHA-256；only then does one
+`verify-confirmed` process re-derive and temporarily materialize the exact bytes
+and pass the confirmed digest through `--expected-receipt-sha256`. The verifier
+recomputes and exactly matches
+the receipt bytes, scope file, its own script, canonical schema, current
+baseline ID and full digest, semantic timestamps, and authorization ID. It
+proves byte binding and substitution resistance after owner confirmation；
+it does not independently prove the human identity/channel and cannot turn an
+agent-generated receipt, digest, manifest or review PASS into owner authority.
 
 There are two separate scope boundaries. B-000 has no receipt or persisted
 bootstrap-scope artifact. Its exact write allowlist is:
@@ -833,6 +840,37 @@ decision-bearing values `lane=B-000` and `implementation_base_commit=<lowercase
 canonical bytes. Derived manifest or scope hashes need not be repeated in chat.
 The owner message itself is the instruction；a hash, review PASS or agent-created
 replacement cannot authorize B-000.
+
+For a T-task, authorization is two-stage and unavailable until B-001 is
+accepted. First, the owner requests a proposal for `lane=T-NNN` at an exact
+clean implementation base commit. This permits only a stateless public-safe
+proposal, never private materialization or implementation. Preflight requires `git
+rev-parse HEAD` to equal that commit and requires its tree to contain the
+validated baseline. The parent returns the exact task/base、baseline ID/full
+digest、complete sorted `allowed_repo_relative_paths`、`non_goals` and
+`prohibited_operations` arrays、issue/expiry timestamps、scope SHA-256、full
+receipt SHA-256、schema/verifier SHA-256 values and `proposal_id`. Second, the
+owner confirms that exact immediately preceding canonical proposal and receipt
+SHA-256. An ambiguous、stale、partial or cross-task
+confirmation is DENY. The second message remains the sole human implementation
+authorization trust root；the reviewed runner is only its bounded materializer
+and executor. Any changed field or byte requires a new proposal and confirmation.
+
+The LF-terminated canonical proposal JSON is a closed object with exactly:
+`schema_version` (integer `1`), `artifact_kind`
+(`subject-implementation-proposal`), `authorized_task`,
+`implementation_base_commit`, `baseline_id`, `baseline_full_digest`,
+`authorizing_principal`, complete
+sorted `allowed_repo_relative_paths`、`non_goals` and
+`prohibited_operations`, strict UTC `issued_at_utc` and `expires_at_utc`,
+`scope_sha256`, `receipt_sha256`, `authorization_verifier_sha256`,
+`authorization_schema_sha256`, `authorization_id`, and `proposal_id`. Its canonicalization is the
+same `json.dumps(..., sort_keys=True, separators=(',', ':'),
+ensure_ascii=True) + '\n'` rule. `proposal_id` is the SHA-256 of those canonical
+bytes with only `proposal_id` omitted. The runner fixes the validity window at
+15 minutes, rejects future-issued proposals and treats equality at expiry as
+expired. Unknown fields、duplicate keys、noncanonical bytes or identifier/hash
+mismatch are DENY.
 
 The T-task receipt scope-file contract alone is the inline
 `subject-distillation-implementation-scope` contract here; B-000 must not add a
@@ -871,11 +909,66 @@ separators=(',', ':'), ensure_ascii=True) + '\n'`; `scope_sha256` hashes those
 exact bytes.
 
 Operator-private `--receipt` and `--scope` accept only normalized absolute paths
-outside the repository, supplied by the trusted parent; their files, paths and
-contents must never be copied into the repo/evidence or echoed. Canonical
-`--manifest` and `--schema` accept only the exact repo-relative strings
+outside the repository. After B-001 is accepted and the owner requests a
+proposal, `propose` derives the exact candidate bytes in memory only and must
+not persist or inject them. After owner confirmation of the complete canonical
+public-safe proposal and exact receipt digest, `verify-confirmed` re-derives
+those bytes from the proposal、current HEAD、validated manifest、fixed task
+scope and current schema/verifier bytes before creating private files. The
+current verifier enforces semantic UTC timestamps with
+`issued_at < expires_at` and current time strictly before expiry；this contract
+does not claim that it enforces a maximum lifetime、future-issue rejection、file
+permission bits or post-verification deletion. Generated paths and contents
+must never be copied into repo/evidence or echoed. Canonical `--manifest` and `--schema`
+accept only the exact repo-relative strings
 `specs/subject-distillation/baseline-manifest.json` and
 `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`.
+
+Post-B-000 governance bootstrap B-001 must create the reviewed
+`scripts/run_subject_implementation_authorization.py` parent runner and
+`tests/test_subject_authorization_runner.py`. The runner owns every control
+outside verifier scope and is stateless across invocations. `propose` performs
+read-only derivation and emits the canonical proposal only；it creates no
+receipt/scope file、persistent proposal registry、daemon、IPC endpoint、background
+process or private locator. Restart simply re-derives a newly requested
+proposal. `verify-confirmed` accepts the exact canonical proposal JSON, checks
+its `proposal_id` and owner-confirmed receipt digest, and re-derives every field
+from current HEAD、the validated baseline、the fixed task scope and the fixed
+schema/verifier bytes. It rejects unknown、partial、noncanonical、stale、expired、
+future-issued、cross-task or drifted input before private creation.
+
+Only after those checks, `verify-confirmed` disables inherited xtrace and
+creates one fresh normalized repo-external directory with exact mode `0700`
+and exactly `receipt.json`/`scope.json` regular non-symlink files with mode
+`0600`. The same process retains parent-directory、candidate-directory and file
+descriptors plus device/inode identity from creation through verification；
+requires the directory member set to remain exact；rechecks identity、mode、
+canonical bytes and the owner-confirmed digest immediately before invoking the
+existing verifier；and never prints a path、private argv or content.
+
+Cleanup is descriptor-relative and identity-checked. It unlinks only the two
+owned entries when current no-follow identity equals the retained identity,
+then removes only the identity-matching candidate directory through its retained
+parent descriptor and proves the three names absent. Replacement or identity
+drift is never pathname-deleted；the runner returns a bounded public-safe
+`private_cleanup_required` result and stops. Signal handlers clean safely and
+terminate nonzero rather than swallowing interruption. PASS、DENY、ERROR、
+timeout、exception and every signal path must run the same lifecycle state
+machine. An identity-safe repo-external advisory lock uses nonblocking
+acquisition for concurrent `verify-confirmed` calls on the same repo/task/base,
+so exactly one may proceed and every concurrent loser is DENY. A byte-identical,
+unexpired replay before T-001 starts may reverify but has no implementation side
+effect；once the progress ledger records T-001 as `IN_PROGRESS`、`BLOCKED` or
+`COMPLETED`, replay is DENY. No proposal state persists between processes.
+The runner checks that progress state both before private creation and again
+after verifier success but before any PASS return. If the ledger appears、
+becomes invalid or records any T-001 non-`PENDING` state during that interval,
+the runner completes identity-safe cleanup and returns DENY；the advisory lock
+does not substitute for this post-verifier state check.
+T-001 may continue only after verifier PASS and verified cleanup；until B-001
+implementation、restart/replay/concurrency and hostile replacement/mode/
+extra-entry/signal tests plus independent review pass, private materialization
+remains unavailable.
 Production starts at repo root, discovered once by `git rev-parse
 --show-toplevel`; its strict-decoded absolute physical result must byte-match
 the no-symlink physical cwd. The verifier self-hashes its own regular bytes at

@@ -8,6 +8,9 @@
 **Parent epic:** #410
 **B-000 issue:** #422
 **Blocked successor:** #421 / T-001
+**Historical status:** B-000 completed and merged through PR #423 at main commit
+`4ed4e2c611713a6fd3c472a43343c669b88ec00a`; this handoff no longer authorizes
+or schedules another B-000 run.
 **Goal:** Create the smallest fail-closed authorization bootstrap needed to
 verify future T-task receipts, without implementing T-001 or product runtime.
 
@@ -98,7 +101,7 @@ authority, stop after the reviewed local return packet.
 
 ## 5. Atomic execution plan
 
-### B-001 — Preflight
+### B0-001 — Preflight
 
 **Owner:** parent verifier
 **Input:** two-value owner instruction + clean selected commit
@@ -106,7 +109,7 @@ authority, stop after the reviewed local return packet.
 **Success:** manifest PASS, HEAD match, three owned paths absent or unmodified,
 supported Python active and no unexpected dirty/untracked path.
 
-### B-002 — Genuine RED
+### B0-002 — Genuine RED
 
 **Owner:** implementer
 **Input:** authoritative B-000 contract
@@ -114,7 +117,7 @@ supported Python active and no unexpected dirty/untracked path.
 **Success:** focused pytest fails because the required schema/verifier behavior
 is absent, not because of syntax, import, install or broken fixture setup.
 
-### B-003 — Schema, verifier and adversarial matrix
+### B0-003 — Schema, verifier and adversarial matrix
 
 **Owner:** implementer
 **Inputs:** genuine RED + design §21 + tasks §1 scanner contract
@@ -136,7 +139,7 @@ Caller/input failures are DENY. ERROR is only for safely classified unexpected
 internal/programmer/harness faults. Never echo path, hostile key/value, token-
 shaped input, receipt/scope content or raw exception.
 
-### B-004 — Verify, review and stop
+### B0-004 — Verify, review and stop
 
 **Owner:** parent verifier + one independent security reviewer
 **Inputs:** exact three-path candidate
@@ -231,4 +234,11 @@ Do not include tokens, private paths, receipt/scope contents or fabricated outpu
 After B-000 tests, parent readback and independent security review pass, stop.
 Do not begin T-001, create a T-001 receipt/scope, or claim product runtime. Git
 delivery is a separate owner decision. After an accepted B-000 delivery, T-001
-still needs an actual verified receipt and independent authorization.
+first requires the separately authorized B-001 identity-safe runner bootstrap
+in canonical design/tasks §21. After B-001 is implemented、independently
+reviewed and delivered, the owner may request an exact T-001/base proposal；the
+reviewed runner's stateless `propose` mode returns complete canonical public-safe
+JSON without creating private files；the owner separately confirms that exact
+proposal and receipt SHA-256 before one `verify-confirmed` process re-derives、
+materializes、verifies and identity-safely cleans the private bytes.
+B-000 itself never creates those artifacts or supplies T-001 authority.
