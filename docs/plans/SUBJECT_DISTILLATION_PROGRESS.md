@@ -2,15 +2,15 @@
 
 **Last updated:** 2026-08-02
 **Repository:** `zycaskevin/Vault-Agent-Memory`
-**Delivery branch:** `docs/subject-distillation-b000-handoff`
-**Base commit:** `3bbb07a03c4a1134e37b585af458264d2c96d709`
-**Current mode:** reviewed canonical baseline + planning/handoff delivery; B-000 implementation has not started
+**Working branch:** `docs/subject-distillation-b000-handoff`
+**Repair base:** `167b2eec443bc2e6ad0af21cb36a8b01c7cae5f7`
+**Current mode:** owner-authorized local docs-only LT-C alignment + rebaseline；B-000/T-001 not started
 
 ---
 
 ## One-sentence status
 
-The docs-only rulefix is closed on a new validated baseline and a fresh P0/P1-free review; the current PR packages that baseline, roadmap, progress state, and a Codex-ready B-000 handoff without implementing B-000 or T-001.
+The LT-C docs candidate is mechanically rebound to a new five-file baseline, but it is intentionally `NOT_AUTHORIZED`: ordered fresh review evidence, docs Git delivery, exact implementation-base selection, and a new five-value B-000 owner instruction are still separate gates.
 
 ## Source of truth
 
@@ -21,81 +21,83 @@ The docs-only rulefix is closed on a new validated baseline and a fresh P0/P1-fr
 - Execution roadmap: `docs/plans/2026-08-02-subject-distillation-execution-roadmap.md`
 - Codex handoff: `docs/plans/2026-08-02-subject-distillation-codex-handoff.md`
 
-## Reviewed baseline binding
+## Candidate baseline binding
 
 | Field | Value |
 |---|---|
-| Baseline ID | `0f688cf2e2472beb` |
-| Full digest | `0f688cf2e2472beb22082fb16c9c344de921e06e71a5efc939c8a4c70f5ed773` |
-| Manifest SHA-256 | `ca55599acc49f3c0f7d263f081b3b884c202e2093ebfdec94925465b6e7a1483` |
-| B-000 scope SHA-256 | `1cb9eaf4e13a4049d93cabd82edb3707c6251f8bf0f7c4d4dceb931a115d9739` |
-| Canonical candidate diff SHA-256 | `a4f21d7a6535a4c261c9bd31ee14033b9d3e516173c01e7a63394fc385613cc0` |
-| Fresh closure review | `PASS`, P0=`0`, P1=`0`, P2=`0` |
-| Review evidence SHA-256 | `ec01e7fe9b9b3eb607d5868056c53ecaba7f1ca44d07a6be8ed89eecb924735f` |
+| Baseline ID | `51625dffe08539b6` |
+| Full digest | `51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f` |
+| Manifest SHA-256 | `0765d28d0b722dbd4e5829e7b17d1b721171acea72912fd131965fb17e4c26cf` |
+| B-000 scope SHA-256 | `3199f1e732b04db99af181d0297bc4f7342e181b129c020b684843878be7f9c3` |
+| Fresh closure review | `EXTERNAL-EVIDENCE-REQUIRED`；no repo file self-declares PASS |
+| Implementation base | `UNSELECTED`；must be a later exact commit containing these reviewed bytes |
 
-Any byte change to the five canonical files requires a new manifest binding and fresh review; none of the identifiers above transfers automatically.
+Any byte change to the five canonical files requires another manifest binding and fresh review. Review evidence follows design §20.1: the parent retains the retrievable public-safe body, locator and SHA-256 outside the repo so this progress file cannot self-certify or create a review-digest cycle.
 
-## Completed
+## LT-C decisions
 
-- [x] Inspected live strategy, canonical specs, GitHub issues, and the old T-001 blocker.
-- [x] Split B-000 from T-001 to remove the authorization-bootstrap cycle.
-- [x] Closed the original five P1 blockers in the canonical requirements/design/tasks package.
-- [x] Closed six additional fresh-review P1 findings covering scope syntax, trusted input handoff, key-aware secret scanning, descriptor-safe paths, exact outputs/errors, and fail-fast commands.
-- [x] Preserved all 43 SBE IDs, `traceability.md`, `schema.v15.sql`, and T-002..T-033 task behavior.
-- [x] Rebound `baseline-manifest.json` to baseline `0f688cf2e2472beb`.
-- [x] Existing baseline validator returned PASS for the exact candidate.
-- [x] Fresh exact-baseline review returned PASS with P0=0/P1=0/P2=0.
-- [x] Created dedicated B-000 Issue #422.
-- [x] Prepared execution roadmap and Codex handoff.
+### Merged into the current canonical contract as invariants only
 
-## Current Git delivery authorization
+- Evidence／Memory／Persona-Policy／Runtime are conceptual ownership/projection planes, not four writable stores.
+- Behavioral Diff is typed candidate-only and never directly updates approved policy/model/runtime.
+- Approved behavior and decision boundaries reuse existing sealed Subject policy/model authority, scope, exceptions, counter-evidence and temporal validity.
+- Human、agent、model and third-party authorship remain distinct；AI-produced material cannot silently become human-explicit evidence.
+- Persona/session snapshots are deterministic derived projections with no independent authority.
+- Model/persona output cannot grant action authority; an independent valid grant remains mandatory.
 
-Arthur explicitly authorized this delivery to:
+### Deferred to the future roadmap
 
-- commit every repository artifact completed in this lane;
-- create or update the relevant GitHub issue;
-- push the delivery branch;
-- open a pull request;
-- provide a complete development plan and handoff for Codex.
+- Dual Evidence/Policy retrieval and precedence/token-budget compiler.
+- Runtime Policy Cards and Virtual Session persona snapshot productization.
+- Canonical Persona IR and cross-model deployment adapters.
+- Governed SFT/DPO dataset export and any LoRA/training pipeline.
 
-This authorization does not include merging the PR, deploying, running migrations, touching private/live/GB10 data, or starting T-001.
+These items wait for the roadmap LT-series prerequisites and separate authorization. None expands B-000 or T-001.
 
-## Delivery inventory
+## Completed in this local docs-only cycle
 
-This review unit contains exactly:
+- [x] Captured the owner's explicit docs-only LT-C/rebaseline authorization.
+- [x] Separated source-reference commit, delivery base, normative baseline ID, reviewed tree and implementation base terminology.
+- [x] Defined retrievable repo-external baseline-review evidence and deterministic normative-tree/delivery-diff hashes.
+- [x] Added exact implementation-base binding to the future B-000 owner instruction.
+- [x] Defined offline wheelhouse-only setup for B-000/T-001.
+- [x] Aligned DB lifecycle API, CLI vocabulary, root setup final state/policies, atomic progress writer and final-tree rerun gate.
+- [x] Added resource/platform acceptance and clarified experimental is not release authority.
+- [x] Mapped the long-term report onto the existing Subject SSOT and added deferred roadmap milestones.
+- [x] Rebound `baseline-manifest.json`; mechanical validator PASS.
+- [ ] Obtain ordered distinct-reviewer design §20.1 evidence with P0=0/P1=0.
+- [ ] Under separate authorization, commit/push/open or update the docs delivery.
+- [ ] Select the resulting exact implementation commit and issue a new five-value B-000 instruction.
+
+## Exact local review unit
 
 1. `specs/subject-distillation/requirements.md`
 2. `specs/subject-distillation/design.md`
 3. `specs/subject-distillation/tasks.md`
-4. `specs/subject-distillation/baseline-manifest.json`
-5. `docs/plans/2026-08-02-subject-distillation-execution-roadmap.md`
-6. `docs/plans/SUBJECT_DISTILLATION_PROGRESS.md`
-7. `docs/plans/2026-08-02-subject-distillation-codex-handoff.md`
+4. `specs/subject-distillation/traceability.md`
+5. `specs/subject-distillation/baseline-manifest.json`
+6. `docs/plans/2026-08-02-subject-distillation-execution-roadmap.md`
+7. `docs/plans/SUBJECT_DISTILLATION_PROGRESS.md`
+8. `docs/plans/2026-08-02-subject-distillation-codex-handoff.md`
 
-No reviewer transcript, local helper, private path, owner chat content, receipt, scope artifact, token, or runtime evidence is committed.
+`schema.v15.sql` remains canonical and hash-bound but byte-unchanged in this repair. No reviewer transcript/body, owner chat content, receipt, scope artifact, token, private/live path, runtime evidence or generated implementation artifact belongs in the repo.
 
-## Next gate: Codex B-000
+## Future B-000 owner instruction template
 
-Codex must not infer B-000 authority from this PR, Issue #422, review PASS, or hashes. Its trusted owner prompt must explicitly contain:
+The values below are not authorization while `implementation_base_commit` is unresolved or design §20.1 evidence has not verified:
 
 ```text
 lane=B-000
-baseline_id=0f688cf2e2472beb
-baseline_full_digest=0f688cf2e2472beb22082fb16c9c344de921e06e71a5efc939c8a4c70f5ed773
-scope_sha256=1cb9eaf4e13a4049d93cabd82edb3707c6251f8bf0f7c4d4dceb931a115d9739
+implementation_base_commit=<exact accepted commit containing the reviewed candidate>
+baseline_id=51625dffe08539b6
+baseline_full_digest=51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f
+scope_sha256=3199f1e732b04db99af181d0297bc4f7342e181b129c020b684843878be7f9c3
 ```
 
-Then Codex may work only on the three B-000 paths named in Issue #422 and the handoff. It must stop after focused gates and fresh reviews. T-001 remains blocked until a separate T-001 receipt verifies.
-
-## Verification commands for this delivery
-
-From repository root in a local-safe environment:
+## Mechanical verification
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -e ".[dev]"
-python scripts/validate_subject_baseline.py \
+python3 scripts/validate_subject_baseline.py \
   --manifest specs/subject-distillation/baseline-manifest.json \
   --repo-root . \
   --json
@@ -105,33 +107,26 @@ git diff --check
 Expected baseline result:
 
 ```json
-{"baseline_id":"0f688cf2e2472beb","full_digest":"0f688cf2e2472beb22082fb16c9c344de921e06e71a5efc939c8a4c70f5ed773","status":"PASS"}
+{"baseline_id":"51625dffe08539b6","full_digest":"51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f","status":"PASS"}
 ```
-
-## Issue state
-
-| Issue | State after this delivery |
-|---|---|
-| #410 | Remains open as the Subject Distillation epic |
-| #422 | Open; B-000 implementation not started |
-| #421 | Open and blocked; old baseline/authorization is superseded |
-| #413–#416 | Open and gated behind baseline/control-plane prerequisites |
 
 ## Stop conditions
 
-Stop and return to the owner if any of the following occurs:
+Stop and return to the owner if:
 
-- canonical bytes no longer validate to the reviewed baseline;
-- the Codex prompt lacks any of the four exact B-000 binding values;
-- the worktree contains out-of-scope changes;
-- a required test or review reports P0/P1;
-- any request would combine B-000 with T-001;
-- any action would commit/push/merge/deploy B-000 code without a separate Git-side-effect authorization;
-- private/live data, migration, release, or production behavior appears.
+- canonical bytes no longer validate to this candidate baseline;
+- review evidence body/locator/digest/tree/diff cannot be independently verified;
+- any ordered review reports P0/P1;
+- a selected implementation base does not contain the exact reviewed bytes;
+- the B-000 prompt lacks any of the five exact binding values;
+- any request mixes docs-only, B-000 and T-001 scopes;
+- any action would commit/push/open or update a PR/write GitHub without separate authorization;
+- private/live data, migration, runtime, release or deployment behavior appears.
 
 ## Handoff state
 
-- Current documentation/baseline delivery: ready for commit, push, and PR.
-- B-000 implementation: planned, not started.
+- Local docs-only LT-C candidate: mechanically PASS, fresh review pending.
+- Git delivery: not authorized in this cycle.
+- B-000 implementation: blocked before first write.
 - T-001 implementation: blocked.
-- Merge/deploy/release: not authorized by this delivery.
+- Merge/deploy/release/private shadow: not authorized.

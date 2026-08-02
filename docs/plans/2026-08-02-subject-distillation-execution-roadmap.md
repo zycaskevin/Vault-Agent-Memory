@@ -2,10 +2,11 @@
 
 **Date:** 2026-08-02
 **Repo:** `zycaskevin/Vault-Agent-Memory`
-**Planning baseline checked from:** local worktree at `3bbb07a03c4a1134e37b585af458264d2c96d709`, matching `origin/main` at inspection time
-**Planning status:** reviewed execution plan and Codex handoff source; this document is not implementation authorization
-**Current delivery authorization:** Arthur explicitly authorized committing the completed baseline/planning artifacts, creating/updating GitHub issues, pushing the documentation branch, and opening a PR
-**Remaining boundary:** this delivery does not authorize merge, deployment, production migration, GB10/private/live shadow, T-001, or B-000 execution without the exact digest-bound owner instruction required below
+**Original delivery base inspected:** `3bbb07a03c4a1134e37b585af458264d2c96d709`; this is historical delivery context, not an implementation base
+**Current repair base:** `167b2eec443bc2e6ad0af21cb36a8b01c7cae5f7` plus this owner-authorized docs-only LT-C candidate
+**Planning status:** docs-only LT-C alignment and rebaseline in progress; this document is not implementation authorization
+**Current authorization:** local docs-only contract/planning edits, manifest rebind, mechanical validation and fresh review only
+**Remaining boundary:** no commit/push/PR/GitHub write, merge, deployment, production migration, GB10/private/live shadow, B-000, or T-001 without separate later authorization
 
 ---
 
@@ -20,13 +21,13 @@ Vault Agent Memory should continue with **Agent Memory Governance** as the produ
 | Evidence | Current observation | Planning impact |
 |---|---|---|
 | Default branch | GitHub default branch is `main`; local HEAD and `origin/main` both `3bbb07a03c4a1134e37b585af458264d2c96d709` during inspection | Plan is grounded on current public main, not old chat state |
-| Delivery state | Branch `docs/subject-distillation-b000-handoff` stages exactly four canonical/baseline files and three planning/handoff files | This PR is the clean reviewed delivery unit; B-000 implementation must still use its own later branch, scope and review unit |
+| Delivery state | Branch `docs/subject-distillation-b000-handoff` carries exactly five changed canonical/baseline files and three planning/handoff files | This eight-file candidate is the clean reviewed delivery unit; B-000 implementation must still use its own later branch, scope and review unit |
 | Product strategy | `docs/strategy/README.md`, `product-architecture.md`, `killer-demo.md`, `90-day-validation.md` position Vault as the memory governance layer for multi-agent teams | Product work should sell governance, not generic RAG/search |
 | Subject overview | `docs/subject-distillation.md` says runtime is not implemented; canonical package is `specs/subject-distillation/` | Runtime claims must remain blocked until implementation evidence exists |
 | Parent epic | GitHub #410 is open: governed Subject Distillation baseline with fail-closed validation | #410 remains the current epic |
 | Current executable blocker | GitHub #421 remains blocked on the superseded baseline `d2b883e518cbc495`; B-000 is now tracked separately in #422 | T-001 must not reuse the old authorization and cannot begin until B-000 passes and a separate T-001 receipt verifies |
 | Adjacent open issues | #413 retrieval benchmark, #414 semantic/vector retrieval, #415 temporal validity, #416 entity/edge graph extraction | These are valid post-baseline workstreams, but should not jump ahead of #421/T-001 gates |
-| Reviewed successor baseline | Canonical validator and fresh closure review passed for baseline `0f688cf2e2472beb`, full digest `0f688cf2e2472beb22082fb16c9c344de921e06e71a5efc939c8a4c70f5ed773` | This exact baseline is the only valid starting point for the B-000 handoff; any canonical byte change invalidates the binding |
+| LT-C candidate baseline | Canonical validator passes for candidate `51625dffe08539b6`, full digest `51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f`; fresh ordered review evidence is still pending | This candidate cannot start B-000 until design §20.1 evidence PASS, docs delivery commit, exact base selection, and a new five-value owner instruction |
 | Existing task package | `specs/subject-distillation/tasks.md` declares B-000 and T-001..T-033 | Preserve canonical order; use grouped milestones for management, not to rewrite task authority |
 
 ---
@@ -67,9 +68,9 @@ Vault Agent Memory should continue with **Agent Memory Governance** as the produ
 
 **Exit condition:** T-001-only implementation passes focused, hostile, baseline, regression, and fresh review gates; progress ledger can mark T-001 complete without mutating canonical task checkboxes.
 
-### Lane S — Subject Distillation public-safe vertical slices
+### Lane S — Subject Distillation governed vertical slices
 
-**Purpose:** Implement T-002+ in dependency order using synthetic fixtures only.
+**Purpose:** Implement T-002..T-031 in dependency order using public-safe synthetic fixtures/evidence. T-032 is a separate operator-private lane and is never implied by Lane S authorization.
 
 **Exit condition:** Generic Subject Core + Person v1 is implemented through final attestation; Organization remains contract-only until separately authorized.
 
@@ -85,6 +86,16 @@ Vault Agent Memory should continue with **Agent Memory Governance** as the produ
 
 **Exit condition:** The killer demo is runnable, documented, and used in real OSS/self-host workflows before cloud/enterprise expansion.
 
+### Lane LT — Long-term identity/behavior governance roadmap
+
+**Purpose:** Extend Subject governance without creating a second persona SSOT or allowing model-generated content to rewrite human identity.
+
+**Merge into the current canonical contract only as invariants:** four conceptual responsibility planes map onto existing Subject evidence/candidates/policy/model/context projections；Behavioral Diff is candidate-only；authorship/producer/model provenance is preserved；decision/persona output grants no action authority；snapshots are deterministic derived projections；evaluation must measure grounding, boundary/context sensitivity, drift and abstention separately.
+
+**Deferred implementation:** dual Evidence/Policy retrieval, Runtime Policy Cards, Virtual Session Persona Snapshot productization, Canonical Persona IR, training-export datasets, SFT/DPO/LoRA and cross-model deployment. These depend on T-001 control plane, T-002/T-003 public fixtures/traceability, relevant Subject authority/model/context tasks, and a fresh privacy/security review. Model training additionally requires separate private-data, consent, spend and deletion authorization.
+
+**Exit condition:** Each future artifact has one existing Subject source of truth, explicit provenance/authority/retention boundaries, synthetic negative tests, rollback, and no path from observation or AI output directly to approved policy.
+
 ---
 
 ## 5. Milestone sequence
@@ -92,14 +103,14 @@ Vault Agent Memory should continue with **Agent Memory Governance** as the produ
 | Milestone | Goal | Primary issue/docs | Start gate | Stop/exit gate |
 |---|---|---|---|---|
 | M0 — Planning alignment | Freeze roadmap and progress anchor | This file + `SUBJECT_DISTILLATION_PROGRESS.md` | Current live repo inspected | Plan exists, progress anchor updated, no product implementation side effects |
-| M1 — Rulefix closeout | Finish docs-only remediation for the 5 original plus 6 fresh-review P1 blockers | #421, `specs/subject-distillation/*` | Arthur docs-only approval | **Complete:** baseline `0f688cf2e2472beb` manifest PASS + fresh review P0=0/P1=0/P2=0; no T-001 code |
+| M1 — LT-C rebaseline | Repair exact-base/evidence/environment/interface gaps and align the long-term persona report without adding runtime | `specs/subject-distillation/*`, planning/handoff docs | Arthur docs-only LT-C authorization | New manifest PASS + retrievable design §20.1 ordered-review evidence P0=0/P1=0; no B-000/T-001 code or Git side effect |
 | M2 — B-000 bootstrap | Implement authorization schema/verifier/bootstrap tests only | #422, B-000 in `tasks.md`, Codex handoff | Clean reviewed base + exact digest-bound B-000 owner instruction | B-000 tests/ruff/fresh security review PASS; stop before T-001 |
 | M3 — T-001 baseline control | Implement T-001 scripts/schemas/progress/evidence | #421, T-001 | T-001 receipt verifies under B-000 | T-001 ledger complete + reviews PASS |
 | M4 — Public fixture and traceability foundation | T-002/T-003 | #410 | T-001 complete | 43 SBE fixture owners + machine-readable traceability PASS |
 | M5 — Subject core and policy substrate | T-004..T-010 | #410 | M4 complete | generic contracts, DB lifecycle, v15 DDL, store, auth, policy, candidate bridge PASS |
 | M6 — Evidence/model/context runtime | T-011..T-020 | #410 | M5 complete | evidence, assertions, model assembler, grants, Context Pack, decisions, relationships, fragments, Organization compatibility PASS |
 | M7 — Surfaces/evaluation/recovery/closure | T-021..T-033 | #410 | M6 complete | CLI/MCP/Gateway, evaluation, backup/rollback, privacy/log, full regression, fresh reviews, attestation PASS |
-| M8 — Retrieval proof slices | #413..#416 | #413, #414, #415, #416 | M3 complete; prefer M4 for subject-specific data | benchmark before semantic ranking; temporal and graph contracts public-safe PASS |
+| M8 — Retrieval proof slices | #413..#416 | #413, #414, #415, #416 | M4 complete for Subject-specific benchmark; generic read-only benchmark preparation may begin after M3 | benchmark before semantic ranking; temporal and graph contracts public-safe PASS |
 | M9 — Adoption loop | Killer demo + 90-day validation | `docs/strategy/*` | At least local demo stable | installs, real agent workflows, self-host/team demand evidence collected |
 
 ---
@@ -110,74 +121,108 @@ Each task below is intentionally smaller than the canonical T-task when needed. 
 
 ### G-series — Governance and baseline readiness
 
-| ID | Objective | Inputs | Outputs | Allowed files/scope | Acceptance commands/evidence | Depends on | Reauth? | Rollback unit |
-|---|---|---|---|---|---|---|---|---|
-| G-001 | Freeze execution roadmap planning artifact | Live repo, #410/#421/#422/#413-#416, strategy docs | `docs/plans/2026-08-02-subject-distillation-execution-roadmap.md` | docs/plans only | `git diff --check -- docs/plans/2026-08-02-subject-distillation-execution-roadmap.md` | none | No | delete plan file |
-| G-002 | Create planning progress anchor | execution roadmap | `docs/plans/SUBJECT_DISTILLATION_PROGRESS.md` | docs/plans only | readback contains current status + next gate | G-001 | No | delete/update progress file |
-| G-003 | Close current docs-only rulefix candidate mechanically | modified `requirements.md/design.md/tasks.md`, parent verify scripts | final rulefix diff evidence | existing modified canonical docs only | parent rulefix verifier PASS; T-002..T-033 preserved; stale baseline fails before rebind | G-002 | No, still docs-only | restore captured pre-atom state; if no pre-state was captured, stop for owner direction instead of resetting to HEAD |
-| G-004 | Rebind baseline manifest after docs-only canonical edits | five canonical files | updated `baseline-manifest.json` | manifest only | `python scripts/validate_subject_baseline.py --repo-root . --manifest specs/subject-distillation/baseline-manifest.json --json` returns PASS | G-003 | Yes before implementation | restore previous manifest backup |
-| G-005 | Fresh review new docs baseline | new manifest + canonical files | spec/quality/security review evidence | repo-external review evidence | **Complete:** P0=0/P1=0/P2=0 bound to baseline `0f688cf2e2472beb` and exact candidate diff | G-004 | No | discard review candidate |
-| G-006 | Generate next authorization packet | reviewed baseline | owner-readable authorization summary + Codex handoff | `docs/plans/2026-08-02-subject-distillation-codex-handoff.md` | packet names baseline ID/full digest/scope digest/task/non-goals | G-005 | Yes | restore captured pre-edit state |
-| G-007 | Arthur authorization decision | G-006 packet | exact approval or stop | trusted channel only | owner instruction explicitly contains lane, baseline ID, full digest, and scope digest | G-006 | Yes | stop |
+| ID | Owner role | Objective | Inputs | Outputs | Allowed files/scope | Acceptance commands/evidence | Depends on | Reauth? | Rollback unit |
+|---|---|---|---|---|---|---|---|---|---|
+| G-001 | Contract steward | Freeze LT-C scope/non-goals | owner authorization + long-term report + prior findings | explicit current/deferred decisions | docs only | no runtime/schema implementation path added；scope readback | none | No | restore owned docs |
+| G-002 | Domain architect | Align canonical interfaces and long-term mapping | requirements/design/tasks/traceability | one SSOT mapping + exact CLI/DB/setup contracts | four canonical Markdown files | `git diff --check`; no new SBE ID; all 43 existing IDs preserved | G-001 | No | restore captured canonical bytes |
+| G-003 | Execution planner | Synchronize roadmap/progress/handoff | canonical candidate | aligned three planning docs | docs/plans only | exact base/evidence/offline/owner gates agree | G-002 | No | restore captured planning bytes |
+| G-004 | Manifest owner | Rebind after canonical edits | five canonical files | updated manifest | manifest only | stale manifest fails before edit; validator PASS after rebind | G-002 | No | restore captured manifest |
+| G-005 | Parent verifier | Build exact review inputs | selected delivery base + candidate paths | normative-tree and delivery-diff canonical bytes/digests | repo-external public-safe evidence inputs | independently recomputed path/hash inventories match candidate | G-003/G-004 | No | discard external candidate evidence |
+| G-006 | Reviewer A | Fresh spec/design/plan review | exact G-005 candidate | public-safe review result | read-only | P0=0/P1=0; every P2 disposition explicit | G-005 | No | reject candidate |
+| G-007 | Reviewer B (different principal) | Fresh quality/security review | unchanged exact candidate + Review A | public-safe review result | read-only | P0=0/P1=0; evidence/base/environment/interfaces reviewed | G-006 | No | reject candidate |
+| G-008 | Parent verifier | Canonicalize repo-external evidence | both reviews + exact hashes | retrievable design §20.1 body, locator, SHA-256 | outside repo only | retrieve-by-locator round trip; body digest/tree/diff/counts PASS | G-007 | No | discard evidence body |
+| G-009 | Handoff owner | Generate next authorization packet | reviewed baseline + evidence locator/digest | owner-readable B-000 tuple template | handoff/progress only before final review; otherwise no write | packet names lane/base/baseline/full/scope and evidence proof | G-008 | Yes before Git delivery/B-000 | stop |
+| G-010 | Repository owner | Select committed implementation base and decide B-000 | accepted docs delivery commit + G-009 | exact approval or stop | trusted channel only | five explicit byte-equal owner values; commit tree contains reviewed bytes | G-009 + separately authorized Git delivery | Yes | stop |
 
 ### B-series — B-000 bootstrap implementation atoms
 
-| ID | Objective | Outputs | Acceptance | Depends on | Reauth? | Rollback |
-|---|---|---|---|---|---|---|
-| B-001 | Write RED tests for authorization bootstrap | `tests/test_subject_authorization_bootstrap.py` | focused test fails for missing verifier/schema, not for unrelated import failure | G-007 | No within B-000 auth | revert test file |
-| B-002 | Implement authorization schema | `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json` | tests cover required fields, duplicate-key/type/path/time/public-safety deny cases | B-001 | No | revert schema |
-| B-003 | Implement verifier CLI | `scripts/verify_subject_implementation_authorization.py` | deny exit 2, error exit 3, success compact JSON; no secret/path echo | B-002 | No | revert script |
-| B-004 | Run B-000 direct gates | command transcripts | `python -m pytest -q tests/test_subject_authorization_bootstrap.py`; `python -m ruff check ...` | B-003 | No | none |
-| B-005 | Fresh B-000 security/spec review | review evidence | P0=0/P1=0 on exact B-000 tree | B-004 | No | reject candidate |
+| ID | Owner role | Objective | Outputs | Acceptance | Depends on | Reauth? | Rollback |
+|---|---|---|---|---|---|---|---|
+| B-001 | Trusted parent | Offline environment + exact preflight | local `.venv` + preflight record | wheelhouse-only install; exact base/evidence/baseline/scope/worktree PASS | G-010 | No within exact B-000 auth | remove local `.venv`; no repo write |
+| B-002 | B-000 implementer | Write genuine RED tests | `tests/test_subject_authorization_bootstrap.py` | focused test fails because desired verifier/schema are absent, not because of import/fixture error | B-001 | No | restore owned test path |
+| B-003 | B-000 implementer | Implement authorization schema | implementation authorization schema | strict schema tests including type/canonical/resource boundaries | B-002 | No | restore owned schema path |
+| B-004 | B-000 implementer | Implement verifier CLI/adversarial matrix | verifier + completed test matrix | fixed ALLOW/DENY/ERROR, no echo, descriptor/race/resource controls | B-003 | No | restore owned verifier/test paths |
+| B-005 | B-000 implementer | Run deterministic gates | public-safe command results | baseline, pytest, Ruff, diff, exact three-path status all PASS | B-004 | No | none |
+| B-006 | Parent verifier | Full readback and exact diff inventory | candidate hashes/readback result | all three files read; baseline unchanged; hostile controls inspected | B-005 | No | reject candidate |
+| B-007 | Fresh spec reviewer | Ordered spec compliance review | Review 1 result | PASS P0=0/P1=0 on exact tree | B-006 | No | reject candidate |
+| B-008 | Different security reviewer | Ordered quality/security review | Review 2 result | PASS P0=0/P1=0 on unchanged exact tree + Linux gate | B-007 | No | reject candidate |
+| B-009 | Parent verifier | Stop/return packet | machine-checkable handoff | hashes, RED/GREEN, OS/Python, unresolved, no Git side effects | B-008 | No | stop before T-001 |
 
 ### I-series — T-001 baseline-control atoms
 
-| ID | Objective | Outputs | Acceptance | Depends on | Reauth? | Rollback |
-|---|---|---|---|---|---|---|
-| I-001 | Establish T-001 local-safe environment | `.venv` local only, environment notes | exact setup commands succeed; `command -v python`; no credential env dependency | B-005 + T-001 receipt | No | remove `.venv` |
-| I-002 | RED coverage for baseline/evidence/progress controls | `tests/test_subject_baseline_control.py`, progress tests as needed | tests fail for missing reader/evidence/progress artifacts | I-001 | No | revert tests |
-| I-003 | Baseline ID reader | `scripts/read_subject_baseline_id.py` | reads only verified manifest baseline_id; mismatch fails closed | I-002 | No | revert script |
-| I-004 | Evidence schemas | `specs/subject-distillation/evidence-schemas/*.schema.json` | schema tests reject secrets/private paths/malformed artifacts | I-002 | No | revert schemas |
-| I-005 | Evidence validator | `scripts/validate_subject_evidence.py` | validates `environment.json`; denies hostile carriers without echo | I-004 | No | revert script |
-| I-006 | Progress schema and seed ledger | `implementation-progress.schema.json`, `implementation-progress.json` | seed is T-001 IN_PROGRESS, T-002..T-033 PENDING, binds manifest/tasks sha | I-003 | No | revert ledger/schema |
-| I-007 | Progress validator | `scripts/validate_subject_progress.py` | duplicate-key safe; legal transitions; one active task; evidence refs safe | I-006 | No | revert script |
-| I-008 | Environment evidence artifact | `evidence/<baseline-id>/environment.json` | public-safe, source_commit, git status, python/sqlite/schema info, normative hashes | I-005/I-007 | No | delete evidence dir |
-| I-009 | T-001 mandatory command run | transcripts | every T-001 command exits 0; no waiver unless new authorized amendment | I-008 | No | mark BLOCKED in progress ledger |
-| I-010 | T-001 fresh reviews | review JSON/evidence | spec-compliance PASS, quality/security PASS, P0=0/P1=0 | I-009 | No | keep T-001 IN_PROGRESS/BLOCKED |
-| I-011 | Complete T-001 ledger transition | updated progress ledger | validator PASS after IN_PROGRESS→COMPLETED with evidence refs | I-010 | No | append BLOCKED instead if validator fails |
-| I-012 | T-001 closure report / issue update | #421 comment or local report | states done/not done, exact baseline, tests, remaining side effects | I-011 | Yes for PR/push | no external update if not authorized |
+| ID | Owner role | Objective | Outputs | Acceptance | Depends on | Reauth? | Rollback |
+|---|---|---|---|---|---|---|---|
+| I-001 | Trusted parent | Establish T-001 local-safe environment | `.venv` local only, environment notes | offline exact setup succeeds; accepted B-000 tree and actual T-001 receipt verify | B-009 + accepted B-000 Git delivery + verified T-001 receipt | Yes, separate T-001 owner decision | remove `.venv` |
+| I-002 | Control-plane test owner | RED coverage for baseline/evidence/progress controls | baseline/progress tests | tests fail for missing reader/evidence/progress artifacts | I-001 | No | restore owned tests |
+| I-003 | Baseline-control owner | Baseline ID reader | `scripts/read_subject_baseline_id.py` | reads only verified manifest baseline_id; mismatch fails closed | I-002 | No | restore script |
+| I-004 | Evidence-contract owner | Evidence schemas | evidence schemas | schema tests reject secrets/private paths/malformed artifacts | I-002 | No | restore schemas |
+| I-005 | Evidence-contract owner | Evidence validator | `scripts/validate_subject_evidence.py` | validates environment; hostile carriers DENY without echo | I-004 | No | restore script |
+| I-006 | Progress-contract owner | Progress schema and seed ledger | progress schema + ledger | exact T-001 IN_PROGRESS seed binds manifest/tasks | I-003 | No | restore ledger/schema |
+| I-007 | Progress-contract owner | Validator + atomic transition writer | validate/update progress scripts | transition/dependency/evidence validation + fsync/atomic-replace crash matrix PASS | I-006 | No | restore scripts |
+| I-008 | Evidence producer | Environment evidence artifact | environment evidence | public-safe source commit/status/python/sqlite/normative hashes | I-005/I-007 | No | delete owned evidence artifact |
+| I-009 | Verification owner | T-001 mandatory command run | transcripts | every command exits 0; zero waiver absent new amendment | I-008 | No | writer records BLOCKED |
+| I-010 | Two independent reviewers | T-001 fresh reviews | review evidence | ordered spec and quality/security PASS, P0=0/P1=0 | I-009 | No | keep task non-completed |
+| I-011 | Progress-contract owner | Complete T-001 transition | updated ledger | atomic writer validates IN_PROGRESS→COMPLETED + evidence refs | I-010 | No | writer records BLOCKED if legal |
+| I-012 | Parent reporter | T-001 closure report / optional issue update | local report or #421 comment | exact baseline/tests/remaining side effects; no external write without authority | I-011 | Yes for any GitHub/PR/push write | keep report local |
 
 ### V-series — Verification and quality gate atoms
 
 These atoms are not feature work. They normalize evidence so that every later implementation task can be mechanically judged instead of argued from prose.
 
-| ID | Objective | Outputs | Acceptance | Depends on | Rollback |
-|---|---|---|---|---|---|
-| V-001 | Normalize acceptance command blocks | Per-task command matrix in the relevant Work Packet or task section | every command has setup, argv, expected exit code, stdout/stderr rule, and artifact path | G-005 | revert command matrix |
-| V-002 | Define RED/GREEN/HOSTILE/REGRESSION evidence classes | verification checklist | every test is classified and cannot substitute for another class | V-001 | revert checklist |
-| V-003 | Define artifact completeness checklist | checklist for schemas, scripts, JSON evidence, transcripts, issue comments | missing artifact blocks completion rather than becoming a note | V-001 | revert checklist |
-| V-004 | Define traceability coverage gate | requirement/example/task/test/evidence mapping rule | no approved E-* is unmapped; no duplicate owner for finite ID sets | V-003 | revert gate |
-| V-005 | Define no-guess/no-hardcode review checklist | reviewer checklist | every material field has owner/source; guessed policy is P1 | V-003 | revert checklist |
-| V-006 | Define docs-change rebind checker | rule or script invocation in Work Packet | canonical byte change forces stale-baseline FAIL before rebind and PASS after rebind | G-004 | revert checker text |
-| V-007 | Define fresh review template set | spec/quality/security/release review template | review binds exact baseline/tree/diff and reports P0/P1/P2 | G-005 | discard templates |
-| V-008 | Capture minimum evidence bundle for each milestone | evidence bundle index | focused, hostile, baseline, regression, diff, and review evidence are named separately | V-002..V-007 | remove index |
+| ID | Owner role | Objective | Outputs | Acceptance | Depends on | Rollback |
+|---|---|---|---|---|---|---|
+| V-001 | Verification owner | Normalize acceptance command blocks | command matrix | setup/argv/exit/stdout/stderr/artifact all exact | G-005 | revert matrix |
+| V-002 | Verification owner | Define RED/GREEN/HOSTILE/REGRESSION classes | checklist | evidence classes cannot substitute for each other | V-001 | revert checklist |
+| V-003 | Evidence owner | Define artifact completeness | checklist | missing artifact blocks completion | V-001 | revert checklist |
+| V-004 | Traceability owner | Define coverage gate | mapping rule | no missing E-* or duplicate finite-ID owner | V-003 | revert gate |
+| V-005 | Review coordinator | Define no-guess checklist | reviewer checklist | every material field has owner/source; guessed policy is P1 | V-003 | revert checklist |
+| V-006 | Manifest owner | Define docs-change rebind check | Work Packet rule | stale-baseline FAIL before rebind and PASS after | G-004 | revert rule |
+| V-007 | Review coordinator | Define fresh review templates | template set | exact baseline/tree/diff + P0/P1/P2 | G-005 | discard templates |
+| V-008 | Evidence owner | Capture minimum evidence bundle index | evidence index | focused/hostile/baseline/regression/diff/review named separately | V-002..V-007 | remove index |
 
 ### E-series — Risk, rollback, and side-effect atoms
 
 These atoms prevent a good plan from becoming unsafe execution. They are especially important because this delivery carries canonical docs-only changes that must remain separate from B-000 implementation.
 
-| ID | Objective | Outputs | Acceptance | Depends on | Rollback |
-|---|---|---|---|---|---|
-| E-001 | Define rollback unit for each atom | rollback column in Work Packet/task table | every atom can name the files/artifacts to restore or the ledger state to append | G-001 | update table |
-| E-002 | Define artifact retention policy | retention note for local ephemeral review outputs, repo evidence, GitHub comments, review JSON | public-safe evidence retained; private/live/raw content excluded | E-001 | update note |
-| E-003 | Define issue/comment evidence norm | issue update template | comments state baseline, scope, verdict, side effects, and next gate without leaking private context | E-002 | update template |
-| E-004 | Define branch hygiene norm | branch/preflight checklist | branch/base/worktree checked before baseline, review, authorization, and PR | E-001 | update checklist |
-| E-005 | Define scope-mixing prohibitions | explicit no-mix list | docs-only, bootstrap, implementation, migration, private shadow, release, and deploy cannot share one authorization | E-001 | update no-mix list |
-| E-006 | Define side-effect-zero checklist | local-only checklist | no commit/push/PR/deploy/migration/external write unless separately authorized | E-005 | update checklist |
-| E-007 | Define release-blocking risk register | risk register rows | P0/P1 risks name mitigation, stop gate, and owner | E-006 | update register |
-| E-008 | Define failure disposition policy | waiver/exception table | default no-waiver; any exception has owner, ceiling, duration, evidence, and affected requirement | E-007 | update policy |
+| ID | Owner role | Objective | Outputs | Acceptance | Depends on | Rollback |
+|---|---|---|---|---|---|---|
+| E-001 | Execution planner | Define rollback unit for each atom | rollback column | exact owned files/artifacts/ledger action named | G-001 | update table |
+| E-002 | Privacy/evidence owner | Define artifact retention | retention note | public-safe retained; private/live/raw excluded | E-001 | update note |
+| E-003 | Parent reporter | Define issue/comment evidence norm | template | baseline/scope/verdict/side effects/next gate without leak | E-002 | update template |
+| E-004 | Parent verifier | Define branch hygiene | preflight checklist | branch/base/worktree checked at every gate | E-001 | update checklist |
+| E-005 | Security reviewer | Define no-mix scopes | prohibition list | docs/bootstrap/implementation/migration/private/release/deploy separate | E-001 | update list |
+| E-006 | Parent verifier | Define zero-side-effect check | local checklist | no external/destructive state without authority | E-005 | update checklist |
+| E-007 | Risk owner | Define release-blocking register | risk rows | every P0/P1 names mitigation/stop/owner | E-006 | update register |
+| E-008 | Designated authority | Define failure/waiver policy | exception table | default zero waiver; bounded explicit exception only | E-007 | update policy |
 
 ### S-series — Subject Distillation atomic implementation tasks after T-001
+
+Canonical task owner map（one accountable role per implementation task；review/release roles remain independent）：
+
+| Task | Accountable owner role | Task | Accountable owner role |
+|---|---|---|---|
+| T-001 | Control-plane owner | T-018 | Relationship/privacy owner |
+| T-002 | Synthetic-fixture owner | T-019 | Fragment-contract owner |
+| T-003 | Traceability owner | T-020 | Organization-contract owner |
+| T-004 | Subject-contract owner | T-021 | Setup/lifecycle owner |
+| T-005 | DB-lifecycle owner | T-022 | CLI surface owner |
+| T-006 | Schema/migration owner | T-023 | MCP surface owner |
+| T-007 | Subject-store owner | T-024 | Gateway/OpenAPI owner |
+| T-008 | Authentication owner | T-025 | Evaluation-gate owner |
+| T-009 | Policy/authority owner | T-026 | Evaluation-governance owner |
+| T-010 | Candidate-bridge owner | T-027 | Recovery owner |
+| T-011 | Evidence-metadata owner | T-028 | Privacy/log-gate owner |
+| T-012 | Operator-private storage owner | T-029 | Final verification owner |
+| T-013 | Assertion/provenance owner | T-030 | Documentation owner |
+| T-014 | Model-assembly owner | T-031 | Review coordinator + three independent reviewers |
+| T-015 | Grant owner | T-032 | Separately authorized private-pilot operator |
+| T-016 | Context Pack owner | T-033 | Reviewed attester owner; release authority remains separate |
+| T-017 | Decision-ledger owner |  |  |
+
+Only one canonical T-task may be `IN_PROGRESS`. Parallel work is limited to
+read-only review/research or repo-external Work Packet drafting that does not edit
+an owned source path or claim task progress. Changing that rule requires a new
+progress contract, rebaseline, fresh review and new authorization.
 
 These rows preserve the canonical T-002..T-033 authority while adding execution-management fields requested for atomic planning. Each row still needs a full Work Packet before coding; this table is the roadmap-level atom index.
 
@@ -202,7 +247,7 @@ These rows preserve the canonical T-002..T-033 authority while adding execution-
 | S-017 | T-018 | Implement directional and temporal relationships | relationship module/tests | temporal/directional/perspective invariants PASS | S-016 | No | revert relationship files |
 | S-018 | T-019 | Implement pure Subject Fragment validator | fragment validator/tests | deterministic validation; no persistence/transmission side effect | S-017 | No | revert validator/tests |
 | S-019 | T-020 | Verify Organization contract compatibility | org compatibility fixtures/tests | contract-only org examples pass; no org runtime sneaks in | S-018 | No | revert org compatibility files |
-| S-020 | T-021 | Implement default-on Subject capability state | capability-state docs/code/tests | default state is safe/off unless explicitly enabled as specified | S-019 | Maybe if capability policy changes | revert capability files |
+| S-020 | T-021 | Implement default-on safe-envelope Subject setup | capability-state docs/code/tests | new interactive setup ends `active` with root, sealed privacy/model policies and empty sealed model; legacy/direct/non-interactive stays `available_uninitialized`; collection/promotion/private copy remain separately gated | S-019 | Maybe if capability policy changes | revert capability files |
 | S-021 | T-022 | Add CLI Subject command tree | CLI commands/tests/docs | CLI cannot self-prove principal via body field | S-020 | No | revert CLI additions |
 | S-022 | T-023 | Add minimal MCP Subject tools | MCP handlers/tests/docs | MCP profile is not authorization boundary; tests PASS | S-021 | No | revert MCP additions |
 | S-023 | T-024 | Add Gateway Subject adapters | Gateway/OpenAPI/tests | bearer/body identity override denied; contract metadata correct | S-022 | Yes before external exposure | revert Gateway additions |
@@ -213,18 +258,37 @@ These rows preserve the canonical T-002..T-033 authority while adding execution-
 | S-028 | T-029 | Run full synthetic and legacy regression gate | unit/fixture/surface/legacy transcripts and final traceability | full synthetic+legacy gates PASS; SBE node mapping complete | S-027 | No | append BLOCKED evidence; revert candidate code if needed |
 | S-029 | T-030 | Update canonical docs and changelog | docs/changelog updates | docs match implemented behavior; no post-review drift | S-028 | Yes if canonical bytes change | restore captured pre-doc state |
 | S-030 | T-031 | Fresh code/security/migration review | review JSON/evidence | P0=0/P1=0; reviewed tree digest bound | S-029 | No | reject review candidate |
-| S-031 | T-032 | Private shadow pilot, operator-private | private receipt reference only | remains operator-private; public release can stay experimental if blocked | S-030 | Yes; private/live explicit only | discard private pilot artifacts |
+| S-031 | T-032 | Private shadow pilot, separate operator-private lane | private receipt reference only | requires separate private/live authorization; remains outside Lane S/public evidence; public attestation may stay experimental if blocked | S-030 | Yes; private/live explicit only | discard private pilot artifacts |
 | S-032 | T-033 | Final attestation and implementation closure | attestation artifact and final ledger transition | attestation validates evidence/review/authorization binding | S-030 and S-031 if stable, or S-031 BLOCKED allowed for experimental | Yes for release/push/merge | do not mark final complete; append BLOCKED |
 
 ### R-series — Retrieval, temporal, and graph proof slices
 
-| ID | Issue | Objective | Must wait for | Atomic acceptance |
+| ID | Owner role | Issue | Objective | Must wait for | Atomic acceptance |
+|---|---|---|---|---|---|
+| R-001 | Retrieval evaluation owner | #413 | Public Subject retrieval benchmark | T-001 + T-002/T-003 stable; generic harness drafting only after T-001 | fixed queries/evidence refs/provenance + numeric quality/latency baseline |
+| R-002 | Retrieval implementation owner | #414 | Deterministic semantic/vector path | R-001 | provider identity, deterministic CI, stale/rebuild/fallback tests |
+| R-003 | Temporal-contract owner | #415 | Temporal validity handling | S-003 or equivalent contract | effective/expiry/source time + stale/unknown tests |
+| R-004 | Graph-contract owner | #416 | Entity/edge extraction | S-001/S-002 | shapes/aliases/relationships/confidence/evidence + unsafe payload DENY |
+| R-005 | Demo owner | docs/strategy | Killer demo hardening | T-001 and candidate flow stable | governed demo remains runnable/public-safe |
+
+### LT-series — Deferred long-term behavior-governance atoms
+
+These entries are roadmap authority only. None belongs to B-000/T-001, and each
+requires its own Work Packet and authorization after the named prerequisites.
+
+| ID | Owner role | Output | Prerequisites | Minimal acceptance |
 |---|---|---|---|---|
-| R-001 | #413 | Public retrieval benchmark baseline | T-001 complete; preferably T-002 fixtures | synthetic fixtures + expected query results + stable quality/latency signal |
-| R-002 | #414 | Deterministic semantic/vector retrieval path | R-001 | provider identity metadata, deterministic CI provider, stale-index/rebuild tests, fallback preserved |
-| R-003 | #415 | Temporal validity handling for distilled facts | S-003 or equivalent subject contract | effective/expiry/source time fields, expired/current/unknown validation tests, stale marking docs |
-| R-004 | #416 | Entity/edge graph extraction contract | S-001/S-002 | entity/edge shapes, alias/relationship fixtures, confidence/evidence refs, unsafe payload rejection |
-| R-005 | docs/strategy | Killer demo hardening | T-001 and candidate flow stable | `propose -> review -> promote -> search -> bounded read -> rollback -> audit` demo stays runnable and public-safe |
+| LT-000 | Isolation/security owner | User-persona × project/org-policy × consumer-agent-role × model-render-style isolation matrix | T-004/T-008/T-009 | default deny; no implicit inheritance/evidence/authority crossover; synthetic confusion matrix + legacy compatibility PASS |
+| LT-001 | Domain architect | Existing-SSOT plane/type crosswalk | LT-000 | every Evidence/Memory/Policy/Runtime concept maps to one owner; no second persona truth store |
+| LT-002 | Provenance/privacy owner | Authorship and AI-contamination contract | LT-000 + T-011/T-013 | human/agent/model/third-party producer metadata preserved; AI output cannot become human-explicit without typed sourced action |
+| LT-003 | Candidate/policy owner | Behavioral Diff candidate protocol | LT-000 + T-010/T-013 | diff is deterministic, provenance-bound and candidate-only; replay/stale-base/generic-promote DENY |
+| LT-004 | Decision-policy owner | Decision Boundary contract | LT-000 + T-015/T-017 | action authority remains false absent independent grant; high-impact/irreversible cases ask or deny; one-field DENY twins |
+| LT-005 | Model/context owner | Versioned persona/session snapshot | LT-000 + T-014/T-016 | deterministic refs-only projection, fixed per session, no raw evidence or authority, rollback/replay PASS |
+| LT-010 | Retrieval/compiler owner | Dual Evidence/Policy retriever + budget/precedence compiler | R-001 + T-016 + LT-001/003 | no candidate/approved cross-stream leakage; explicit instruction precedence; provenance/fallback/stale-index tests PASS |
+| LT-011 | Evaluation owner | Persona governance evaluation suite | T-025/T-026 + LT-002..005 + LT-010 | separately reports exactly Evidence Grounding, Decision Agreement, Constraint Violation Rate, Boundary Consistency, Context Sensitivity, Persona Drift, Cross-model Portability and Abstention Quality；synthetic/private data remain separated |
+| LT-020 | IR architect | Canonical Persona IR v1 export view | LT-005/010/011 stable | versioned lossless provenance mapping and round-trip; derived artifact, never DB authority |
+| LT-030 | Privacy/export owner | Governed SFT/DPO dataset export | T-028/T-033 + LT-020 | explicit consent/scope, minimization, revocation/deletion, AI-contamination weights, audit; raw/private default DENY |
+| LT-040 | ML owner + independent privacy/security reviewers | Optional LoRA/SFT/DPO experiment | LT-030 PASS + separate private/live/spend authority | isolated/deletable artifacts, benchmarked against non-trained baseline, no unapproved data, no mutation of canonical memory/policy |
 
 ---
 
@@ -287,12 +351,17 @@ Every future coding Work Packet should answer these before delegation:
 
 ## 10. Recommended next action
 
-The docs-only rulefix and exact-baseline review are complete. Continue through the Codex handoff in this order:
+Complete this owner-authorized docs-only LT-C repair and stop before B-000. The valid sequence is:
 
 ```text
-review and merge this baseline/plan PR (or explicitly choose a reviewed stacked base)
-→ start a clean B-000 branch from the accepted commit
-→ give Codex the exact four-value owner instruction from the handoff
+finish canonical/planning alignment
+→ rebind and mechanically validate the five-file manifest
+→ build exact normative-tree + delivery-diff review inputs
+→ obtain two ordered distinct-reviewer PASS results
+→ retain a retrievable design §20.1 evidence body outside the repo
+→ under separate Git authorization, commit/deliver the reviewed docs candidate
+→ select that exact commit as a clean B-000 base
+→ give Codex the exact five-value owner instruction from the handoff
 → implement only the three B-000 paths with genuine RED first
 → parent readback + fresh spec review + fresh quality/security review
 → stop
@@ -310,14 +379,14 @@ Do not combine B-000 and T-001 into one branch, receipt, review unit, commit, or
 - [x] Live GitHub issues inspected: #410, #421, #422, #413, #414, #415, #416
 - [x] Strategy docs inspected: product architecture, killer demo, 90-day validation
 - [x] Subject canonical task order inspected: B-000 + T-001..T-033
-- [x] Current seven-file staged delivery inventory called out
+- [x] Current eight-file staged delivery inventory called out
 - [x] Roadmap optimized into lanes, milestones, risks, and atomic tasks
 - [x] Progress anchor synchronized in `docs/plans/SUBJECT_DISTILLATION_PROGRESS.md`
 - [x] Mechanical docs check run on planning files
-- [x] Fresh planning review closure PASS after P1 repair
-- [x] Canonical rulefix baseline rebound and validated as `0f688cf2e2472beb`
-- [x] Fresh exact-baseline closure review PASS with P0=0/P1=0/P2=0
+- [x] LT-C canonical/planning repair complete
+- [x] New manifest rebound and validator PASS
+- [ ] Retrievable design §20.1 ordered-review evidence PASS with P0=0/P1=0
 - [x] B-000 Issue #422 created
 - [x] Codex continuation handoff prepared
 
-This document records the plan and current owner-authorized Git delivery. It does not itself authorize B-000/T-001 execution, merge, deployment, private shadow, or production migration.
+This document records the plan and current owner-authorized local docs-only repair. It does not authorize commit/push/PR/GitHub writes, B-000/T-001 execution, merge, deployment, private shadow, release, or production migration.

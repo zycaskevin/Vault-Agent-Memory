@@ -1,7 +1,7 @@
 # Subject Distillation — Implementation Tasks
 
 **Status:** Canonical product contract; frozen bytes record integrity only
-**Public repository baseline:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
+**Source reference commit:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`（inventory reference only；not the normative baseline ID、delivery base、reviewed tree或implementation base）
 **Integrity binding:** `baseline-manifest.json` binds the exact five canonical files, their order, byte sizes, SHA-256 values, full digest, and baseline ID. Integrity does not imply review approval, implementation authorization, migration registration, or release authorization.
 **Implementation status:** Not implemented and not authorized by this artifact.
 **Target:** Generic Subject Core + Person v1；Organization contract-only
@@ -11,9 +11,9 @@
 這份文件是hash-bound implementation plan，不是coding授權，也不自行宣告plan verdict。B-000與T-001各自只能在其明列條件全部成立後開始；review PASS或hash本身從不授權implementation。
 
 1. `baseline-manifest.json`通過mechanical integrity validation，證明top-level five-file hash/full-digest/baseline-ID/frozen-state binding成立；
-2. separately recorded fresh spec/design/plan review evidence為`PASS`、P0=0、P1=0，並綁定exact `baseline_id`、full digest及reviewed diff/tree hash；
+2. parent可依design §20.1 locator取回並hash驗證separately recorded fresh review evidence body，兩個ordered reviews皆為`PASS`、P0=0、P1=0，並綁定exact `baseline_id`、full digest、reviewed normative tree及delivery diff；digest或prose claim若無actual body一律不算evidence；
 3. B-000已在trusted operator channel的exact owner instruction下完成並通過exact-tree review，且separate fail-closed authorization verifier確認T-001的actual receipt綁定exact `baseline_id`、full digest、task及scope；
-4. worktree／branch／base重新核對為clean且符合reviewed diff/tree，沒有未解的外部變更。
+4. worktree／branch／base重新核對為clean，`git rev-parse HEAD` byte-equal於owner-selected implementation base，該commit tree包含reviewed canonical candidate且符合reviewed diff/tree，沒有未解的外部變更。
 
 執行紀律：
 
@@ -34,12 +34,14 @@
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[dev]"
+test -n "${SUBJECT_DEV_WHEELHOUSE:-}"
+test -d "${SUBJECT_DEV_WHEELHOUSE}"
+python -m pip install --no-index --find-links "${SUBJECT_DEV_WHEELHOUSE}" -e ".[dev]"
 command -v python
 python --version
 ```
 
-`.venv/`必須已gitignored；supported Python依package contract為`>=3.10`。啟用後每個normative `python ...`命令都必須可逐字執行。setup或`command -v python`失敗即阻塞該lane，不得silent interpreter substitution。
+`.venv/`必須已gitignored；supported Python依package contract為`>=3.10`。`SUBJECT_DEV_WHEELHOUSE`由trusted parent指向repo外、預先取得且經來源／完整性核對的local wheelhouse；B-000/T-001 setup禁止index與remote network fallback。啟用後每個normative `python ...`命令都必須可逐字執行。wheelhouse、setup或`command -v python`失敗即阻塞該lane，不得silent interpreter/dependency substitution或臨時連網。
 
 ## 1. Closure artifacts
 
@@ -85,7 +87,7 @@ Progress contract固定為JSON Schema 2020-12，所有object層級均`additional
 
 `repo_file.path`在lexical normalization後、讀取／hash前，validator必須從repo root開始對每個path component執行`lstat`並拒絕任何symlink（包含symlink parent／alias），要求resolved target仍位於resolved repo root內、是regular file，且resolved target相對repo root的POSIX path byte-equal於lexically normalized repo-relative path；任何missing component、alias、escape、non-regular target或physical／lexical mismatch都fail closed，只有全部檢查成功才hash該regular file bytes。Future schema／validator必須具有上述scanner fixtures、symlink-parent／target／escape DENY，以及ordinary public-safe opaque和in-repo non-symlink regular-file legal ALLOW controls，但本docs-only amendment不建立schema、validator或tests。所有timestamp必須通過semantic calendar/clock解析的UTC RFC3339 `Z`；events的`at_utc`不得倒退，top-level `updated_at_utc`必須byte-equal末筆event `at_utc`。Validator必須用duplicate-key-rejecting JSON parser讀取manifest、schema與ledger；任何ledger write/update都必須在同一operation後執行validator並取得`PASS`，否則update不構成有效status transition。當重播結果為`T-033=COMPLETED`時，validator必須自動執行完整fixed evidence、review-tree與implementation-authorization attestation gate，不接受caller跳過；final event必須含resolved fixed `attestation.json` repo path及其當前SHA-256的exact `repo_file` ref。
 
-`implementation-progress.json`是唯一mutable control-plane file，明確排除於T-031／T-033的`reviewed_tree_sha256`及`attestation.json.artifact_sha256`集合之外。`implementation-progress.schema.json`、`scripts/validate_subject_progress.py`與T-031先建立的`scripts/attest_subject_closure.py`則是authorized source paths，必須納入reviewed tree；其完整性由`reviewed_tree_sha256`覆蓋，不重複加入只用於固定closure evidence的`attestation.json.artifact_sha256`集合。Generated evidence及private pilot資料維持既有排除；`CHANGELOG.md`是T-030 reviewed source path，T-030完成後即freeze，T-031／T-033的status transition只能進progress ledger，因此不得造成post-review source drift。
+`implementation-progress.json`是唯一mutable control-plane file，明確排除於T-031／T-033的`reviewed_tree_sha256`及`attestation.json.artifact_sha256`集合之外。`implementation-progress.schema.json`、`scripts/validate_subject_progress.py`、`scripts/update_subject_progress.py`與T-031先建立的`scripts/attest_subject_closure.py`則是authorized source paths，必須納入reviewed tree；其完整性由`reviewed_tree_sha256`覆蓋，不重複加入只用於固定closure evidence的`attestation.json.artifact_sha256`集合。Generated evidence及private pilot資料維持既有排除；`CHANGELOG.md`是T-030 reviewed source path，T-030完成後即freeze，T-031／T-033的status transition只能透過atomic writer進progress ledger，因此不得造成post-review source drift。
 
 ## 2. Phase A — Contract、fixtures與baseline
 
@@ -97,9 +99,13 @@ B-000 is not a T-task，never appears in `implementation-progress.json`，and ca
 - `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`
 - `tests/test_subject_authorization_bootstrap.py`
 
-B-000只能在current five-file baseline integrity validates、該exact baseline fresh spec/design/plan review為PASS且P0=0/P1=0、repository owner透過trusted operator channel簽發design §21所定四個public values皆explicit且byte-equal的exact B-000 instruction、以及clean branch/base/worktree preflight全部成立後開始。Trusted operator channel message本身是repository-owner instruction與唯一explicit human bootstrap trust root；repo無法自行cryptographically prove private conversation/channel。B-000與所有implementation agents must not self-authorize、不得從lane-only phrase、old digest、hash或review PASS推論授權、不得create/rewrite owner instruction或persist fake owner-supplied scope artifact。Parent可從verified manifest與normative constants在memory計算bootstrap canonical bytes/digest，且只在repo外保存public-safe opaque audit reference。
+B-000只能在current five-file baseline integrity validates、parent可取回並驗證design §20.1 exact review evidence body且兩個ordered reviews皆PASS/P0=0/P1=0、repository owner透過trusted operator channel簽發design §21所定五個public values皆explicit且byte-equal的exact B-000 instruction、`git rev-parse HEAD`等於其中`implementation_base_commit`且該clean commit tree包含reviewed canonical bytes、以及clean branch/worktree preflight全部成立後開始。Trusted operator channel message本身是repository-owner instruction與唯一explicit human bootstrap trust root；repo無法自行cryptographically prove private conversation/channel。B-000與所有implementation agents must not self-authorize、不得從lane-only phrase、old digest、hash或review PASS推論授權、不得create/rewrite owner instruction或persist fake owner-supplied scope artifact。Parent可從verified manifest與normative constants在memory計算bootstrap canonical bytes/digest；selected base另以owner instruction與clean checkout byte-equality核對，且只在repo外保存public-safe opaque audit reference。
 
 B-000 local-only且只能觸碰上述三paths；禁止product/runtime/data/migration、GitHub、commit、push、PR、release或deployment操作。先在`tests/test_subject_authorization_bootstrap.py`建立genuine RED，再實作schema/verifier。Schema/verifier必須完整實現design §21的exact fields、canonical authorization ID、parent-bound receipt byte digest、duplicate-key/type/time/path/public-safety/no-echo contract與全部negative/legal-positive controls。
+
+Schema validation不得新增dependency或修改package metadata：canonical schema只可使用design §21固定的JSON Schema 2020-12 keyword subset，verifier以Python standard library實作該exact closed subset；任何unknown keyword／remote `$ref` DENY，且schema-shape與receipt matrix證明fixed checker和canonical schema contract一致。不得silent import environment偶然存在的`jsonschema`。
+
+Resource hostile matrix另須覆蓋每檔1,048,576-byte cap、JSON depth 32／aggregate node 32,768／single-container member 4,096 exact-boundary ALLOW與one-over DENY，且limit failure不得成為RecursionError或unbounded secondary copy。Descriptor/no-follow/race acceptance至少在一個supported Python 3.10+ Linux run通過；macOS run只算smoke，return packet逐次記錄OS/Python。
 
 Verifier deny contract固定為exit `2`、empty stdout、stderr exact `SUBJECT_IMPLEMENTATION_AUTHORIZATION_DENY\n`；unexpected internal/harness failure固定為exit `3`、empty stdout、stderr exact `SUBJECT_IMPLEMENTATION_AUTHORIZATION_ERROR\n`。Success contract固定為exit `0`、empty stderr及exact compact LF-terminated JSON object，且不得echo path、hostile key/value、token-shaped value或receipt content。
 
@@ -115,7 +121,7 @@ python -m ruff check scripts/verify_subject_implementation_authorization.py test
 ### T-001 — Freeze implementation baseline
 
 **Requirements:** R-SD-015
-**Files:** no production changes；B-000 already owns the authorization schema/verifier/bootstrap test。Create `scripts/read_subject_baseline_id.py`、reuse existing `scripts/validate_subject_baseline.py`、Create `scripts/validate_subject_evidence.py`、per-artifact JSON schemas under `specs/subject-distillation/evidence-schemas/`、`tests/test_subject_baseline_control.py`、`specs/subject-distillation/implementation-progress.schema.json`、`specs/subject-distillation/implementation-progress.json`、`scripts/validate_subject_progress.py`、and existing planned `tests/test_subject_progress.py` solely for progress-ledger controls，then create `specs/subject-distillation/evidence/<baseline-id>/environment.json`。
+**Files:** no production changes；B-000 already owns the authorization schema/verifier/bootstrap test。Create `scripts/read_subject_baseline_id.py`、reuse existing `scripts/validate_subject_baseline.py`、Create `scripts/validate_subject_evidence.py`、per-artifact JSON schemas under `specs/subject-distillation/evidence-schemas/`、`tests/test_subject_baseline_control.py`、`specs/subject-distillation/implementation-progress.schema.json`、`specs/subject-distillation/implementation-progress.json`、`scripts/validate_subject_progress.py`、`scripts/update_subject_progress.py`、and existing planned `tests/test_subject_progress.py` solely for progress-ledger controls，then create `specs/subject-distillation/evidence/<baseline-id>/environment.json`。
 
 - [ ] Record `git status --short --branch`, `git rev-parse HEAD`, Python/SQLite versions and current schema status.
 - [ ] Verify every SHA-256 in `baseline-manifest.json` against bytes on disk; any mismatch blocks T-001 and requires a new fresh review, never an in-place manifest rewrite under old approval.
@@ -128,11 +134,12 @@ Trust-artifact RED ownership is exact：`tests/test_subject_baseline_control.py`
 Progress-ledger obligations：
 
 - Create the strict schema and duplicate-key-safe validator before seeding the ledger；the schema/validator are reviewed source, while the ledger is the excluded mutable control plane defined in §1.
+- Create one atomic transition writer `scripts/update_subject_progress.py`; every T-001..T-033 status change must pass expected-current-state、sequence、dependency and evidence-ref validation in memory, write a same-directory mode-preserving temporary file, fsync file, run the canonical validator against that exact temp bytes, atomically replace the ledger, then fsync the parent directory. Any validation/write/fsync/replace fault leaves the previous ledger byte-identical and nonzero；manual direct ledger editing is invalid execution evidence.
 - Seed exactly `T-001` as`IN_PROGRESS` and `T-002`..`T-033` as`PENDING`, binding the integrity-verified manifest `baseline_id`／`closure.full_digest` and the separately reviewed `tasks.md` SHA-256；immediately run the progress validator.
 - Define `attestation.json.implementation_authorization` only as the result of the separate release-authority receipt verifier, bound to the exact baseline ID、full digest and authorized scope；manifest integrity and review PASS cannot populate or imply it.
 - Append the `T-001: IN_PROGRESS→COMPLETED` event only after T-001 spec-compliance and code-quality reviews pass and every mandatory command exits `0`；immediately rerun the progress validator. Any nonzero exit blocks T-001 and prevents its COMPLETED ledger event。Failure evidence is recorded public-safely，but recording is not a waiver。Only a separately owner-authorized normative amendment plus a new baseline and fresh review may change this rule。Do not mark any T-001 checkbox。
 
-`tests/test_subject_progress.py` is the one and only `Create` owner for the progress adversarial matrix. It must cover opaque token-prefix（including `sk_test_`、`rk_test_` and `whsec_` parity with the shared scanner）、Bearer、three-segment JWT、credential assignment、PEM/private-key marker、bare-digest and recursively scanned dotted/dashed/underscored forbidden-key variants plus the expanded `client_secret|refresh_token|aws_secret_access_key|capability_secret|raw|raw_evidence|content_raw|private_path|absolute_path` DENY controls；the sole receipt exception exact `private-shadow-pass:<64 lowercase hex>` legal ALLOW；and `repo_file` DENY controls for `..` components、absolute paths、symlink final targets、symlink ancestors、alias/physical-lexical mismatch、non-regular targets、and resolved targets outside the repo, plus the legal ALLOW for a regular non-symlink file whose canonical relative path remains inside the repo. T-029 must execute this concrete file in its unit stage, and T-031 must include its unchanged bytes in the authorized reviewed tree before hashing.
+`tests/test_subject_progress.py` is the one and only `Create` owner for the progress adversarial matrix. It must cover opaque token-prefix（including `sk_test_`、`rk_test_` and `whsec_` parity with the shared scanner）、Bearer、three-segment JWT、credential assignment、PEM/private-key marker、bare-digest and recursively scanned dotted/dashed/underscored forbidden-key variants plus the expanded `client_secret|refresh_token|aws_secret_access_key|capability_secret|raw|raw_evidence|content_raw|private_path|absolute_path` DENY controls；the sole receipt exception exact `private-shadow-pass:<64 lowercase hex>` legal ALLOW；`repo_file` DENY controls for `..` components、absolute paths、symlink final targets、symlink ancestors、alias/physical-lexical mismatch、non-regular targets、and resolved targets outside the repo, plus the legal ALLOW for a regular non-symlink file whose canonical relative path remains inside the repo；以及atomic writer的stale expected state、invalid dependency、invalid temp bytes、short write、file-fsync、validator、replace、directory-fsync fault injection與crash/retry controls，逐一證明failure前一版ledger byte-identical且合法retry只追加一次transition。T-029 must execute this concrete file in its unit stage, and T-031 must include its unchanged bytes together with both progress scripts in the authorized reviewed tree before hashing.
 
 **Trusted-channel handoff（normative, before Commands）：** The repository and
 agents must not create/rewrite the receipt, scope, owner instruction, or their
@@ -276,11 +283,11 @@ ruff check vault/subject_contracts.py tests/test_subject_contracts.py
 - Modify `vault/cli_flow.py` for a non-mutating status/preflight path
 - Create `tests/test_subject_migration.py`
 
-- [ ] Red-test `VaultDB.inspect()`的missing／empty／v14／unsupported／contradictory state matrix；它是readonly path，constructor與inspect不得建立父目錄、DB、sidecar、journal mode、DDL或version stamp。
+- [ ] Red-test canonical `VaultDB.inspect(path)`的missing／empty／v14／unsupported／contradictory state matrix；它是readonly class/service path，constructor與inspect不得建立父目錄、DB、sidecar、journal mode、DDL或version stamp，且不得依賴先建立可寫instance。
 - [ ] Red-test `SCHEMA_MANIFESTS`是status、migration與backup共用的唯一versioned shape authority；移除`max(...)` version reconciliation。
-- [ ] Red-test a v14 DB can continue legacy memory operations while Subject calls return `schema_upgrade_required`；在T-006註冊v15 target前，explicit `VaultDB.migrate(15)`只可回`schema_contract_unavailable`且pre/post hash相同。
+- [ ] Red-test a v14 DB can continue legacy memory operations while Subject calls return `schema_upgrade_required`；在T-006註冊v15 target前，canonical explicit `VaultDB.migrate(path, backup_path, target=15)`只可回`schema_contract_unavailable`且source/backup pre/post inventory與source hash相同。任何pre-existing backup target（file/symlink/directory）固定回`backup_exists`且byte/inode/inventory不變。
 - [ ] Red-test every supported read-write `VaultDB` holds a shared schema lock and migration orchestration obtains an exclusive lock before backup/DDL callback/post-verify。
-- [ ] Red-test同一source connection的`data_version`在backup前後、`BEGIN IMMEDIATE`後發現raw external writer race時，必須rollback、刪除該backup並bounded retry，而不是migration。
+- [ ] Red-test同一source connection的`data_version`在backup前後、`BEGIN IMMEDIATE`後發現raw external writer race時，必須rollback、只依opened-descriptor identity刪除本attempt新建且pathname identity未變的backup，並重跑完整snapshot/preflight，最多三次attempt；第三次race固定回`migration_source_raced`、無migrator-authored DDL/version/migration-row、外部writer資料仍保留、該attempt backup absent，而不是宣稱source byte-identical、migration或無限retry。Pre-existing/replaced/identity-drifted backup target不得刪除；cleanup不能安全證明ownership時固定回`backup_cleanup_unsafe`。
 - [ ] Implement lifecycle/inspection/lock scaffolding without importing or executing v15 Subject DDL；T-005完成時不會建立任何Subject table。
 
 **Verify:**
@@ -311,7 +318,7 @@ python -m pytest -q tests/test_subject_migration.py tests/test_db_migrations.py
 - [ ] Red-test every exact-authority trigger with half-open event-time grant validity: a grant revoked/expired at or before the event is denied, while an immutable event created when the grant was valid remains a legal positive after that grant is later revoked.
 - [ ] Register deterministic `subject_sha256(text)` on every test/runtime read-write connection before Subject writes; verify missing UDF makes scorecard view/close fail closed and verify canonical v1 view digest stability.
 - [ ] Direct-SQL red-test purge proof timestamp inversion、counterparty completion-before-request、relationship-time inversion、per-subject gate-version uniqueness及same-subject duplicate denial。
-- [ ] Red-test schema target v15 and required table reporting, then enable the only v15 upgrade entry `VaultDB.migrate(15)`.
+- [ ] Red-test schema target v15 and required table reporting, then enable the only v15 upgrade entry `VaultDB.migrate(path, backup_path, target=15)`；backup path不可省略、猜測或由source旁路推導。
 - [ ] Red-test default `VaultDB(path)` for absent/v15/v14/pre-v14/contradictory states remains non-mutating until explicit connect/migrate.
 - [ ] Red-test explicit migration holds the T-005 exclusive lock through backup, DDL, version stamp and post-verify；WAL snapshot/backup uses the shared manifest authority.
 - [ ] Red-test legacy DB becomes `available_uninitialized` with zero subject rows, no legacy knowledge inference/backfill, idempotent retry and fault injection safety.
@@ -705,7 +712,7 @@ python -m pytest -q tests/test_subject_organization_contract.py
 - Create `tests/test_subject_setup.py`
 
 - [ ] Red-test new interactive quickstart cannot silently skip root Subject setup.
-- [ ] Red-test setup creates root subject, principals/bindings, role grants, private policy and empty model only.
+- [ ] Red-test setup creates root subject, principals/bindings, role grants, exact same-subject sealed `privacy` default-private policy、exact sealed `model` policy及empty sealed model only；成功transaction經`initialized_empty`後終止於`active`，任何中途fault整體rollback且不得留下可觀察partial state。
 - [ ] Red-test no personality inference or source scan occurs.
 - [ ] Red-test legacy/direct init/non-interactive without explicit args returns `available_uninitialized` plus next action.
 - [ ] Red-test repeated setup does not create second active root.
@@ -731,8 +738,8 @@ python -m pytest -q tests/test_subject_setup.py tests/test_agent_setup.py
 
 - [ ] Red-test command names, required auth, JSON/pretty schema and stable error codes.
 - [ ] Red-test secret accepted only through safe input path and never echoed.
-- [ ] Red-test status/setup/propose/review/confirm/correct/model/context/decision/relationship/grant/fragment groups；evaluation group由T-025在domain unit/fixture PASS後加入。
-- [ ] Red-test `vault subject status` uses only`VaultDB.inspect()` and missing/empty/legacy/current/unsupported/contradictory inputs create no DB or sidecar and preserve source bytes/hash.
+- [ ] Red-test exact design §10.1 command vocabulary：`status`、`setup-root`、`principal bind|revoke`、`propose`、`review`、`confirm|correct|revoke|delete-request`、`model build|show`、`context-pack`、`decision create|append|show`、`relationship add|end|alias`、`grant create|revoke`、`fragment validate`；evaluation group由T-025/T-026在各自domain unit/fixture PASS後依同一canonical vocabulary加入，不得使用別名替代canonical command。
+- [ ] Red-test `vault subject status` uses only canonical `VaultDB.inspect(path)` and missing/empty/legacy/current/unsupported/contradictory inputs create no DB or sidecar and preserve source bytes/hash.
 - [ ] Red-test generic promotion rejects Subject candidate.
 - [ ] Implement thin handlers calling `SubjectDomainService`.
 
@@ -752,7 +759,7 @@ python -m pytest -q tests/test_subject_cli.py tests/test_cli_json_contract.py
 - Create `tests/test_subject_mcp.py`
 
 - [ ] Red-test core profile includes status/propose/context-pack/fragment-validate only.
-- [ ] Red-test `vault_subject_status` uses only`VaultDB.inspect()` and is byte/sidecar/no-create identical to CLI status across the full inspect state matrix.
+- [ ] Red-test `vault_subject_status` uses only canonical `VaultDB.inspect(path)` and is byte/sidecar/no-create identical to CLI status across the full inspect state matrix.
 - [ ] Red-test review/maintenance tools require process principal binding.
 - [ ] Red-test caller-supplied principal cannot elevate.
 - [ ] Red-test tool profile is disclosed as surface control, not authorization.
@@ -775,7 +782,7 @@ python -m pytest -q tests/test_subject_mcp.py tests/test_mcp_memory.py
 - Extend `tests/test_gateway.py`
 
 - [ ] Red-test five approved endpoints and auth/rate/body-size/error contracts.
-- [ ] Red-test `GET /subject/status` uses only`VaultDB.inspect()` and is byte/sidecar/no-create identical to CLI/MCP status across the full inspect state matrix.
+- [ ] Red-test `GET /subject/status` uses only canonical `VaultDB.inspect(path)` and is byte/sidecar/no-create identical to CLI/MCP status across the full inspect state matrix.
 - [ ] Red-test token→principal binding wins over body identity.
 - [ ] Red-test remote proposals are candidate-first.
 - [ ] Red-test Context Pack excludes raw evidence and ungranted third-party data.
@@ -821,7 +828,7 @@ python -m pytest -q tests/test_gateway.py
 - [ ] Red-test all deterministic safety invariants are hard, non-adjustable failures.
 - [ ] Implement draft→frozen→closed and scorecard fingerprint.
 - [ ] 依固定順序執行本task：evaluation pure/domain unit → synthetic fixture/DB contract → CLI surface；surface handler只能呼叫`SubjectDomainService`。
-- [ ] Red-test CLI evaluation create/freeze/record/close/status commands, stable JSON/error schema and authorization；不得在unit/fixture尚紅時先提交surface。
+- [ ] Red-test canonical CLI evaluation `init|freeze|record|close` commands及read-only evaluation status view，stable JSON/error schema and authorization；不得使用`create`替代`init`，不得在unit/fixture尚紅時先提交surface。
 
 Evaluation-event shape is fixed to the existing physical contract and must be asserted in `tests/test_subject_evaluation.py`: only `utility|reason_alignment|abstention|domain_score` carry non-null binary `metric_value` with `passed=CAST(metric_value)`; `hard_failure` is non-metric with `metric_value=NULL`, `passed IN (0,1)`, and non-null bounded `reason_code`. NULL rejection for `metric_value` applies to the four metric-bearing types, not to `hard_failure`.
 
@@ -839,7 +846,10 @@ python -m pytest -q tests/test_subject_cli.py -k evaluation
 
 - Extend `vault/subject_evaluation.py`
 - Modify `vault/subject_service.py` only for the typed sign-off/next-version candidate orchestration methods defined here; no unrelated service refactor
+- Modify `vault/cli_subject.py` only to add canonical evaluation `signoff|propose-next` handlers after domain tests pass
+- Modify `vault/cli.py` parser/dispatch registration only
 - Extend `tests/test_subject_evaluation.py`
+- Extend `tests/test_subject_cli.py` with signoff/propose-next surface cases
 
 - [ ] Red-test subject/controller and fresh reviewer sign the same closed scorecard fingerprint.
 - [ ] Red-test both signoffs use the canonical view digest and signed_at lies inside the frozen-to-close interval.
@@ -847,12 +857,14 @@ python -m pytest -q tests/test_subject_cli.py -k evaluation
 - [ ] Red-test closed gate cannot change verdict/threshold/denominator/case result.
 - [ ] Red-test analysis creates a candidate for next gate/model/policy version only.
 - [ ] Red-test candidate cannot weaken deterministic privacy/authority/provenance/temporal invariants.
+- [ ] Red-test canonical CLI evaluation `signoff|propose-next` commands, stable JSON/error schema and exact server-side principal authority；surface handler只呼叫typed service method，caller-supplied principal不得elevate。
 - [ ] Implement report-only next-version proposal path through existing candidate gates.
 
 **Verify:**
 
 ```bash
 python -m pytest -q tests/test_subject_evaluation.py -k 'signoff or prospective or closed'
+python -m pytest -q tests/test_subject_cli.py -k 'evaluation and (signoff or propose_next)'
 ```
 
 ## 10. Phase I — Migration recovery、privacy與regression
@@ -931,7 +943,7 @@ python scripts/capture_subject_closure.py --manifest specs/subject-distillation/
 python scripts/export_subject_sbe_traceability.py --mode collected --requirements specs/subject-distillation/requirements.md --traceability specs/subject-distillation/traceability.md --collect-command "python -m pytest --collect-only -q tests/test_subject_*.py" --require-count 43 --output specs/subject-distillation/sbe-traceability.json
 python scripts/capture_subject_closure.py --manifest specs/subject-distillation/baseline-manifest.json --stage fixture --requires unit --output "$EVIDENCE_DIR/fixture.txt" -- python scripts/run_subject_sbe_fixture_gate.py --mapping specs/subject-distillation/sbe-traceability.json --require-count 43 --extra tests/test_subject_fixture_privacy.py tests/test_subject_sbe_traceability.py tests/test_subject_organization_contract.py tests/test_subject_migration.py tests/test_db_migrations.py tests/test_db_backup.py
 python scripts/capture_subject_closure.py --manifest specs/subject-distillation/baseline-manifest.json --stage surface --requires fixture --output "$EVIDENCE_DIR/surface.txt" -- python -m pytest -q tests/test_subject_cli.py tests/test_subject_mcp.py tests/test_gateway.py tests/test_cli_json_contract.py tests/test_mcp_memory.py
-python scripts/capture_subject_closure.py --manifest specs/subject-distillation/baseline-manifest.json --stage legacy --requires surface --output "$EVIDENCE_DIR/legacy.txt" -- python scripts/run_subject_legacy_gate.py --pytest "python -m pytest -q" --ruff "ruff check vault tests" --readme-smoke "python scripts/readme_command_smoke.py" --release-parity "python scripts/check_release_parity.py" --diff-check "git diff --check"
+python scripts/capture_subject_closure.py --manifest specs/subject-distillation/baseline-manifest.json --stage legacy --requires surface --output "$EVIDENCE_DIR/legacy.txt" -- python scripts/run_subject_legacy_gate.py --pytest "python -m pytest -q" --ruff "ruff check vault tests scripts" --readme-smoke "python scripts/readme_command_smoke.py" --release-parity "python scripts/check_release_parity.py" --diff-check "git diff --check"
 python scripts/validate_subject_evidence.py --manifest specs/subject-distillation/baseline-manifest.json --evidence-dir "$EVIDENCE_DIR" --require unit,fixture,surface,legacy
 ```
 
@@ -982,6 +994,7 @@ python scripts/check_release_parity.py --tag "v${RELEASE_VERSION}"
 - [ ] Fresh reviewer B: schema/migration/rollback/legacy compatibility.
 - [ ] Fresh reviewer C: SBE traceability/evaluation/no-post-hoc semantics.
 - [ ] Record exact P0/P1/P2 counts and artifact commit/tree hash.
+- [ ] After T-030 docs and all T-031-owned closure tooling/tests reach their final candidate bytes, rerun the complete T-029 unit→fixture→surface→legacy sequence on that exact final source tree and replace the four stage artifacts with those fresh results before hashing；an earlier T-029 run cannot prove the later tree。
 - [ ] Before review, fail on scope-external dirty/untracked source and compute the deterministic authorized final-tree manifest digest; all three reviewers must record that exact `reviewed_tree_sha256` and the aggregator must reject any mismatch or post-review tree drift.
 - [ ] Fix every P0/P1, rerun affected tests, then rerun fresh review.
 
@@ -989,7 +1002,7 @@ Before the authorized tree hash, the T-031-owned `tests/test_subject_attestation
 
 The same T-031-owned test file must explicitly cover the T-033 child-channel grammar as a byte matrix. Valid control: exit `0`, stderr empty, and exactly one LF-terminated stdout line matching `private-shadow-pass:[0-9a-f]{64}`. Success-path DENY cases: multiline stdout、missing final LF、extra stdout bytes、wrong stdout format, or any nonempty stderr. Failure-path DENY cases: nonempty stdout；unknown stderr code；multiline、non-ASCII, or more-than-96-byte stderr；and a child that attempts to print private argv、path, or result markers. Every malformed case must prove nonzero attester exit, fixed no-echo public-safe attester error, byte-identical preexisting `attestation.json` and progress ledger (or continued absence when absent), and no private marker in stdout、stderr or any repo log/artifact. The exact valid control must alone permit the independently verified `stable` path.
 
-Review-tree rule：T-031 must include `implementation-progress.schema.json`、`scripts/validate_subject_progress.py`、the completed `scripts/attest_subject_closure.py`、`tests/test_subject_progress.py` and `tests/test_subject_attestation.py` as authorized source paths before hashing, and include the T-030-frozen `CHANGELOG.md`; it must exclude `implementation-progress.json`, generated evidence and private pilot data. All three reviewers must review the attester's progress/authorization/tree/evidence bindings before PASS. After `reviewed_tree_sha256` is computed, no authorized source byte may change. Fixed-path review evidence may be produced outside that tree, and the only mutable control-plane file is the excluded progress ledger. After all three reviews and aggregate validation pass, record `T-031=COMPLETED` only in that ledger and rerun the progress validator；any P0/P1 source fix requires a new tree hash and fresh review.
+Review-tree rule：T-031 must include `implementation-progress.schema.json`、`scripts/validate_subject_progress.py`、`scripts/update_subject_progress.py`、the completed `scripts/attest_subject_closure.py`、`tests/test_subject_progress.py` and `tests/test_subject_attestation.py` as authorized source paths before hashing, and include the T-030-frozen `CHANGELOG.md`; it must exclude `implementation-progress.json`, generated evidence and private pilot data. All three reviewers must review the attester's progress/authorization/tree/evidence bindings before PASS. After `reviewed_tree_sha256` is computed, no authorized source byte may change. Fixed-path review evidence may be produced outside that tree, and the only mutable control-plane file is the excluded progress ledger. After all three reviews and aggregate validation pass, record `T-031=COMPLETED` only through the atomic writer and rerun the progress validator；any P0/P1 source fix requires a new tree hash and fresh review.
 
 **Pass condition:** all blocking reviews are `PASS`, P0=0, P1=0. P2 has explicit disposition.
 
@@ -1055,7 +1068,8 @@ Attestation rules：
 - The attester derives, never accepts, the release label. For T-032=`COMPLETED`, all four operator-private inputs are mandatory and empty/missing values DENY: `SUBJECT_PRIVATE_EVAL_VERIFIER`（operator-private executable, not a claimed repo command）、`PRIVATE_SHADOW_GATE_INPUT`（closed gate/case input）、`PRIVATE_SHADOW_VERIFIER_CONFIG`（`key_id`→key/config input）and `PRIVATE_SHADOW_RELEASE_RECEIPT`（complete receipt input）. With shell xtrace disabled, the attester must invoke exactly `"$SUBJECT_PRIVATE_EVAL_VERIFIER" reopen-and-verify-release-receipt --gate-input "$PRIVATE_SHADOW_GATE_INPUT" --verifier-config "$PRIVATE_SHADOW_VERIFIER_CONFIG" --release-receipt "$PRIVATE_SHADOW_RELEASE_RECEIPT" --public-handoff-output -`; no alternate subcommand, flag alias, receipt-only mode or caller-supplied verdict is legal. The private verifier must reopen the closed gate and independently recompute canonical scorecard bytes、every threshold、both distinct signoffs、receipt HMAC and complete validated canonical receipt SHA-256. Success is exit 0, empty stderr, and exactly one LF-terminated stdout line matching `private-shadow-pass:[0-9a-f]{64}`；failure is nonzero with stdout empty and at most one LF-terminated ASCII stderr line `private-shadow-error:<code>`（maximum 96 bytes total）, where `code` is exactly one of `missing-input|verifier-unavailable|unknown-key|invalid-private-input|recompute-mismatch|signoff-drift|threshold-drift|hmac-mismatch|receipt-digest-mismatch|internal-failure`. The attester must capture rather than forward child output, reject every other byte, and never echo or persist argv、private paths、keys/config、gate data、full receipt or private result in repo output or logs.
 - Child-channel validation is byte-exact and fail-closed: exit-0 children with multiline/missing-LF/extra-byte/wrong-format stdout or nonempty stderr DENY；nonzero children with nonempty stdout、unknown/multiline/non-ASCII/>96-byte stderr, or attempted private argv/path/result output DENY. The attester emits only its fixed no-echo public-safe error, creates or changes neither attestation nor ledger, and leaves no private marker in repository logs/artifacts. Only the exact valid control (exit 0, empty stderr, one LF-terminated matching stdout line) may proceed.
 - A successful private-verifier process is necessary but not sufficient. The attester must reject symlink/non-regular gate/config/receipt inputs, duplicate-key-safely parse the complete receipt, enforce the exact T-032 key/type contract, select the exact bounded `key_id` from operator-private config, rebuild domain bytes `b"vault-subject-private-shadow-release-v1\x00"` and the existing canonical JSON bytes with only `receipt_hmac_sha256` removed, verify `HMAC-SHA256(selected_key, domain_bytes || canonical_receipt_without_hmac_bytes)` by constant-time lowercase-hex comparison with no plain-SHA fallback, hash the complete validated canonical receipt including the HMAC, require equality among that digest、the verifier stdout digest and the ledger's exact `private-shadow-pass:<receipt SHA-256>` opaque ref, and only then write `release_label=stable` plus that SHA-256. Missing input、unknown/unavailable verifier or key、recomputation mismatch、signoff/threshold drift、HMAC/canonicalization mismatch or digest mismatch all DENY. For T-032=`BLOCKED`, all four private flags must be absent, and the attester writes `release_label=experimental` plus `private_shadow_receipt_sha256=null`; any private input or other pairing fails closed.
-- `attestation.json.artifact_sha256` and recomputed `reviewed_tree_sha256` must exclude `implementation-progress.json`. The authorized progress schema、progress validator and frozen attester source must be included in`reviewed_tree_sha256` but are not duplicated in the fixed closure-evidence`artifact_sha256` set. No authorized source or T-030-frozen CHANGELOG byte may change after T-031 hashing.
+- `attestation.json.artifact_sha256` and recomputed `reviewed_tree_sha256` must exclude `implementation-progress.json`. The authorized progress schema、progress validator、atomic progress writer and frozen attester source must be included in`reviewed_tree_sha256` but are not duplicated in the fixed closure-evidence`artifact_sha256` set. No authorized source or T-030-frozen CHANGELOG byte may change after T-031 hashing.
+- `experimental`與`stable`都只是evidence label，不是merge/release/default-on rollout authority。任何distribution、new-install enablement、cohort/canary或release仍需designated release authority另行核對installed-artifact parity、rollback/kill procedure與operator-facing label；`experimental`不得被UI/docs隱藏或宣稱production-ready。
 - The reviewed attester owns the finalization operation: validate pre-state；atomically write and fully validate the fixed attestation；append exactly `T-033: IN_PROGRESS→COMPLETED` with the fixed attestation repo path/current SHA-256 `repo_file` ref to a temporary ledger；run the progress validator in automatic final mode so it repeats the fixed evidence、review-tree、authorization and, for`stable`, private receipt gate；only then atomically replace the ledger. Any failure must leave T-033 non-completed and must not retain a newly invalid attestation；a crash after a valid attestation write but before ledger replacement remains safely`IN_PROGRESS` and may only resume by byte-validating the same fixed artifact. Manual final ledger rewrites are forbidden.
 
 **Evidence command:**

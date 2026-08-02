@@ -1,12 +1,12 @@
 # Subject Distillation — Requirements and SBE Contract
 
 **Status:** Canonical product contract; frozen bytes record integrity only
-**Public repository baseline:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
+**Source reference commit:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
 **Integrity binding:** `baseline-manifest.json` binds the exact five canonical files, their order, byte sizes, SHA-256 values, full digest, and baseline ID. Integrity does not imply review approval, implementation authorization, migration registration, or release authorization.
 **Implementation status:** Not implemented and not authorized by this artifact.
 **Product:** Vault Agent Memory
 **Target slice:** Generic Subject Core + Person v1; Organization contract/SBE only
-**Repository baseline:** public base `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27` (current public package)
+**Repository source reference:** public commit `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27` used for the original inventory; it is not the normative baseline ID, delivery base, reviewed tree, or implementation base.
 
 ## 1. Product intent
 
@@ -1136,6 +1136,7 @@ start while any material decision below remains OPEN.
 | D-SD-007 | What third-party personal data may enter Person v1? | Relationship-first governed inclusion: the primary subject/controller may privately retain the minimum relationship context needed for their own model; relationships are first-class, directional, temporal, and alias-capable; counterparty hypotheses remain perspective-bound rather than canonical models. Full counterparty self-models require independent subject governance. Generic Core reserves a consented, purpose-limited Subject Fragment contract for future cross-Vault sharing, but live synchronization is outside Person v1. | APPROVED |
 | D-SD-008 | Should Subject Distillation be core or optional package surface in v1? | Default-on Safe Envelope: Subject capability is part of the required new-install journey; root subject initialization plus minimal Context Pack/proposal surfaces are available by default. Collection, raw evidence copy, model use, broad sharing, promotion, and cross-Vault sync retain independent gates. Existing upgrades remain `available_uninitialized` until setup. | APPROVED |
 | D-SD-009 | What exact private shadow pilot pass rule and authority close the third evaluation gate? | Balanced v1 gate over every completed eligible preregistered case (`N >= 20`): at least three primary domains and five cases per domain; at least five abstention and three correction/counter-evidence/context cases; zero hard safety failures, unresolved material misrepresentation, or incorrect subject-choice predictions above 0.80 confidence; at least `ceil(0.80 * N)` usefulness and reason-alignment passes, 80% abstention quality, and 60% usefulness per primary domain; missing rationale is unaligned; subject/controller plus fresh-reviewer sign-off. Results may adjust only a later version through a governed feedback loop; safety invariants never relax. | APPROVED |
+| D-SD-010 | How does the long-term persona/behavior-governance plan enter the current Subject contract? | Map it onto the existing Subject SSOT instead of creating a parallel persona store. Person-subject assertions/preferences、project/organization policy、consumer-agent role/grant and model/rendering style are orthogonal planes with distinct actor/authority/lifecycle; none inherits from, rewrites, or supplies evidence for another without an explicit typed bridge and grant. Immutable source observations remain evidence/events; behavioral differences enter only as typed candidates; approved behavior rules and decision boundaries are sealed policy/model entries with scope, exceptions, counter-evidence, temporal validity, confidence/unknown semantics, provenance and explicit authority; persona/session snapshots are deterministic derived projections with no independent authority. AI-produced material must retain producer/model/authorship metadata and cannot be upgraded to human-explicit evidence merely because a user viewed, accepted, or published it. Future evaluation reports Evidence Grounding、Decision Agreement、Constraint Violation Rate、Boundary Consistency、Context Sensitivity、Persona Drift、Cross-model Portability and Abstention Quality separately, never as one score. Dual retrieval, session productization, Canonical Persona IR, training export, SFT/DPO/LoRA and cross-model deployment remain future roadmap work after the governed Subject control plane and evaluation gates pass. | APPROVED |
 
 ## 11. SBE gate and approval record
 
@@ -1143,8 +1144,8 @@ start while any material decision below remains OPEN.
 |---|---|---|
 | Product vision | APPROVED | Generic open-source subject-distillation foundation for people and organizations. |
 | v1 slice | APPROVED | Generic Subject Core + Person v1; Organization contract/SBE only. |
-| Person business policy | APPROVED | D-SD-001 through D-SD-009, including prospective evaluation-loop governance. |
-| Requirements/SBE review | SEPARATE-EVIDENCE-REQUIRED | No verdict is declared by this artifact or manifest. A fresh review PASS with P0=0/P1=0 applies only when separate review evidence binds the exact baseline ID, full digest, and reviewed diff/tree hash. |
+| Person business/behavior policy | APPROVED | D-SD-001 through D-SD-010, including prospective evaluation-loop and long-term persona-governance boundaries. |
+| Requirements/SBE review | SEPARATE-EVIDENCE-REQUIRED | No verdict is declared by this artifact or manifest. A fresh review PASS with P0=0/P1=0 applies only when the parent can retrieve and hash the separate evidence body defined by design §20.1 and it binds the exact baseline ID, full digest, reviewed normative tree, and delivery diff. A digest/prose claim without retrievable bytes is not evidence. |
 | Technical design | SEPARATE-EVIDENCE-REQUIRED | No design verdict is declared here or inferred from integrity validation；only separate exact-baseline review evidence may supply it. |
 | Implementation plan | SEPARATE-EVIDENCE-REQUIRED | No plan verdict is declared here；review PASS remains distinct from an explicit implementation-authorization receipt. |
 | Coding | `NOT_AUTHORIZED` | No coding or implementation may start; requirements approval and any later design/task PASS do not change this without the designated release authority's explicit authorization. |
@@ -1155,7 +1156,7 @@ This requirements artifact is approved only when:
 
 - every `R-SD-*` rule is accepted or explicitly revised;
 - every `E-P-*`, `E-O-*`, and `E-F-*` example has an expected behavior;
-- D-SD-001 through D-SD-009 are decided or explicitly deferred outside v1;
+- D-SD-001 through D-SD-010 are decided or explicitly deferred outside v1;
 - non-goals are accepted;
 - public/private boundaries are preserved;
 - a fresh reviewer finds no unresolved material behavior ambiguity.
@@ -1173,9 +1174,11 @@ GitHub operation.
 This pre-implementation bootstrap is governance-only and adds no product SBE.
 
 B-000 may begin only after the current five-file baseline integrity validates,
-a fresh spec/design/plan review bound to that exact baseline reports PASS with
-P0=0/P1=0, clean branch/base/worktree preflight passes, and the repository owner
-issues an exact baseline- and scope-digest-bound B-000 instruction through the
+the parent retrieves and verifies the design §20.1 fresh-review evidence body
+bound to that exact baseline and selected delivery diff/tree with both ordered
+reviews PASS and P0=0/P1=0, clean branch/base/worktree preflight passes against
+the exact selected implementation commit, and the repository owner issues an
+exact base-, baseline-, and scope-digest-bound B-000 instruction through the
 trusted operator channel. That channel and instruction are the one explicit
 human bootstrap trust root. The repository cannot cryptographically prove the
 private conversation or channel. B-000 and all implementation agents must not
@@ -1193,10 +1196,11 @@ authorization bindings; none transfers to a successor baseline.
 
 The authorization protocol has two distinct scope contracts in design §21.
 B-000 uses a deterministic in-memory bootstrap-scope projection with lane
-`B-000`, exact verified baseline identity, exact three-path write list, and
-fixed prohibited operations; it is not a receipt and has no `authorized_task`.
-The trusted owner instruction must explicitly contain and byte-equal its four
-public binding values, including the projection digest. T-task receipts alone
+`B-000`, exact verified baseline identity, exact three-path write list, and fixed
+prohibited operations; it is not a receipt and has no `authorized_task`. The
+trusted owner instruction separately binds the exact implementation base commit
+and must explicitly contain and byte-equal all five public binding values,
+including that commit and the projection digest. T-task receipts alone
 use the operator-private canonical
 `subject-distillation-implementation-scope` file with `authorized_task`.
 Operator-private receipt/scope inputs remain outside repo and evidence;

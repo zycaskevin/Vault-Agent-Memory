@@ -1,6 +1,6 @@
 # Subject Distillation B-000 — Codex Development Handoff
 
-> **For Codex:** Execute this handoff only after the trusted owner prompt explicitly contains all four B-000 binding values below. This document, its PR, Issue #422, hashes, and review PASS are not authorization by themselves.
+> **For Codex:** Execute this handoff only after the trusted owner prompt explicitly contains all five B-000 binding values below, including the exact implementation base commit. This document, its PR, Issue #422, hashes, and review PASS are not authorization by themselves.
 
 **Repository:** `zycaskevin/Vault-Agent-Memory`
 
@@ -24,27 +24,30 @@
 
 ---
 
-## 1. Exact reviewed binding
+## 1. Exact candidate binding（not executable until review evidence PASS）
 
 | Field | Required value |
 |---|---|
 | Lane | `B-000` |
-| Baseline ID | `0f688cf2e2472beb` |
-| Baseline full digest | `0f688cf2e2472beb22082fb16c9c344de921e06e71a5efc939c8a4c70f5ed773` |
-| B-000 scope SHA-256 | `1cb9eaf4e13a4049d93cabd82edb3707c6251f8bf0f7c4d4dceb931a115d9739` |
-| Canonical manifest SHA-256 | `ca55599acc49f3c0f7d263f081b3b884c202e2093ebfdec94925465b6e7a1483` |
-| Fresh review | `PASS`, P0=`0`, P1=`0`, P2=`0` |
+| Baseline ID | `51625dffe08539b6` |
+| Baseline full digest | `51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f` |
+| B-000 scope SHA-256 | `3199f1e732b04db99af181d0297bc4f7342e181b129c020b684843878be7f9c3` |
+| Canonical manifest SHA-256 | `0765d28d0b722dbd4e5829e7b17d1b721171acea72912fd131965fb17e4c26cf` |
+| Fresh review | `PENDING`; B-000 remains blocked until design §20.1 evidence verifies ordered PASS/P0=0/P1=0 |
+| Review evidence | Parent-retrievable design §20.1 body; digest-only claim is insufficient |
+| Implementation base | Exact clean commit selected by owner; its tree must contain these reviewed bytes |
 
 A valid owner prompt must explicitly contain this exact public tuple:
 
 ```text
 lane=B-000
-baseline_id=0f688cf2e2472beb
-baseline_full_digest=0f688cf2e2472beb22082fb16c9c344de921e06e71a5efc939c8a4c70f5ed773
-scope_sha256=1cb9eaf4e13a4049d93cabd82edb3707c6251f8bf0f7c4d4dceb931a115d9739
+implementation_base_commit=<exact lowercase 40-or-64-hex commit containing the reviewed baseline>
+baseline_id=51625dffe08539b6
+baseline_full_digest=51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f
+scope_sha256=3199f1e732b04db99af181d0297bc4f7342e181b129c020b684843878be7f9c3
 ```
 
-If any value is absent, different, inherited from chat summary, or bound to changed canonical bytes: **stop without editing**.
+If any value is absent, different, inherited from chat summary, bound to changed canonical bytes, or the selected commit does not contain the reviewed candidate: **stop without editing**.
 
 ## 2. Base and branch policy
 
@@ -56,7 +59,7 @@ Preferred start:
 4. Use a fresh worktree.
 5. Verify the worktree is clean before the first B-000 write.
 
-A stacked branch from the baseline/handoff PR head is allowed only when the owner explicitly chooses that reviewed base. Do not silently retarget or mix unrelated work.
+A stacked branch from the baseline/handoff PR head is allowed only when the owner explicitly chooses that reviewed base and the commit tree contains the exact reviewed canonical bytes. An earlier commit plus uncommitted docs is not a valid base. Do not silently retarget or mix unrelated work.
 
 Record before editing:
 
@@ -69,6 +72,8 @@ git remote -v
 
 Preflight must show no modified, staged, or untracked path. If it does, stop and report the exact path set; do not reset, stash, clean, or overwrite unrelated state.
 
+Before environment setup, the parent must retrieve the actual repo-external review evidence body through its public-safe locator, recompute its SHA-256, rebuild the design §20.1 normative-tree and delivery-diff digests, and verify ordered distinct-reviewer PASS with P0=0/P1=0. A progress row, PR claim, digest without body, inaccessible locator, or drifted tree/diff is a blocker.
+
 ## 3. Environment setup
 
 Run from repository root:
@@ -76,12 +81,14 @@ Run from repository root:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -e ".[dev]"
+test -n "${SUBJECT_DEV_WHEELHOUSE:-}"
+test -d "${SUBJECT_DEV_WHEELHOUSE}"
+python -m pip install --no-index --find-links "${SUBJECT_DEV_WHEELHOUSE}" -e ".[dev]"
 command -v python
 python --version
 ```
 
-Any nonzero exit blocks B-000. Do not substitute another environment silently.
+`SUBJECT_DEV_WHEELHOUSE` must be a parent-provisioned, integrity-checked local wheelhouse outside the repo. Index/network fallback is prohibited. Any nonzero exit blocks B-000. Do not substitute another environment or dependency source silently.
 
 Then validate the exact baseline:
 
@@ -95,7 +102,7 @@ python scripts/validate_subject_baseline.py \
 Expected exact semantic result:
 
 ```json
-{"baseline_id":"0f688cf2e2472beb","full_digest":"0f688cf2e2472beb22082fb16c9c344de921e06e71a5efc939c8a4c70f5ed773","status":"PASS"}
+{"baseline_id":"51625dffe08539b6","full_digest":"51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f","status":"PASS"}
 ```
 
 A mismatch means the handoff is stale. Stop; do not rewrite the manifest under the old owner instruction.
@@ -107,6 +114,8 @@ B-000 may create or modify exactly:
 1. `tests/test_subject_authorization_bootstrap.py`
 2. `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`
 3. `scripts/verify_subject_implementation_authorization.py`
+
+This numbered list is the implementation action sequence (genuine RED test first). It is not the bootstrap-scope serialization order. Scope projection and digest computation must preserve design §21's exact order: verifier script → schema → test.
 
 Read-only inspection of repository files is allowed. No other repository write is allowed—not README, changelog, roadmap, progress ledger, evidence, fixture, helper, config, lock file, package metadata, snapshot, transcript, or generated report.
 
@@ -140,7 +149,30 @@ Do not modify the canonical files during B-000. A real contradiction is a blocke
 
 ## 7. Atomic execution plan
 
-### B-001 — Create genuine RED bootstrap tests
+### B-001 — Establish the offline exact-bound environment
+
+**Owner:** Trusted parent
+
+**Objective:** Complete the no-write preflight before the implementer owns any
+repository path.
+
+Verify all of the following together:
+
+- the retrievable design §20.1 evidence body, its digest, ordered distinct-reviewer
+  PASS results, reviewed base, delivery paths, normative-tree hash, and delivery-diff
+  hash;
+- the validated baseline ID/full digest and recomputed B-000 scope digest;
+- the exact five-value owner instruction, including
+  `implementation_base_commit`, against a clean checkout containing the reviewed
+  canonical bytes;
+- the parent-provisioned offline wheelhouse and Section 3 setup commands, with no
+  network fallback;
+- an exact clean B-000 starting tree in which none of the three owned paths exists.
+
+**Output:** repo-external public-safe preflight record plus local `.venv` only.
+No repository file is written. Any mismatch blocks B-001 and prevents B-002.
+
+### B-002 — Create genuine RED bootstrap tests
 
 **Objective:** Prove the absent schema/verifier fail for the intended reason before implementation.
 
@@ -165,7 +197,7 @@ Capture the RED command, exit code, and concise failure class outside the repo f
 
 Stop if the expected files already exist or another test owns conflicting behavior.
 
-### B-002 — Implement the strict receipt schema
+### B-003 — Implement the strict receipt schema
 
 **Objective:** Encode the exact JSON Schema 2020-12 receipt shape without adding policy.
 
@@ -186,11 +218,11 @@ Implement exactly the required fields and closed shape from design §21:
 - `expires_at_utc`
 - `authorization_id`
 
-Use `additionalProperties: false`. Preserve exact regex/const/type restrictions. JSON Schema alone does not replace semantic duplicate-key, canonical-byte, timestamp, path, self-hash, or public-safety checks; those belong in the verifier.
+Use `additionalProperties: false`. Preserve exact regex/const/type restrictions. Use only design §21's fixed JSON Schema 2020-12 keyword subset. B-000 cannot add `jsonschema` or modify package metadata: the verifier's Python-standard-library fixed-subset checker and schema-shape tests reject unknown keywords/remote refs and prove parity for required/property/type/const/pattern/closed-object behavior. JSON Schema alone does not replace semantic duplicate-key, canonical-byte, timestamp, path, self-hash, or public-safety checks; those belong in the verifier.
 
 Add schema positive and negative tests before relying on the verifier.
 
-### B-003 — Implement the fail-closed verifier CLI
+### B-004 — Implement the fail-closed verifier and adversarial matrix
 
 **Objective:** Verify exact trusted receipt bytes and all transitive bindings without echoing hostile/private input.
 
@@ -234,7 +266,7 @@ Exact output contract:
 
 Caller/input faults are DENY. ERROR is reserved for safely classified unexpected internal/programmer/harness failure.
 
-### B-004 — Complete the adversarial matrix
+#### Required adversarial matrix
 
 The single bootstrap test file must cover at least these named classes.
 
@@ -265,6 +297,7 @@ The single bootstrap test file must cover at least these named classes.
 - relative private input path, NUL/backslash, empty/`.`/`..` component;
 - symlink ancestor, symlink final, missing/non-regular file;
 - file over byte cap, short/extra read, descriptor identity or metadata mutation race;
+- JSON depth/node/container exact-boundary controls from design §21 and one-over DENY;
 - hostile path/content/exception no-echo assertions;
 - exact fixed DENY serialization.
 
@@ -293,6 +326,8 @@ git status --short --untracked-files=all
 ```
 
 All commands must exit `0`. The final status path set must be exactly the three B-000 files. If `.venv` appears, fix local ignore/exclude state without editing tracked repository files.
+
+Descriptor/no-follow/race acceptance additionally requires the focused suite on Linux with supported Python 3.10+; a macOS run is smoke-only. Record OS/Python for each run.
 
 ## 8. Parent readback gate
 
@@ -361,9 +396,12 @@ Return a concise machine-checkable handoff to the parent containing:
 ```text
 STATUS: PASS | BLOCKED
 BASE_COMMIT: <sha>
-BASELINE_ID: 0f688cf2e2472beb
-BASELINE_FULL_DIGEST: 0f688cf2e2472beb22082fb16c9c344de921e06e71a5efc939c8a4c70f5ed773
-SCOPE_SHA256: 1cb9eaf4e13a4049d93cabd82edb3707c6251f8bf0f7c4d4dceb931a115d9739
+REVIEW_EVIDENCE_SHA256: <verified digest of retrieved body>
+REVIEWED_NORMATIVE_TREE_SHA256: <verified digest>
+REVIEWED_DELIVERY_DIFF_SHA256: <verified digest>
+BASELINE_ID: 51625dffe08539b6
+BASELINE_FULL_DIGEST: 51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f
+SCOPE_SHA256: 3199f1e732b04db99af181d0297bc4f7342e181b129c020b684843878be7f9c3
 CHANGED_PATHS:
 - <exact paths>
 RED_COMMAND: <command>

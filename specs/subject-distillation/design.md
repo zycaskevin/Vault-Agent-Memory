@@ -1,13 +1,13 @@
 # Subject Distillation — Technical Design
 
 **Status:** Canonical product contract; frozen bytes record integrity only
-**Public repository baseline:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
+**Source reference commit:** `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`
 **Integrity binding:** `baseline-manifest.json` binds the exact five canonical files, their order, byte sizes, SHA-256 values, full digest, and baseline ID. Integrity does not imply review approval, implementation authorization, migration registration, or release authorization.
 **Implementation status:** Not implemented and not authorized by this artifact.
 **Product:** Vault Agent Memory
 **Requirements binding:** subject to the five-file hash-bound manifest contract below；this file declares no requirements verdict
 **Target slice:** Generic Subject Core + Person v1；Organization 僅契約與機械相容性
-**Repository baseline:** public base `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27`（current public package）
+**Repository source reference:** public commit `09a0f4c08f2f7479a01c9b6c083dd3cd0e564c27` used for the original inventory；it is not the normative baseline ID、delivery base、reviewed tree或implementation base。
 
 ## 1. 設計結論
 
@@ -27,6 +27,7 @@ Subject Distillation 採用「**受治理的Subject領域層**」，而不是把
 10. **Dependent-first relationship closure**：alias、`relationship_experience`／`perspective` assertion、counterparty control先關閉，再關relationship；只有在endpoint前由有效request切入fail-closed `purge_pending`的deletion cleanup可於relationship結束後完成，endpoint後不得新開request。
 11. **Dual-time top-level sealing**：model policy在model generation有效；pack不論entry數量都要在generated/sealed兩時點重驗exact model/model-policy＋grant/access-policy chain。
 12. **Complete canonical evaluation header**：scorecard digest以固定欄序/型別綁定explicit eligibility/exclusion/hard-failure/scoring rule versions＋hashes、`created_at`、`frozen_at`、其餘frozen gate semantics及case/event rows；rationale metric沒有reviewable reason/source不得PASS。
+13. **Long-term persona alignment without a second SSOT**：Evidence／Memory／Persona-Policy／Runtime是責任與projection邊界，不是四套可互相寫入的資料庫。Behavioral Diff只能成為typed candidate；approved behavior／decision boundary只能由既有Subject policy/model authority封存；persona/session snapshot是無authority的derived projection。Human、agent、model與third-party authorship必須分離，AI-produced material不得因approval/publish直接冒充human-explicit evidence。Dual retrieval、Persona IR、training export與LoRA維持future roadmap，不能擴張B-000或T-001。
 
 ## 2. Scope與非Scope
 
@@ -485,9 +486,9 @@ OpenAPI `x-vault-subject-safety`必須揭露：candidate-first、principal bindi
 1. `quickstart`完成既有agent setup。
 2. 顯示用途與privacy boundary，不掃描任何既有來源。
 3. 使用者明確提供subject type、controller principal與subject principal關係。
-4. 建立principal、auth binding、root subject、subject/controller role grants、default-private policy。
-5. 建立empty sealed model v1，coverage為empty/unknown；不產生人格內容。
-6. 回傳minimal proposal與Context Pack surface；無grant時pack只有安全metadata或deny。
+4. 建立principal、auth binding、root subject、subject/controller role grants、一份sealed `privacy` default-private policy及一份sealed `model` policy；兩者皆是empty-safe、同Subject、具獨立version與approval event。
+5. 先把installation切到`initialized_empty`，再以exact sealed `model` policy建立empty sealed model v1（coverage為empty/unknown；不產生人格內容），最後在同一setup transaction切到`active`；任何中途失敗整體rollback，因此成功setup不對外停留在`initialized_empty`。
+6. 回傳minimal proposal與Context Pack surface；無access grant時pack只有安全metadata或deny。
 
 ### 11.2 Agent observation proposal
 
@@ -571,13 +572,20 @@ db.require_schema(15, capability="subject")
 
 `inspect`以SQLite immutable/readonly URI或等價的無寫入方式開啟：missing path回`missing`且不得建立檔案；empty path回`empty`；一致v14/v15回版本與capability；unsupported或三個version signals／manifest不一致回明確error。任何`inspect`／`vault db status`路徑都不得建立sidecar、切換journal mode、執行DDL、commit、寫migration row或改變DB bytes；pre/post SHA-256與missing-file測試必須證明此點。WAL-mode DB的inspect與backup必須用SQLite connection snapshot語義，不能只複製主`.db`檔。
 
+`backup_path`是caller選定的new-file target：migration開始前若任何filesystem
+object已存在即回`backup_exists`且不得開啟、覆寫、截斷、替換或刪除。每個
+attempt建立backup後保留其opened descriptor identity；cleanup只可unlink該
+attempt新建且pathname仍解析為同一regular-file identity的backup。Identity
+不符、pathname被替換或任何pre-existing target一律停止並保留現況，回
+`backup_cleanup_unsafe`；不得以清理失敗為理由操作不屬於本attempt的path。
+
 Schema version authority集中於`vault/db_schema.py::SCHEMA_MANIFESTS`。每個受支援version明列table、column、index、trigger與migration IDs；`db_migrations.py`、`db_backup.py`與status共同import。`config.schema_version`、`PRAGMA user_version`與applied migration rows必須全部一致；禁止現行`max(...)`容錯。任何缺值、超前、分歧、manifest shape不符回`schema_metadata_inconsistent`，不得自動修正。
 
 所有`VaultDB` read-write connection生命週期持有`vault.db.schema.lock`的shared OS advisory lock；explicit migrate取得exclusive lock並等待既有connection結束。鎖內流程：
 
 1. 在同一條source connection上做readonly manifest preflight確認一致v14，記`PRAGMA data_version=d0`；
 2. 在exclusive advisory lock仍持有時，以WAL-aware SQLite online backup建立v14 snapshot並依v14 manifest驗證；不得以raw file copy取代；
-3. 在同一條source connection取得`BEGIN IMMEDIATE`，再讀`data_version=d1`；若`d1 != d0`，代表有不遵守advisory lock的外部writer，立即rollback、刪除該backup並bounded retry，絕不migration；
+3. 在同一條source connection取得`BEGIN IMMEDIATE`，再讀`data_version=d1`；若`d1 != d0`，代表有不遵守advisory lock的外部writer，立即rollback、依上述identity rule只刪除本attempt新建backup並重試整個snapshot/preflight cycle，絕不migration；每次explicit migrate最多三次attempt（initial + two retries），第三次race後回stable `migration_source_raced`，不得有任何migrator-authoredDDL/version/migration-row變更且不得保留本attempt backup；外部writer已提交的合法資料變化原樣保留，不宣稱source全檔byte-identical；不得無限重試或在race後繼續DDL；
 4. 同一transaction建立additive tables、indexes、triggers與`subject_installation=available_uninitialized`；最後才寫migration/config/`PRAGMA user_version`；
 5. commit後仍持有exclusive lock，跑v15 manifest/integrity verification；失敗即停止並保留verified v14 backup，不切runtime；
 6. 釋放lock後，`subject status`回`available_uninitialized`。不修改舊knowledge/candidate/task、不建立root subject、不掃描檔案。
@@ -745,6 +753,59 @@ Design completion conditions（normative；verdict只由separately recorded revi
 
 Technical design verdict: `NOT_SELF_DECLARED`
 
+### 20.1 Repo-external baseline review evidence
+
+A docs baseline is review-qualified only when the parent can retrieve and hash the
+actual public-safe evidence bytes; a digest or prose claim without the body is not
+evidence. The repo-external artifact is canonical UTF-8 JSON plus one trailing LF,
+with recursive object-key sorting, separators `(',', ':')`, `ensure_ascii=True`,
+duplicate-key rejection, exact builtin types, and no additional keys. Its exact
+top-level keys are `schema_version` (non-Boolean integer `1`), `artifact_kind`
+(`subject-distillation-baseline-review`), `baseline_id`,
+`baseline_full_digest`, `reviewed_base_commit`, `reviewed_delivery_paths`,
+`reviewed_normative_tree_sha256`, `reviewed_delivery_diff_sha256`,
+`created_at_utc`, and `reviews`. Artifact bytes are capped at 262,144 bytes.
+`baseline_id` is lowercase `^[0-9a-f]{16}$`; full/tree/diff digests are lowercase
+`^[0-9a-f]{64}$`; `reviewed_base_commit` is lowercase
+`^[0-9a-f]{40,64}$` and must resolve to the exact declared base object.
+`reviewed_delivery_paths` is 1..32 unique normalized POSIX repo-relative UTF-8
+paths, each 1..256 characters, strictly POSIX-byte sorted, with no absolute,
+backslash, control, empty, `.`, or `..` component.
+
+`reviewed_normative_tree_sha256` hashes canonical JSON plus LF for the
+POSIX-byte-sorted array of the five manifest-owned canonical paths, each object
+having exact keys `path` and `sha256`; every digest must byte-equal the validated
+manifest. `reviewed_delivery_diff_sha256` hashes canonical JSON plus LF for the
+POSIX-byte-sorted reviewed delivery path array derived from the exact
+`reviewed_delivery_paths`, each object having exact keys
+`path`, `base_sha256`, and `candidate_sha256`; a missing side is JSON `null`, and
+all present digests are lowercase SHA-256 of exact file bytes. `base_sha256` is
+read from `reviewed_base_commit:path`; `candidate_sha256` is read from the exact
+candidate path. No undeclared changed path is allowed, and the declared set may
+not include private/live/generated data.
+
+`reviews` contains exactly two objects in this order: `spec-design-plan`, then
+`quality-security`. Each object has only `review_kind`, `reviewer_principal`,
+`p0`, `p1`, `p2`, `verdict`, and `findings`; reviewer principals are distinct
+1..128-character non-secret public-safe strings matching
+`^[A-Za-z0-9][A-Za-z0-9._:@/-]*$`. Counts are non-Boolean integers in 0..999,
+verdict is exactly `PASS|FAIL`, and findings are objects with only
+`finding_id`, `severity`, `status`, and `summary`. `finding_id` matches
+`^[A-Z][A-Z0-9_-]{0,63}$`; severity is `P0|P1|P2`; status is
+`open|resolved|accepted|deferred`; summary is a 1..256-character public-safe
+single-line string scanned by the tasks §1 grammar. Counts must equal findings
+of each severity. PASS requires P0=0, P1=0, no `open` finding, and every P2
+explicitly `accepted|deferred|resolved`. `created_at_utc` is semantic canonical
+RFC3339 UTC `Z`; it records evidence assembly time, not review timing authority.
+
+The parent computes SHA-256 over the exact artifact bytes, retains those bytes
+outside the repo, and records both a public-safe opaque locator and the digest.
+Before B-000, the parent must retrieve the body through that locator, recompute
+its digest, rebuild both reviewed hashes from the selected base and candidate,
+verify the distinct ordered reviewer PASS conditions, and confirm the candidate
+bytes are unchanged. Any missing body, locator failure, digest/tree/diff drift,
+unknown field/type, private carrier, or self-declared replacement is a blocker.
+
 ## 21. Pre-implementation bootstrap and receipt protocol
 
 The first executable pre-task is B-000, before T-001. It is a local-only,
@@ -774,6 +835,17 @@ every object layer and exactly these required top-level fields: `schema_version`
 `issued_at_utc` and `expires_at_utc` (semantic RFC3339 UTC `Z`; expiry strictly
 later than issue and unexpired at verification), and `authorization_id`
 (string, `^[0-9a-f]{64}$`). No other top-level field is allowed.
+
+B-000 may not modify package metadata or add a runtime dependency. The canonical
+schema therefore uses only this fixed JSON Schema 2020-12 subset: `$schema`,
+`$id`, `type`, `properties`, `required`, `additionalProperties`, `const`, and
+`pattern`. The verifier implements and tests that exact closed subset with the
+Python standard library; it does not import `jsonschema`, resolve remote `$ref`,
+or claim to be a general JSON Schema evaluator. Schema-shape tests reject every
+keyword outside the subset and prove the fixed receipt checker accepts/rejects
+the same required/property/type/const/pattern/additional-property matrix.
+Semantic timestamps, canonical bytes, cross-field digests and freshness remain
+explicit verifier checks outside JSON Schema.
 
 `authorization_id` is SHA-256 of UTF-8 canonical JSON for the receipt with only
 `authorization_id` omitted, using `sort_keys=True`, separators `(',', ':')`,
@@ -806,11 +878,15 @@ values), `write_paths` (this exact ordered list), and
 impossible in the constructed object. Canonical bytes are UTF-8 encoding of
 `json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True) +
 '\n'`; `scope_sha256` is SHA-256 of those exact bytes. The parent may compute
-the bytes and digest in memory from the verified manifest plus these normative
-constants, but must not create/rewrite an owner instruction or persist a fake
-owner-supplied scope artifact. A valid trusted owner instruction must explicitly
-contain and byte-equal all four public values: lane `B-000`, exact baseline ID,
-exact baseline full digest, and exact B-000 `scope_sha256`. The trusted channel
+the bytes and digest in memory from the verified manifest and these normative
+constants, but must not create/rewrite an owner instruction
+or persist a fake owner-supplied scope artifact. The selected commit must be an
+exact clean checkout whose tree contains the reviewed canonical bytes; a commit
+that merely precedes an uncommitted docs candidate is not a valid implementation
+base. A valid trusted owner instruction must explicitly contain and byte-equal
+all five public values: lane `B-000`, exact implementation base commit matching
+lowercase `^[0-9a-f]{40,64}$`, exact
+baseline ID, exact baseline full digest, and exact B-000 `scope_sha256`. The trusted channel
 message itself is the instruction; the parent stores only an opaque public-safe
 audit reference outside the repo. A vague lane-only phrase, an old digest, or
 review/hash PASS cannot authorize B-000.
@@ -881,6 +957,13 @@ comparison, or mount-device comparison is an authorization decision. Mutation,
 replacement, short/extra data, non-regular input, or any race is DENY. One
 central cleanup closes descriptors in reverse acquisition order.
 
+After byte-bounded parsing, each JSON artifact also has deterministic structural
+limits: maximum nesting depth 32, maximum 32,768 aggregate JSON values/object
+members/array elements visited by the duplicate-key-safe parser and scanner, and
+maximum 4,096 members in any one object or array. Exceeding a limit is DENY, not
+an internal recursion error. Tests must include exact-boundary ALLOW and one-over
+DENY controls without allocating attacker-proportional secondary copies.
+
 Parsing is duplicate-key-safe and checks exact builtin JSON types. Recursively
 scan receipt, scope, manifest and schema using the sole public-safety scanner
 grammar normative in `tasks.md` §1. That section exclusively defines recursive
@@ -889,6 +972,11 @@ handling, and the private-shadow namespace exception. Named DENY and ALLOW
 fixtures required there are reused by progress and authorization, alongside
 path/no-follow/race and no-echo tests. No copied or second scanner grammar is
 permitted here.
+
+Descriptor/no-follow/race behavior is security-accepted only after the focused
+suite passes on Linux with a supported Python 3.10+ runtime; a macOS/local run is
+useful smoke evidence but cannot replace that Linux gate. The return packet must
+name OS and Python versions for each gate run.
 
 Missing, unknown or duplicate CLI arguments (including repeated flags), absent
 mandatory `--json`, and all caller-controlled absent/unreadable/malformed/
