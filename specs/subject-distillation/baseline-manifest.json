@@ -26,7 +26,7 @@
     },
     {
       "path": "specs/subject-distillation/tasks.md",
-      "sha256": "ae23cf459c0e04c238f33706bf3d338eb286c04a88d648cdd7faf74b2df3084c",
+      "sha256": "9ee1cfdb869b8ec805c0134789684a5763770147494e7cec50797c60554aed28",
       "size_bytes": 123744
     },
     {
@@ -41,7 +41,7 @@
     }
   ],
   "closure": {
-    "full_digest": "c07927774aa3d2c109a1e3f1ba88f746733bdfe9324955d3127d1f4087cb8e9a",
-    "baseline_id": "c07927774aa3d2c1"
+    "full_digest": "ef5083d6351e5943ca26205e7be4d1c2d4526c1755f1a9201bc696d67904e961",
+    "baseline_id": "ef5083d6351e5943"
   }
 }
