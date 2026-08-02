@@ -35,6 +35,11 @@ def _load_verifier():
 verifier = _load_verifier()
 
 
+@pytest.fixture(autouse=True)
+def _run_subject_authorization_from_repo_root(monkeypatch) -> None:
+    monkeypatch.chdir(REPO_ROOT)
+
+
 def _canonical(value: Any, *, newline: bool = True) -> bytes:
     result = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return (result + ("\n" if newline else "")).encode()
@@ -165,6 +170,14 @@ def test_valid_receipt_passes_with_exact_output(tmp_path: Path, capsys) -> None:
             "status": "PASS",
         }
     ).decode()
+
+
+def test_non_repo_cwd_is_fixed_deny(tmp_path: Path, capsys, monkeypatch) -> None:
+    args, _ = _build(tmp_path)
+    foreign_cwd = tmp_path / "foreign-cwd"
+    foreign_cwd.mkdir()
+    monkeypatch.chdir(foreign_cwd)
+    assert _run(args, capsys) == (2, "", verifier.DENY)
 
 
 @pytest.mark.parametrize(
