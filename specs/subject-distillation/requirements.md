@@ -1147,8 +1147,8 @@ start while any material decision below remains OPEN.
 | Person business/behavior policy | APPROVED | D-SD-001 through D-SD-010, including prospective evaluation-loop and long-term persona-governance boundaries. |
 | Requirements/SBE review | RISK-BASED | Review is recorded in the PR、task return packet or other owner-visible work record and binds the baseline/diff being judged. Docs-only process changes need mechanical validation plus one focused review；security、auth、migration、privacy or public-surface changes require an independent reviewer. A separate repo-external evidence body is not mandatory. |
 | Technical design | RISK-BASED | Integrity validation does not declare design quality. Material design changes require a focused review appropriate to their risk；routine wording/planning changes do not require two ordered reviewers. |
-| Implementation plan | APPROVED-WITH-GATES | B-000 may execute after an owner instruction names its lane and exact base commit；T-tasks remain receipt-authorized under design §21. Tests and scope checks remain mandatory，and review depth is selected by change risk. |
-| Coding | OWNER-AUTHORIZATION-REQUIRED | B-000 coding starts only after the two-value owner instruction；T-task coding starts only after its required receipt verifies. Repeating B-000 manifest and scope hashes in chat is not required because preflight derives them from the selected commit. |
+| Implementation plan | APPROVED-WITH-GATES | B-000 may execute after an owner instruction names its lane and exact base commit；B-001 must then implement and independently validate the identity-safe runner before any T-task proposal. T-tasks use the two-stage protocol in design §21；implementation remains blocked until stateless/file-free proposal output is exactly owner-confirmed, then one runner process re-derives、materializes、verifies and cleans. Tests and scope checks remain mandatory，and review depth is selected by change risk. |
+| Coding | OWNER-AUTHORIZATION-REQUIRED | B-000 coding starts only after the two-value owner instruction；T-task coding starts only after owner confirmation binds the exact canonical proposal、receipt SHA-256 and verified cleanup result. Proposal derivation or private materialization alone is never coding authority. |
 
 ## 12. Completion definition for requirements approval
 
@@ -1183,23 +1183,56 @@ explicit human bootstrap trust root. B-000 and all implementation agents must
 not self-authorize or create/rewrite the owner instruction.
 
 After B-000's exact tree passes its focused tests, parent readback, exact diff
-inventory and one independent security review, T-001 remains blocked until a
-separate, actual T-001 receipt verifies. Receipt
-integrity is not human authenticity: the verifier binds exact bytes to the
-trusted parent's inputs and never claims to prove the owner identity or channel
-independently. Canonical byte changes require manifest rebind before later
-implementation uses them, but planning-only edits and ordinary code iterations
-within an unchanged authorized scope do not require a new owner prompt.
+inventory and one independent security review, T-001 remains blocked until
+B-001 implements、reviews and delivers the identity-safe runner. The owner may
+then request a T-001 proposal for an exact base. Its stateless `propose` mode
+derives candidate receipt/scope bytes in memory but creates no private file、
+registry、daemon、IPC endpoint or locator. It returns only one LF-terminated
+canonical public-safe proposal JSON containing the exact task/base、baseline
+ID/full digest、complete sorted allowed-path/non-goal/prohibited-operation
+arrays、issue/expiry timestamps、scope SHA-256、full receipt SHA-256、canonical
+schema/verifier SHA-256 values、fixed authorizing principal、derived
+authorization ID and a deterministic `proposal_id`. The owner must
+separately confirm that exact immediately preceding proposal and receipt
+SHA-256. Only that confirmation is the human authorization trust root. A single
+`verify-confirmed` process then re-derives the confirmed bytes, creates and holds
+the private objects through verification, and proves identity-safe cleanup
+before returning PASS. Any byte、task、base、baseline、scope、timestamp or repo
+input drift requires a new proposal and confirmation. Receipt integrity is not
+human authenticity: the verifier proves binding to the owner-confirmed receipt
+digest and never claims to prove the owner identity or channel independently.
+Canonical byte changes require manifest rebind before later implementation uses
+them, but planning-only edits and ordinary code iterations within an unchanged
+authorized scope do not require a new owner prompt.
 
 The authorization protocol has two distinct boundaries in design §21. B-000
 uses the exact three-path write allowlist declared by the canonical task and the
 two-value owner instruction (`lane` plus exact base commit); it has no receipt or
-persisted bootstrap-scope artifact. T-task receipts use the operator-private canonical
-`subject-distillation-implementation-scope` file with `authorized_task`.
-Operator-private receipt/scope inputs remain outside repo and evidence;
-manifest, schema, and verifier are exact canonical repo inputs. Verification
-uses retained-descriptor no-follow traversal and bounded same-descriptor reads,
-the sole key-aware scanner grammar in tasks §1, OS UTC time with equality at
-expiry denied, and mandatory `--json`. Caller/input faults DENY; only safely
-classified unexpected internal faults ERROR. Neither contract authorizes
-B-000, T-001, or implementation by itself.
+persisted bootstrap-scope artifact. T-task execution uses an owner-confirmed
+public-safe proposal naming the task、exact base、complete canonical scope and
+full receipt SHA-256 plus the byte-identical operator-private canonical
+`subject-distillation-implementation-scope` and receipt. Receipt/scope inputs
+remain outside repo and evidence and are never echoed；manifest, schema, and
+verifier are exact canonical repo inputs. Verification uses retained-descriptor no-follow
+traversal and bounded same-descriptor reads, the sole key-aware scanner grammar
+in tasks §1, OS UTC time with equality at expiry denied, and mandatory `--json`.
+Caller/input faults DENY；only safely classified unexpected internal faults
+ERROR. The existing verifier does not independently validate the chat-channel
+owner identity、Git HEAD or whether the scope arrays are the task's intended
+ones；those exact public-safe values are therefore mandatory fields of the
+owner-confirmed proposal. Neither an unconfirmed generated artifact, its hash,
+the manifest nor review PASS authorizes B-000, T-001, or implementation.
+
+Private candidate materialization is unavailable until the post-B-000 governance
+bootstrap B-001 implements and independently reviews the identity-safe runner
+specified in design §21. B-001 is not a product T-task and cannot authorize
+T-001. `propose` is stateless and file-free. Only the later owner-confirmed
+`verify-confirmed` process may disable xtrace, expand the exact private bytes
+into restrictive repo-external files, retain descriptor identity through the
+existing verifier, and clean only identity-matching owned objects on PASS、DENY、
+ERROR and interruption. Before T-001 continues, cleanup and path absence must
+verify. Progress state is checked before private creation and after verifier
+success but before PASS；appearance、invalidity or any non-`PENDING` T-001 state
+during verification requires cleanup and DENY. Until B-001 passes its hostile
+tests and independent security review,
+private receipt/scope materialization and T-001 remain fail-closed unavailable.
