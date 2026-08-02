@@ -21,13 +21,13 @@
     },
     {
       "path": "specs/subject-distillation/design.md",
-      "sha256": "151cca813b90bee65585a145cca59732ee15f017951bbb791d2adfeb0a301d2b",
-      "size_bytes": 92607
+      "sha256": "0a4d064ac2bf5fd3257645d2210c10592e7d00ac3b52368e088597213602ea07",
+      "size_bytes": 92984
     },
     {
       "path": "specs/subject-distillation/tasks.md",
-      "sha256": "cf98c40fc8441c318ad35e741d606295fff3440731b8af3207f3c2a5c020cc4a",
-      "size_bytes": 116158
+      "sha256": "9a1061400b1cb56f05916a24927937a054af9db1d7868ea66a481910dfb83c51",
+      "size_bytes": 116967
     },
     {
       "path": "specs/subject-distillation/traceability.md",
@@ -41,7 +41,7 @@
     }
   ],
   "closure": {
-    "full_digest": "4011418f6c00605ce30e44579848687a14dae038494170bc887cc07c3ec72630",
-    "baseline_id": "4011418f6c00605c"
+    "full_digest": "8b975623b3c170fb39600a3506a27f45d11b1398cd9fcccefce696ae822379f8",
+    "baseline_id": "8b975623b3c170fb"
   }
 }

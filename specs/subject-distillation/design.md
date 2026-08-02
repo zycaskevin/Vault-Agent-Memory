@@ -918,10 +918,14 @@ Parsing is duplicate-key-safe and checks exact builtin JSON types. Recursively
 scan receipt, scope, manifest and schema using the sole public-safety scanner
 grammar normative in `tasks.md` §1. That section exclusively defines recursive
 key/value traversal, normalized forbidden keys, exact regexes, digest-field
-handling, and the private-shadow namespace exception. Named DENY and ALLOW
-fixtures required there are reused by progress and authorization, alongside
-path/no-follow/race and no-echo tests. No copied or second scanner grammar is
-permitted here.
+handling, the private-shadow namespace exception, and one fixed manifest-domain
+exception. That manifest exception applies only when the direct owning key is
+byte-exact `domain_separator_utf8_hex` and the value is byte-exact
+`7375626a6563742d64697374696c6c6174696f6e2d626173656c696e652d76310a`；
+it is not a generic 66-hex allowance. Any key spelling/separator/case mutation or
+value prefix/suffix/case/content mutation is DENY. Named DENY and ALLOW fixtures
+required there are reused by progress and authorization, alongside path/no-follow/
+race and no-echo tests. No copied or second scanner grammar is permitted here.
 
 Local development and focused tests may run on any supported host. The
 descriptor/no-follow/race suite must also pass on Linux with supported Python
