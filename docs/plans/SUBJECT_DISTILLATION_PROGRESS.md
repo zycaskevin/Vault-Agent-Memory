@@ -3,96 +3,96 @@
 **Last updated:** 2026-08-02
 **Repository:** `zycaskevin/Vault-Agent-Memory`
 **Working branch:** `docs/subject-distillation-b000-handoff`
-**Repair base:** `167b2eec443bc2e6ad0af21cb36a8b01c7cae5f7`
-**Current mode:** owner-authorized local docs-only LT-C alignment + rebaseline；B-000/T-001 not started
+**Docs base:** `018a4d518f84783ecc2538f44aeb665c80a5112b`
+**Current mode:** owner-authorized local docs-only Simplification Rebaseline
 
----
+## Current status
 
-## One-sentence status
+The development workflow is being simplified without changing product behavior.
+B-000 and T-001 have not started. This cycle may align docs, rebind the canonical
+manifest, validate the exact diff and obtain one focused review. It may not commit,
+push, update a PR or start implementation without separate authorization.
 
-The LT-C docs candidate is mechanically rebound to a new five-file baseline, but it is intentionally `NOT_AUTHORIZED`: ordered fresh review evidence, docs Git delivery, exact implementation-base selection, and a new five-value B-000 owner instruction are still separate gates.
+## Simplification decision
 
-## Source of truth
+Removed from routine development:
 
-- Parent epic: #410
-- B-000 implementation issue: #422
-- Blocked successor T-001 issue: #421
-- Canonical specification: `specs/subject-distillation/`
-- Execution roadmap: `docs/plans/2026-08-02-subject-distillation-execution-roadmap.md`
-- Codex handoff: `docs/plans/2026-08-02-subject-distillation-codex-handoff.md`
+- mandatory offline wheelhouse;
+- repo-external review evidence body/locator/digest;
+- repeated five-value owner instruction;
+- two ordered reviewers for every stage;
+- Linux-before-local-development and excessive bootstrap substeps.
 
-## Candidate baseline binding
+Retained:
 
-| Field | Value |
-|---|---|
-| Baseline ID | `51625dffe08539b6` |
-| Full digest | `51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f` |
-| Manifest SHA-256 | `0765d28d0b722dbd4e5829e7b17d1b721171acea72912fd131965fb17e4c26cf` |
-| B-000 scope SHA-256 | `3199f1e732b04db99af181d0297bc4f7342e181b129c020b684843878be7f9c3` |
-| Fresh closure review | `EXTERNAL-EVIDENCE-REQUIRED`；no repo file self-declares PASS |
-| Implementation base | `UNSELECTED`；must be a later exact commit containing these reviewed bytes |
+- owner authority cannot be inferred or created by an agent;
+- B-000 exact three-path scope and RED-first tests;
+- separate T-001 receipt and authorization;
+- credential, privacy, private/live-data and no-echo controls;
+- explicit authority for Git delivery when not included in a work instruction;
+- explicit authority for production migration, deploy, merge/release and
+  destructive actions;
+- independent review for auth/security/migration/privacy/public-surface changes;
+- Linux security CI before merge/release.
 
-Any byte change to the five canonical files requires another manifest binding and fresh review. Review evidence follows design §20.1: the parent retains the retrievable public-safe body, locator and SHA-256 outside the repo so this progress file cannot self-certify or create a review-digest cycle.
-
-## LT-C decisions
-
-### Merged into the current canonical contract as invariants only
-
-- Evidence／Memory／Persona-Policy／Runtime are conceptual ownership/projection planes, not four writable stores.
-- Behavioral Diff is typed candidate-only and never directly updates approved policy/model/runtime.
-- Approved behavior and decision boundaries reuse existing sealed Subject policy/model authority, scope, exceptions, counter-evidence and temporal validity.
-- Human、agent、model and third-party authorship remain distinct；AI-produced material cannot silently become human-explicit evidence.
-- Persona/session snapshots are deterministic derived projections with no independent authority.
-- Model/persona output cannot grant action authority; an independent valid grant remains mandatory.
-
-### Deferred to the future roadmap
-
-- Dual Evidence/Policy retrieval and precedence/token-budget compiler.
-- Runtime Policy Cards and Virtual Session persona snapshot productization.
-- Canonical Persona IR and cross-model deployment adapters.
-- Governed SFT/DPO dataset export and any LoRA/training pipeline.
-
-These items wait for the roadmap LT-series prerequisites and separate authorization. None expands B-000 or T-001.
-
-## Completed in this local docs-only cycle
-
-- [x] Captured the owner's explicit docs-only LT-C/rebaseline authorization.
-- [x] Separated source-reference commit, delivery base, normative baseline ID, reviewed tree and implementation base terminology.
-- [x] Defined retrievable repo-external baseline-review evidence and deterministic normative-tree/delivery-diff hashes.
-- [x] Added exact implementation-base binding to the future B-000 owner instruction.
-- [x] Defined offline wheelhouse-only setup for B-000/T-001.
-- [x] Aligned DB lifecycle API, CLI vocabulary, root setup final state/policies, atomic progress writer and final-tree rerun gate.
-- [x] Added resource/platform acceptance and clarified experimental is not release authority.
-- [x] Mapped the long-term report onto the existing Subject SSOT and added deferred roadmap milestones.
-- [x] Rebound `baseline-manifest.json`; mechanical validator PASS.
-- [ ] Obtain ordered distinct-reviewer design §20.1 evidence with P0=0/P1=0.
-- [ ] Under separate authorization, commit/push/open or update the docs delivery.
-- [ ] Select the resulting exact implementation commit and issue a new five-value B-000 instruction.
-
-## Exact local review unit
+## Current docs-only work unit
 
 1. `specs/subject-distillation/requirements.md`
 2. `specs/subject-distillation/design.md`
 3. `specs/subject-distillation/tasks.md`
-4. `specs/subject-distillation/traceability.md`
-5. `specs/subject-distillation/baseline-manifest.json`
-6. `docs/plans/2026-08-02-subject-distillation-execution-roadmap.md`
-7. `docs/plans/SUBJECT_DISTILLATION_PROGRESS.md`
-8. `docs/plans/2026-08-02-subject-distillation-codex-handoff.md`
+4. `specs/subject-distillation/baseline-manifest.json`
+5. `docs/plans/2026-08-02-subject-distillation-execution-roadmap.md`
+6. `docs/plans/SUBJECT_DISTILLATION_PROGRESS.md`
+7. `docs/plans/2026-08-02-subject-distillation-codex-handoff.md`
 
-`schema.v15.sql` remains canonical and hash-bound but byte-unchanged in this repair. No reviewer transcript/body, owner chat content, receipt, scope artifact, token, private/live path, runtime evidence or generated implementation artifact belongs in the repo.
+`schema.v15.sql` and `traceability.md` remain canonical and manifest-bound but
+should remain byte-unchanged in this simplification cycle. No implementation,
+receipt, scope, review transcript, private path/data or generated runtime artifact
+belongs in this work unit.
 
-## Future B-000 owner instruction template
+## Long-term planning disposition
 
-The values below are not authorization while `implementation_base_commit` is unresolved or design §20.1 evidence has not verified:
+Merged now as invariants only:
+
+- separate Evidence/Memory/Persona-Policy/Runtime responsibilities within the
+  existing Subject SSOT;
+- candidate-only Behavioral Diff;
+- human/agent/model/third-party authorship provenance;
+- scoped, temporal, exception-aware behavior and decision-boundary policy;
+- isolation of user policy, project policy, agent role and render style;
+- no action authority from persona/model output.
+
+Deferred: runtime Behavioral Diff, dual retrieval/Context Compiler, Policy Cards,
+session persona snapshots, Persona IR/export adapters, persona evaluation and all
+SFT/DPO/LoRA work. Their milestones/prerequisites are in the execution roadmap.
+
+## Completion state
+
+- [x] Owner explicitly authorized docs-only Simplification Rebaseline.
+- [x] Requirements/design/tasks aligned to the simplified authorization and review model.
+- [x] Roadmap/progress/handoff aligned to the long-term report and simplified flow.
+- [x] Canonical manifest rebound and validator PASS.
+- [x] Stale restriction scan, count checks and exact changed-path inventory PASS.
+- [x] Focused safety-boundary review reports P0=0/P1=0.
+- [x] New baseline packet is ready；stop before implementation.
+
+## Future B-000 owner instruction
+
+After the reviewed docs bytes are delivered in an exact commit:
 
 ```text
 lane=B-000
-implementation_base_commit=<exact accepted commit containing the reviewed candidate>
-baseline_id=51625dffe08539b6
-baseline_full_digest=51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f
-scope_sha256=3199f1e732b04db99af181d0297bc4f7342e181b129c020b684843878be7f9c3
+implementation_base_commit=<exact clean commit containing the validated baseline>
 ```
+
+The preflight derives baseline ID, full digest and exact three-path allowlist.
+The owner does not need to repeat derived hashes. This template is not authority
+until the owner sends it with a real commit SHA.
+
+Current docs candidate binding:
+
+- Baseline ID: `4011418f6c00605c`
+- Full digest: `4011418f6c00605ce30e44579848687a14dae038494170bc887cc07c3ec72630`
 
 ## Mechanical verification
 
@@ -104,29 +104,23 @@ python3 scripts/validate_subject_baseline.py \
 git diff --check
 ```
 
-Expected baseline result:
+Expected result:
 
 ```json
-{"baseline_id":"51625dffe08539b6","full_digest":"51625dffe08539b60520b4c21c4793cc19aad0dd63f8066d4e0c5f277056a08f","status":"PASS"}
+{"baseline_id":"4011418f6c00605c","full_digest":"4011418f6c00605ce30e44579848687a14dae038494170bc887cc07c3ec72630","status":"PASS"}
 ```
 
 ## Stop conditions
 
-Stop and return to the owner if:
-
-- canonical bytes no longer validate to this candidate baseline;
-- review evidence body/locator/digest/tree/diff cannot be independently verified;
-- any ordered review reports P0/P1;
-- a selected implementation base does not contain the exact reviewed bytes;
-- the B-000 prompt lacks any of the five exact binding values;
-- any request mixes docs-only, B-000 and T-001 scopes;
-- any action would commit/push/open or update a PR/write GitHub without separate authorization;
-- private/live data, migration, runtime, release or deployment behavior appears.
+Stop if canonical integrity fails, a focused review reports P0/P1, a request mixes
+B-000 and T-001, or the next action needs Git delivery, private/live data,
+production migration/deployment, release/merge or destructive authority that has
+not been explicitly granted.
 
 ## Handoff state
 
-- Local docs-only LT-C candidate: mechanically PASS, fresh review pending.
+- Local Simplification Rebaseline: PASS；P0=0，P1=0.
 - Git delivery: not authorized in this cycle.
-- B-000 implementation: blocked before first write.
-- T-001 implementation: blocked.
-- Merge/deploy/release/private shadow: not authorized.
+- B-000 implementation: not started.
+- T-001 implementation: not started and independently gated.
+- Production/private/destructive actions: not authorized.

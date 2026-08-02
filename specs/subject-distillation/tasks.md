@@ -11,44 +11,42 @@
 這份文件是hash-bound implementation plan，不是coding授權，也不自行宣告plan verdict。B-000與T-001各自只能在其明列條件全部成立後開始；review PASS或hash本身從不授權implementation。
 
 1. `baseline-manifest.json`通過mechanical integrity validation，證明top-level five-file hash/full-digest/baseline-ID/frozen-state binding成立；
-2. parent可依design §20.1 locator取回並hash驗證separately recorded fresh review evidence body，兩個ordered reviews皆為`PASS`、P0=0、P1=0，並綁定exact `baseline_id`、full digest、reviewed normative tree及delivery diff；digest或prose claim若無actual body一律不算evidence；
-3. B-000已在trusted operator channel的exact owner instruction下完成並通過exact-tree review，且separate fail-closed authorization verifier確認T-001的actual receipt綁定exact `baseline_id`、full digest、task及scope；
-4. worktree／branch／base重新核對為clean，`git rev-parse HEAD` byte-equal於owner-selected implementation base，該commit tree包含reviewed canonical candidate且符合reviewed diff/tree，沒有未解的外部變更。
+2. docs-only process change完成mechanical validation與focused review；auth/security/migration/privacy/public-surface change完成一位independent reviewer的risk-based review，且P0=0、P1=0；
+3. B-000已在trusted operator channel的owner instruction（`lane=B-000`＋exact implementation base commit）下完成並通過exact-tree review，且separate fail-closed authorization verifier確認T-001的actual receipt綁定exact `baseline_id`、full digest、task及scope；
+4. worktree／branch／base重新核對為clean，`git rev-parse HEAD` byte-equal於owner-selected implementation base，該commit tree包含validated canonical bytes，沒有未解的外部變更。
 
 執行紀律：
 
 - SBE → SDD → TDD；每個behavior先有紅燈測試。
 - 一次只做一個task；不得把`BLOCKED`標成完成。
 - 每個behavior-bearing implementation slice的執行順序固定為：unit/contract → synthetic fixture behavior → surface contract → legacy regression → private live/shadow。T-002只建立public synthetic taxonomy並跑fixture privacy/schema unit gate，不執行Subject behavior或live資料，因此可在T-004前作preflight；不得把這個例外外推到behavior tests。
-- Implementation agent負責coding；parent verifier負責scope與mechanical verification；independent reviewer負責fresh review；designated release authority獨立決定implementation authorization。
+- Implementation agent負責coding；parent verifier負責scope與mechanical verification；需要時由independent reviewer進行risk-based review；designated release authority獨立決定implementation authorization。
 - 本檔所有checkbox是immutable contract bullets，永遠不表示execution status；baseline freeze後不得因task開始、阻塞或完成而改動checkbox。
 - 每個task的唯一current status只存在`specs/subject-distillation/implementation-progress.json`；完成必須先追加合法ledger transition、附public-safe evidence refs，並由`python scripts/validate_subject_progress.py`實跑`PASS`。所有`BLOCKED`狀態也只記入該ledger，不得改本檔。
 - `CHANGELOG.md`按coherent product／security／docs review unit更新，不按task status逐筆更新；不得以CHANGELOG取代progress ledger。
 - 不把真實person/org資料、private pilot內容、secret、home path或remote credential放入repo。
-- 任何schema、auth、policy、migration、Gateway或MCP變更都需要fresh reviewer。
+- Auth、security、migration、privacy、production或public-surface變更需要一位independent reviewer；docs-only與低風險內部變更使用mechanical validation加focused review。
 
-所有task共用stop/checkpoint：RED測試若因normative contract缺失、互相矛盾或需新增business/security決策而無法寫出，立即停止並在progress ledger記錄`BLOCKED`；不得用implementation選擇補規格。每個task至少在「RED原因符合spec」「GREEN只改approved scope」「verify命令實跑」「fresh review適用時PASS」四個checkpoint留證據，未過checkpoint不得進下一task或phase。
+所有task共用stop/checkpoint：RED測試若因normative contract缺失、互相矛盾或需新增business/security決策而無法寫出，立即停止並在progress ledger記錄`BLOCKED`；不得用implementation選擇補規格。每個task至少在「RED原因符合spec」「GREEN只改approved scope」「verify命令實跑」「risk-based review適用時PASS」四個checkpoint留證據，未過checkpoint不得進下一task或phase。
 
-在任何B-000或T-001命令前，必須從repo root逐行原樣執行下列local-only setup：
+在任何B-000或T-001命令前，從repo root建立或重用project-local環境：
 
 ```bash
-python3 -m venv .venv
+test -x .venv/bin/python || python3 -m venv .venv
 source .venv/bin/activate
-test -n "${SUBJECT_DEV_WHEELHOUSE:-}"
-test -d "${SUBJECT_DEV_WHEELHOUSE}"
-python -m pip install --no-index --find-links "${SUBJECT_DEV_WHEELHOUSE}" -e ".[dev]"
+python -m pip install -e ".[dev]"
 command -v python
 python --version
 ```
 
-`.venv/`必須已gitignored；supported Python依package contract為`>=3.10`。`SUBJECT_DEV_WHEELHOUSE`由trusted parent指向repo外、預先取得且經來源／完整性核對的local wheelhouse；B-000/T-001 setup禁止index與remote network fallback。啟用後每個normative `python ...`命令都必須可逐字執行。wheelhouse、setup或`command -v python`失敗即阻塞該lane，不得silent interpreter/dependency substitution或臨時連網。
+`.venv/`必須已gitignored；supported Python依package contract為`>=3.10`。既有有效`.venv`可直接重用；一般package index/network dependency install可用，不得使用未授權private index、credential或private source。Dependency/package metadata變更仍是獨立review scope。Setup或`command -v python`失敗即阻塞該lane，不得silent interpreter/dependency substitution。
 
 ## 1. Closure artifacts
 
 Implementation完成時至少交付：
 
 1. `specs/subject-distillation/requirements.md`（normative requirements；不在檔內自宣告verdict）
-2. `specs/subject-distillation/design.md`（normative design；current verdict只由separate exact-baseline review evidence供應）
+2. `specs/subject-distillation/design.md`（normative design；review record依risk-based policy保存）
 3. `specs/subject-distillation/tasks.md`（immutable execution contract；不是status evidence）
 4. `specs/subject-distillation/schema.v15.sql`（normative physical schema contract）
 5. `specs/subject-distillation/traceability.md`（design-approved 43-example mapping）
@@ -99,13 +97,13 @@ B-000 is not a T-task，never appears in `implementation-progress.json`，and ca
 - `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`
 - `tests/test_subject_authorization_bootstrap.py`
 
-B-000只能在current five-file baseline integrity validates、parent可取回並驗證design §20.1 exact review evidence body且兩個ordered reviews皆PASS/P0=0/P1=0、repository owner透過trusted operator channel簽發design §21所定五個public values皆explicit且byte-equal的exact B-000 instruction、`git rev-parse HEAD`等於其中`implementation_base_commit`且該clean commit tree包含reviewed canonical bytes、以及clean branch/worktree preflight全部成立後開始。Trusted operator channel message本身是repository-owner instruction與唯一explicit human bootstrap trust root；repo無法自行cryptographically prove private conversation/channel。B-000與所有implementation agents must not self-authorize、不得從lane-only phrase、old digest、hash或review PASS推論授權、不得create/rewrite owner instruction或persist fake owner-supplied scope artifact。Parent可從verified manifest與normative constants在memory計算bootstrap canonical bytes/digest；selected base另以owner instruction與clean checkout byte-equality核對，且只在repo外保存public-safe opaque audit reference。
+B-000只能在current five-file baseline integrity validates、repository owner透過trusted operator channel簽發包含`lane=B-000`與exact `implementation_base_commit`的instruction、`git rev-parse HEAD`等於該clean commit且其tree包含validated canonical bytes、以及clean branch/worktree preflight成立後開始。Baseline ID、full digest與exact三-path allowlist由preflight從該commit機械導出，不要求owner在chat重複。Trusted operator channel message本身是repository-owner instruction與唯一explicit human bootstrap trust root；repo無法自行cryptographically prove private conversation/channel。B-000與所有implementation agents must not self-authorize、不得從hash或review PASS推論授權，也不得create/rewrite owner instruction。
 
-B-000 local-only且只能觸碰上述三paths；禁止product/runtime/data/migration、GitHub、commit、push、PR、release或deployment操作。先在`tests/test_subject_authorization_bootstrap.py`建立genuine RED，再實作schema/verifier。Schema/verifier必須完整實現design §21的exact fields、canonical authorization ID、parent-bound receipt byte digest、duplicate-key/type/time/path/public-safety/no-echo contract與全部negative/legal-positive controls。
+B-000 local-only且只能觸碰上述三paths；禁止product/runtime/data、production migration、deployment、release、private-live-data或destructive操作。Git commit/push/PR不由B-000本身授權，只能在owner另行授權Git delivery後執行。先在`tests/test_subject_authorization_bootstrap.py`建立genuine RED，再實作schema/verifier。Schema/verifier必須完整實現design §21的exact fields、canonical authorization ID、parent-bound receipt byte digest、duplicate-key/type/time/path/public-safety/no-echo contract與全部negative/legal-positive controls。
 
 Schema validation不得新增dependency或修改package metadata：canonical schema只可使用design §21固定的JSON Schema 2020-12 keyword subset，verifier以Python standard library實作該exact closed subset；任何unknown keyword／remote `$ref` DENY，且schema-shape與receipt matrix證明fixed checker和canonical schema contract一致。不得silent import environment偶然存在的`jsonschema`。
 
-Resource hostile matrix另須覆蓋每檔1,048,576-byte cap、JSON depth 32／aggregate node 32,768／single-container member 4,096 exact-boundary ALLOW與one-over DENY，且limit failure不得成為RecursionError或unbounded secondary copy。Descriptor/no-follow/race acceptance至少在一個supported Python 3.10+ Linux run通過；macOS run只算smoke，return packet逐次記錄OS/Python。
+Resource hostile matrix另須覆蓋每檔1,048,576-byte cap、JSON depth 32／aggregate node 32,768／single-container member 4,096 exact-boundary ALLOW與one-over DENY，且limit failure不得成為RecursionError或unbounded secondary copy。Local supported-OS run可作為開發與task completion evidence；descriptor/no-follow/race suite另須在supported Python 3.10+ Linux CI於merge前通過，return packet逐次記錄OS/Python。
 
 Verifier deny contract固定為exit `2`、empty stdout、stderr exact `SUBJECT_IMPLEMENTATION_AUTHORIZATION_DENY\n`；unexpected internal/harness failure固定為exit `3`、empty stdout、stderr exact `SUBJECT_IMPLEMENTATION_AUTHORIZATION_ERROR\n`。Success contract固定為exit `0`、empty stderr及exact compact LF-terminated JSON object，且不得echo path、hostile key/value、token-shaped value或receipt content。
 
@@ -116,7 +114,7 @@ python -m pytest -q tests/test_subject_authorization_bootstrap.py
 python -m ruff check scripts/verify_subject_implementation_authorization.py tests/test_subject_authorization_bootstrap.py
 ```
 
-完成還要求parent readback與exact diff inventory，並對同一exact B-000 tree依序取得fresh spec-compliance PASS及quality/security PASS。這不暗示或產生任何T-001 owner authorization；T-001仍須actual receipt verification。
+完成還要求parent readback、exact diff inventory及同一exact B-000 tree的一位independent security reviewer PASS。這不暗示或產生任何T-001 owner authorization；T-001仍須actual receipt verification。
 
 ### T-001 — Freeze implementation baseline
 
@@ -1140,8 +1138,8 @@ python scripts/validate_subject_progress.py --manifest specs/subject-distillatio
 ## 13. Current gate
 
 - Normative current-truth contract: apply `baseline-manifest.json` mechanical identity only when its five recorded canonical hashes equal disk bytes, its canonical `closure.full_digest` and 16-hex `baseline_id` mechanically recompute from those hashes, and `baseline_state` is a manifest-validator-recognized frozen state. Otherwise the disk bytes are unreviewed remediation, no manifest verdict applies, and this section does not invent one.
-- Implementation authorization code: `NOT_AUTHORIZED` — no coding or implementation may start; only the designated release authority may explicitly change this after all fresh gates PASS.
+- Implementation authorization code: `NOT_AUTHORIZED` — no coding or implementation may start；owner以lane與exact base commit明確授權B-000，T-task仍依receipt contract授權。
 - Renderer-proof authorization remains `NOT_AUTHORIZED` in the normative package；a separate designated release authority receipt is applicable only when it binds the same successfully verified manifest `baseline_id`、`closure.full_digest` and authorized scope, and may never be inferred from review PASS.
-- First executable pre-task: **B-000, BLOCKED until the exact baseline- and scope-digest-bound repository-owner instruction exists in the trusted operator channel and all B-000 preconditions pass**.
+- First executable pre-task: **B-000, BLOCKED until a repository-owner instruction names `lane=B-000` and the exact clean implementation base commit, and all B-000 preconditions pass**.
 - First product implementation task: **T-001, BLOCKED until the exact B-000 tree tests/reviews pass and the actual T-001 receipt verifies under the fixed protocol**.
-- No current baseline ID is hard-coded in these canonical docs。After any canonical byte change，old baseline/review/authorization evidence does not transfer；the parent must rebuild the manifest and obtain fresh reviews。
+- No current baseline ID is hard-coded in these canonical docs。After canonical byte changes，the parent rebinds the manifest and applies risk-based review；planning-only changes and ordinary implementation iterations within unchanged authorized scope do not require a repeated owner prompt。

@@ -657,7 +657,7 @@ Synthetic pass但shadow未pass時只能標`experimental`；不宣稱「理解」
 4. **Legacy regression**：existing compile/search/read/propose/promote、backup/restore、full pytest。
 5. **Private live/shadow**：僅operator private Vault；不進repo，不在synthetic gate前執行。
 
-Current contract alignment要求bounded direct-SQL DENY＋legal ALLOW pairs涵蓋既有authority／temporal矩陣，並補：Subject lifecycle exact target-kind/authority/replay/timestamp；global principal NULL-Subject self-event、same-principal event-time binding及no-global-admin negative；access policy同時在issuance與grant `effective_from`有效；closure同時阻擋`relationship_experience`與`perspective`跨endpoint窗；只有endpoint前valid request的`purge_pending`可使parent close且立即deny use；endpoint後new request DENY但pre-endpoint request later completion ALLOW；四組explicit evaluation rule version/hash freeze及digest對version、`created_at`、`frozen_at`的paired divergence。Manifest只供mechanical byte identity；任何fresh-review結論都必須來自綁定exact baseline ID、full digest與reviewed diff/tree hash的separate review evidence，本設計不自行宣告其結果。每個negative fixture必須對準目標guard，不能先被無關FK/time check擋下。
+Current contract alignment要求bounded direct-SQL DENY＋legal ALLOW pairs涵蓋既有authority／temporal矩陣，並補：Subject lifecycle exact target-kind/authority/replay/timestamp；global principal NULL-Subject self-event、same-principal event-time binding及no-global-admin negative；access policy同時在issuance與grant `effective_from`有效；closure同時阻擋`relationship_experience`與`perspective`跨endpoint窗；只有endpoint前valid request的`purge_pending`可使parent close且立即deny use；endpoint後new request DENY但pre-endpoint request later completion ALLOW；四組explicit evaluation rule version/hash freeze及digest對version、`created_at`、`frozen_at`的paired divergence。Manifest只供mechanical byte identity；review結論必須綁定exact baseline或changed-path diff並依§20.1風險規則記錄，本設計不自行宣告其結果。每個negative fixture必須對準目標guard，不能先被無關FK/time check擋下。
 
 最低命令：
 
@@ -740,11 +740,11 @@ Fresh design closure需同時hash-lock `requirements.md`、`design.md`、`tasks.
 
 ## 20. Design approval gate
 
-本節不自行宣告technical-design verdict。`baseline-manifest.json`只機械驗證top-level五檔hash、canonical full digest、baseline ID與frozen state；design verdict必須由綁定exact baseline ID、full digest與reviewed diff/tree hash的separate fresh review evidence供應。任一binding或review evidence失敗時，這些bytes是unreviewed remediation並維持`NOT_AUTHORIZED`／`implementation_authorized=false`；即使review PASS，仍須designated release authority的separate explicit authorization receipt。
+本節不自行宣告technical-design verdict。`baseline-manifest.json`只機械驗證top-level五檔hash、canonical full digest、baseline ID與frozen state；review結論記錄於PR、task return packet或其他owner-visible work record，並綁定被審查的baseline或diff。Review PASS不等於implementation、merge、release或production授權。
 
-Design completion conditions（normative；verdict只由separately recorded review evidence評估）：
+Design completion conditions（normative；review深度依風險選擇）：
 
-- fresh reviewer確認P0=0、P1=0；
+- 風險適當的review確認P0=0、P1=0；
 - schema能機械表達Person v1與Organization fixture，無person-only core column；
 - principal authentication與role authorization無自我聲明漏洞；
 - migration、interrupt recovery、backup rollback具可測試路徑；
@@ -753,58 +753,18 @@ Design completion conditions（normative；verdict只由separately recorded revi
 
 Technical design verdict: `NOT_SELF_DECLARED`
 
-### 20.1 Repo-external baseline review evidence
+### 20.1 Risk-based review record
 
-A docs baseline is review-qualified only when the parent can retrieve and hash the
-actual public-safe evidence bytes; a digest or prose claim without the body is not
-evidence. The repo-external artifact is canonical UTF-8 JSON plus one trailing LF,
-with recursive object-key sorting, separators `(',', ':')`, `ensure_ascii=True`,
-duplicate-key rejection, exact builtin types, and no additional keys. Its exact
-top-level keys are `schema_version` (non-Boolean integer `1`), `artifact_kind`
-(`subject-distillation-baseline-review`), `baseline_id`,
-`baseline_full_digest`, `reviewed_base_commit`, `reviewed_delivery_paths`,
-`reviewed_normative_tree_sha256`, `reviewed_delivery_diff_sha256`,
-`created_at_utc`, and `reviews`. Artifact bytes are capped at 262,144 bytes.
-`baseline_id` is lowercase `^[0-9a-f]{16}$`; full/tree/diff digests are lowercase
-`^[0-9a-f]{64}$`; `reviewed_base_commit` is lowercase
-`^[0-9a-f]{40,64}$` and must resolve to the exact declared base object.
-`reviewed_delivery_paths` is 1..32 unique normalized POSIX repo-relative UTF-8
-paths, each 1..256 characters, strictly POSIX-byte sorted, with no absolute,
-backslash, control, empty, `.`, or `..` component.
+The review record must identify the exact baseline or changed paths, reviewer,
+verdict, P0/P1/P2 counts and unresolved findings. It may live in the PR, task
+return packet or another owner-visible work record; a canonical repo-external
+JSON body, locator and digest are not required.
 
-`reviewed_normative_tree_sha256` hashes canonical JSON plus LF for the
-POSIX-byte-sorted array of the five manifest-owned canonical paths, each object
-having exact keys `path` and `sha256`; every digest must byte-equal the validated
-manifest. `reviewed_delivery_diff_sha256` hashes canonical JSON plus LF for the
-POSIX-byte-sorted reviewed delivery path array derived from the exact
-`reviewed_delivery_paths`, each object having exact keys
-`path`, `base_sha256`, and `candidate_sha256`; a missing side is JSON `null`, and
-all present digests are lowercase SHA-256 of exact file bytes. `base_sha256` is
-read from `reviewed_base_commit:path`; `candidate_sha256` is read from the exact
-candidate path. No undeclared changed path is allowed, and the declared set may
-not include private/live/generated data.
-
-`reviews` contains exactly two objects in this order: `spec-design-plan`, then
-`quality-security`. Each object has only `review_kind`, `reviewer_principal`,
-`p0`, `p1`, `p2`, `verdict`, and `findings`; reviewer principals are distinct
-1..128-character non-secret public-safe strings matching
-`^[A-Za-z0-9][A-Za-z0-9._:@/-]*$`. Counts are non-Boolean integers in 0..999,
-verdict is exactly `PASS|FAIL`, and findings are objects with only
-`finding_id`, `severity`, `status`, and `summary`. `finding_id` matches
-`^[A-Z][A-Z0-9_-]{0,63}$`; severity is `P0|P1|P2`; status is
-`open|resolved|accepted|deferred`; summary is a 1..256-character public-safe
-single-line string scanned by the tasks §1 grammar. Counts must equal findings
-of each severity. PASS requires P0=0, P1=0, no `open` finding, and every P2
-explicitly `accepted|deferred|resolved`. `created_at_utc` is semantic canonical
-RFC3339 UTC `Z`; it records evidence assembly time, not review timing authority.
-
-The parent computes SHA-256 over the exact artifact bytes, retains those bytes
-outside the repo, and records both a public-safe opaque locator and the digest.
-Before B-000, the parent must retrieve the body through that locator, recompute
-its digest, rebuild both reviewed hashes from the selected base and candidate,
-verify the distinct ordered reviewer PASS conditions, and confirm the candidate
-bytes are unchanged. Any missing body, locator failure, digest/tree/diff drift,
-unknown field/type, private carrier, or self-declared replacement is a blocker.
+Docs-only process changes require mechanical validation plus one focused review.
+Changes to authentication, authorization, security controls, migration, privacy,
+public interfaces or production behavior require one independent reviewer. Final
+merge, release and production gates may require broader review under their own
+contracts. No agent may use its own review record to create owner authority.
 
 ## 21. Pre-implementation bootstrap and receipt protocol
 
@@ -820,9 +780,10 @@ authorize itself. Its trusted operator channel and exact repository-owner
 instruction form the sole explicit human bootstrap trust root; the repository
 cannot cryptographically prove that private channel. Neither B-000 nor any
 implementation agent may self-authorize, infer authority from integrity/review
-PASS, or create/rewrite that instruction. The parent stores only a public-safe
-opaque audit reference outside the repo. B-000 permits no product/runtime/data,
-migration, GitHub, commit, release, or deployment operation.
+PASS, or create/rewrite that instruction. B-000 permits no product/runtime/data,
+production migration, deployment, release, private-live-data or destructive
+operation. Git publishing is outside B-000 and requires separate explicit owner
+authorization.
 
 The receipt schema is JSON Schema 2020-12 with `additionalProperties:false` at
 every object layer and exactly these required top-level fields: `schema_version`
@@ -858,38 +819,20 @@ and full digest, semantic timestamps, and authorization ID. It proves exact
 byte identity to trusted parent inputs, rejects self-generated substitutions,
 and does not claim independent proof of the human identity or channel.
 
-There are two separate scope contracts. The deterministic B-000 bootstrap scope
-projection is not a receipt, is constructed in memory, and does not use
-`authorized_task`. It is an exact canonical JSON object with no additional
-keys and these fields: `schema_version` (exact builtin non-Boolean integer `1`),
-`artifact_kind` (exact `subject-distillation-bootstrap-scope`),
-`authorized_lane` (exact `B-000`), `baseline_id` and
-`baseline_full_digest` (byte-equal to the exact verified manifest closure
-values), `write_paths` (this exact ordered list), and
-`prohibited_operations` (this exact sorted list):
+There are two separate scope boundaries. B-000 has no receipt or persisted
+bootstrap-scope artifact. Its exact write allowlist is:
 
 1. `scripts/verify_subject_implementation_authorization.py`
 2. `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`
 3. `tests/test_subject_authorization_bootstrap.py`
 
-`prohibited_operations` is exactly `commit`, `deployment`, `github_write`,
-`migration`, `private_live_data`, `product_runtime`, `pull_request`, `push`,
-`release`, `remote_network`, `stage`, in that order. Duplicate keys are
-impossible in the constructed object. Canonical bytes are UTF-8 encoding of
-`json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True) +
-'\n'`; `scope_sha256` is SHA-256 of those exact bytes. The parent may compute
-the bytes and digest in memory from the verified manifest and these normative
-constants, but must not create/rewrite an owner instruction
-or persist a fake owner-supplied scope artifact. The selected commit must be an
-exact clean checkout whose tree contains the reviewed canonical bytes; a commit
-that merely precedes an uncommitted docs candidate is not a valid implementation
-base. A valid trusted owner instruction must explicitly contain and byte-equal
-all five public values: lane `B-000`, exact implementation base commit matching
-lowercase `^[0-9a-f]{40,64}$`, exact
-baseline ID, exact baseline full digest, and exact B-000 `scope_sha256`. The trusted channel
-message itself is the instruction; the parent stores only an opaque public-safe
-audit reference outside the repo. A vague lane-only phrase, an old digest, or
-review/hash PASS cannot authorize B-000.
+The preflight derives and verifies the baseline ID、full digest and this allowlist
+from the selected commit. A valid trusted owner instruction contains exactly the
+decision-bearing values `lane=B-000` and `implementation_base_commit=<lowercase
+40-or-64-hex commit>`；the selected commit must be clean and contain the validated
+canonical bytes. Derived manifest or scope hashes need not be repeated in chat.
+The owner message itself is the instruction；a hash, review PASS or agent-created
+replacement cannot authorize B-000.
 
 The T-task receipt scope-file contract alone is the inline
 `subject-distillation-implementation-scope` contract here; B-000 must not add a
@@ -913,6 +856,13 @@ unique, strictly sorted members of this closed vocabulary: `commit`, `deploy`,
 `release`, `remote_network`, `stage`. T-001 contains all except it may omit
 `migration` or `product_runtime` solely for an operation
 expressly required by T-001, which grants no broader operation.
+
+The `remote_network` task prohibition governs product/service calls and access to
+remote or private data during the authorized task. It does not prohibit the
+public dependency installation described by tasks §0 before task execution；that
+setup may not use a private index, credential or private source without separate
+authority. Dependency or package-metadata changes remain outside B-000/T-001
+unless expressly scoped.
 
 The scope rejects duplicate keys, non-exact builtin types, non-finite numbers,
 missing/unknown fields, and unsorted/duplicate/out-of-bound arrays. Its bytes
@@ -973,10 +923,10 @@ fixtures required there are reused by progress and authorization, alongside
 path/no-follow/race and no-echo tests. No copied or second scanner grammar is
 permitted here.
 
-Descriptor/no-follow/race behavior is security-accepted only after the focused
-suite passes on Linux with a supported Python 3.10+ runtime; a macOS/local run is
-useful smoke evidence but cannot replace that Linux gate. The return packet must
-name OS and Python versions for each gate run.
+Local development and focused tests may run on any supported host. The
+descriptor/no-follow/race suite must also pass on Linux with supported Python
+3.10+ in CI before merge or release. The return packet names OS and Python
+versions for each gate run so local evidence is not confused with the Linux gate.
 
 Missing, unknown or duplicate CLI arguments (including repeated flags), absent
 mandatory `--json`, and all caller-controlled absent/unreadable/malformed/
@@ -1002,6 +952,6 @@ harness failure is exit `3`, empty stdout, and exactly
 `SUBJECT_IMPLEMENTATION_AUTHORIZATION_ERROR\n` on stderr. No path, hostile
 key/value, token-shaped value, or receipt content may be echoed.
 
-After exact-tree B-000 testing and fresh reviews, no T-001 authority is implied.
+After exact-tree B-000 testing and its independent security review, no T-001 authority is implied.
 T-001 requires its actual verified receipt. Old baseline, review, and
 authorization evidence does not transfer after canonical byte changes.

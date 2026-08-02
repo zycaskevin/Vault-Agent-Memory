@@ -1145,10 +1145,10 @@ start while any material decision below remains OPEN.
 | Product vision | APPROVED | Generic open-source subject-distillation foundation for people and organizations. |
 | v1 slice | APPROVED | Generic Subject Core + Person v1; Organization contract/SBE only. |
 | Person business/behavior policy | APPROVED | D-SD-001 through D-SD-010, including prospective evaluation-loop and long-term persona-governance boundaries. |
-| Requirements/SBE review | SEPARATE-EVIDENCE-REQUIRED | No verdict is declared by this artifact or manifest. A fresh review PASS with P0=0/P1=0 applies only when the parent can retrieve and hash the separate evidence body defined by design §20.1 and it binds the exact baseline ID, full digest, reviewed normative tree, and delivery diff. A digest/prose claim without retrievable bytes is not evidence. |
-| Technical design | SEPARATE-EVIDENCE-REQUIRED | No design verdict is declared here or inferred from integrity validation；only separate exact-baseline review evidence may supply it. |
-| Implementation plan | SEPARATE-EVIDENCE-REQUIRED | No plan verdict is declared here；review PASS remains distinct from an explicit implementation-authorization receipt. |
-| Coding | `NOT_AUTHORIZED` | No coding or implementation may start; requirements approval and any later design/task PASS do not change this without the designated release authority's explicit authorization. |
+| Requirements/SBE review | RISK-BASED | Review is recorded in the PR、task return packet or other owner-visible work record and binds the baseline/diff being judged. Docs-only process changes need mechanical validation plus one focused review；security、auth、migration、privacy or public-surface changes require an independent reviewer. A separate repo-external evidence body is not mandatory. |
+| Technical design | RISK-BASED | Integrity validation does not declare design quality. Material design changes require a focused review appropriate to their risk；routine wording/planning changes do not require two ordered reviewers. |
+| Implementation plan | APPROVED-WITH-GATES | B-000 may execute after an owner instruction names its lane and exact base commit；T-tasks remain receipt-authorized under design §21. Tests and scope checks remain mandatory，and review depth is selected by change risk. |
+| Coding | OWNER-AUTHORIZATION-REQUIRED | B-000 coding starts only after the two-value owner instruction；T-task coding starts only after its required receipt verifies. Repeating B-000 manifest and scope hashes in chat is not required because preflight derives them from the selected commit. |
 
 ## 12. Completion definition for requirements approval
 
@@ -1159,7 +1159,7 @@ This requirements artifact is approved only when:
 - D-SD-001 through D-SD-010 are decided or explicitly deferred outside v1;
 - non-goals are accepted;
 - public/private boundaries are preserved;
-- a fresh reviewer finds no unresolved material behavior ambiguity.
+- risk-appropriate review finds no unresolved material behavior ambiguity.
 
 ## 13. Pre-implementation bootstrap and authorization requirement
 
@@ -1173,35 +1173,28 @@ GitHub operation.
 
 This pre-implementation bootstrap is governance-only and adds no product SBE.
 
-B-000 may begin only after the current five-file baseline integrity validates,
-the parent retrieves and verifies the design §20.1 fresh-review evidence body
-bound to that exact baseline and selected delivery diff/tree with both ordered
-reviews PASS and P0=0/P1=0, clean branch/base/worktree preflight passes against
-the exact selected implementation commit, and the repository owner issues an
-exact base-, baseline-, and scope-digest-bound B-000 instruction through the
-trusted operator channel. That channel and instruction are the one explicit
-human bootstrap trust root. The repository cannot cryptographically prove the
-private conversation or channel. B-000 and all implementation agents must not
-self-authorize, infer authorization from hashes or review PASS, or create or
-rewrite the owner instruction. The parent orchestrator retains only a
-public-safe opaque audit reference outside the repository.
+B-000 may begin after the current five-file baseline integrity validates, the
+worktree is clean at an exact commit containing those bytes, and the repository
+owner explicitly names both `lane=B-000` and that exact base commit through the
+trusted operator channel. The implementation preflight derives the baseline ID,
+full digest and exact three-path allowlist from the selected commit; the owner
+does not need to repeat derived hashes. That channel and instruction remain the
+explicit human bootstrap trust root. B-000 and all implementation agents must
+not self-authorize or create/rewrite the owner instruction.
 
-After B-000's exact tree passes its focused tests, parent readback and exact
-diff inventory, and fresh spec-compliance followed by quality/security review,
-T-001 remains blocked until a separate, actual T-001 receipt verifies. Receipt
+After B-000's exact tree passes its focused tests, parent readback, exact diff
+inventory and one independent security review, T-001 remains blocked until a
+separate, actual T-001 receipt verifies. Receipt
 integrity is not human authenticity: the verifier binds exact bytes to the
 trusted parent's inputs and never claims to prove the owner identity or channel
-independently. Any byte change invalidates the old baseline, review, and
-authorization bindings; none transfers to a successor baseline.
+independently. Canonical byte changes require manifest rebind before later
+implementation uses them, but planning-only edits and ordinary code iterations
+within an unchanged authorized scope do not require a new owner prompt.
 
-The authorization protocol has two distinct scope contracts in design §21.
-B-000 uses a deterministic in-memory bootstrap-scope projection with lane
-`B-000`, exact verified baseline identity, exact three-path write list, and fixed
-prohibited operations; it is not a receipt and has no `authorized_task`. The
-trusted owner instruction separately binds the exact implementation base commit
-and must explicitly contain and byte-equal all five public binding values,
-including that commit and the projection digest. T-task receipts alone
-use the operator-private canonical
+The authorization protocol has two distinct boundaries in design §21. B-000
+uses the exact three-path write allowlist declared by the canonical task and the
+two-value owner instruction (`lane` plus exact base commit); it has no receipt or
+persisted bootstrap-scope artifact. T-task receipts use the operator-private canonical
 `subject-distillation-implementation-scope` file with `authorized_task`.
 Operator-private receipt/scope inputs remain outside repo and evidence;
 manifest, schema, and verifier are exact canonical repo inputs. Verification
