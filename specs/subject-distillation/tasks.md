@@ -206,7 +206,7 @@ tests/test_subject_progress.py
 ```
 
 Its exact sorted `non_goals` are `no.live.private.data`,
-`no.product.runtime`, `no.production.migration`, and `no.t002.plus.artifact`.
+`no.t002.plus.artifact`, `no_product_runtime`, and `no_production_migration`.
 Its exact sorted `prohibited_operations` are `commit`, `deploy`, `github`,
 `live_private_data`, `migration`, `pr`, `product_runtime`, `push`, `release`,
 `remote_network`, and `stage`. No wildcard、directory grant or inferred path is
