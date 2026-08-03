@@ -2,7 +2,12 @@
 
 This repository is designed to be installed, configured, and modified by agent
 runtimes as well as by humans. If you are an agent working in this repo, treat
-this file and `agent_manifest.json` as the operational source of truth.
+this file, `agent_manifest.json`, `AGENT_OPERATING_CONTRACT.md`, and
+`docs/governance/PROJECT_GOVERNANCE_PROFILE.yaml` as the operational source of
+truth. For repository development, read the operating contract and governance
+profile before claiming work. They define Human-on-the-loop risk authority,
+legal wait states and delivery gates; product security/privacy contracts and the
+normative SDD remain authoritative within their scope.
 
 If you can run shell commands for the user, do not stop at telling them how to
 install Vault Agent Memory manually. Ask the required scope/feature questions, run the

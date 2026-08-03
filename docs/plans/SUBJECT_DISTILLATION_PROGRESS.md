@@ -1,5 +1,12 @@
 # Subject Distillation Progress Anchor
 
+> **Historical / superseded operational snapshot.** This file records the
+> pre-B-000 simplification cycle and is not the current execution authority.
+> Current state is maintained in docs/governance/CURRENT_STATE.md,
+> docs/governance/PROGRESS_LEDGER.md and the canonical current gate in
+> specs/subject-distillation/tasks.md. Do not reuse the branch, base, baseline
+> or approval stops below for new work.
+
 **Last updated:** 2026-08-02
 **Repository:** `zycaskevin/Vault-Agent-Memory`
 **Working branch:** `docs/subject-distillation-b000-handoff`
