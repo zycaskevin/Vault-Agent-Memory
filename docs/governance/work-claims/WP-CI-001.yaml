@@ -1,0 +1,21 @@
+schema_version: 1
+work_package: WP-CI-001
+issue: 428
+owner: Main Engineering Agent
+risk: risk:L0
+base_commit: 3e407416123ff093416cac375bbce667f4f71658
+state: IN_REVIEW
+capability_outcome: New changes cannot add lint or dependency debt without blocking on historical debt
+handoff_from: Builder Agent bootstrap_code_audit after RED fixture
+owned_paths:
+  - .github/workflows/ci.yml
+  - docs/ci_quality_gates.md
+  - docs/governance/PROGRESS_LEDGER.md
+  - docs/governance/SDD_TRACEABILITY.md
+  - docs/governance/WORK_CLAIMS.md
+  - docs/governance/work-claims/WP-CI-001.yaml
+  - scripts/ci_changed_python_lint.py
+  - scripts/ci_dependency_audit.py
+  - scripts/dependency_audit_exceptions.json
+  - scripts/ruff_debt_baseline.json
+  - tests/test_ci_quality_gates.py

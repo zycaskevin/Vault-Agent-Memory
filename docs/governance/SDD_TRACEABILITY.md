@@ -15,6 +15,7 @@ remains in specs/subject-distillation/traceability.md.
 | Subject canonical contract | Subject requirements; design sections 1–20 | normative five-file baseline + baseline tests | Approved, not implemented |
 | B-000 authorization verifier | Subject design section 21; tasks B-000 | authorization schema/verifier + bootstrap tests | Merged |
 | B-001 identity-safe runner | Subject design section 21; tasks B-001 | runner + lifecycle/adversarial tests | Claimed next |
+| Incremental lint/dependency assurance | AGENT_OPERATING_CONTRACT merge gate; Issue #428 | changed-line Ruff, per-rule ceiling, exact expiring advisory exceptions and CI evidence | In progress |
 | T-001 implementation control plane | tasks T-001 | baseline/evidence/progress scripts and schemas | Blocked by B-001 |
 | Subject contracts through runtime surfaces | tasks T-002..T-031 | synthetic fixtures, schema/store/policy/evidence/model/context/CLI/MCP/Gateway/evaluation/recovery | Planned |
 | Persona-governance extensions | traceability D-SD-010 | current owners T-004/T-008..T-017/T-025/T-026 | Partial current-cycle semantics; advanced retrieval/training deferred |
