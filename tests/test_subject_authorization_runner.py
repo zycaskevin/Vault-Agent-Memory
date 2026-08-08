@@ -1043,9 +1043,25 @@ def test_pass_is_not_returned_until_verified_cleanup(runner, tmp_path: Path, cap
 
 
 def test_exact_b001_repository_scope() -> None:
+    expected = {
+        "scripts/run_subject_implementation_authorization.py",
+        "tests/test_subject_authorization_runner.py",
+    }
     assert RUNNER_PATH.is_file()
     assert os.access(RUNNER_PATH, os.X_OK)
     assert Path(__file__).resolve().is_file()
+    tracked = subprocess.run(
+        ["git", "ls-files", "--stage", "--", *sorted(expected)],
+        cwd=REPO_ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.splitlines()
+    modes = {line.split(maxsplit=3)[3]: line.split(maxsplit=1)[0] for line in tracked}
+    assert modes == {
+        "scripts/run_subject_implementation_authorization.py": "100755",
+        "tests/test_subject_authorization_runner.py": "100644",
+    }
     status = subprocess.run(
         ["git", "status", "--short", "--untracked-files=all"],
         cwd=REPO_ROOT,
@@ -1053,14 +1069,44 @@ def test_exact_b001_repository_scope() -> None:
         stdout=subprocess.PIPE,
         text=True,
     ).stdout.splitlines()
-    committed = subprocess.run(
-        ["git", "diff", "--name-only", BASE_COMMIT, "HEAD"],
+    assert {line[3:] for line in status} <= expected
+
+    base_available = subprocess.run(
+        ["git", "cat-file", "-e", f"{BASE_COMMIT}^{{commit}}"],
         cwd=REPO_ROOT,
-        check=True,
-        capture_output=True,
-        text=True,
-    ).stdout.splitlines()
-    assert {line[3:] for line in status} | set(committed) == {
-        "scripts/run_subject_implementation_authorization.py",
-        "tests/test_subject_authorization_runner.py",
-    }
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+    if base_available:
+        distance = int(
+            subprocess.run(
+                ["git", "rev-list", "--count", f"{BASE_COMMIT}..HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout
+        )
+        if distance <= 2:
+            committed = subprocess.run(
+                ["git", "diff", "--name-only", BASE_COMMIT, "HEAD"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.splitlines()
+            assert set(committed) == expected
+        return
+
+    assert os.environ.get("GITHUB_ACTIONS") == "true"
+    event_path = os.environ.get("GITHUB_EVENT_PATH")
+    assert event_path is not None
+    event = json.loads(Path(event_path).read_text(encoding="utf-8"))
+    if os.environ.get("GITHUB_EVENT_NAME") == "pull_request":
+        assert event["pull_request"]["base"]["sha"] == BASE_COMMIT
+        assert event["pull_request"]["changed_files"] == len(expected)
+    elif event.get("before") == BASE_COMMIT:
+        head = event["head_commit"]
+        changed = set(head["added"]) | set(head["modified"]) | set(head["removed"])
+        assert changed == expected
