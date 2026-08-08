@@ -924,6 +924,26 @@ accept only the exact repo-relative strings
 `specs/subject-distillation/baseline-manifest.json` and
 `specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json`.
 
+B-001 authorization is mission-bound rather than message-bound. Once the
+repository owner has approved a Subject/Person development mission under the
+repository's Human-on-the-loop operating model, the Main Engineering Agent may
+start B-001 without asking the owner to restate `lane=B-001` or an exact commit.
+Before any B-001 write, the Main Agent must not select an arbitrary local
+commit. It must mechanically select clean HEAD that byte-equals current remote
+`main` or an independently reviewed Subject protocol-amendment PR head in the
+approved mission chain, validate the canonical baseline from that exact tree,
+and record the provenance proof、base commit、baseline ID/full digest、exact
+two-path write allowlist and owner mission/decision reference in owner-visible
+Issue/PR metadata or a task return packet outside the repository tree. The
+preflight record must not create or modify a third B-001 repository path. HEAD、
+baseline or scope drift requires a new clean-base preflight record under the
+same approved mission, not another owner prompt. Base selection is auditable
+execution metadata, not a human-authenticity claim；it cannot authorize T-001、
+change the B-001 allowlist、
+waive independent security review or infer authority from hash/review PASS.
+The two-stage owner-confirmed proposal protocol below remains mandatory for
+every T-task.
+
 Post-B-000 governance bootstrap B-001 must create the reviewed
 `scripts/run_subject_implementation_authorization.py` parent runner and
 `tests/test_subject_authorization_runner.py`. The runner owns every control
