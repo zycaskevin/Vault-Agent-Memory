@@ -1147,8 +1147,8 @@ start while any material decision below remains OPEN.
 | Person business/behavior policy | APPROVED | D-SD-001 through D-SD-010, including prospective evaluation-loop and long-term persona-governance boundaries. |
 | Requirements/SBE review | RISK-BASED | Review is recorded in the PR、task return packet or other owner-visible work record and binds the baseline/diff being judged. Docs-only process changes need mechanical validation plus one focused review；security、auth、migration、privacy or public-surface changes require an independent reviewer. A separate repo-external evidence body is not mandatory. |
 | Technical design | RISK-BASED | Integrity validation does not declare design quality. Material design changes require a focused review appropriate to their risk；routine wording/planning changes do not require two ordered reviewers. |
-| Implementation plan | APPROVED-WITH-GATES | B-000 may execute after an owner instruction names its lane and exact base commit；B-001 must then implement and independently validate the identity-safe runner before any T-task proposal. T-tasks use the two-stage protocol in design §21；implementation remains blocked until stateless/file-free proposal output is exactly owner-confirmed, then one runner process re-derives、materializes、verifies and cleans. Tests and scope checks remain mandatory，and review depth is selected by change risk. |
-| Coding | OWNER-AUTHORIZATION-REQUIRED | B-000 coding starts only after the two-value owner instruction；T-task coding starts only after owner confirmation binds the exact canonical proposal、receipt SHA-256 and verified cleanup result. Proposal derivation or private materialization alone is never coding authority. |
+| Implementation plan | APPROVED-WITH-GATES | B-000 may execute after an owner instruction names its lane and exact base commit；after B-000, an owner-approved Subject/Person development mission authorizes B-001 without requiring the owner to restate `lane=B-001` or an exact commit. The Main Engineering Agent mechanically selects and records a clean exact base that is either current remote `main` or an independently reviewed Subject protocol-amendment PR head in the approved mission chain and contains the validated baseline；B-001 must then implement and independently validate the identity-safe runner before any T-task proposal. T-tasks use the two-stage protocol in design §21；implementation remains blocked until stateless/file-free proposal output is exactly owner-confirmed, then one runner process re-derives、materializes、verifies and cleans. Tests and scope checks remain mandatory，and review depth is selected by change risk. |
+| Coding | MISSION-BOUND-AUTHORIZATION | B-000 coding starts only after the historical two-value owner instruction；B-001 coding is preauthorized by an owner-approved Subject/Person development mission and a mechanically verified clean exact base recorded in repository-visible engineering evidence. T-task coding starts only after owner confirmation binds the exact canonical proposal、receipt SHA-256 and verified cleanup result. Proposal derivation or private materialization alone is never T-task coding authority. |
 
 ## 12. Completion definition for requirements approval
 
@@ -1184,7 +1184,22 @@ not self-authorize or create/rewrite the owner instruction.
 
 After B-000's exact tree passes its focused tests, parent readback, exact diff
 inventory and one independent security review, T-001 remains blocked until
-B-001 implements、reviews and delivers the identity-safe runner. The owner may
+B-001 implements、reviews and delivers the identity-safe runner. B-001 itself
+does not require a new two-value owner message when an owner-approved
+Subject/Person development mission is active. The Main Engineering Agent must
+not select an arbitrary local commit. It selects a clean exact implementation
+base that byte-equals current remote `main` or an independently reviewed Subject
+protocol-amendment PR head in the approved mission chain, verifies that exact
+tree contains the validated canonical baseline, and records the provenance
+proof、base commit、baseline ID/full digest、owner mission/decision reference and
+exact two-path write allowlist in owner-visible Issue/PR metadata or a task
+return packet outside the repository tree before modifying B-001 files. The
+preflight record must not create or modify a third B-001 repository path. HEAD、
+baseline or scope drift requires a
+new clean-base preflight record under the same approved mission, not another
+owner prompt. An Agent-selected base is mechanical execution evidence only and
+never authorizes
+T-001 or expands B-001 scope. The owner may
 then request a T-001 proposal for an exact base. Its stateless `propose` mode
 derives candidate receipt/scope bytes in memory but creates no private file、
 registry、daemon、IPC endpoint or locator. It returns only one LF-terminated

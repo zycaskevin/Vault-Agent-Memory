@@ -16,18 +16,18 @@
   "files": [
     {
       "path": "specs/subject-distillation/requirements.md",
-      "sha256": "48ce1fe29de30766d916abfb344dd48ebc561447dd1fe123bfb189c72b719021",
-      "size_bytes": 73783
+      "sha256": "0bf038b6fdc9825cc12374fa4efe21ad01f185413e0fb54e65e3513facaa336f",
+      "size_bytes": 75417
     },
     {
       "path": "specs/subject-distillation/design.md",
-      "sha256": "ae60fce67bd61e995053f34ef75a55a6c48ac9ccb4bd98b9e595ef939bc71a6b",
-      "size_bytes": 99467
+      "sha256": "448db74fc00676d537baea03bf65d7cc2bb0d870bf4fc91140243a9e37835ac4",
+      "size_bytes": 100835
     },
     {
       "path": "specs/subject-distillation/tasks.md",
-      "sha256": "9ee1cfdb869b8ec805c0134789684a5763770147494e7cec50797c60554aed28",
-      "size_bytes": 123744
+      "sha256": "22fa42e642bc00b6f6b24dbff57c6d862ca7bbd84ff18c6d1b2ac1ebed4b4713",
+      "size_bytes": 125241
     },
     {
       "path": "specs/subject-distillation/traceability.md",
@@ -41,7 +41,7 @@
     }
   ],
   "closure": {
-    "full_digest": "ef5083d6351e5943ca26205e7be4d1c2d4526c1755f1a9201bc696d67904e961",
-    "baseline_id": "ef5083d6351e5943"
+    "full_digest": "4d65b4cd8a3d19c993b25527642cf561b35eff4bc62ee8e8d496caee86863000",
+    "baseline_id": "4d65b4cd8a3d19c9"
   }
 }

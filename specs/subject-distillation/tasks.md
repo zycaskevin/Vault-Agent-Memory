@@ -12,8 +12,8 @@
 
 1. `baseline-manifest.json`通過mechanical integrity validation，證明top-level five-file hash/full-digest/baseline-ID/frozen-state binding成立；
 2. docs-only process change完成mechanical validation與focused review；auth/security/migration/privacy/public-surface change完成一位independent reviewer的risk-based review，且P0=0、P1=0；
-3. B-000已完成並通過exact-tree review；B-001另在exact-base owner instruction下完成identity-safe runner與獨立security review後，owner才可要求exact T-001/base proposal；stateless runner只回傳canonical public-safe proposal且不落地private bytes，owner另行確認完整proposal與exact receipt SHA-256後，單一`verify-confirmed`程序才可重建、驗證actual bytes綁定exact `baseline_id`、full digest、task及scope並完成安全cleanup；
-4. worktree／branch／base重新核對為clean，`git rev-parse HEAD` byte-equal於owner-selected implementation base，該commit tree包含validated canonical bytes，沒有未解的外部變更。
+3. B-000已完成並通過exact-tree review；owner-approved Subject/Person development mission成立後，Main Engineering Agent可在不要求owner重貼`lane=B-001`或exact commit的情況下完成B-001 identity-safe runner與獨立security review，之後owner才可要求exact T-001/base proposal；stateless runner只回傳canonical public-safe proposal且不落地private bytes，owner另行確認完整proposal與exact receipt SHA-256後，單一`verify-confirmed`程序才可重建、驗證actual bytes綁定exact `baseline_id`、full digest、task及scope並完成安全cleanup；
+4. B-001開始前由Main Engineering Agent機械選定current clean HEAD；它不得是任意local commit，必須byte-equal於current remote `main`或approved mission chain中已獨立review的Subject protocol-amendment PR head。Owner-visible Issue／PR metadata或task return packet在repo tree外記錄provenance proof、exact implementation base、validated baseline ID/full digest、owner mission/decision reference與exact兩-path allowlist；preflight不得建立或修改第三個B-001 repo path，且沒有未解的外部變更。這項base紀錄不是T-task授權。
 
 執行紀律：
 
@@ -125,9 +125,19 @@ in `implementation-progress.json`. It may create exactly:
 - `scripts/run_subject_implementation_authorization.py`
 - `tests/test_subject_authorization_runner.py`
 
-B-001 starts only after an owner instruction names `lane=B-001` and the exact
-clean implementation base commit containing this validated baseline. It cannot
-create an owner instruction or authorize T-001. Its runner implements the
+B-001 starts when an owner-approved Subject/Person development mission is
+active. The owner does not need to restate `lane=B-001` or an exact commit. The
+Main Engineering Agent must not select an arbitrary local commit. It selects
+clean HEAD that byte-equals current remote `main` or an independently reviewed
+Subject protocol-amendment PR head in the approved mission chain, validates
+that exact tree contains this canonical baseline, and records the provenance
+proof、base commit、baseline ID/full digest、exact two-path allowlist and owner
+mission/decision reference in owner-visible Issue/PR metadata or a task return
+packet outside the repository tree before the first B-001 write. The preflight
+record must not create or modify a third B-001 repository path. HEAD、baseline
+or scope drift requires a new clean-base preflight record under the same
+approved mission, not another owner prompt. That mechanical selection cannot
+authorize T-001 or expand B-001 scope. Its runner implements the
 two-stage proposal/confirmation protocol and invokes the unchanged B-000
 verifier only after exact owner confirmation.
 
@@ -175,8 +185,9 @@ DENY/ERROR；timeout/exception/signals；cleanup failure/retry；no private mark
 stdout/stderr/repo logs；and proof that no implementation command runs before
 verified cleanup. B-001 acceptance is focused pytest、Ruff、
 exact two-path diff、parent readback and one independent security review with
-P0=0/P1=0. Git delivery remains separately authorized；after delivery B-001
-stops before any T-001 proposal request or implementation.
+P0=0/P1=0. Under an approved Development Mission, routine B-001 commit、push、
+PR、CI repair and risk:L1 merge are autonomous engineering delivery；after
+delivery B-001 stops before any T-001 proposal request or implementation.
 
 ### T-001 — Freeze implementation baseline
 
@@ -1237,6 +1248,6 @@ python scripts/validate_subject_progress.py --manifest specs/subject-distillatio
 - Implementation authorization code: `NOT_AUTHORIZED` — no coding or implementation may start from this artifact alone；B-001完成前不得產生proposal；其後`propose`仍不得建立private candidate，只有owner確認完整canonical proposal與exact receipt SHA-256且單一runner/verifier/cleanup PASS才授權T-task implementation。
 - Renderer-proof authorization remains `NOT_AUTHORIZED` in the normative package；a separate designated release authority receipt is applicable only when it binds the same successfully verified manifest `baseline_id`、`closure.full_digest` and authorized scope, and may never be inferred from review PASS.
 - Completed historical pre-task: **B-000, merged through PR #423**.
-- Next executable pre-task: **B-001, BLOCKED until the owner names `lane=B-001` and the exact clean implementation base commit containing this validated baseline**.
+- Next executable pre-task: **B-001, authorized by an owner-approved Subject/Person development mission after the Main Engineering Agent mechanically records and verifies the clean exact base、validated baseline and exact two-path allowlist；no repeated `lane=B-001`/commit owner message is required**.
 - First product implementation task: **T-001, BLOCKED until B-001 tests/review/delivery are accepted, owner requests an exact T-001/base proposal, stateless `propose` returns the complete canonical public-safe JSON without private materialization, owner separately confirms that exact proposal/digest, and one `verify-confirmed` process re-derives、verifies and identity-safely cleans the private objects**.
 - No current baseline ID is hard-coded in these canonical docs。After canonical byte changes，the parent rebinds the manifest and applies risk-based review；planning-only changes and ordinary implementation iterations within unchanged authorized scope do not require a repeated owner prompt。
