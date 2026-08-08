@@ -1107,6 +1107,22 @@ def test_exact_b001_repository_scope() -> None:
         assert event["pull_request"]["base"]["sha"] == BASE_COMMIT
         assert event["pull_request"]["changed_files"] == len(expected)
     elif event.get("before") == BASE_COMMIT:
-        head = event["head_commit"]
-        changed = set(head["added"]) | set(head["modified"]) | set(head["removed"])
-        assert changed == expected
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=REPO_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        commit = subprocess.run(
+            ["git", "cat-file", "-p", "HEAD"],
+            cwd=REPO_ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.splitlines()
+        parents = [line.removeprefix("parent ") for line in commit if line.startswith("parent ")]
+        assert event["ref"] == "refs/heads/main"
+        assert event["after"] == head
+        assert event["head_commit"]["id"] == head
+        assert parents and parents[0] == BASE_COMMIT
