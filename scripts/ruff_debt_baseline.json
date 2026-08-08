@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "tool": {
+    "name": "ruff",
+    "version": "0.15.20"
+  },
+  "scope": [
+    "vault",
+    "scripts",
+    "tests"
+  ],
+  "initialized_from_commit": "3e407416123ff093416cac375bbce667f4f71658",
+  "counts": {
+    "E401": 3,
+    "E402": 29,
+    "E701": 1,
+    "E702": 4,
+    "E712": 23,
+    "E722": 2,
+    "E741": 1,
+    "F401": 197,
+    "F541": 9,
+    "F811": 48,
+    "F841": 35
+  },
+  "total": 352
+}

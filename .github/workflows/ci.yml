@@ -51,6 +51,108 @@ permissions:
   contents: read
 
 jobs:
+  incremental-quality:
+    name: Incremental lint and dependency assurance
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out full repository history
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install exact quality tools and project
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]" "ruff==0.15.20" "pip-audit==2.10.1"
+
+      - name: Collect exact PR diff and Ruff findings
+        id: lint_collect
+        continue-on-error: true
+        run: |
+          base_sha="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+            base_sha="$(git rev-parse HEAD^)"
+          fi
+          echo "base_sha=$base_sha" >> "$GITHUB_OUTPUT"
+          git -c core.quotePath=false diff --unified=0 "$base_sha"...HEAD -- vault scripts tests > /tmp/vault-quality.diff
+          if git show "$base_sha":scripts/ruff_debt_baseline.json > /tmp/vault-previous-ruff-baseline.json; then
+            echo "previous_baseline=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "previous_baseline=false" >> "$GITHUB_OUTPUT"
+          fi
+          ruff_status=0
+          ruff check vault scripts tests --output-format json > /tmp/vault-ruff.json || ruff_status=$?
+          if [ "$ruff_status" -gt 1 ]; then
+            exit "$ruff_status"
+          fi
+
+      - name: Enforce changed-line and rule-level Ruff ceilings
+        id: lint_gate
+        if: always()
+        continue-on-error: true
+        run: |
+          ruff_version="$(ruff --version | awk '{print $2}')"
+          previous_args=()
+          if [ "${{ steps.lint_collect.outputs.previous_baseline }}" = "true" ]; then
+            previous_args=(--previous-baseline /tmp/vault-previous-ruff-baseline.json)
+          fi
+          python scripts/ci_changed_python_lint.py \
+            --baseline scripts/ruff_debt_baseline.json \
+            --ruff-json /tmp/vault-ruff.json \
+            --diff-file /tmp/vault-quality.diff \
+            --ruff-version "$ruff_version" \
+            --base-commit "${{ steps.lint_collect.outputs.base_sha }}" \
+            "${previous_args[@]}" \
+            --report /tmp/vault-lint-gate.json
+
+      - name: Collect dependency audit
+        id: dependency_collect
+        continue-on-error: true
+        run: |
+          audit_status=0
+          python -m pip_audit --local --format json --output /tmp/vault-pip-audit.json || audit_status=$?
+          if [ "$audit_status" -gt 1 ]; then
+            exit "$audit_status"
+          fi
+
+      - name: Enforce exact bounded dependency exceptions
+        id: dependency_gate
+        if: always()
+        continue-on-error: true
+        run: |
+          python scripts/ci_dependency_audit.py \
+            --audit-json /tmp/vault-pip-audit.json \
+            --exceptions scripts/dependency_audit_exceptions.json \
+            --report /tmp/vault-dependency-gate.json
+
+      - name: Upload machine-readable quality evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: incremental-quality-${{ github.sha }}
+          path: |
+            /tmp/vault-lint-gate.json
+            /tmp/vault-dependency-gate.json
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Fail when either incremental gate failed
+        if: >-
+          always() &&
+          (steps.lint_collect.outcome != 'success' ||
+          steps.lint_gate.outcome != 'success' ||
+          steps.dependency_collect.outcome != 'success' ||
+          steps.dependency_gate.outcome != 'success')
+        run: exit 1
+
   test:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
