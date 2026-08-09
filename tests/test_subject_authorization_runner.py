@@ -537,7 +537,13 @@ def test_environment_selected_default_symlink_remains_denied(
     monkeypatch.setattr(runner.sys, "platform", "darwin")
     monkeypatch.setattr(runner.tempfile, "gettempdir", lambda: os.fspath(alias))
     root = runner._external_root(runner.Runtime(), os.fspath(REPO_ROOT))
-    assert root == os.fspath(alias)
+    alias_text = os.fspath(alias)
+    expected = (
+        "/private" + alias_text
+        if alias_text.startswith(("/var/", "/tmp/"))
+        else alias_text
+    )
+    assert root == expected
     with pytest.raises(runner.Denied):
         runner._open_external_root(root)
 
