@@ -505,6 +505,84 @@ def test_nonblocking_lock_allows_only_one_concurrent_verifier(
         )
 
 
+@pytest.mark.parametrize(
+    ("reported", "expected"),
+    [
+        ("/var", "/private/var"),
+        ("/var/folders/example", "/private/var/folders/example"),
+        ("/tmp", "/private/tmp"),
+        ("/tmp/example", "/private/tmp/example"),
+    ],
+)
+def test_default_temp_root_maps_only_exact_darwin_system_aliases(
+    runner, monkeypatch, reported: str, expected: str
+) -> None:
+    monkeypatch.setattr(runner.sys, "platform", "darwin")
+    monkeypatch.setattr(runner.tempfile, "gettempdir", lambda: reported)
+    monkeypatch.setattr(
+        runner.os.path,
+        "realpath",
+        lambda *_args, **_kwargs: pytest.fail("realpath is not an authorization input"),
+    )
+    assert runner._external_root(runner.Runtime(), os.fspath(REPO_ROOT)) == expected
+
+
+def test_environment_selected_default_symlink_remains_denied(
+    runner, tmp_path: Path, monkeypatch
+) -> None:
+    physical = tmp_path / "physical-temp"
+    physical.mkdir()
+    alias = tmp_path / "environment-temp-alias"
+    alias.symlink_to(physical, target_is_directory=True)
+    monkeypatch.setattr(runner.sys, "platform", "darwin")
+    monkeypatch.setattr(runner.tempfile, "gettempdir", lambda: os.fspath(alias))
+    root = runner._external_root(runner.Runtime(), os.fspath(REPO_ROOT))
+    assert root == os.fspath(alias)
+    with pytest.raises(runner.Denied):
+        runner._open_external_root(root)
+
+    explicit = runner.Runtime(temp_root=os.fspath(alias))
+    with pytest.raises(runner.Denied):
+        runner._open_external_root(
+            runner._external_root(explicit, os.fspath(REPO_ROOT))
+        )
+
+
+def test_default_temp_root_resolving_inside_repo_denies(
+    runner, tmp_path: Path, monkeypatch
+) -> None:
+    alias = tmp_path / "unsafe-system-temp-alias"
+    alias.symlink_to(REPO_ROOT, target_is_directory=True)
+    monkeypatch.setattr(runner.tempfile, "gettempdir", lambda: os.fspath(alias))
+    root = runner._external_root(runner.Runtime(), os.fspath(REPO_ROOT))
+    assert root == os.fspath(alias)
+    with pytest.raises(runner.Denied):
+        runner._open_external_root(root)
+
+
+@pytest.mark.skipif(sys.platform != "darwin", reason="Darwin system alias integration")
+def test_verify_uses_canonicalized_default_temp_root_and_cleans(
+    runner, tmp_path: Path, capsys, monkeypatch
+) -> None:
+    physical = tmp_path / "physical-production-temp"
+    physical.mkdir()
+    physical_text = os.fspath(physical)
+    assert physical_text.startswith("/private/var/")
+    alias = "/var/" + physical_text.removeprefix("/private/var/")
+    monkeypatch.setattr(runner.tempfile, "gettempdir", lambda: alias)
+
+    runtime = _runtime(runner, physical)
+    runtime.temp_root = None
+    raw, proposal = _propose(runner, physical, capsys, runtime=runtime)
+    runtime.now = lambda: NOW + timedelta(seconds=1)
+    assert _run(runner, _verify_args(raw, proposal), capsys, runtime)[0] == 0
+    assert not [
+        item
+        for item in physical.iterdir()
+        if item.is_dir() and item.name.startswith("subject-authorization-")
+    ]
+
+
 def test_nonblocking_lock_rejects_a_second_process(
     runner, tmp_path: Path
 ) -> None:
@@ -1059,7 +1137,7 @@ def test_b001_artifacts_are_tracked_with_exact_modes() -> None:
     assert RUNNER_PATH.is_file()
     assert os.access(RUNNER_PATH, os.X_OK)
     assert hashlib.sha256(RUNNER_PATH.read_bytes()).hexdigest() == (
-        "42e2ddeb5dfdd98cd83536496318c4d872c5fe7a5dbbefc7687315a1832e5805"
+        "535938b54d1aa567572ed7ad18e9fc4c8808cb83d7db16c9896d13389a99d805"
     )
     assert Path(__file__).resolve().is_file()
     tracked = subprocess.run(
