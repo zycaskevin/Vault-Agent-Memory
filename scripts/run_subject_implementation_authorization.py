@@ -27,7 +27,7 @@ except ImportError:  # pragma: no cover - the descriptor contract is Unix-only
     fcntl = None  # type: ignore[assignment]
 
 
-EXPECTED_VERIFIER_SHA256 = "9016d843c28142903728fab83860bb58f22f162d9f327f045c36d6ec1540b241"
+EXPECTED_VERIFIER_SHA256 = "fd233f32a5f7afe506276fc92aae0d77a6144a0537e8b9b8f25cf300b22cdbe3"
 DENY = "SUBJECT_IMPLEMENTATION_AUTHORIZATION_RUNNER_DENY\n"
 ERROR = "SUBJECT_IMPLEMENTATION_AUTHORIZATION_RUNNER_ERROR\n"
 CLEANUP_REQUIRED = '{"status":"private_cleanup_required"}\n'
@@ -98,6 +98,7 @@ T001_PATHS = (
     "scripts/update_subject_progress.py",
     "scripts/validate_subject_evidence.py",
     "scripts/validate_subject_progress.py",
+    "specs/subject-distillation/.implementation-progress.pending",
     "specs/subject-distillation/evidence-schemas/attestation.schema.json",
     "specs/subject-distillation/evidence-schemas/backup-restore.schema.json",
     "specs/subject-distillation/evidence-schemas/environment.schema.json",
@@ -117,17 +118,13 @@ T001_NON_GOALS = (
     "no_production_migration",
 )
 T001_PROHIBITED = (
-    "commit",
     "deploy",
-    "github",
     "live_private_data",
     "migration",
-    "pr",
+    "non_github_remote_network",
     "product_runtime",
-    "push",
     "release",
-    "remote_network",
-    "stage",
+    "unreviewed_git_delivery",
 )
 PROPOSAL_KEYS = {
     "schema_version",

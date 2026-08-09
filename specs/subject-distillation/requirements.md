@@ -1251,3 +1251,31 @@ success but before PASS；appearance、invalidity or any non-`PENDING` T-001 sta
 during verification requires cleanup and DENY. Until B-001 passes its hostile
 tests and independent security review,
 private receipt/scope materialization and T-001 remain fail-closed unavailable.
+
+## 14. T-001 bootstrap repair decisions
+
+T-001 authorization and acceptance are separate phases. Owner-confirmed
+`verify-confirmed` runs exactly once on the clean exact base before any T-001
+write or ledger exists；the post-implementation acceptance sequence does not
+replay it. The private receipt/scope are always cleaned. Their public-safe exact
+binding is retained only in the closed `environment.implementation_authorization`
+record defined by design §22 and is revalidated at T-033.
+
+Evidence uses typed `source_commit="git:<object-id>"`, never a bare Git digest
+and never a new generic scanner exception. All six evidence schemas、progress
+initialization/transition CLI、resource limits、completion evidence and
+crash/retry semantics are exactly defined by design §22. Before the progress
+control plane exists, a canonical contradiction is reported through a bounded
+owner-visible task packet outside the repo；after seed, every status uses the
+atomic writer.
+
+After all T-001 acceptance commands and an independent auth/security review
+report P0=P1=0, the exact reviewed allowlist may be staged、committed、pushed、
+opened as a PR、CI-read back and merged under the approved Human-on-the-loop
+mission. Design §21/§22.3's closed two-phase delivery requires an exact
+IN_PROGRESS preliminary PR head to pass CI before the packet-consuming
+completion transition, followed by a ledger-only finalization head and second
+CI gate；post-completion byte repair requires a fresh baseline/authorization,
+never reversal of the terminal ledger. This delivery authority does not permit
+deployment、release、migration、product runtime、live/private data or non-GitHub
+network access.

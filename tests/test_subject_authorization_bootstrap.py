@@ -259,6 +259,25 @@ def test_public_safety_families_deny(value: str) -> None:
 
 
 @pytest.mark.parametrize(
+    "value",
+    [
+        "log gho_example",
+        "prefix Bearer:value",
+        "url abc.def.ghi suffix",
+        "flag --client-secret=value",
+        "note -----BEGIN PRIVATE KEY----- suffix",
+    ],
+)
+def test_embedded_public_safety_markers_deny(value: str) -> None:
+    with pytest.raises(verifier.Denied):
+        verifier._scan({"ordinary": value})
+
+
+def test_four_segment_public_identifier_is_not_misclassified_as_jwt() -> None:
+    verifier._scan({"non_goals": ["no.live.private.data", "no.t002.plus.artifact"]})
+
+
+@pytest.mark.parametrize(
     "key",
     ["secret", "Api.Key", "client-secret", "raw_evidence", "absolute.path"],
 )
@@ -282,9 +301,10 @@ def test_every_forbidden_key_and_separator_variant_denies() -> None:
 
 
 def test_digest_field_requires_exact_lowercase_64_hex() -> None:
-    for value in ("a" * 63, "a" * 65, "A" * 64):
-        with pytest.raises(verifier.Denied):
-            verifier._scan({"scope_sha256": value})
+    for key in verifier.DIGEST_KEYS:
+        for value in ("a" * 63, "a" * 65, "A" * 64):
+            with pytest.raises(verifier.Denied):
+                verifier._scan({key: value})
 
 
 def test_duplicate_keys_and_schema_unknown_keyword_deny() -> None:
@@ -466,15 +486,13 @@ def test_scope_traversal_and_expiry_equality_deny(tmp_path: Path, capsys) -> Non
     assert _run(args, capsys) == (2, "", verifier.DENY)
 
 
-def test_scope_requires_all_safety_prohibitions_with_two_contract_exceptions(
+def test_scope_requires_all_core_safety_prohibitions(
     tmp_path: Path, capsys
 ) -> None:
     args, _ = _build(
         tmp_path,
         scope_change=lambda scope: scope.update(
-            prohibited_operations=sorted(
-                verifier.PROHIBITED - {"migration", "product_runtime"}
-            )
+            prohibited_operations=sorted(verifier.REQUIRED_PROHIBITED)
         ),
     )
     code, _, _ = _run(args, capsys)
@@ -483,7 +501,9 @@ def test_scope_requires_all_safety_prohibitions_with_two_contract_exceptions(
     args, _ = _build(
         tmp_path,
         scope_change=lambda scope: scope.update(
-            prohibited_operations=sorted(verifier.PROHIBITED - {"deploy"})
+            prohibited_operations=sorted(
+                verifier.REQUIRED_PROHIBITED - {"unreviewed_git_delivery"}
+            )
         ),
     )
     assert _run(args, capsys) == (2, "", verifier.DENY)
