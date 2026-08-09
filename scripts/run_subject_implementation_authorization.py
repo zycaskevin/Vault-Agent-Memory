@@ -599,7 +599,17 @@ def _require_prestart(value: ProgressSnapshot) -> None:
 
 
 def _external_root(runtime: Runtime, repo_root: str) -> str:
-    root = runtime.temp_root if runtime.temp_root is not None else tempfile.gettempdir()
+    if runtime.temp_root is None:
+        root = tempfile.gettempdir()
+        # Darwin exposes two root-owned system aliases. Map only their exact
+        # lexical namespaces; arbitrary environment-selected aliases and every
+        # explicit caller root still enter the descriptor walk unchanged and
+        # therefore fail closed on any symlink component.
+        if sys.platform == "darwin":
+            if root in {"/var", "/tmp"} or root.startswith(("/var/", "/tmp/")):
+                root = "/private" + root
+    else:
+        root = runtime.temp_root
     if (
         type(root) is not str
         or not os.path.isabs(root)
