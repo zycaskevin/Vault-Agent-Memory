@@ -890,17 +890,54 @@ T-001 expressly owns and grants nothing to T-002+. `non_goals` has 1..16
 unique, strictly sorted 1..128-character ASCII values matching
 `^[a-z][a-z0-9]*(?:[._:-][a-z0-9]+)*$`. `prohibited_operations` has 1..16
 unique, strictly sorted members of this closed vocabulary: `commit`, `deploy`,
-`github`, `live_private_data`, `migration`, `pr`, `product_runtime`, `push`,
-`release`, `remote_network`, `stage`. T-001 contains all except it may omit
-`migration` or `product_runtime` solely for an operation
-expressly required by T-001, which grants no broader operation.
+`github`, `live_private_data`, `migration`, `non_github_remote_network`, `pr`,
+`product_runtime`, `push`, `release`, `remote_network`, `stage`,
+`unreviewed_git_delivery`. T-001's exact set is `deploy`、`live_private_data`、
+`migration`、`non_github_remote_network`、`product_runtime`、`release`、
+`unreviewed_git_delivery`. It therefore permits only the reviewed Git delivery
+described below, never product/runtime/network scope by omission.
 
-The `remote_network` task prohibition governs product/service calls and access to
-remote or private data during the authorized task. It does not prohibit the
-public dependency installation described by tasks §0 before task execution；that
-setup may not use a private index, credential or private source without separate
-authority. Dependency or package-metadata changes remain outside B-000/T-001
-unless expressly scoped.
+`non_github_remote_network` prohibits every network destination except exact
+GitHub repository identity `zycaskevin/Vault-Agent-Memory` and its PR/check APIs.
+Immediately before every network write, `origin` must byte-equal either
+`https://github.com/zycaskevin/Vault-Agent-Memory.git` or
+`git@github.com:zycaskevin/Vault-Agent-Memory.git`, and authenticated GitHub API
+readback must report the same case-sensitive `nameWithOwner`; mutable or other
+configured origins DENY. Even that GitHub delivery remains prohibited by
+`unreviewed_git_delivery` until every T-001 acceptance command and independent
+auth/security review has passed.
+
+Delivery uses the closed packets in §22.3 and completes in two Git phases. First,
+while the ledger is IN_PROGRESS, an independent source/auth review packet binds
+the implementation base、the 14 immutable T-001 repo outputs、mandatory local
+command exits and P0=P1=0 verdict. A preliminary delivery-readback packet then
+binds that source-review digest and the 15-path tree containing the IN_PROGRESS
+ledger. Only its exact commit/tree may be pushed to the PR, and required CI must
+be green for that exact head before completion is attempted. Any immutable
+source or command fix at this phase repeats local acceptance、independent review
+and the preliminary packet.
+
+After the preliminary head is green, the atomic writer descriptor-safely
+consumes the same source-review packet, derives its digest as `review_id`, and
+produces the deterministic COMPLETED ledger event. A final delivery-readback
+packet binds the same source-review digest and the final 15-path tree containing
+the validator-valid completed ledger. Only the ledger may differ from the green
+preliminary packet. The ledger-only finalization commit is pushed to the same PR
+and required CI runs again before merge. A transient CI failure may be rerun；a
+post-completion failure requiring any source or ledger byte correction
+invalidates this T-001 execution and requires a fresh repaired baseline、fresh
+authorization proposal/confirmation and a new clean execution. The terminal
+ledger is never reversed or silently rewritten.
+
+Stage may include only paths and modes from the phase-appropriate packet；the
+commit/tree readback must reproduce it exactly. Push、PR、CI and merge are
+permitted only for packet-bound commits/trees and PR heads, with final required
+CI green and remote repo/head/tree readback. The transient pending path and both
+repository-external packets are never staged. Deploy、release、migration、product
+runtime and live/private data remain prohibited.
+Public dependency installation described by tasks §0 occurs before task
+execution and may not use a private index、credential or private source；
+dependency/package-metadata changes remain outside T-001.
 
 The scope rejects duplicate keys, non-exact builtin types, non-finite numbers,
 missing/unknown fields, and unsorted/duplicate/out-of-bound arrays. Its bytes
@@ -1072,3 +1109,317 @@ key/value, token-shaped value, or receipt content may be echoed.
 After exact-tree B-000 testing and its independent security review, no T-001 authority is implied.
 T-001 requires its actual verified receipt. Old baseline, review, and
 authorization evidence does not transfer after canonical byte changes.
+
+## 22. T-001 control-plane and evidence contract
+
+T-001 has two non-overlapping command phases. The **authorization preflight**
+runs on the exact clean base before any T-001 write or progress ledger exists:
+baseline validator → existing B-000/B-001 tests → exactly one owner-confirmed
+`verify-confirmed` call → verified private cleanup. The **acceptance phase**
+runs only after that PASS and never replays the runner. A dirty tree or a
+non-PENDING ledger remains DENY at the runner；this split does not weaken the
+clean-base/prestart boundary.
+
+Until the strict progress schema、validator、atomic writer and seed ledger all
+validate, a contradiction or missing contract is reported only as a bounded
+public-safe `BLOCKED` task packet or Issue outside the repository. No fabricated
+ledger is allowed. After the seed ledger exists, every status—including
+`BLOCKED`—must use the atomic writer.
+
+### 22.1 Shared evidence envelope and limits
+
+Every evidence JSON、`implementation-progress.schema.json` and
+`implementation-progress.json` is duplicate-key-safe, canonical UTF-8
+`json.dumps(value, sort_keys=True, separators=(',', ':'), ensure_ascii=True) +
+'\n'`, at most 1,048,576 bytes, depth at most 32, aggregate values/members at
+most 32,768 and members in any one object/array at most 4,096. Validators reuse
+the B-000 parser/scanner implementation read-only；they may not copy or extend
+its grammar. The progress validator uses the same descriptor-relative bounded
+read、no-follow identity audit and exact-boundary／one-over resource tests as the
+evidence validator. Every object layer is closed (`additionalProperties:false`).
+Stage TXT files are at most 16,777,216 bytes with a first-line canonical JSON
+header of at most 65,536 bytes；the fixed evidence directory contains at most 32
+regular files and 80 MiB aggregate. Every component is descriptor-relative、
+no-follow and identity-audited；unknown extras DENY once a fixed closure set is
+required. Limits have exact-boundary ALLOW and one-over DENY tests without
+attacker-proportional secondary copies.
+
+The common exact keys are `schema_version`（non-Boolean integer `1`）、
+`artifact_kind`（the schema constant）、`baseline_id`（16 lowercase hex）、
+`source_commit`（exact `git:` followed by 40 or 64 lowercase hex and length
+matching the repository object format）、`created_at_utc`（semantic
+second-precision RFC3339 UTC `Z`）
+and `producer_task`（the fixed owning task）. The `git:` prefix is mandatory so
+the provenance value remains typed and does not create a generic bare-digest
+exception in the shared scanner. Environment uses the exact T-001 authorization
+preflight HEAD；each later producer records its clean reviewed mission-chain HEAD
+immediately before its evidence-only write.
+
+The six schema-specific closed dictionaries are:
+
+- `environment` (`artifact_kind="subject-distillation-environment"`)／`T-001`:
+  common keys plus `git_status` exact object
+  `{captured_phase:"pre_implementation",clean:true,head_kind:"branch"|"detached"}`；
+  raw branch names/status lines are never persisted. `python` is the exact object
+  `{implementation:"CPython",version:[major,minor,micro]}` where the three
+  non-Boolean integers are 0..999, major=3 and minor>=10；`sqlite` exact object
+  `{version:[major,minor,micro]}` with three non-Boolean integers 0..999；
+  non-Boolean integer `schema_contract_version >= 0` byte-equal to
+  `vault.db_schema.SCHEMA_VERSION`；`normative_hashes` exactly five ordered
+  `{path,sha256}` objects in manifest order, byte-equal to manifest and disk；
+  and `implementation_authorization` as defined below.
+- `migration` and `backup-restore`／`T-027`: common keys plus `command`（the exact
+  six-string argv `python`、`-m`、`pytest`、`-q`、
+  `tests/test_subject_migration.py`、`tests/test_db_backup.py`）and no
+  caller-selected value、`exit_code`（integer
+  0..255）、`input_hash`／`output_hash`（64 lowercase hex）、
+  `rollback_path` exact object `{kind:"public_safe_locator",id:<opaque>}` and
+  `result` (`PASS|FAIL`, with PASS iff exit_code=0). Their artifact constants are
+  `subject-distillation-migration-evidence` and
+  `subject-distillation-backup-restore-evidence`；rollback IDs never contain a
+  filesystem locator.
+- `review-result` (`artifact_kind="subject-distillation-review-result"`)／
+  `T-031`: common keys plus bounded opaque `review_id`、`builder_principal` and
+  `reviewer_principal`、`review_scope` exact enum
+  `requirements-architecture|security-privacy|execution-traceability` whose
+  value matches the fixed filename、the exact five ordered
+  `reviewed_normative_hashes` entries、`reviewed_tree_sha256`、non-Boolean
+  integer `p0|p1|p2` in 0..65535、
+  `verdict` (`PASS|FAIL`) and `findings` (0..256 closed objects with exact
+  bounded opaque `finding_id`、`severity=P0|P1|P2`、`summary_code` matching
+  `^[A-Z][A-Z0-9_]{0,63}$` and
+  nullable `disposition`, where P0/P1 require null and P2 requires
+  `ACCEPTED|DEFERRED|FOLLOW_UP`). `findings` is strictly sorted by `finding_id`
+  with no duplicates；counts equal all findings by severity, independent of P2
+  disposition. PASS requires p0=p1=0 and every P2 disposition non-null.
+- `fresh-review` (`artifact_kind="subject-distillation-fresh-review"`)／`T-031`:
+  common keys plus bounded opaque `builder_principal` and `reviews` exactly
+  three objects in fixed scope order, each exact
+  `{review_scope,review_id,reviewer_principal,artifact_sha256,p0,p1,p2,
+  verdict}` and hash-matched to its review-result file；the exact five ordered
+  `reviewed_normative_hashes` entries、`reviewed_tree_sha256` and aggregate
+  p0/p1/p2/verdict. Hashes equal all inputs；counts are sums；PASS requires all
+  three PASS and aggregate p0=p1=0. The three reviewer principals are pairwise
+  distinct and each differs from builder principal；all three review-result
+  files carry the same exact builder principal.
+- `attestation` (`artifact_kind="subject-distillation-attestation"`)／`T-033`:
+  common keys plus `artifact_sha256` as the exact 15-entry `{path,sha256}`
+  closure below, strictly ordered by POSIX path bytes after `<baseline-id>` is
+  replaced from the verified manifest:
+  `specs/subject-distillation/baseline-manifest.json`、
+  `specs/subject-distillation/design.md`、
+  `specs/subject-distillation/evidence/<baseline-id>/backup-restore.json`、
+  `specs/subject-distillation/evidence/<baseline-id>/environment.json`、
+  `specs/subject-distillation/evidence/<baseline-id>/fixture.txt`、
+  `specs/subject-distillation/evidence/<baseline-id>/fresh-review.json`、
+  `specs/subject-distillation/evidence/<baseline-id>/legacy.txt`、
+  `specs/subject-distillation/evidence/<baseline-id>/migration.json`、
+  `specs/subject-distillation/evidence/<baseline-id>/surface.txt`、
+  `specs/subject-distillation/evidence/<baseline-id>/unit.txt`、
+  `specs/subject-distillation/requirements.md`、
+  `specs/subject-distillation/sbe-traceability.json`、
+  `specs/subject-distillation/schema.v15.sql`、
+  `specs/subject-distillation/tasks.md`、and
+  `specs/subject-distillation/traceability.md`. It excludes attestation itself、
+  the progress ledger and individual review-result files；their exact hashes are
+  instead transitively bound through the validated fresh-review artifact. The
+  exact attestation `implementation_authorization` projection defined below；
+  `reviewer_set` as the same three
+  `{review_scope,review_id,reviewer_principal,artifact_sha256}` members as fresh
+  review；
+  `reviewed_tree_sha256`、`release_label=experimental|stable` and nullable
+  `private_shadow_receipt_sha256`. Experimental requires null；stable requires
+  64 lowercase hex and the independent private verifier gate.
+
+The four stage TXT files have an exact first-line closed header with the common
+six keys plus `stage`、`requires`、`argv`、`started_at_utc`、
+`completed_at_utc`、`exit_code`、`result`、`stdout_size_bytes`、
+`stderr_size_bytes`、`stdout_sha256` and `stderr_sha256`.
+`artifact_kind="subject-distillation-stage-evidence"` and
+`producer_task="T-029"` are fixed；`stage` is `unit|fixture|surface|legacy` and
+must match the filename. `requires` is null only for unit, otherwise exactly the
+immediately preceding stage (`unit`、`fixture`、`surface` respectively). `argv`
+is the exact executed argv with 1..64 public-safe strings of 1..256 characters
+and must byte-equal that stage's fixed command after `--` in tasks T-029；no
+caller-selected argument is accepted.
+Both timestamps are semantic second-precision UTC and
+`started_at_utc <= completed_at_utc`. `exit_code` is a non-Boolean integer
+-255..255 so signal exits remain representable；`result` is `PASS|FAIL` with
+PASS iff exit code is 0, and fixed closure accepts only PASS. Size fields are
+non-Boolean integers 0..16,777,216 and hashes are lowercase SHA-256. The bytes
+after the LF header are exactly raw stdout followed by raw stderr；the two sizes
+define the boundary and both hashes must match. Raw streams first remain only in
+mode-0600 repo-external retained objects. Each stream must be strict UTF-8
+without NUL or CR. Unicode categories `Cc` and `Cf` DENY except horizontal TAB
+and the LF separators themselves, so terminal escapes、bidi controls and hidden
+format controls cannot publish. Each LF-delimited line is scanned as an unowned
+string by the exact shared scanner. The scanner's embedded-marker rules apply at
+every position. The line is additionally tokenized on ASCII whitespace plus
+`"'()[]{}<>,;`; each token、the suffix after its first `=` and the suffix after
+case-insensitive `path:|file:|dir:|cwd:|root:` are tested. A candidate beginning
+`/`、`~/`、`\\` or matching `^[A-Za-z]:[\\/]` is an absolute-locator DENY.
+The runtime home and resolved repo-root byte strings are also DENY anywhere.
+Exact-boundary and embedded token、assignment、PEM、POSIX、UNC、Windows、HOME、
+repo-root、ESC、bidi and control fixtures are mandatory. Only after all checks
+PASS may byte-identical streams publish to the repo artifact. Unsafe output
+publishes no repo bytes；the
+external task packet retains only bounded code `UNSAFE_STAGE_OUTPUT` and stream
+SHA-256, never raw content or a locator. Header plus streams remain within the
+file limit and are complete、untruncated、descriptor-retained and
+identity-audited.
+
+Every bounded opaque identifier above is 1..128 ASCII characters matching
+`^[A-Za-z0-9][A-Za-z0-9._:-]*$`; sorted arrays use Unicode code-point order and
+contain no duplicates.
+
+### 22.2 Durable public authorization binding
+
+`environment.implementation_authorization` is the only durable T-001
+authorization record. It is a closed public-safe object with exact keys:
+`schema_version=1`、
+`artifact_kind="subject-distillation-implementation-authorization-proof"`、
+`status="PASS"`、`authorized_task="T-001"`、
+`implementation_base_commit=<the same typed git: commit ref as environment.source_commit>`、`baseline_id`、
+`baseline_full_digest`、`authorizing_principal="github:zycaskevin"`、the exact
+sorted `allowed_repo_relative_paths`／`non_goals`／`prohibited_operations`、
+`issued_at_utc`／`expires_at_utc`／`recorded_at_utc`、`scope_sha256`、
+`receipt_sha256`、`authorization_verifier_sha256`、
+`authorization_schema_sha256`、`authorization_id`、
+`authorization_pass_packet_sha256`、`proposal_id`、`runner`
+exact `{path:"scripts/run_subject_implementation_authorization.py",sha256}` and
+bounded opaque `owner_confirmation_ref`. Every digest is 64 lowercase hex.
+
+The Main Agent captures one immutable LF-canonical repository-external packet
+with exact keys `schema_version=1`、
+`artifact_kind="subject-distillation-t001-authorization-pass-packet"`、the
+byte-identical confirmed `proposal` object、the exact parsed `runner_pass` object
+(`authorization_id`、`authorized_task`、`baseline_id`、`status="PASS"`)、OS UTC
+`recorded_at_utc` captured immediately after PASS、and `owner_confirmation_ref`
+copied from owner-visible trusted-channel parent metadata. Packet SHA-256 is its
+immutable packet ID and must byte-equal the proof's
+`authorization_pass_packet_sha256`. The Main Agent supplies the packet to the environment
+producer through parent task state；T-001 may only verify/consume it and never
+invent the owner reference or recorded time. After environment creation the
+packet is released. It contains no private receipt/scope bytes or locator.
+Neither audit field grants authority by itself, and missing or inconsistent
+packet evidence blocks environment creation.
+
+Validator requires the typed base byte-equal to environment source commit and
+strips only one exact leading `git:` when rebuilding the raw-base
+owner-confirmed proposal；it checks baseline against the manifest, arrays against
+the T-001 template, issued <= recorded < expires,
+schema/verifier/runner hashes against fixed current files, and deterministically
+rebuilds canonical scope、receipt and proposal IDs/digests. From those proof
+fields it must also reconstruct the exact confirmed `proposal` object, the fixed
+four-key `runner_pass` projection, `recorded_at_utc` and
+`owner_confirmation_ref`, serialize the exact authorization-pass packet with the
+same LF canonical JSON contract, and require its SHA-256 byte-equal to
+`authorization_pass_packet_sha256`. T-033 repeats this reconstruction without
+access to the released packet. The proof contains no proposal text、private
+receipt/scope bytes、path or locator. It audits exact byte binding；
+`owner_confirmation_ref` is an audit reference, not cryptographic proof of chat
+identity.
+
+Attestation uses a closed projection with exact keys `environment_path`（fixed
+resolved environment repo path）、`environment_sha256`、`authorization_id`、
+`authorization_pass_packet_sha256`、`proposal_id`、`receipt_sha256`、
+`scope_sha256`、`owner_confirmation_ref` and
+`status="PASS"`. T-033 reopens/hashes environment, repeats every deterministic
+proof check, and requires copied fields to match.
+
+### 22.3 Progress writer and T-001 completion
+
+The T-001 source/auth review packet is repository-external, public-safe,
+duplicate-key-safe, LF-canonical JSON with every object closed. Its exact keys
+are `schema_version=1`、
+`artifact_kind="subject-distillation-t001-source-review"`、typed
+`implementation_base_commit`、`baseline_id`、`baseline_full_digest`、bounded
+`builder_principal`、bounded `reviewer_principal` distinct from the builder、
+semantic `reviewed_at_utc`、`immutable_outputs`、`authorization`、
+`command_results`、`pending_absent=true`、non-Boolean integer `p0=0`、`p1=0`、
+bounded non-Boolean integer `p2` and `verdict="PASS"`. `immutable_outputs` is
+the exact POSIX-path-byte-sorted 14-entry T-001 allowlist after excluding only
+`implementation-progress.json` and `.implementation-progress.pending`; each
+closed entry is `{path,mode,sha256}`. Mode is the string `100755` for the four
+T-001 scripts and `100644` for the other ten paths. `authorization` is exact
+`{environment_path,environment_sha256,authorization_id,
+authorization_pass_packet_sha256,status:"PASS"}` and is independently
+revalidated under §22.2.
+
+`command_results` is an exact ordered nine-entry array. Each closed entry is
+`{command_id,exit_code:0,status:"PASS"}` and the command IDs, in order, are
+`baseline-control`、`evidence-environment`、`progress-tests`、
+`progress-validator-in-progress`、`legacy-regression`、`readme-smoke`、
+`release-parity`、`ruff` and `diff-check`; each maps one-to-one to the post-
+authorization command block in tasks §2. The packet is accepted only when all
+14 current hashes/modes、environment authorization、command evidence、principal
+independence、P0/P1 counts and pending absence revalidate. `review_id` is exactly
+the lowercase SHA-256 of the complete LF-canonical packet bytes; there is no
+self-referential `review_id` field. The descriptor/path used to consume it is
+never persisted or echoed.
+
+The T-001 delivery-readback packet is likewise repository-external,
+public-safe, duplicate-key-safe, closed and LF-canonical. Its exact keys are
+`schema_version=1`、
+`artifact_kind="subject-distillation-t001-delivery-readback"`、
+`phase` (`pre_completion|completed`)、
+`repository="zycaskevin/Vault-Agent-Memory"`、typed
+`implementation_base_commit`、`source_review_sha256`、
+`delivery_diff_sha256`、`delivered_entries`、typed `delivery_commit` and typed
+`delivery_tree`. `delivered_entries` is the exact POSIX-path-byte-sorted 15-entry
+array of closed `{path,mode,sha256}` objects containing the same 14 immutable
+outputs plus `implementation-progress.json`, never the pending path. Its
+LF-canonical array SHA-256 is `delivery_diff_sha256`; the complete packet
+SHA-256 is the repository-external `delivery_packet_sha256`. The preliminary
+packet requires a validator-valid IN_PROGRESS ledger；the completed packet
+requires a validator-valid COMPLETED ledger with the same
+`source_review_sha256`. Commit/tree readback must reproduce all entries and
+modes. Required CI must be green for the preliminary packet before completion,
+and then for the completed packet before merge.
+
+The writer has two exact JSON-output subcommands. `init` requires an absent
+fixed progress path and creates mode `0644`, sequence 1
+`T-001:PENDING→IN_PROGRESS`, with every later task PENDING. `transition`
+requires `--task`、`--expected`、`--to`, zero or more `--repo-ref PATH=SHA256`
+and `--opaque-ref ID`, optional `--blocker`, and the fixed
+manifest/schema/tasks/progress paths. The exact T-001 `IN_PROGRESS→COMPLETED`
+form additionally requires exactly one `--source-review-packet <repo-external
+path>`；every other transition forbids that flag. The writer opens the packet
+only from a normalized absolute path physically outside the repository, rejects
+symlink/non-regular components, bounds it to 1,048,576 bytes, uses descriptor
+no-follow plus pre/post identity audit, duplicate-key-safe parses it, revalidates
+the complete closed packet contract above, derives `review_id`, and requires the
+exact `t001-review:<review_id>` opaque ref. Production timestamps
+come only from OS UTC；clock injection is test-only. Both require `--json`;
+unknown、duplicate or inconsistent flags DENY. Success is exact LF canonical
+`{sequence,status:"PASS",task_id}`；caller/stale faults are fixed no-echo exit 2,
+internal I/O faults fixed no-echo exit 3.
+
+Each operation holds an identity-safe repo-external lock and uses only the fixed
+mode-0600 transient
+`specs/subject-distillation/.implementation-progress.pending`. It opens the
+parent/ledger/pending descriptor-relative and no-follow, writes complete bytes,
+handles partial writes, validates them, then `fchmod`s pending to `0644`, fsyncs
+and re-audits its identity/mode before publication. Every published ledger is
+mode `0644`. `init`
+publishes without overwrite；`transition` uses atomic replace；both then fsync
+the parent. Before publication any fault leaves old bytes. After publication or
+crash, only byte-identical old or complete validator-valid new is legal—never
+partial. Exact retry resumes a matching pending transition or recognizes its
+requested last event as `RECOVERED_COMMITTED` without duplicate append；mismatch
+DENYs. The current invocation may unlink only the retained pending identity it
+created. Directory fsync failure returns nonzero/unknown rather than falsely
+claiming rollback.
+
+The T-001 completion event contains exactly 16 canonical-sorted refs: 14
+`repo_file` refs for every T-001 output except mutable
+`implementation-progress.json` and the transient pending path（four scripts、six
+evidence schemas、environment、progress schema、two tests）, plus opaque
+`t001-authorization:<authorization_id>` matching environment and
+`t001-review:<review_id>` matching the owner-visible independent P0=0/P1=0
+source-review packet. The writer validates that packet、the environment proof
+and all 14 current hashes before permitting `T-001=COMPLETED`; caller-supplied
+opaque text alone can never satisfy the predicate. The packet records mandatory
+command exits and verdict；its opaque ID is evidence routing, never authority or
+a secret. `canonical-sorted` means ascending comparison of each ref's canonical
+UTF-8 JSON bytes；the bytes and logical refs must both be unique.

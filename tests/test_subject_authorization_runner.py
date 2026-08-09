@@ -233,6 +233,15 @@ def test_propose_is_canonical_complete_and_file_free(runner, tmp_path: Path, cap
     assert proposal["allowed_repo_relative_paths"] == [
         path.format(baseline_id=proposal["baseline_id"]) for path in runner.T001_PATHS
     ]
+    assert proposal["prohibited_operations"] == [
+        "deploy",
+        "live_private_data",
+        "migration",
+        "non_github_remote_network",
+        "product_runtime",
+        "release",
+        "unreviewed_git_delivery",
+    ]
     assert list(tmp_path.iterdir()) == []
     assert child_called is False
 
@@ -1050,7 +1059,7 @@ def test_b001_artifacts_are_tracked_with_exact_modes() -> None:
     assert RUNNER_PATH.is_file()
     assert os.access(RUNNER_PATH, os.X_OK)
     assert hashlib.sha256(RUNNER_PATH.read_bytes()).hexdigest() == (
-        "3a8e751a1e717ba654e1701141b295f7f3b63607c3a98aaff87fbb0ea8303ef2"
+        "42e2ddeb5dfdd98cd83536496318c4d872c5fe7a5dbbefc7687315a1832e5805"
     )
     assert Path(__file__).resolve().is_file()
     tracked = subprocess.run(

@@ -41,14 +41,17 @@ HEX16 = re.compile(r"[0-9a-f]{16}")
 TASK = re.compile(r"T-[0-9]{3}")
 TIME = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\.[0-9]{1,6})?Z")
 TOKEN = re.compile(
-    r"(?i)^(?:ghp_|gho_|ghu_|ghs_|ghr_|github_pat_|glpat-|sk-|sk_live_"
+    r"(?i)(?:^|[^A-Za-z0-9])(?:ghp_|gho_|ghu_|ghs_|ghr_|github_pat_|glpat-|sk-|sk_live_"
     r"|sk_test_|rk_live_|rk_test_|pk_live_|whsec_|xoxb-|xoxp-|xoxa-|xoxr-"
     r"|AKIA|ASIA|AIza|ya29\.)"
 )
-BEARER = re.compile(r"(?i)^bearer(?:[._:-]|$)")
-JWT = re.compile(r"[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+")
+BEARER = re.compile(r"(?i)(?:^|[^A-Za-z0-9])bearer(?:[._:-]|$)")
+JWT = re.compile(
+    r"(?<![A-Za-z0-9_./-])[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+"
+    r"(?![A-Za-z0-9_./-])"
+)
 ASSIGNMENT = re.compile(
-    r"(?i)(?:token|secret|password|passwd|api[._-]?key|access[._-]?key"
+    r"(?i)(?:^|[^A-Za-z0-9])(?:token|secret|password|passwd|api[._-]?key|access[._-]?key"
     r"|private[._-]?key|credential|client[._-]?secret|refresh[._-]?token"
     r"|aws[._-]?secret[._-]?access[._-]?key)[.:=_-].+"
 )
@@ -60,17 +63,25 @@ NON_GOAL = re.compile(r"[a-z][a-z0-9]*(?:[._:-][a-z0-9]+)*")
 DIGEST_KEYS = {
     "artifact_sha256",
     "authorization_id",
+    "authorization_pass_packet_sha256",
     "authorization_schema_sha256",
     "authorization_verifier_sha256",
     "baseline_full_digest",
+    "delivery_diff_sha256",
+    "delivery_packet_sha256",
+    "environment_sha256",
     "full_digest",
     "input_hash",
     "output_hash",
     "private_shadow_receipt_sha256",
+    "proposal_id",
     "receipt_sha256",
     "reviewed_tree_sha256",
     "scope_sha256",
     "sha256",
+    "source_review_sha256",
+    "stderr_sha256",
+    "stdout_sha256",
     "tasks_sha256",
 }
 FORBIDDEN_KEYS = {
@@ -98,12 +109,23 @@ PROHIBITED = {
     "github",
     "live_private_data",
     "migration",
+    "non_github_remote_network",
     "pr",
     "product_runtime",
     "push",
     "release",
     "remote_network",
     "stage",
+    "unreviewed_git_delivery",
+}
+REQUIRED_PROHIBITED = {
+    "deploy",
+    "live_private_data",
+    "migration",
+    "non_github_remote_network",
+    "product_runtime",
+    "release",
+    "unreviewed_git_delivery",
 }
 SCHEMA_KEYS = {
     "$schema",
@@ -313,9 +335,9 @@ def _normalize_key(key: str) -> str:
 
 def _scan_string(value: str, owning_key: str | None) -> None:
     normalized = _normalize_key(owning_key) if owning_key is not None else None
-    if TOKEN.search(value) or BEARER.search(value) or JWT.fullmatch(value):
+    if TOKEN.search(value) or BEARER.search(value) or JWT.search(value):
         raise Denied
-    if ASSIGNMENT.fullmatch(value) or PEM.search(value):
+    if ASSIGNMENT.search(value) or PEM.search(value):
         raise Denied
     if owning_key == DOMAIN_KEY:
         if value != DOMAIN_HEX:
@@ -522,7 +544,7 @@ def _scope(value: Any, baseline_id: str, full_digest: str, task: str, raw: bytes
     operations = _sorted_unique_strings(value["prohibited_operations"], 1, 16)
     if any(item not in PROHIBITED for item in operations):
         raise Denied
-    if not PROHIBITED - {"migration", "product_runtime"} <= set(operations):
+    if not REQUIRED_PROHIBITED <= set(operations):
         raise Denied
     if raw != _canonical(value, newline=True):
         raise Denied
