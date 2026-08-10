@@ -1,0 +1,11 @@
+allowed_interruptions:
+  - unresolved_l2_decision
+  - concrete_l3_operation
+  - external_owner_action
+  - required_milestone_uat
+forbidden_interruptions:
+  - commit_permission
+  - pull_request_permission
+  - routine_test_or_review
+  - continuation_when_unblocked_work_exists
+same_decision_reopen_requires: recorded_reopen_condition

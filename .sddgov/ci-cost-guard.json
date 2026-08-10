@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "profile": "team-standard",
+  "local_green": {
+    "environment": {
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "commands": [
+      [".venv/bin/python", "-m", "pytest", "-q"],
+      [".venv/bin/python", "-m", "compileall", "-q", "vault", "scripts", "tests"],
+      [".venv/bin/python", "scripts/readme_command_smoke.py"],
+      [".venv/bin/python", "scripts/check_release_parity.py"],
+      ["bash", "integrations/openclaw/verify.sh"]
+    ]
+  },
+  "hosted": {
+    "max_runs_per_work_package": 1,
+    "max_reruns_per_revision": 1,
+    "expected_minutes": 12,
+    "full_matrix": "manual_or_ready_for_review"
+  },
+  "workflow_controls": {
+    "require_concurrency": true,
+    "cancel_in_progress": true,
+    "require_job_timeouts": true,
+    "require_read_only_permissions": true,
+    "skip_draft_pull_requests": true,
+    "exempt_workflows": [
+      "pages.yml",
+      "publish.yml"
+    ]
+  }
+}

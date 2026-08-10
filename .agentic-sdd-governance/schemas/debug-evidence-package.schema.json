@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentic-sdd-governance.local/schemas/debug-evidence-package.schema.json",
+  "title": "Debug Evidence Package",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "dep_id",
+    "issue",
+    "risk_level",
+    "created_at",
+    "updated_at",
+    "workflow",
+    "expected_behavior",
+    "actual_behavior",
+    "environment",
+    "root_cause_status",
+    "attachments"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "dep_id": {"type": "string", "pattern": "^DEP-[A-Za-z0-9._-]+$"},
+    "issue": {"type": "string", "minLength": 1},
+    "sdd_references": {"type": "array", "items": {"type": "string"}},
+    "risk_level": {"enum": ["L0", "L1", "L2", "L3"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "updated_at": {"type": "string", "format": "date-time"},
+    "workflow": {
+      "type": "object",
+      "required": ["phase", "history"],
+      "properties": {
+        "phase": {"enum": ["red", "evidence", "fix", "green", "proof"]},
+        "history": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["phase", "at"],
+            "properties": {
+              "phase": {"enum": ["red", "evidence", "fix", "green", "proof"]},
+              "at": {"type": "string", "format": "date-time"}
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "expected_behavior": {"type": "string"},
+    "actual_behavior": {"type": "string"},
+    "environment": {
+      "type": "object",
+      "required": ["commit", "branch", "runtime"],
+      "properties": {
+        "commit": {"type": "string"},
+        "branch": {"type": "string"},
+        "runtime": {"type": "string"}
+      },
+      "additionalProperties": true
+    },
+    "root_cause_status": {"enum": ["unknown", "hypothesized", "confirmed", "rejected"]},
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"type": "string", "pattern": "^shareable/"},
+          "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "collector": {"type": "string"}
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

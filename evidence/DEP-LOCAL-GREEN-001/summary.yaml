@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-LOCAL-GREEN-001",
+  "issue": "LOCAL-GREEN-001",
+  "sdd_references": [
+    "B-000-LIFECYCLE"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-10T07:33:39Z",
+  "updated_at": "2026-08-10T07:39:03Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-10T07:33:39Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-10T07:36:20Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-10T07:36:20Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-10T07:39:03Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-10T07:39:03Z"
+      }
+    ]
+  },
+  "expected_behavior": "The B-000 bootstrap test preserves exact B-000-owned artifacts while allowing authorized later-phase T-001 artifacts to exist.",
+  "actual_behavior": "The branch-local stale test denied every T-001 worktree because it asserted that two valid T-001 artifacts must not exist.",
+  "environment": {
+    "commit": "3e30a99c46cdd3cb0982f1332efa0e7dc2442438",
+    "branch": "agent/t001-control-plane",
+    "runtime": "CPython 3.14.3; pytest 9.1.1; macOS arm64"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

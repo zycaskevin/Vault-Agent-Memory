@@ -1,0 +1,11 @@
+merge_requires:
+  - acceptance_checks_pass
+  - required_evidence_verified
+  - redaction_blockers_zero
+  - protected_file_review_when_changed
+  - rollback_recorded
+prohibited:
+  - raw_evidence_attachment
+  - acceptance_criteria_weakening
+  - hidden_scope_change
+  - unapproved_l2_or_l3

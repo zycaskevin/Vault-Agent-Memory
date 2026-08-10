@@ -79,3 +79,8 @@ raw/
 .hermes/
 .ruff_cache/
 work-home/
+
+# agentic-sdd-governance:start
+# Raw Debug Evidence Packages stay local.
+evidence/**/private/raw/
+# agentic-sdd-governance:end

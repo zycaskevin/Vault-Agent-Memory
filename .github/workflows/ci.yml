@@ -15,8 +15,13 @@ on:
       - 'pyproject.toml'
       - 'uv.lock'
       - '.gitignore'
+      - 'AGENTS.md'
+      - '.agentic-sdd-governance/**'
+      - '.agents/skills/agentic-sdd-governance/**'
+      - '.sddgov/**'
       - '.github/workflows/**'
       - 'docs/**'
+      - 'evidence/**'
       - 'specs/**'
       - 'vault/**'
       - 'tests/**'
@@ -24,6 +29,7 @@ on:
       - 'raw/**'
       - 'benchmarks/**'
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     branches:
       - 'main'
     paths:
@@ -34,8 +40,13 @@ on:
       - 'pyproject.toml'
       - 'uv.lock'
       - '.gitignore'
+      - 'AGENTS.md'
+      - '.agentic-sdd-governance/**'
+      - '.agents/skills/agentic-sdd-governance/**'
+      - '.sddgov/**'
       - '.github/workflows/**'
       - 'docs/**'
+      - 'evidence/**'
       - 'specs/**'
       - 'vault/**'
       - 'tests/**'
@@ -53,7 +64,9 @@ permissions:
 jobs:
   test:
     name: Tests (Python ${{ matrix.python-version }})
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -84,7 +97,9 @@ jobs:
 
   readme-command-smoke:
     name: README documented command smoke
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -108,7 +123,9 @@ jobs:
 
   one-click-install-smoke-linux:
     name: One-click installer smoke (Linux)
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -129,7 +146,9 @@ jobs:
 
   one-click-install-smoke-windows:
     name: One-click installer smoke (Windows)
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: windows-latest
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -154,7 +173,9 @@ jobs:
 
   uv-dev-smoke:
     name: uv dev workflow smoke
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -184,7 +205,9 @@ jobs:
 
   search-qa-regression:
     name: Search QA regression gate
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -208,7 +231,9 @@ jobs:
 
   memory-foundation-contract:
     name: Memory foundation governance contract
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -317,7 +342,9 @@ jobs:
 
   build-smoke:
     name: Build, twine check, and wheel smoke
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -362,7 +389,9 @@ jobs:
 
   release-parity:
     name: Release version parity
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -397,7 +426,9 @@ jobs:
 
   module-size:
     name: Module size gate
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -415,7 +446,9 @@ jobs:
 
   lint-knowledge:
     name: Lint raw/ knowledge files
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -524,7 +557,9 @@ jobs:
 
   secret-scan-light:
     name: Lightweight secret scan
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -552,9 +587,17 @@ jobs:
           included_roots = [
               Path('vault'), Path('scripts'), Path('tests'), Path('docs'), Path('raw'),
               Path('benchmarks'), Path('.github/workflows'),
+              Path('.agentic-sdd-governance'),
+              Path('.agents/skills/agentic-sdd-governance'),
+              Path('.sddgov'), Path('evidence'),
           ]
-          included_files = [Path('README.md'), Path('CHANGELOG.md'), Path('pyproject.toml')]
-          suffixes = {'.py', '.md', '.toml', '.yml', '.yaml', '.json', '.txt'}
+          included_files = [
+              Path('README.md'), Path('CHANGELOG.md'), Path('AGENTS.md'),
+              Path('pyproject.toml'),
+          ]
+          suffixes = {
+              '.py', '.md', '.toml', '.yml', '.yaml', '.json', '.jsonl', '.log', '.txt',
+          }
           patterns = {
               'private key block': re.compile(r'-----BEGIN [A-Z ]+ PRIVATE KEY-----'),
               'AWS access key': re.compile(r'\b(?:AKIA|ASIA)[0-9A-Z]{16}\b'),
@@ -600,7 +643,9 @@ jobs:
 
   history-privacy-scan:
     name: Full history privacy scan
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Check out full repository history

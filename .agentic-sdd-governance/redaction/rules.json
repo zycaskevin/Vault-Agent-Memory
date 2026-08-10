@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "default_action": "deny_unreviewed_binary",
+  "local_only": true,
+  "rules": [
+    {"id": "private-key", "action": "remove"},
+    {"id": "authorization", "action": "replace"},
+    {"id": "cookie", "action": "replace"},
+    {"id": "jwt", "action": "replace"},
+    {"id": "secret-field", "action": "replace"},
+    {"id": "email", "action": "mask"},
+    {"id": "phone", "action": "mask"},
+    {"id": "card-like", "action": "mask"}
+  ],
+  "regulated_overrides": {
+    "medical": "deny_raw_export",
+    "payment": "deny_raw_export",
+    "authentication": "deny_raw_export"
+  }
+}

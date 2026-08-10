@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-LOCAL-GREEN-001",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-red.log",
+      "sha256": "e2440172004fa26ddac7d109eb632611ec84bca8a266371ead6d557684802510",
+      "collected_at": "2026-08-10T07:36:20Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--local-green-red.log",
+      "sha256": "e2440172004fa26ddac7d109eb632611ec84bca8a266371ead6d557684802510",
+      "shareable": true
+    }
+  ]
+}

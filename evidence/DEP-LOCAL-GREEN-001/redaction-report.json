@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--local-green-red.log",
+      "output": "terminal--local-green-red.log",
+      "source_sha256": "e2440172004fa26ddac7d109eb632611ec84bca8a266371ead6d557684802510",
+      "output_sha256": "e2440172004fa26ddac7d109eb632611ec84bca8a266371ead6d557684802510",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-LOCAL-GREEN-001",
+  "generated_at": "2026-08-10T07:36:20Z"
+}

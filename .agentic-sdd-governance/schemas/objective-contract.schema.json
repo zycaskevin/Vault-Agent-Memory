@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Objective Contract",
+  "type": "object",
+  "required": ["outcome", "success_metric", "guardrails", "keep_condition", "rollback_condition"],
+  "properties": {
+    "outcome": {"type": "string", "minLength": 1},
+    "success_metric": {"type": "string", "minLength": 1},
+    "guardrails": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "keep_condition": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "rollback_condition": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

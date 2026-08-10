@@ -1,0 +1,18 @@
+version: "0.2.0-experimental.3"
+runtime_load_set:
+  - core/POLICY_KERNEL.md
+  - selected_project_profile
+  - current_work_package
+  - relevant_playbook_only
+invariants:
+  preauthorize_l0_l1: true
+  raw_evidence_export: false
+  builder_controls_final_verification: false
+  checkpoint_requires_reply: false
+  continue_when_unblocked_work_exists: true
+interruptions:
+  allowed:
+    - unresolved_l2_decision
+    - concrete_l3_operation
+    - external_owner_action
+    - required_milestone_uat

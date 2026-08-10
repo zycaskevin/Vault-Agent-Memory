@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "External Action",
+  "type": "object",
+  "required": ["action_id", "summary", "risk_level", "owner", "status", "created_at", "authorization_scope"],
+  "properties": {
+    "action_id": {"type": "string", "minLength": 1},
+    "summary": {"type": "string", "minLength": 1},
+    "risk_level": {"enum": ["L2", "L3"]},
+    "owner": {"type": "string", "minLength": 1},
+    "status": {"enum": ["pending", "approved", "completed", "cancelled"]},
+    "created_at": {"type": "string", "format": "date-time"},
+    "authorization_scope": {"const": "one concrete action only"}
+  },
+  "additionalProperties": false
+}

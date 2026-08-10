@@ -3,6 +3,7 @@ name: External reproduction validation
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "benchmarks/external_reproductions/**"
       - "benchmarks/schemas/external_reproduction_submission.v1.schema.json"
@@ -16,9 +17,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: external-reproduction-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
         with:

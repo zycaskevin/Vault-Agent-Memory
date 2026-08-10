@@ -1,0 +1,8 @@
+command=.venv/bin/python -m pytest -q
+branch=agent/t001-control-plane
+commit=3e30a99c46cdd3cb0982f1332efa0e7dc2442438
+runtime=CPython 3.14.3 pytest 9.1.1 macOS arm64
+result=1 failed, 3092 passed, 12 skipped
+failure=tests/test_subject_authorization_bootstrap.py::test_only_b000_paths_are_present
+assertion=scripts/read_subject_baseline_id.py exists during T-001
+upstream_repair=536934c369082568f01a86413cf7e346aaecfd2c
