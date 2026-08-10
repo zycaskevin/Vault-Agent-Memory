@@ -602,10 +602,14 @@ def _external_root(runtime: Runtime, repo_root: str) -> str:
     if runtime.temp_root is None:
         root = tempfile.gettempdir()
         # Darwin exposes two root-owned system aliases. Map only their exact
-        # lexical namespaces; arbitrary environment-selected aliases and every
-        # explicit caller root still enter the descriptor walk unchanged and
-        # therefore fail closed on any symlink component.
-        if sys.platform == "darwin":
+        # lexical namespaces. tempfile may preserve TMPDIR's trailing slash;
+        # remove only trailing separators from this OS-selected default before
+        # the exact alias mapping. Arbitrary environment-selected aliases and
+        # every explicit caller root still enter the descriptor walk without
+        # symlink resolution and therefore fail closed on a symlink component.
+        if sys.platform == "darwin" and type(root) is str:
+            if root != "/":
+                root = root.rstrip("/")
             if root in {"/var", "/tmp"} or root.startswith(("/var/", "/tmp/")):
                 root = "/private" + root
     else:
