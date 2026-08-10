@@ -583,14 +583,20 @@ def test_private_path_lexical_mutations_deny(path: str) -> None:
         verifier._absolute_parts(path)
 
 
-def test_only_b000_paths_are_present() -> None:
-    assert not (REPO_ROOT / "scripts/read_subject_baseline_id.py").exists()
-    assert not (REPO_ROOT / "specs/subject-distillation/implementation-progress.json").exists()
-    assert {
-        path.relative_to(REPO_ROOT).as_posix()
-        for path in (VERIFIER_PATH, SCHEMA_PATH, Path(__file__).resolve())
-    } == {
+def test_b000_owned_artifacts_remain_exact_across_later_phases() -> None:
+    expected = {
         "scripts/verify_subject_implementation_authorization.py",
         "specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json",
         "tests/test_subject_authorization_bootstrap.py",
     }
+    actual = {
+        path.relative_to(REPO_ROOT).as_posix()
+        for path in (VERIFIER_PATH, SCHEMA_PATH, Path(__file__).resolve())
+    }
+    assert actual == expected
+    for relative in expected:
+        artifact = REPO_ROOT / relative
+        assert artifact.is_file() and not artifact.is_symlink()
+        assert artifact.stat().st_mode & 0o777 == (
+            0o755 if relative.startswith("scripts/") else 0o644
+        )
