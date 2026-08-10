@@ -1,0 +1,9 @@
+collector=terminal
+phase=green-after-independent-review-remediation
+baseline_id=5dd83dd8b3d3696a
+baseline_full_digest=5dd83dd8b3d3696ae4f33ac863af87f4baf569ac1ca5ea11014ad5919ae740e0
+baseline_validator=PASS
+focused_pytest=320 passed, 2 skipped
+diff_check=PASS
+private_inputs_read=false
+authorization_runner_executed=false

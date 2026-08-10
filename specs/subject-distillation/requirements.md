@@ -403,6 +403,35 @@ must use nonzero exit plus at most one 96-byte public-safe stderr line whose cod
 is exactly one of `missing-input|verifier-unavailable|unknown-key|invalid-private-input|recompute-mismatch|signoff-drift|threshold-drift|hmac-mismatch|receipt-digest-mismatch|internal-failure`, and no private path, key,
 gate data, full receipt, or private result may enter repository output or logs.
 
+The operator-private verifier configuration is one closed canonical JSON v1
+document, not an implementation-defined key store. Its exact top-level keys are
+`schema_version=1`,
+`artifact_kind="subject-distillation-private-shadow-verifier-config"`, and
+`keys`. `keys` contains 1..64 exact objects, strictly sorted by unique `key_id`;
+each object has only `key_id` and `hmac_sha256_key_hex`. `key_id` uses the
+receipt's bounded identifier grammar and `hmac_sha256_key_hex` is exactly 64
+lowercase hexadecimal characters decoding to a 32-byte HMAC key. The complete
+config is duplicate-key-safe, no larger than 65,536 bytes, byte-equal to the
+same recursively key-sorted, UTF-8, no-insignificant-whitespace,
+non-finite-number-rejecting canonical JSON core used by the receipt, with no
+trailing newline or LF-canonical packet wrapper, stored outside the repository
+as a mode-0600, single-link, non-symlink regular file, and never
+echoed or persisted in repository evidence. Unknown, duplicate, unsorted,
+malformed, extra, unavailable, or non-canonical config data must DENY.
+
+The attester, rather than only the operator-private child, must select the exact
+receipt `key_id` from retained config bytes and independently recompute the
+receipt HMAC using the fixed domain and canonical receipt-without-HMAC bytes.
+It must compare the lowercase MAC with `hmac.compare_digest`, reject a plain
+SHA-256 fallback, and then bind the complete receipt digest to the child handoff
+and ledger reference. Child stdout and stderr must be read incrementally with
+hard caps of 85 and 96 bytes respectively; unbounded `capture_output` is not a
+legal implementation. Both pipes must be multiplexed and concurrently drained
+under one monotonic 300-second deadline. Timeout or either
+one-byte-over condition must terminate the child process group, wait at most 5
+seconds, force-kill the remaining group, reap it, retain no private output, and
+return only the existing bounded public-safe failure contract.
+
 Before the private shadow gate passes, builds may be marked `experimental` but
 Person v1 must not be called stable, broadly useful, or evidence of
 "understanding" based only on memory volume or search recall. Passing v1 does
