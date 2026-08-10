@@ -1,0 +1,6 @@
+collector=terminal
+commit=d7e8803d659170ed8120594401c7e07114d22e60
+branch=agent/t001-hmac-contract-repair
+expected=stable validator independently verifies receipt HMAC from a closed private config with bounded child IO
+actual=baseline omits config serialization and key encoding; candidate positive can trust mocked child PASS with arbitrary synthetic MAC; child output capture is unbounded
+security_data=synthetic only; no operator-private inputs read

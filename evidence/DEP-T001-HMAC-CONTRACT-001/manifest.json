@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-T001-HMAC-CONTRACT-001",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--contract-gap.txt",
+      "sha256": "fdd5d762d919a0a202e9e363a8fb18f93aab7442d975757550b3822eb34119fe",
+      "collected_at": "2026-08-10T10:44:58Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--contract-green.txt",
+      "sha256": "0c70c040586d361b275f3c010ae569c952aae87fcba7364fcc07211d865cd2fa",
+      "collected_at": "2026-08-10T10:46:13Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--contract-green-v2.txt",
+      "sha256": "ae4cb00cf42b92bf23216d4719aa2a5fa6f3541c9902ba0477b93fa645c9e10b",
+      "collected_at": "2026-08-10T10:57:22Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--contract-proof.txt",
+      "sha256": "22277fe9af1aad4f23be05263b2ea56c6ab2aa2016fbc36d0247871cc49b0104",
+      "collected_at": "2026-08-10T11:03:18Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--contract-gap.txt",
+      "sha256": "fdd5d762d919a0a202e9e363a8fb18f93aab7442d975757550b3822eb34119fe",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--contract-green-v2.txt",
+      "sha256": "ae4cb00cf42b92bf23216d4719aa2a5fa6f3541c9902ba0477b93fa645c9e10b",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--contract-green.txt",
+      "sha256": "0c70c040586d361b275f3c010ae569c952aae87fcba7364fcc07211d865cd2fa",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--contract-proof.txt",
+      "sha256": "22277fe9af1aad4f23be05263b2ea56c6ab2aa2016fbc36d0247871cc49b0104",
+      "shareable": true
+    }
+  ]
+}

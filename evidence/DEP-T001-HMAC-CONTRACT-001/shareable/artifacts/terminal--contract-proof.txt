@@ -1,0 +1,15 @@
+collector=terminal
+phase=proof-candidate
+baseline_id=5dd83dd8b3d3696a
+baseline_validator=PASS
+focused_pytest=320 passed, 2 skipped
+independent_review=P0=0 P1=0 APPROVE
+ci_verify=PASS
+local_green_pytest=2974 passed, 12 skipped
+compileall=PASS
+readme_smoke=PASS
+release_parity=PASS
+openclaw_adapter_smoke=PASS
+hosted_ci=false
+private_inputs_read=false
+authorization_runner_executed=false
