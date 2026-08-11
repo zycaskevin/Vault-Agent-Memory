@@ -14,6 +14,9 @@ def test_release_readiness_workflow_trigger_and_concurrency_contract():
     push_block = trigger_block.split("  push:\n", 1)[1].split("  pull_request:\n", 1)[0]
     pull_request_block = trigger_block.split("  pull_request:\n", 1)[1]
     concurrency_block = workflow.split("\nconcurrency:\n", 1)[1].split("\njobs:\n", 1)[0]
+    test_job = workflow.split("\n  test:\n", 1)[1].split(
+        "\n  readme-command-smoke:\n", 1
+    )[0]
 
     assert "  workflow_dispatch:\n" in trigger_block
     assert "    branches:\n      - 'main'\n" in push_block
@@ -22,6 +25,7 @@ def test_release_readiness_workflow_trigger_and_concurrency_contract():
     assert "      - 'specs/**'\n" in push_block
     assert "    branches:\n      - 'main'\n" in pull_request_block
     assert "      - 'specs/**'\n" in pull_request_block
+    assert "          fetch-depth: 0\n" in test_job
     assert (
         "  group: release-readiness-${{ github.event.pull_request.number || github.ref }}\n"
         in concurrency_block
