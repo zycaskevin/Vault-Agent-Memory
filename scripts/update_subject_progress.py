@@ -91,17 +91,46 @@ class SourceReviewGuard:
     file_handles: list[authorization_runner.verifier.Handle]
     raw_files: list[bytes]
     owned: list[int]
+    subject_directory: authorization_runner.verifier.Handle
+    subject_directory_entries: tuple[str, ...]
 
-    def audit(self) -> None:
-        authorization_runner.verifier._audit(self.audit_handles)
-        for handle, expected in zip(self.file_handles, self.raw_files, strict=True):
-            try:
-                os.lseek(handle.fd, 0, os.SEEK_SET)
-            except OSError:
-                raise Denied from None
-            if authorization_runner.verifier._read(handle) != expected:
+    def _audit_handle(self, handle: authorization_runner.verifier.Handle) -> None:
+        if authorization_runner.verifier._identity(os.fstat(handle.fd)) != handle.identity:
+            raise Denied
+        for parent, name, before in handle.chain:
+            current = os.stat(name, dir_fd=parent, follow_symlinks=False)
+            current_identity = authorization_runner.verifier._identity(current)
+            if before[:3] == self.subject_directory.identity[:3]:
+                if current_identity[:3] != before[:3]:
+                    raise Denied
+            elif current_identity != before:
                 raise Denied
-        authorization_runner.verifier._audit(self.audit_handles)
+
+    def audit(self, *, allow_pending: bool = False) -> None:
+        try:
+            directory_info = os.fstat(self.subject_directory.fd)
+            if (
+                authorization_runner.verifier._identity(directory_info)[:3]
+                != self.subject_directory.identity[:3]
+            ):
+                raise Denied
+            expected_entries = set(self.subject_directory_entries)
+            if allow_pending:
+                expected_entries.add(PENDING_NAME)
+            if set(os.listdir(self.subject_directory.fd)) != expected_entries:
+                raise Denied
+            for handle in self.audit_handles:
+                self._audit_handle(handle)
+            for handle, expected in zip(
+                self.file_handles, self.raw_files, strict=True
+            ):
+                os.lseek(handle.fd, 0, os.SEEK_SET)
+                if authorization_runner.verifier._read(handle) != expected:
+                    raise Denied
+            for handle in self.audit_handles:
+                self._audit_handle(handle)
+        except (OSError, authorization_runner.verifier.Denied):
+            raise Denied from None
 
     def close(self) -> None:
         for fd in reversed(self.owned):
@@ -621,6 +650,15 @@ def _open_source_review_guard(
             authorization_runner.verifier._absolute_parts(os.fspath(packet_path)),
             owned,
         )
+        subject_directory = authorization_runner.verifier._open_chain(
+            repo.fd,
+            ("specs", "subject-distillation"),
+            owned,
+            final_directory=True,
+        )
+        subject_directory_entries = tuple(sorted(os.listdir(subject_directory.fd)))
+        if PENDING_NAME in subject_directory_entries:
+            raise Denied
         manifest = authorization_runner.verifier._open_chain(
             repo.fd,
             tuple(os.fspath(paths.manifest.relative_to(paths.repo_root)).split("/")),
@@ -769,10 +807,17 @@ def _open_source_review_guard(
         for path, raw in zip(T001_PATHS, raw_files[source_offset:], strict=True):
             if hashlib.sha256(raw).hexdigest() != repo_refs[path]:
                 raise Denied
-        guard = SourceReviewGuard(audit_handles, file_handles, raw_files, owned)
+        guard = SourceReviewGuard(
+            audit_handles,
+            file_handles,
+            raw_files,
+            owned,
+            subject_directory,
+            subject_directory_entries,
+        )
         guard.audit()
         return guard
-    except (OSError, ValueError, authorization_runner.verifier.Denied):
+    except (OSError, ValueError, Denied, authorization_runner.verifier.Denied):
         for fd in reversed(owned):
             try:
                 os.close(fd)
@@ -1104,7 +1149,12 @@ def _transition_impl(
                 return
             if guard is None:
                 raise Denied
-            guard.audit()
+            guard.audit(
+                allow_pending=(
+                    paths.pending.parent
+                    == paths.repo_root / "specs/subject-distillation"
+                )
+            )
             (
                 final_refs,
                 final_review_id,

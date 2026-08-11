@@ -1684,6 +1684,9 @@ def test_source_review_guard_retains_manifest_normative_trust_and_source_set(
     source.parent.mkdir(exist_ok=True)
     source.write_bytes(b"VALUE = 1\n")
     source.chmod(0o755)
+    progress_path = repo / "specs/subject-distillation/implementation-progress.json"
+    progress_path.write_bytes(b"old-ledger\n")
+    progress_path.chmod(0o644)
     packet = tmp_path / "source-review.json"
     packet_value = {
         "baseline_id": "5dd83dd8b3d3696a",
@@ -1705,39 +1708,78 @@ def test_source_review_guard_retains_manifest_normative_trust_and_source_set(
         repo / "specs/subject-distillation/baseline-manifest.json",
         repo / "unused-schema",
         repo / "specs/subject-distillation/tasks.md",
-        repo / "unused-progress",
-        repo / "unused-pending",
+        progress_path,
+        repo / "specs/subject-distillation/.implementation-progress.pending",
     )
+    authorization_proof = {
+        "runner": {
+            "path": writer.AUTHORIZATION_TRUST_PATHS[0],
+            "sha256": hashlib.sha256(
+                (repo / writer.AUTHORIZATION_TRUST_PATHS[0]).read_bytes()
+            ).hexdigest(),
+        },
+        "authorization_verifier_sha256": hashlib.sha256(
+            (repo / writer.AUTHORIZATION_TRUST_PATHS[1]).read_bytes()
+        ).hexdigest(),
+        "authorization_schema_sha256": hashlib.sha256(
+            (repo / writer.AUTHORIZATION_TRUST_PATHS[2]).read_bytes()
+        ).hexdigest(),
+    }
+    review_id = hashlib.sha256(packet.read_bytes()).hexdigest()
     guard = writer._open_source_review_guard(
         paths,
         packet,
         refs,
-        hashlib.sha256(packet.read_bytes()).hexdigest(),
-        {
-            "runner": {
-                "path": writer.AUTHORIZATION_TRUST_PATHS[0],
-                "sha256": hashlib.sha256(
-                    (repo / writer.AUTHORIZATION_TRUST_PATHS[0]).read_bytes()
-                ).hexdigest(),
-            },
-            "authorization_verifier_sha256": hashlib.sha256(
-                (repo / writer.AUTHORIZATION_TRUST_PATHS[1]).read_bytes()
-            ).hexdigest(),
-            "authorization_schema_sha256": hashlib.sha256(
-                (repo / writer.AUTHORIZATION_TRUST_PATHS[2]).read_bytes()
-            ).hexdigest(),
-        },
+        review_id,
+        authorization_proof,
     )
     try:
+        unexpected = progress_path.with_name("unexpected.txt")
+        unexpected.write_bytes(b"unexpected\n")
+        with pytest.raises(writer.Denied):
+            guard.audit()
+        unexpected.unlink()
+        guard.audit()
+
+        paths.pending.write_bytes(b"new-ledger\n")
+        paths.pending.chmod(0o644)
+        guard.audit(allow_pending=True)
+        os.replace(paths.pending, paths.progress)
+        guard.audit()
+
         mutated = repo / mutated_relative
         replacement = mutated.with_name("replacement.py")
         replacement.write_bytes(b"VALUE = 2\n")
         replacement.chmod(0o755)
         os.replace(replacement, mutated)
-        with pytest.raises(writer.authorization_runner.verifier.Denied):
+        with pytest.raises(writer.Denied):
             guard.audit()
     finally:
         guard.close()
+
+    paths.pending.write_bytes(b"retained-pending\n")
+    paths.pending.chmod(0o644)
+    real_open = writer.os.open
+    opened: list[int] = []
+
+    def tracking_open(*args, **kwargs):
+        fd = real_open(*args, **kwargs)
+        opened.append(fd)
+        return fd
+
+    monkeypatch.setattr(writer.os, "open", tracking_open)
+    with pytest.raises(writer.Denied):
+        writer._open_source_review_guard(
+            paths,
+            packet,
+            refs,
+            review_id,
+            authorization_proof,
+        )
+    assert opened
+    for fd in opened:
+        with pytest.raises(OSError):
+            os.fstat(fd)
 
 
 def test_t001_completion_consumes_packet_and_exact_sixteen_refs(tmp_path: Path) -> None:
