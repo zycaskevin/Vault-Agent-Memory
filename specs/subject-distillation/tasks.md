@@ -241,6 +241,17 @@ not T-001 write grants.
 
 Trust-artifact RED ownership is exact：`tests/test_subject_baseline_control.py` owns genuine RED-first coverage for baseline ID reader、baseline validator、evidence schemas/validator、`environment.json` controls and deterministic authorization-pass packet reconstruction/digest mismatch；`tests/test_subject_progress.py` owns only progress-ledger RED controls, including the closed source-review packet、descriptor-safe `--source-review-packet` handoff、derived `review_id` and arbitrary opaque-id rejection。For every T-001-created trust artifact, its owner test must demonstrably fail before implementation and the corresponding focused/direct command below must pass afterward。T-001不得create或rewrite B-000的schema、verifier或bootstrap test。
 
+`tests/test_subject_progress.py` must remain byte-identical between the
+IN_PROGRESS preliminary CI and COMPLETED final CI. Its repository-ledger check
+accepts exactly the design §22.3 sequence-1 or sequence-2 delivery shape and
+asserts the validator-reported sequence equals the validated event count；it
+must not hard-code the repository ledger as permanently sequence 1. Every
+seed-specific state/time mutation uses a temporary writer-created seed or an
+exact one-event seed projection with the task map and `updated_at_utc`
+reconstructed from event 1. Add RED controls proving both legal phases pass and
+an inconsistent hybrid or third sequence DENYs；no skip、xfail or phase-selected
+test file is allowed.
+
 Progress-ledger obligations：
 
 - Create the strict schema and duplicate-key-safe validator before seeding the ledger；the schema/validator are reviewed source, while the ledger is the excluded mutable control plane defined in §1.

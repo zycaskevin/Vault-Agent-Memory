@@ -1298,6 +1298,16 @@ control plane exists, a canonical contradiction is reported through a bounded
 owner-visible task packet outside the repo；after seed, every status uses the
 atomic writer.
 
+The unchanged T-001 progress test source must pass in both delivery phases.
+Repository-ledger integration assertions accept only the two canonical states:
+sequence 1 with `T-001=IN_PROGRESS`, or sequence 2 with the exact reviewed
+`T-001=COMPLETED` event and every later task still `PENDING`. Seed-specific
+mutation and timestamp tests must instead use an isolated writer-created seed
+or an exact one-event seed projection whose task map and `updated_at_utc` are
+reconstructed from that first event；they must not treat the mutable repository
+ledger as permanently sequence 1. The preliminary and completed CI gates run
+the same reviewed test bytes without skipping or weakening either phase.
+
 After all T-001 acceptance commands and an independent auth/security review
 report P0=P1=0, the exact reviewed allowlist may be staged、committed、pushed、
 opened as a PR、CI-read back and merged under the approved Human-on-the-loop

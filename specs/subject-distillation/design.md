@@ -1421,6 +1421,21 @@ requires a validator-valid COMPLETED ledger with the same
 modes. Required CI must be green for the preliminary packet before completion,
 and then for the completed packet before merge.
 
+The T-001 progress test source is immutable between those two CI gates and is
+therefore phase-aware by construction. Its fixed-repository integration case
+duplicate-key-safely reads and validates the current ledger, then accepts only
+one of two complete shapes: the sequence-1 seed (`T-001=IN_PROGRESS`, all later
+tasks `PENDING`, exact first event) or sequence-2 completion (`T-001=COMPLETED`,
+all later tasks `PENDING`, exact first and completion events with the required
+16 refs). It derives the expected validator sequence from the validated event
+count, never from a hard-coded delivery phase. Tests that mutate seed time or
+seed state operate on a writer-created temporary seed or reconstruct an exact
+one-event projection by truncating to the first event, restoring the task map
+to that event's resulting state, and setting `updated_at_utc` to that event.
+They never mutate the live completed ledger into an internally inconsistent
+hybrid. Any third repository-ledger sequence/state shape DENYs, and neither CI
+phase may skip the progress suite.
+
 The writer has two exact JSON-output subcommands. `init` requires an absent
 fixed progress path and creates mode `0644`, sequence 1
 `T-001:PENDING→IN_PROGRESS`, with every later task PENDING. `transition`
