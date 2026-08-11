@@ -19,12 +19,22 @@ import argparse
 import os
 import re
 import subprocess
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-
 SCRIPT_PATH = "scripts/history_privacy_scan.py"
+PUBLIC_TERM_MATCH_ALLOWLIST = frozenset(
+    {
+        (
+            "Private User",
+            ".agentic-sdd-governance/collectors/browser-playwright.md",
+            (
+                "Do not share the raw trace when it includes typed credentials, "
+                "DOM content, cookies, storage, or private user data."
+            ),
+        ),
+    }
+)
 
 
 def _load_runtime_terms(env_key: str, default: list[str]) -> list[str]:
@@ -120,8 +130,10 @@ def scan_terms(repo: Path) -> list[Finding]:
             parts = line.split(":", 3)
             if len(parts) < 4:
                 continue
-            commit, path, line_no, _text = parts
+            commit, path, line_no, text = parts
             if path == SCRIPT_PATH:
+                continue
+            if (term, path, text) in PUBLIC_TERM_MATCH_ALLOWLIST:
                 continue
             findings.append(
                 Finding(
