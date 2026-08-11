@@ -509,22 +509,31 @@ def test_nonblocking_lock_allows_only_one_concurrent_verifier(
     ("reported", "expected"),
     [
         ("/var", "/private/var"),
+        ("/var/", "/private/var"),
         ("/var/folders/example", "/private/var/folders/example"),
+        ("/var/folders/example/", "/private/var/folders/example"),
         ("/tmp", "/private/tmp"),
+        ("/tmp/", "/private/tmp"),
         ("/tmp/example", "/private/tmp/example"),
+        ("/tmp/example/", "/private/tmp/example"),
     ],
 )
 def test_default_temp_root_maps_only_exact_darwin_system_aliases(
     runner, monkeypatch, reported: str, expected: str
 ) -> None:
+    realpath_calls = 0
+    original_realpath = os.path.realpath
+
+    def audited_realpath(*args, **kwargs):
+        nonlocal realpath_calls
+        realpath_calls += 1
+        return original_realpath(*args, **kwargs)
+
     monkeypatch.setattr(runner.sys, "platform", "darwin")
     monkeypatch.setattr(runner.tempfile, "gettempdir", lambda: reported)
-    monkeypatch.setattr(
-        runner.os.path,
-        "realpath",
-        lambda *_args, **_kwargs: pytest.fail("realpath is not an authorization input"),
-    )
+    monkeypatch.setattr(runner.os.path, "realpath", audited_realpath)
     assert runner._external_root(runner.Runtime(), os.fspath(REPO_ROOT)) == expected
+    assert realpath_calls == 0
 
 
 def test_environment_selected_default_symlink_remains_denied(
@@ -535,7 +544,7 @@ def test_environment_selected_default_symlink_remains_denied(
     alias = tmp_path / "environment-temp-alias"
     alias.symlink_to(physical, target_is_directory=True)
     monkeypatch.setattr(runner.sys, "platform", "darwin")
-    monkeypatch.setattr(runner.tempfile, "gettempdir", lambda: os.fspath(alias))
+    monkeypatch.setattr(runner.tempfile, "gettempdir", lambda: os.fspath(alias) + "/")
     root = runner._external_root(runner.Runtime(), os.fspath(REPO_ROOT))
     alias_text = os.fspath(alias)
     expected = (
@@ -1143,7 +1152,7 @@ def test_b001_artifacts_are_tracked_with_exact_modes() -> None:
     assert RUNNER_PATH.is_file()
     assert os.access(RUNNER_PATH, os.X_OK)
     assert hashlib.sha256(RUNNER_PATH.read_bytes()).hexdigest() == (
-        "535938b54d1aa567572ed7ad18e9fc4c8808cb83d7db16c9896d13389a99d805"
+        "51ebcc00958c77d07cb7249070b91c17b5bb25fa6ed4737379514c7aa01db2c9"
     )
     assert Path(__file__).resolve().is_file()
     tracked = subprocess.run(
