@@ -80,6 +80,12 @@ jobs:
       - name: Run tests
         run: python -m pytest -q
 
+      - name: Validate Subject task authorization v2 ledger overlay
+        run: |
+          python scripts/validate_subject_task_authorization_v2.py \
+            --ledger \
+            --json
+
       - name: Compile Python sources
         run: python -m compileall -q vault scripts tests
 
