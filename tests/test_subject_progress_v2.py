@@ -1014,6 +1014,9 @@ def test_real_git_completion_reconstructs_progress_prefix_and_passes_final_overl
         ["git", "clone", "-q", "--no-hardlinks", os.fspath(REPO_ROOT), os.fspath(repo)],
         check=True,
     )
+    subprocess.run(
+        ["git", "checkout", "-q", "--detach", "HEAD^"], cwd=repo, check=True
+    )
     delivery_paths = [
         ".github/workflows/ci.yml",
         "docs/decision_records/2026-08-12-subject-task-authorization-v2-bridge.md",
