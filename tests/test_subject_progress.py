@@ -5,6 +5,7 @@ import hmac
 import importlib.util
 import json
 import os
+import re
 import signal
 import subprocess
 import sys
@@ -84,7 +85,7 @@ def _test_paths(writer, tmp_path: Path):
 
 def _runtime(writer):
     return writer.Runtime(
-        now=lambda: datetime(2026, 8, 11, 8, 0, 0, tzinfo=timezone.utc)
+        now=lambda: datetime(2026, 8, 11, 12, 0, 0, tzinfo=timezone.utc)
     )
 
 
@@ -95,21 +96,99 @@ def test_progress_artifacts_exist_with_expected_modes() -> None:
     assert PROGRESS.is_file() and PROGRESS.stat().st_mode & 0o777 == 0o644
 
 
-def test_seed_ledger_is_strict_and_in_progress() -> None:
+def test_repository_ledger_is_strict_for_delivery_phase() -> None:
+    ledger = json.loads(PROGRESS.read_text(encoding="utf-8"))
     result = _run(*_validator_args(PROGRESS))
     assert result.returncode == 0
     assert result.stderr == b""
     payload = json.loads(result.stdout)
     assert payload == {
-        "baseline_id": "5dd83dd8b3d3696a",
-        "sequence": 1,
+        "baseline_id": "0dc10cfc4a429662",
+        "sequence": len(ledger["events"]),
         "status": "PASS",
     }
-    ledger = json.loads(PROGRESS.read_text(encoding="utf-8"))
-    assert ledger["tasks"]["T-001"] == "IN_PROGRESS"
-    assert set(ledger["tasks"].values()) == {"PENDING", "IN_PROGRESS"}
-    assert ledger["events"][0]["from"] == "PENDING"
-    assert ledger["events"][0]["to"] == "IN_PROGRESS"
+    assert len(ledger["events"]) in {1, 2}
+    first = ledger["events"][0]
+    assert first["sequence"] == 1
+    assert first["task_id"] == "T-001"
+    assert first["from"] == "PENDING"
+    assert first["to"] == "IN_PROGRESS"
+    assert first["evidence_refs"] == []
+    assert first["blocker"] is None
+    assert all(ledger["tasks"][f"T-{index:03d}"] == "PENDING" for index in range(2, 34))
+    if len(ledger["events"]) == 1:
+        assert ledger["tasks"]["T-001"] == "IN_PROGRESS"
+        assert ledger["updated_at_utc"] == first["at_utc"]
+    else:
+        completed = ledger["events"][1]
+        assert completed["sequence"] == 2
+        assert completed["task_id"] == "T-001"
+        assert completed["from"] == "IN_PROGRESS"
+        assert completed["to"] == "COMPLETED"
+        writer = _load_writer()
+        repo_refs = [
+            {"kind": "repo_file", "path": item["path"], "sha256": item["sha256"]}
+            for item in writer._immutable_entries(writer._paths())
+        ]
+        environment = json.loads(
+            (
+                REPO_ROOT
+                / "specs/subject-distillation/evidence/0dc10cfc4a429662/environment.json"
+            ).read_text(encoding="utf-8")
+        )
+        authorization_ref = {
+            "kind": "opaque",
+            "id": "t001-authorization:"
+            + environment["implementation_authorization"]["authorization_id"],
+        }
+        review_refs = [
+            item
+            for item in completed["evidence_refs"]
+            if item.get("kind") == "opaque"
+            and re.fullmatch(r"t001-review:[0-9a-f]{64}", item.get("id", ""))
+        ]
+        assert len(review_refs) == 1
+        expected_refs = sorted(
+            [*repo_refs, authorization_ref, review_refs[0]],
+            key=writer.evidence._canonical,
+        )
+        assert completed["evidence_refs"] == expected_refs
+        assert completed["blocker"] is None
+        assert ledger["tasks"]["T-001"] == "COMPLETED"
+        assert ledger["updated_at_utc"] == completed["at_utc"]
+
+
+def test_t001_completion_rejects_sixteen_arbitrary_opaque_refs() -> None:
+    validator = _load_progress_validator()
+    value = json.loads(PROGRESS.read_text(encoding="utf-8"))
+    value["events"] = [deepcopy(value["events"][0])]
+    value["tasks"] = {task_id: "PENDING" for task_id in validator.TASK_IDS}
+    value["tasks"]["T-001"] = "COMPLETED"
+    refs = [
+        {"kind": "opaque", "id": f"synthetic:{index:02d}"}
+        for index in range(16)
+    ]
+    refs.sort(key=validator.evidence._canonical)
+    value["events"].append(
+        {
+            "sequence": 2,
+            "task_id": "T-001",
+            "from": "IN_PROGRESS",
+            "to": "COMPLETED",
+            "at_utc": value["events"][0]["at_utc"],
+            "evidence_refs": refs,
+            "blocker": None,
+        }
+    )
+    value["updated_at_utc"] = value["events"][1]["at_utc"]
+    manifest, tasks_sha256 = _validation_inputs(validator)
+    with pytest.raises(validator.Denied):
+        validator.validate_value(
+            value,
+            repo_root=REPO_ROOT,
+            manifest_result=manifest,
+            tasks_sha256=tasks_sha256,
+        )
 
 
 def test_seed_time_is_not_before_fresh_authorization() -> None:
@@ -118,7 +197,7 @@ def test_seed_time_is_not_before_fresh_authorization() -> None:
     environment = json.loads(
         (
             REPO_ROOT
-            / "specs/subject-distillation/evidence/5dd83dd8b3d3696a/environment.json"
+            / "specs/subject-distillation/evidence/0dc10cfc4a429662/environment.json"
         ).read_text(encoding="utf-8")
     )
     recorded = datetime.strptime(
@@ -128,6 +207,9 @@ def test_seed_time_is_not_before_fresh_authorization() -> None:
     manifest, tasks_sha256 = _validation_inputs(validator)
 
     equal = deepcopy(value)
+    equal["events"] = [deepcopy(value["events"][0])]
+    equal["tasks"] = {task_id: "PENDING" for task_id in validator.TASK_IDS}
+    equal["tasks"]["T-001"] = "IN_PROGRESS"
     equal_time = recorded.strftime("%Y-%m-%dT%H:%M:%SZ")
     equal["events"][0]["at_utc"] = equal_time
     equal["updated_at_utc"] = equal_time
@@ -461,7 +543,7 @@ def test_t033_completed_replay_automatically_invokes_final_gate(monkeypatch) -> 
         "baseline_id": seed["baseline_id"],
         "baseline_full_digest": seed["baseline_full_digest"],
         "tasks_sha256": seed["tasks_sha256"],
-        "updated_at_utc": "2026-08-11T08:00:00Z",
+        "updated_at_utc": "2026-08-11T12:00:00Z",
         "tasks": {task: "PENDING" for task in validator.TASK_IDS},
         "events": [],
     }
@@ -473,20 +555,42 @@ def test_t033_completed_replay_automatically_invokes_final_gate(monkeypatch) -> 
                 "task_id": task,
                 "from": before,
                 "to": after,
-                "at_utc": "2026-08-11T08:00:00Z",
+                "at_utc": "2026-08-11T12:00:00Z",
                 "evidence_refs": refs,
                 "blocker": blocker,
             }
         )
         value["tasks"][task] = after
 
+    writer = _load_writer()
+    environment = json.loads(
+        (
+            REPO_ROOT
+            / "specs/subject-distillation/evidence/0dc10cfc4a429662/environment.json"
+        ).read_text(encoding="utf-8")
+    )
+    t001_refs = [
+        {"kind": "repo_file", "path": item["path"], "sha256": item["sha256"]}
+        for item in writer._immutable_entries(writer._paths())
+    ]
+    t001_refs.extend(
+        [
+            {
+                "kind": "opaque",
+                "id": "t001-authorization:"
+                + environment["implementation_authorization"]["authorization_id"],
+            },
+            {"kind": "opaque", "id": "t001-review:" + "0" * 64},
+        ]
+    )
+    t001_refs.sort(key=validator.evidence._canonical)
     for task in validator.TASK_IDS[:31]:
         append(task, "PENDING", "IN_PROGRESS", [])
         append(
             task,
             "IN_PROGRESS",
             "COMPLETED",
-            [{"kind": "opaque", "id": f"evidence:{task}"}],
+            t001_refs if task == "T-001" else [{"kind": "opaque", "id": f"evidence:{task}"}],
         )
     append("T-032", "PENDING", "BLOCKED", [], "PRIVATE_GATE_NOT_RUN")
     append("T-033", "PENDING", "IN_PROGRESS", [])
@@ -1171,7 +1275,7 @@ def test_writer_short_write_and_replace_failure_preserve_old_bytes(tmp_path: Pat
     writer = _load_writer()
     paths = _test_paths(writer, tmp_path)
     bad_write = writer.Runtime(
-        now=lambda: datetime(2026, 8, 11, 8, 0, 0, tzinfo=timezone.utc),
+        now=lambda: datetime(2026, 8, 11, 12, 0, 0, tzinfo=timezone.utc),
         write=lambda _fd, _raw: 0,
     )
     with pytest.raises(RuntimeError):
@@ -1186,7 +1290,7 @@ def test_writer_short_write_and_replace_failure_preserve_old_bytes(tmp_path: Pat
         raise OSError
 
     replace_failure = writer.Runtime(
-        now=lambda: datetime(2026, 8, 11, 8, 0, 1, tzinfo=timezone.utc),
+        now=lambda: datetime(2026, 8, 11, 12, 0, 1, tzinfo=timezone.utc),
         replace=fail_replace,
     )
     with pytest.raises(OSError):
@@ -1212,7 +1316,7 @@ def test_writer_file_fsync_and_candidate_validation_faults_leave_no_partial(
     paths = _test_paths(writer, tmp_path / "fsync")
     paths.progress.parent.mkdir()
     fsync_failure = writer.Runtime(
-        now=lambda: datetime(2026, 8, 11, 8, 0, 0, tzinfo=timezone.utc),
+        now=lambda: datetime(2026, 8, 11, 12, 0, 0, tzinfo=timezone.utc),
         fsync=lambda _fd: (_ for _ in ()).throw(OSError()),
     )
     with pytest.raises(RuntimeError):
@@ -1262,7 +1366,7 @@ def test_writer_denies_second_cooperative_process_lease(tmp_path: Path) -> None:
     with writer.authorization_runner._authorization_lock(
         os.fspath(REPO_ROOT),
         "subject-progress",
-        "5dd83dd8b3d3696a",
+        "0dc10cfc4a429662",
         writer.authorization_runner.Runtime(),
     ), pytest.raises(writer.authorization_runner.Denied):
         writer.init(paths, _runtime(writer))
@@ -1282,7 +1386,7 @@ def test_writer_directory_fsync_failure_leaves_complete_valid_state(tmp_path: Pa
         os.fsync(fd)
 
     runtime = writer.Runtime(
-        now=lambda: datetime(2026, 8, 11, 8, 0, 0, tzinfo=timezone.utc),
+        now=lambda: datetime(2026, 8, 11, 12, 0, 0, tzinfo=timezone.utc),
         fsync=fsync,
     )
     with pytest.raises(OSError):
@@ -1344,7 +1448,7 @@ def test_writer_transition_retry_recovers_committed_event(tmp_path: Path) -> Non
         os.fsync(fd)
 
     runtime = writer.Runtime(
-        now=lambda: datetime(2026, 8, 11, 8, 0, 1, tzinfo=timezone.utc),
+        now=lambda: datetime(2026, 8, 11, 12, 0, 1, tzinfo=timezone.utc),
         fsync=fsync,
     )
     with pytest.raises(OSError):
@@ -1387,12 +1491,12 @@ def test_writer_resumes_matching_retained_transition_pending(tmp_path: Path) -> 
             "task_id": "T-001",
             "from": "IN_PROGRESS",
             "to": "BLOCKED",
-            "at_utc": "2026-08-11T08:00:01Z",
+            "at_utc": "2026-08-11T12:00:01Z",
             "evidence_refs": [],
             "blocker": "TEST_BLOCKER",
         }
     )
-    candidate["updated_at_utc"] = "2026-08-11T08:00:01Z"
+    candidate["updated_at_utc"] = "2026-08-11T12:00:01Z"
     writer._validate_candidate(paths, candidate)
     paths.pending.write_bytes(writer.evidence._canonical(candidate))
     paths.pending.chmod(0o600)
@@ -1427,12 +1531,12 @@ def test_writer_denies_hostile_pending_replacement_before_publish(
             "task_id": "T-001",
             "from": "IN_PROGRESS",
             "to": "BLOCKED",
-            "at_utc": "2026-08-11T08:00:01Z",
+            "at_utc": "2026-08-11T12:00:01Z",
             "evidence_refs": [],
             "blocker": "TEST_BLOCKER",
         }
     )
-    candidate["updated_at_utc"] = "2026-08-11T08:00:01Z"
+    candidate["updated_at_utc"] = "2026-08-11T12:00:01Z"
 
     def replace_pending(_identity) -> None:
         paths.pending.unlink()
@@ -1479,12 +1583,12 @@ def test_writer_post_publish_guard_failure_restores_previous_ledger(
             "task_id": "T-001",
             "from": "IN_PROGRESS",
             "to": "BLOCKED",
-            "at_utc": "2026-08-11T08:00:01Z",
+            "at_utc": "2026-08-11T12:00:01Z",
             "evidence_refs": [],
             "blocker": "POST_PUBLISH_GUARD",
         }
     )
-    candidate["updated_at_utc"] = "2026-08-11T08:00:01Z"
+    candidate["updated_at_utc"] = "2026-08-11T12:00:01Z"
 
     def deny_after_publish() -> None:
         raise writer.Denied
@@ -1516,12 +1620,12 @@ def test_writer_rejects_hostile_progress_path_replacement_and_restores_old(
             "task_id": "T-001",
             "from": "IN_PROGRESS",
             "to": "BLOCKED",
-            "at_utc": "2026-08-11T08:00:01Z",
+            "at_utc": "2026-08-11T12:00:01Z",
             "evidence_refs": [],
             "blocker": "HOSTILE_PROGRESS_REPLACEMENT",
         }
     )
-    candidate["updated_at_utc"] = "2026-08-11T08:00:01Z"
+    candidate["updated_at_utc"] = "2026-08-11T12:00:01Z"
 
     def replace_progress() -> None:
         replacement = paths.progress.with_name("hostile-progress")
@@ -1553,7 +1657,7 @@ def test_writer_cli_rejects_path_override_without_echo(tmp_path: Path) -> None:
 
 def _source_review_value(writer, paths):
     environment_path = (
-        "specs/subject-distillation/evidence/5dd83dd8b3d3696a/environment.json"
+        "specs/subject-distillation/evidence/0dc10cfc4a429662/environment.json"
     )
     environment_raw = (REPO_ROOT / environment_path).read_bytes()
     environment = json.loads(environment_raw)
@@ -1561,12 +1665,12 @@ def _source_review_value(writer, paths):
     return {
         "schema_version": 1,
         "artifact_kind": "subject-distillation-t001-source-review",
-        "implementation_base_commit": "git:24e1a126a1022a53480b7126f5f393dc0be85613",
-        "baseline_id": "5dd83dd8b3d3696a",
-        "baseline_full_digest": "5dd83dd8b3d3696ae4f33ac863af87f4baf569ac1ca5ea11014ad5919ae740e0",
+        "implementation_base_commit": "git:1eb4d0ef7209cf3f04c5d163561403e835311aeb",
+        "baseline_id": "0dc10cfc4a429662",
+        "baseline_full_digest": "0dc10cfc4a429662037f3bb7d6c42e10e7cc832b540f7aa8f4b9e0656e0e459b",
         "builder_principal": "agent:main-builder",
         "reviewer_principal": "agent:independent-reviewer",
-        "reviewed_at_utc": "2026-08-11T08:01:00Z",
+        "reviewed_at_utc": "2026-08-11T12:01:00Z",
         "immutable_outputs": writer._immutable_entries(paths),
         "authorization": {
             "environment_path": environment_path,
@@ -1603,7 +1707,7 @@ def test_source_review_packet_is_closed_and_review_id_is_derived(tmp_path: Path)
     review_id, proof, reviewed_at = writer._source_review(paths, packet)
     assert review_id == hashlib.sha256(packet.read_bytes()).hexdigest()
     assert proof["authorization_id"]
-    assert reviewed_at == datetime(2026, 8, 11, 8, 1, 0, tzinfo=timezone.utc)
+    assert reviewed_at == datetime(2026, 8, 11, 12, 1, 0, tzinfo=timezone.utc)
 
 
 @pytest.mark.parametrize(
@@ -1689,9 +1793,9 @@ def test_source_review_guard_retains_manifest_normative_trust_and_source_set(
     progress_path.chmod(0o644)
     packet = tmp_path / "source-review.json"
     packet_value = {
-        "baseline_id": "5dd83dd8b3d3696a",
+        "baseline_id": "0dc10cfc4a429662",
         "baseline_full_digest": (
-            "5dd83dd8b3d3696ae4f33ac863af87f4baf569ac1ca5ea11014ad5919ae740e0"
+            "0dc10cfc4a429662037f3bb7d6c42e10e7cc832b540f7aa8f4b9e0656e0e459b"
         ),
     }
     _write_packet(writer, packet, packet_value)
@@ -1794,7 +1898,7 @@ def test_t001_completion_consumes_packet_and_exact_sixteen_refs(tmp_path: Path) 
     environment = json.loads(
         (
             REPO_ROOT
-            / "specs/subject-distillation/evidence/5dd83dd8b3d3696a/environment.json"
+            / "specs/subject-distillation/evidence/0dc10cfc4a429662/environment.json"
         ).read_text()
     )
     refs = writer._immutable_entries(paths)
@@ -1807,7 +1911,7 @@ def test_t001_completion_consumes_packet_and_exact_sixteen_refs(tmp_path: Path) 
     result = writer.transition(
         paths,
         writer.Runtime(
-            now=lambda: datetime(2026, 8, 11, 8, 2, 0, tzinfo=timezone.utc)
+            now=lambda: datetime(2026, 8, 11, 12, 2, 0, tzinfo=timezone.utc)
         ),
         task="T-001",
         expected="IN_PROGRESS",
@@ -1835,7 +1939,7 @@ def test_t001_completion_time_is_not_before_source_review(tmp_path: Path) -> Non
     environment = json.loads(
         (
             REPO_ROOT
-            / "specs/subject-distillation/evidence/5dd83dd8b3d3696a/environment.json"
+            / "specs/subject-distillation/evidence/0dc10cfc4a429662/environment.json"
         ).read_text()
     )
     repo_refs = [
@@ -1869,7 +1973,7 @@ def test_t001_completion_rejects_arbitrary_review_id(tmp_path: Path) -> None:
     packet = tmp_path / "source-review.json"
     _write_packet(writer, packet, value)
     environment = json.loads(
-        (REPO_ROOT / "specs/subject-distillation/evidence/5dd83dd8b3d3696a/environment.json").read_text()
+        (REPO_ROOT / "specs/subject-distillation/evidence/0dc10cfc4a429662/environment.json").read_text()
     )
     repo_refs = [
         f"{item['path']}={item['sha256']}" for item in writer._immutable_entries(paths)

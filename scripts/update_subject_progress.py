@@ -31,7 +31,7 @@ ERROR_TEXT = "SUBJECT_PROGRESS_ERROR\n"
 PENDING_NAME = ".implementation-progress.pending"
 T001_PATHS = tuple(
     sorted(
-        path.format(baseline_id="5dd83dd8b3d3696a")
+        path.format(baseline_id="0dc10cfc4a429662")
         for path in authorization_runner.T001_PATHS
         if not path.endswith("implementation-progress.json")
         and not path.endswith(PENDING_NAME)
@@ -100,7 +100,7 @@ class SourceReviewGuard:
         for parent, name, before in handle.chain:
             current = os.stat(name, dir_fd=parent, follow_symlinks=False)
             current_identity = authorization_runner.verifier._identity(current)
-            if before[:3] == self.subject_directory.identity[:3]:
+            if stat.S_ISDIR(current.st_mode):
                 if current_identity[:3] != before[:3]:
                     raise Denied
             elif current_identity != before:
@@ -851,7 +851,7 @@ def _source_review(
         type(value["schema_version"]) is not int
         or value["schema_version"] != 1
         or value["artifact_kind"] != "subject-distillation-t001-source-review"
-        or value["implementation_base_commit"] != "git:24e1a126a1022a53480b7126f5f393dc0be85613"
+        or value["implementation_base_commit"] != "git:1eb4d0ef7209cf3f04c5d163561403e835311aeb"
         or value["baseline_id"] != manifest["baseline_id"]
         or value["baseline_full_digest"] != manifest["full_digest"]
         or type(value["builder_principal"]) is not str

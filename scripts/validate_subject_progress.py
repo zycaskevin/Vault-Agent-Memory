@@ -49,6 +49,22 @@ PRIVATE_STDOUT_MAX = 85
 PRIVATE_STDERR_MAX = 96
 PRIVATE_CHILD_TIMEOUT_SECONDS = 300.0
 PRIVATE_CHILD_TERMINATE_GRACE_SECONDS = 5.0
+T001_COMPLETION_PATHS = (
+    "scripts/read_subject_baseline_id.py",
+    "scripts/update_subject_progress.py",
+    "scripts/validate_subject_evidence.py",
+    "scripts/validate_subject_progress.py",
+    "specs/subject-distillation/evidence-schemas/attestation.schema.json",
+    "specs/subject-distillation/evidence-schemas/backup-restore.schema.json",
+    "specs/subject-distillation/evidence-schemas/environment.schema.json",
+    "specs/subject-distillation/evidence-schemas/fresh-review.schema.json",
+    "specs/subject-distillation/evidence-schemas/migration.schema.json",
+    "specs/subject-distillation/evidence-schemas/review-result.schema.json",
+    "specs/subject-distillation/evidence/{baseline_id}/environment.json",
+    "specs/subject-distillation/implementation-progress.schema.json",
+    "tests/test_subject_baseline_control.py",
+    "tests/test_subject_progress.py",
+)
 
 
 Denied = evidence.Denied
@@ -765,10 +781,10 @@ def _final_gate(
     _private_gate(value, attestation, private_inputs, repo_root)
 
 
-def _authorization_recorded_at(
+def _authorization_context(
     repo_root: Path,
     manifest_result: dict[str, str],
-) -> datetime:
+) -> tuple[datetime, str]:
     manifest_path = repo_root / "specs/subject-distillation/baseline-manifest.json"
     manifest, current_result = evidence._manifest(repo_root, manifest_path)
     if current_result != manifest_result:
@@ -788,9 +804,42 @@ def _authorization_recorded_at(
         manifest,
         evidence._expected_schemas()["environment"],
     )
-    return evidence._timestamp(
-        environment["implementation_authorization"]["recorded_at_utc"]
+    proof = environment["implementation_authorization"]
+    return (
+        evidence._timestamp(proof["recorded_at_utc"]),
+        proof["authorization_id"],
     )
+
+
+def _validate_t001_completion_refs(
+    refs: list[Any], *, baseline_id: str, authorization_id: str
+) -> None:
+    expected_paths = tuple(
+        sorted(path.format(baseline_id=baseline_id) for path in T001_COMPLETION_PATHS)
+    )
+    repo_paths = tuple(
+        sorted(
+            item["path"]
+            for item in refs
+            if type(item) is dict and item.get("kind") == "repo_file"
+        )
+    )
+    opaque_ids = [
+        item["id"]
+        for item in refs
+        if type(item) is dict and item.get("kind") == "opaque"
+    ]
+    if repo_paths != expected_paths or len(opaque_ids) != 2:
+        raise Denied
+    if f"t001-authorization:{authorization_id}" not in opaque_ids:
+        raise Denied
+    review_ids = [
+        value
+        for value in opaque_ids
+        if re.fullmatch(r"t001-review:[0-9a-f]{64}", value) is not None
+    ]
+    if len(review_ids) != 1:
+        raise Denied
 
 
 def validate_value(
@@ -828,7 +877,9 @@ def validate_value(
     events = value["events"]
     if type(events) is not list or not events or len(events) > 4_096:
         raise Denied
-    authorization_recorded_at = _authorization_recorded_at(repo_root, manifest_result)
+    authorization_recorded_at, authorization_id = _authorization_context(
+        repo_root, manifest_result
+    )
     states = {task: "PENDING" for task in TASK_IDS}
     previous_time = None
     for sequence, event in enumerate(events, 1):
@@ -856,6 +907,12 @@ def validate_value(
             raise Denied
         for item in refs:
             _validate_ref(repo_root, item)
+        if task_id == "T-001" and after == "COMPLETED":
+            _validate_t001_completion_refs(
+                refs,
+                baseline_id=manifest_result["baseline_id"],
+                authorization_id=authorization_id,
+            )
         if after == "BLOCKED":
             if type(event["blocker"]) is not str or BLOCKER.fullmatch(event["blocker"]) is None:
                 raise Denied

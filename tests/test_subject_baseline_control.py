@@ -14,7 +14,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PYTHON = sys.executable
 MANIFEST = REPO_ROOT / "specs/subject-distillation/baseline-manifest.json"
-EVIDENCE_DIR = REPO_ROOT / "specs/subject-distillation/evidence/5dd83dd8b3d3696a"
+EVIDENCE_DIR = REPO_ROOT / "specs/subject-distillation/evidence/0dc10cfc4a429662"
 READER = REPO_ROOT / "scripts/read_subject_baseline_id.py"
 VALIDATOR = REPO_ROOT / "scripts/validate_subject_evidence.py"
 SCHEMA_DIR = REPO_ROOT / "specs/subject-distillation/evidence-schemas"
@@ -73,7 +73,7 @@ def test_t001_control_plane_artifacts_exist_with_expected_modes() -> None:
 def test_baseline_reader_accepts_exact_manifest() -> None:
     result = _run(str(READER), "--manifest", str(MANIFEST))
     assert result.returncode == 0
-    assert result.stdout == b"5dd83dd8b3d3696a\n"
+    assert result.stdout == b"0dc10cfc4a429662\n"
     assert result.stderr == b""
 
 
@@ -169,7 +169,7 @@ def test_environment_evidence_reconstructs_authorization_packet() -> None:
     assert result.stderr == b""
     payload = json.loads(result.stdout)
     assert payload == {
-        "baseline_id": "5dd83dd8b3d3696a",
+        "baseline_id": "0dc10cfc4a429662",
         "status": "PASS",
         "validated": ["environment"],
     }
@@ -297,8 +297,8 @@ def _semantic_common(kind: str, producer: str) -> dict[str, object]:
     return {
         "schema_version": 1,
         "artifact_kind": kind,
-        "baseline_id": "5dd83dd8b3d3696a",
-        "source_commit": "git:24e1a126a1022a53480b7126f5f393dc0be85613",
+        "baseline_id": "0dc10cfc4a429662",
+        "source_commit": "git:1eb4d0ef7209cf3f04c5d163561403e835311aeb",
         "created_at_utc": "2026-08-10T00:00:00Z",
         "producer_task": producer,
     }
@@ -552,7 +552,7 @@ def test_attestation_semantic_contract_matrix(tmp_path: Path, monkeypatch) -> No
                 f"artifact:{path}".encode()
             ).hexdigest(),
         }
-        for path in validator._attestation_paths("5dd83dd8b3d3696a")
+        for path in validator._attestation_paths("0dc10cfc4a429662")
     ]
     reviewer_set = [
         {
@@ -572,7 +572,7 @@ def test_attestation_semantic_contract_matrix(tmp_path: Path, monkeypatch) -> No
         "implementation_authorization": {
             "environment_path": (
                 "specs/subject-distillation/evidence/"
-                "5dd83dd8b3d3696a/environment.json"
+                "0dc10cfc4a429662/environment.json"
             ),
             "environment_sha256": hashlib.sha256(environment_raw).hexdigest(),
             "authorization_id": proof["authorization_id"],
@@ -668,8 +668,8 @@ def _stage_bytes(
     header = {
         "schema_version": 1,
         "artifact_kind": "subject-distillation-stage-evidence",
-        "baseline_id": "5dd83dd8b3d3696a",
-        "source_commit": "git:24e1a126a1022a53480b7126f5f393dc0be85613",
+        "baseline_id": "0dc10cfc4a429662",
+        "source_commit": "git:1eb4d0ef7209cf3f04c5d163561403e835311aeb",
         "created_at_utc": "2026-08-10T00:00:00Z",
         "producer_task": "T-029",
         "stage": stage,
@@ -769,7 +769,7 @@ def test_environment_schema_version_is_bound_to_authorized_base() -> None:
     assert (
         validator._schema_version_at_commit(
             REPO_ROOT,
-            "git:24e1a126a1022a53480b7126f5f393dc0be85613",
+            "git:1eb4d0ef7209cf3f04c5d163561403e835311aeb",
         )
         == 14
     )

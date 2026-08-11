@@ -75,7 +75,7 @@ REVIEW_FILES = {
     "security-privacy.json",
     "execution-traceability.json",
 }
-REVIEW_TASKS_SHA256 = "1dc2c8d9745e79788b5eef6131eebfd87c1bf70bc1aae0485ab304a5a72352fc"
+REVIEW_TASKS_SHA256 = "0150935a1a16e51dc30dff9dff8d01104d7127ee3cf57333caec7586d93f5007"
 REVIEW_LITERAL_PATHS = (
     "CHANGELOG.md",
     "README.md",
