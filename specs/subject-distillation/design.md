@@ -220,7 +220,51 @@ Public artifact／fixture可用plain SHA-256。涉及subject value、reason、pu
 
 Private-shadow release receipt把這個物理契約固定如下，producer與attester不得各自選格式。Duplicate-key-safe parse後先驗exact key set/type：non-Boolean integer `schema_version=1`、`artifact_kind="private-shadow-release"`、`verdict="PASS"`、bounded opaque `gate_version`、lowercase 64-hex `scorecard_sha256`／`manifest_sha256`、distinct bounded opaque `subject_controller_signoff_id`／`fresh_reviewer_signoff_id`、semantic UTC RFC3339 `created_at_utc`、bounded non-secret `key_id`（`^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$`）及lowercase 64-hex `receipt_hmac_sha256`；不接受其他key。`key_id`只從operator-private evaluation-verifier config選定exact HMAC key，receipt、repo及log不得含key。Domain separator是UTF-8/ASCII literal `vault-subject-private-shadow-release-v1`後接單一NUL byte `0x00`，即exact bytes `b"vault-subject-private-shadow-release-v1\x00"`。HMAC message唯一為`domain_separator_bytes || canonical_receipt_without_hmac_bytes`：從已exact-validated object只移除`receipt_hmac_sha256`，再用現有RFC8785-like project canonical JSON contract遞迴排序object keys、UTF-8編碼、移除insignificant whitespace並拒絕non-finite numbers；不加delimiter、length prefix或newline，也不含HMAC欄本身。Result為lowercase 64-hex HMAC-SHA256；verifier重建完全相同bytes並constant-time compare。完整public receipt SHA-256則取包含`receipt_hmac_sha256`之validated canonical receipt bytes。Key/config unavailable、unknown `key_id`、type/key/canonicalization錯誤或MAC mismatch一律fail closed；不得fallback plain SHA-256，亦未新增任何hash algorithm。
 
+`PRIVATE_SHADOW_VERIFIER_CONFIG` has one exact operator-private serialization.
+Its bytes are a single canonical JSON object with no trailing newline and no
+more than 65,536 bytes. Duplicate-key-safe parsing must produce exactly
+`{schema_version,artifact_kind,keys}` where `schema_version` is the non-Boolean
+integer `1`, `artifact_kind` is exactly
+`subject-distillation-private-shadow-verifier-config`, and `keys` is an array of
+1..64 entries strictly increasing by Unicode code-point `key_id`. Every entry
+is an exact `{key_id,hmac_sha256_key_hex}` object；`key_id` matches
+`^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$`, is unique, and
+`hmac_sha256_key_hex` is exactly 64 lowercase hexadecimal characters that
+decode to 32 bytes. The complete input must be byte-equal to the same canonical
+JSON core used by the receipt: recursively sort object keys, encode UTF-8, emit
+no insignificant whitespace, reject non-finite numbers, and append no newline.
+It is not an LF-canonical packet/file encoding. The config must be physically
+outside the repository, mode `0600`, link count one, a retained non-symlink regular file,
+and subject to the same full-chain no-follow identity audit as the other
+operator-private inputs. No key/config byte may enter argv、stdout、stderr、repo
+artifacts or logs. Missing、unknown、duplicate、unsorted、extra、non-canonical or
+malformed config and wrong key length/case all DENY.
+
+Stable finalization has two independent HMAC checks. The operator-private
+verifier recomputes the closed gate and receipt as already required；the
+repository attester separately parses the retained config/receipt descriptors,
+selects the one entry whose `key_id` byte-equals the receipt, decodes its exact
+32-byte key, reconstructs the fixed domain plus canonical
+receipt-without-HMAC message, and uses `hmac.compare_digest` on lowercase MAC
+text. It then hashes the complete canonical receipt and requires byte equality
+with both the child handoff digest and ledger opaque ref. A child PASS alone is
+never sufficient, and a normal SHA-256 comparison is never a substitute.
+
 T-033的`stable` completed branch不得只把receipt交給attester。Attester必須強制接收operator-private `SUBJECT_PRIVATE_EVAL_VERIFIER`、`PRIVATE_SHADOW_GATE_INPUT`、`PRIVATE_SHADOW_VERIFIER_CONFIG`、`PRIVATE_SHADOW_RELEASE_RECEIPT`四個輸入，以shell xtrace disabled執行唯一固定介面 `reopen-and-verify-release-receipt --gate-input <gate> --verifier-config <config> --release-receipt <receipt> --public-handoff-output -`。Operator-private verifier必須從closed gate重新計算canonical scorecard、所有threshold與兩個distinct signoff，重驗上述HMAC／完整receipt digest，且成功stdout只能是exactly one LF-terminated line `private-shadow-pass:<64 lowercase hex>`；任何失敗必須nonzero、stdout empty，stderr最多一個LF-terminated ASCII line、總長最多96 bytes，且只能是`private-shadow-error:<code>`，其中`code` exact allowlist為`missing-input|verifier-unavailable|unknown-key|invalid-private-input|recompute-mismatch|signoff-drift|threshold-drift|hmac-mismatch|receipt-digest-mismatch|internal-failure`。Attester還要把該digest與完整validated canonical receipt及ledger opaque ref比對後才可產生`stable`。任何missing input、unknown/unavailable verifier、unknown key、recompute mismatch、signoff/threshold drift或digest mismatch都DENY；repo與log不得記錄或echo private path、key、gate、full receipt或private result。Verifier executable由operator-private environment提供，本設計不宣稱repo內存在該executable。
+
+The child channel is bounded while it is read, not after an unbounded capture.
+The attester creates a new child process group, concurrently drains and
+multiplexes both pipes, reads at most 85 stdout bytes and 96 stderr bytes, and
+keeps only the bytes needed to validate the fixed public-safe channel. One
+monotonic deadline bounds the whole operation to exactly 300 seconds；activity
+on either pipe does not reset it and one blocked pipe cannot stall the other. A timeout, stdout byte
+86, or stderr byte 97 immediately enters fail-closed cleanup: terminate the
+whole process group, wait at most 5 seconds, force-kill any remainder, reap the
+child, discard captured private bytes, and emit only the existing fixed attester
+DENY/ERROR contract. `subprocess.run(..., capture_output=True)` or any equivalent
+unbounded pipe buffering is prohibited. Exact-boundary ALLOW and one-byte-over、
+timeout、descendant-holds-pipe and terminate-to-kill escalation fixtures are
+mandatory.
 
 Supported write contract的inline TEXT白名單只允許：stable/opaque ID、enum、UTC timestamp、bounded allowlisted code、non-sensitive public manifest SHA-256。`SubjectDomainService`對每個inline TEXT執行typed validator；DDL另外對所有安全敏感code／opaque locator施作長度、字元、enum、FK與state `CHECK`／trigger。Coverage/exclusion只用具名numeric counts；evaluation rule bodies只存SHA-256。`authority_scope`、`reason_code`、`source_ref`、assertion semantic/domain、relationship role/state、alias purpose與payload object ref均不得接受raw quote、自由文字reason、姓名、聯絡資料、絕對路徑或subject value；需要自由文字時必須走`subject_payload_objects`。T-028同時驗service boundary與DDL已聲明的physical invariants，不宣稱SQLite本身是完整UUID/RFC3339 parser。
 
@@ -1376,6 +1420,21 @@ requires a validator-valid COMPLETED ledger with the same
 `source_review_sha256`. Commit/tree readback must reproduce all entries and
 modes. Required CI must be green for the preliminary packet before completion,
 and then for the completed packet before merge.
+
+The T-001 progress test source is immutable between those two CI gates and is
+therefore phase-aware by construction. Its fixed-repository integration case
+duplicate-key-safely reads and validates the current ledger, then accepts only
+one of two complete shapes: the sequence-1 seed (`T-001=IN_PROGRESS`, all later
+tasks `PENDING`, exact first event) or sequence-2 completion (`T-001=COMPLETED`,
+all later tasks `PENDING`, exact first and completion events with the required
+16 refs). It derives the expected validator sequence from the validated event
+count, never from a hard-coded delivery phase. Tests that mutate seed time or
+seed state operate on a writer-created temporary seed or reconstruct an exact
+one-event projection by truncating to the first event, restoring the task map
+to that event's resulting state, and setting `updated_at_utc` to that event.
+They never mutate the live completed ledger into an internally inconsistent
+hybrid. Any third repository-ledger sequence/state shape DENYs, and neither CI
+phase may skip the progress suite.
 
 The writer has two exact JSON-output subcommands. `init` requires an absent
 fixed progress path and creates mode `0644`, sequence 1

@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--contract-gap.txt",
+      "output": "terminal--contract-gap.txt",
+      "source_sha256": "fdd5d762d919a0a202e9e363a8fb18f93aab7442d975757550b3822eb34119fe",
+      "output_sha256": "fdd5d762d919a0a202e9e363a8fb18f93aab7442d975757550b3822eb34119fe",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--contract-green-v2.txt",
+      "output": "terminal--contract-green-v2.txt",
+      "source_sha256": "ae4cb00cf42b92bf23216d4719aa2a5fa6f3541c9902ba0477b93fa645c9e10b",
+      "output_sha256": "ae4cb00cf42b92bf23216d4719aa2a5fa6f3541c9902ba0477b93fa645c9e10b",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--contract-green.txt",
+      "output": "terminal--contract-green.txt",
+      "source_sha256": "0c70c040586d361b275f3c010ae569c952aae87fcba7364fcc07211d865cd2fa",
+      "output_sha256": "0c70c040586d361b275f3c010ae569c952aae87fcba7364fcc07211d865cd2fa",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--contract-proof.txt",
+      "output": "terminal--contract-proof.txt",
+      "source_sha256": "22277fe9af1aad4f23be05263b2ea56c6ab2aa2016fbc36d0247871cc49b0104",
+      "output_sha256": "22277fe9af1aad4f23be05263b2ea56c6ab2aa2016fbc36d0247871cc49b0104",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-T001-HMAC-CONTRACT-001",
+  "generated_at": "2026-08-10T11:03:18Z"
+}
