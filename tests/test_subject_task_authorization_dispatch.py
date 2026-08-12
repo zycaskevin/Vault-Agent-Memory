@@ -135,7 +135,7 @@ def test_public_cli_dependency_bootstrap_faults_are_fixed_and_no_echo(
             "raise RuntimeError('private-marker-bootstrap')\n", encoding="utf-8"
         )
     result = subprocess.run(
-        [sys.executable, os.fspath(isolated / script), *argv],
+        [sys.executable, "-S", os.fspath(isolated / script), *argv],
         cwd=isolated,
         capture_output=True,
         check=False,
