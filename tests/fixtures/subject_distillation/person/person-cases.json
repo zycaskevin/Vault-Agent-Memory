@@ -1,0 +1,366 @@
+{
+  "artifact_kind": "subject-distillation-synthetic-fixtures",
+  "cases": [
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": false,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "preference_modeling"
+      },
+      "fixture_id": "synthetic-e-p-001",
+      "planned_tests": [
+        "tests/test_subject_assertions.py",
+        "tests/test_subject_auth.py",
+        "tests/test_subject_context.py",
+        "tests/test_subject_policy.py"
+      ],
+      "scenario": "A fabricated subject explicitly confirms a preference for concise task reports through an authorized action.",
+      "sbe_id": "E-P-001",
+      "source_locator": "synthetic://subject-distillation/e-p-001",
+      "subject_ref": "subject:synthetic:person-001",
+      "synthetic": true,
+      "title": "Explicit preference remains explicit"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "decision_governance"
+      },
+      "fixture_id": "synthetic-e-p-002",
+      "planned_tests": [
+        "tests/test_subject_assertions.py",
+        "tests/test_subject_decisions.py"
+      ],
+      "scenario": "A temporary budget limit explains one fabricated low-cost choice and must not become a stable preference.",
+      "sbe_id": "E-P-002",
+      "source_locator": "synthetic://subject-distillation/e-p-002",
+      "subject_ref": "subject:synthetic:person-002",
+      "synthetic": true,
+      "title": "Constraint is not mislearned as preference"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": true,
+        "primary_domain": "preference_modeling"
+      },
+      "fixture_id": "synthetic-e-p-003",
+      "planned_tests": [
+        "tests/test_subject_assertions.py",
+        "tests/test_subject_models.py"
+      ],
+      "scenario": "Three synthetic speed-first choices conflict with one high-stakes customization choice and remain qualified.",
+      "sbe_id": "E-P-003",
+      "source_locator": "synthetic://subject-distillation/e-p-003",
+      "subject_ref": "subject:synthetic:person-003",
+      "synthetic": true,
+      "title": "Repeated behavior with counter-evidence stays calibrated"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": true,
+        "contains_counter_evidence": true,
+        "primary_domain": "preference_modeling"
+      },
+      "fixture_id": "synthetic-e-p-004",
+      "planned_tests": [
+        "tests/test_subject_assertions.py",
+        "tests/test_subject_models.py"
+      ],
+      "scenario": "A fabricated subject corrects an old speaking hypothesis by separating preparation limits from future goals.",
+      "sbe_id": "E-P-004",
+      "source_locator": "synthetic://subject-distillation/e-p-004",
+      "subject_ref": "subject:synthetic:person-004",
+      "synthetic": true,
+      "title": "Subject correction supersedes old inference"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": false,
+        "contains_correction": true,
+        "contains_counter_evidence": true,
+        "primary_domain": "preference_modeling"
+      },
+      "fixture_id": "synthetic-e-p-005",
+      "planned_tests": [
+        "tests/test_subject_context.py",
+        "tests/test_subject_models.py"
+      ],
+      "scenario": "Synthetic postponement observations coexist with an explicit goal of becoming more consistent.",
+      "sbe_id": "E-P-005",
+      "source_locator": "synthetic://subject-distillation/e-p-005",
+      "subject_ref": "subject:synthetic:person-005",
+      "synthetic": true,
+      "title": "Present pattern and desired direction remain separate"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "context_access"
+      },
+      "fixture_id": "synthetic-e-p-006",
+      "planned_tests": [
+        "tests/test_subject_context.py",
+        "tests/test_subject_grants.py"
+      ],
+      "scenario": "Synthetic schedule and finance agents receive distinct purpose-limited Context Packs for one subject.",
+      "sbe_id": "E-P-006",
+      "source_locator": "synthetic://subject-distillation/e-p-006",
+      "subject_ref": "subject:synthetic:person-006",
+      "synthetic": true,
+      "title": "Purpose-limited Context Packs"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "context_access"
+      },
+      "fixture_id": "synthetic-e-p-007",
+      "planned_tests": [
+        "tests/test_subject_context.py",
+        "tests/test_subject_grants.py"
+      ],
+      "scenario": "A fabricated revoked grant prevents all later protected retrieval while retaining bounded audit metadata.",
+      "sbe_id": "E-P-007",
+      "source_locator": "synthetic://subject-distillation/e-p-007",
+      "subject_ref": "subject:synthetic:person-007",
+      "synthetic": true,
+      "title": "Revoked access fails closed"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": true,
+        "contains_counter_evidence": true,
+        "primary_domain": "decision_governance"
+      },
+      "fixture_id": "synthetic-e-p-008",
+      "planned_tests": [
+        "tests/test_subject_decisions.py",
+        "tests/test_subject_models.py"
+      ],
+      "scenario": "A synthetic new constraint changes the actual choice without rewriting the earlier prediction.",
+      "sbe_id": "E-P-008",
+      "source_locator": "synthetic://subject-distillation/e-p-008",
+      "subject_ref": "subject:synthetic:person-008",
+      "synthetic": true,
+      "title": "Outcome feedback updates confidence, not history"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "decision_governance"
+      },
+      "fixture_id": "synthetic-e-p-009",
+      "planned_tests": [
+        "tests/test_subject_context.py",
+        "tests/test_subject_grants.py",
+        "tests/test_subject_policy.py"
+      ],
+      "scenario": "A fabricated irreversible decision stays advisory even when historical preference confidence is high.",
+      "sbe_id": "E-P-009",
+      "source_locator": "synthetic://subject-distillation/e-p-009",
+      "subject_ref": "subject:synthetic:person-009",
+      "synthetic": true,
+      "title": "High-stakes decision remains advisory"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": false,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "identity_authority"
+      },
+      "fixture_id": "synthetic-e-p-010",
+      "planned_tests": [
+        "tests/test_subject_assertions.py",
+        "tests/test_subject_auth.py",
+        "tests/test_subject_policy.py"
+      ],
+      "scenario": "A synthetic controller statement remains controller-attested until an authorized subject action confirms it.",
+      "sbe_id": "E-P-010",
+      "source_locator": "synthetic://subject-distillation/e-p-010",
+      "subject_ref": "subject:synthetic:person-010",
+      "synthetic": true,
+      "title": "Controller testimony does not impersonate the subject"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": false,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "decision_governance"
+      },
+      "fixture_id": "synthetic-e-p-011",
+      "planned_tests": [
+        "tests/test_subject_candidates.py",
+        "tests/test_subject_decisions.py"
+      ],
+      "scenario": "A fabricated agent observation creates only a decision candidate until a separately authorized source confirms it.",
+      "sbe_id": "E-P-011",
+      "source_locator": "synthetic://subject-distillation/e-p-011",
+      "subject_ref": "subject:synthetic:person-011",
+      "synthetic": true,
+      "title": "Agent observation enters as a decision candidate"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": false,
+        "contains_correction": true,
+        "contains_counter_evidence": true,
+        "primary_domain": "decision_governance"
+      },
+      "fixture_id": "synthetic-e-p-012",
+      "planned_tests": [
+        "tests/test_subject_decisions.py"
+      ],
+      "scenario": "A synthetic sourced outcome appends to an episode while the original recommendation remains unchanged.",
+      "sbe_id": "E-P-012",
+      "source_locator": "synthetic://subject-distillation/e-p-012",
+      "subject_ref": "subject:synthetic:person-012",
+      "synthetic": true,
+      "title": "Later outcome appends without rewriting prediction"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": true,
+        "contains_counter_evidence": false,
+        "primary_domain": "relationships_fragments"
+      },
+      "fixture_id": "synthetic-e-p-013",
+      "planned_tests": [
+        "tests/test_subject_relationships.py"
+      ],
+      "scenario": "A fabricated spouse edge becomes historical while the stable counterparty and co-parent role remain intact.",
+      "sbe_id": "E-P-013",
+      "source_locator": "synthetic://subject-distillation/e-p-013",
+      "subject_ref": "subject:synthetic:person-013",
+      "synthetic": true,
+      "title": "Relationship role changes without identity loss"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": true,
+        "contains_counter_evidence": false,
+        "primary_domain": "relationships_fragments"
+      },
+      "fixture_id": "synthetic-e-p-014",
+      "planned_tests": [
+        "tests/test_subject_context.py",
+        "tests/test_subject_relationships.py"
+      ],
+      "scenario": "A fabricated private alias can change or disappear without changing the stable counterparty reference.",
+      "sbe_id": "E-P-014",
+      "source_locator": "synthetic://subject-distillation/e-p-014",
+      "subject_ref": "subject:synthetic:person-014",
+      "synthetic": true,
+      "title": "Alias supports recognition without becoming identity"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": true,
+        "primary_domain": "relationships_fragments"
+      },
+      "fixture_id": "synthetic-e-p-015",
+      "planned_tests": [
+        "tests/test_subject_fragments.py",
+        "tests/test_subject_relationships.py"
+      ],
+      "scenario": "A synthetic local perspective and conflicting explicit fragment remain separately typed and conflict-visible.",
+      "sbe_id": "E-P-015",
+      "source_locator": "synthetic://subject-distillation/e-p-015",
+      "subject_ref": "subject:synthetic:person-015",
+      "synthetic": true,
+      "title": "Perspective model and counterparty self-fragment coexist"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "identity_authority"
+      },
+      "fixture_id": "synthetic-e-p-016",
+      "planned_tests": [
+        "tests/test_subject_setup.py"
+      ],
+      "scenario": "A fabricated new installation creates a default-private root subject without accessing historical sources.",
+      "sbe_id": "E-P-016",
+      "source_locator": "synthetic://subject-distillation/e-p-016",
+      "subject_ref": "subject:synthetic:person-016",
+      "synthetic": true,
+      "title": "New installation starts with a safe root subject"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": true,
+        "contains_counter_evidence": true,
+        "primary_domain": "evaluation_release"
+      },
+      "fixture_id": "synthetic-e-p-017",
+      "planned_tests": [
+        "tests/test_subject_evaluation.py"
+      ],
+      "scenario": "A fabricated preregistered shadow gate meets its balanced-domain and safety thresholds without granting action authority.",
+      "sbe_id": "E-P-017",
+      "source_locator": "synthetic://subject-distillation/e-p-017",
+      "subject_ref": "subject:synthetic:person-017",
+      "synthetic": true,
+      "title": "Balanced shadow gate passes with preregistered evidence"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "evaluation_release"
+      },
+      "fixture_id": "synthetic-e-p-018",
+      "planned_tests": [
+        "tests/test_subject_evaluation.py"
+      ],
+      "scenario": "A synthetic 25-case pilot uses all eligible rows and scales each aggregate threshold to twenty.",
+      "sbe_id": "E-P-018",
+      "source_locator": "synthetic://subject-distillation/e-p-018",
+      "subject_ref": "subject:synthetic:person-018",
+      "synthetic": true,
+      "title": "Larger pilots scale every aggregate denominator"
+    }
+  ],
+  "schema_version": 1,
+  "synthetic_only": true
+}

@@ -1,0 +1,239 @@
+{
+  "artifact_kind": "subject-distillation-synthetic-fixtures",
+  "cases": [
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": false,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "preference_modeling"
+      },
+      "fixture_id": "synthetic-e-f-001",
+      "planned_tests": [
+        "tests/test_subject_assertions.py",
+        "tests/test_subject_models.py"
+      ],
+      "scenario": "One fabricated ambiguous observation yields unknown instead of a stable preference assertion.",
+      "sbe_id": "E-F-001",
+      "source_locator": "synthetic://subject-distillation/e-f-001",
+      "subject_ref": "subject:synthetic:migration-001",
+      "synthetic": true,
+      "title": "Insufficient evidence returns unknown"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "migration_compatibility"
+      },
+      "fixture_id": "synthetic-e-f-003",
+      "planned_tests": [
+        "tests/test_subject_migration.py"
+      ],
+      "scenario": "A fabricated legacy Vault stays usable and uninitialized after a Subject-capable package opens it.",
+      "sbe_id": "E-F-003",
+      "source_locator": "synthetic://subject-distillation/e-f-003",
+      "subject_ref": "subject:synthetic:migration-003",
+      "synthetic": true,
+      "title": "Legacy Vault remains valid"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "migration_compatibility"
+      },
+      "fixture_id": "synthetic-e-f-004",
+      "planned_tests": [
+        "tests/test_subject_db_schema.py",
+        "tests/test_subject_organization_contract.py"
+      ],
+      "scenario": "A fabricated organization fixture fits the generic contract without requiring person-only core fields.",
+      "sbe_id": "E-F-004",
+      "source_locator": "synthetic://subject-distillation/e-f-004",
+      "subject_ref": "subject:synthetic:migration-004",
+      "synthetic": true,
+      "title": "Generic schema accepts organization fixtures"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "evaluation_release"
+      },
+      "fixture_id": "synthetic-e-f-006",
+      "planned_tests": [
+        "tests/test_subject_evaluation.py"
+      ],
+      "scenario": "Passing only fabricated deterministic cases keeps the feature experimental until private shadow evidence exists.",
+      "sbe_id": "E-F-006",
+      "source_locator": "synthetic://subject-distillation/e-f-006",
+      "subject_ref": "subject:synthetic:migration-006",
+      "synthetic": true,
+      "title": "Synthetic success alone remains experimental"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "migration_compatibility"
+      },
+      "fixture_id": "synthetic-e-f-008",
+      "planned_tests": [
+        "tests/test_subject_migration.py",
+        "tests/test_subject_setup.py"
+      ],
+      "scenario": "A fabricated upgraded legacy project remains available-uninitialized and never infers a person from old data.",
+      "sbe_id": "E-F-008",
+      "source_locator": "synthetic://subject-distillation/e-f-008",
+      "subject_ref": "subject:synthetic:migration-008",
+      "synthetic": true,
+      "title": "Existing Vault upgrade does not infer a person"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": false,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "migration_compatibility"
+      },
+      "fixture_id": "synthetic-e-f-014",
+      "planned_tests": [
+        "tests/test_subject_migration.py"
+      ],
+      "scenario": "Running a fabricated Subject migration twice yields the same state without duplicate governed records.",
+      "sbe_id": "E-F-014",
+      "source_locator": "synthetic://subject-distillation/e-f-014",
+      "subject_ref": "subject:synthetic:migration-014",
+      "synthetic": true,
+      "title": "Subject migration is idempotent"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "migration_compatibility"
+      },
+      "fixture_id": "synthetic-e-f-015",
+      "planned_tests": [
+        "tests/test_subject_migration.py"
+      ],
+      "scenario": "A synthetic injected migration fault leaves no partial initialized state and preserves legacy readability.",
+      "sbe_id": "E-F-015",
+      "source_locator": "synthetic://subject-distillation/e-f-015",
+      "subject_ref": "subject:synthetic:migration-015",
+      "synthetic": true,
+      "title": "Interrupted migration fails safely"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": true,
+        "contains_counter_evidence": false,
+        "primary_domain": "migration_compatibility"
+      },
+      "fixture_id": "synthetic-e-f-016",
+      "planned_tests": [
+        "tests/test_db_backup.py",
+        "tests/test_subject_migration.py"
+      ],
+      "scenario": "A fabricated verified backup restores a usable legacy project without leaking Subject state.",
+      "sbe_id": "E-F-016",
+      "source_locator": "synthetic://subject-distillation/e-f-016",
+      "subject_ref": "subject:synthetic:migration-016",
+      "synthetic": true,
+      "title": "Backup rollback restores a usable legacy Vault"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": true,
+        "primary_domain": "evaluation_release"
+      },
+      "fixture_id": "synthetic-e-f-017",
+      "planned_tests": [
+        "tests/test_subject_evaluation.py"
+      ],
+      "scenario": "A synthetic pilot with strong aggregate utility still fails because one preregistered domain is weak.",
+      "sbe_id": "E-F-017",
+      "source_locator": "synthetic://subject-distillation/e-f-017",
+      "subject_ref": "subject:synthetic:migration-017",
+      "synthetic": true,
+      "title": "Aggregate success cannot hide a weak domain"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": true,
+        "contains_counter_evidence": true,
+        "primary_domain": "evaluation_release"
+      },
+      "fixture_id": "synthetic-e-f-018",
+      "planned_tests": [
+        "tests/test_subject_evaluation.py"
+      ],
+      "scenario": "A fabricated post-hoc threshold proposal applies only to a new pilot and never rewrites the frozen failure.",
+      "sbe_id": "E-F-018",
+      "source_locator": "synthetic://subject-distillation/e-f-018",
+      "subject_ref": "subject:synthetic:migration-018",
+      "synthetic": true,
+      "title": "Post-hoc threshold changes apply only to a later pilot"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": true,
+        "primary_domain": "evaluation_release"
+      },
+      "fixture_id": "synthetic-e-f-019",
+      "planned_tests": [
+        "tests/test_subject_evaluation.py"
+      ],
+      "scenario": "One fabricated safety failure overrides every otherwise passing utility score and sign-off.",
+      "sbe_id": "E-F-019",
+      "source_locator": "synthetic://subject-distillation/e-f-019",
+      "subject_ref": "subject:synthetic:migration-019",
+      "synthetic": true,
+      "title": "A hard failure overrides all utility scores"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": false,
+        "contains_correction": true,
+        "contains_counter_evidence": true,
+        "primary_domain": "evaluation_release"
+      },
+      "fixture_id": "synthetic-e-f-020",
+      "planned_tests": [
+        "tests/test_subject_evaluation.py"
+      ],
+      "scenario": "A synthetic correct choice with a rejected rationale scores choice and reason alignment separately.",
+      "sbe_id": "E-F-020",
+      "source_locator": "synthetic://subject-distillation/e-f-020",
+      "subject_ref": "subject:synthetic:migration-020",
+      "synthetic": true,
+      "title": "Correct choice with wrong rationale is scored separately"
+    }
+  ],
+  "schema_version": 1,
+  "synthetic_only": true
+}

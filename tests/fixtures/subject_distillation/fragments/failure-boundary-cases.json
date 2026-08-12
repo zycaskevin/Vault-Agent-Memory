@@ -1,0 +1,165 @@
+{
+  "artifact_kind": "subject-distillation-synthetic-fixtures",
+  "cases": [
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "context_access"
+      },
+      "fixture_id": "synthetic-e-f-002",
+      "planned_tests": [
+        "tests/test_subject_context.py",
+        "tests/test_subject_evidence.py"
+      ],
+      "scenario": "A fabricated inaccessible source yields unavailable evidence instead of invented or disclosed content.",
+      "sbe_id": "E-F-002",
+      "source_locator": "synthetic://subject-distillation/e-f-002",
+      "subject_ref": "subject:synthetic:fragment-002",
+      "synthetic": true,
+      "title": "Unavailable source prevents overclaim"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": true,
+        "primary_domain": "preference_modeling"
+      },
+      "fixture_id": "synthetic-e-f-005",
+      "planned_tests": [
+        "tests/test_subject_assertions.py",
+        "tests/test_subject_evidence.py",
+        "tests/test_subject_models.py"
+      ],
+      "scenario": "A deleted fabricated pointer source remains auditable as unavailable and reduces evidence coverage.",
+      "sbe_id": "E-F-005",
+      "source_locator": "synthetic://subject-distillation/e-f-005",
+      "subject_ref": "subject:synthetic:fragment-005",
+      "synthetic": true,
+      "title": "Missing pointer source degrades verifiability"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": true,
+        "contains_counter_evidence": false,
+        "primary_domain": "relationships_fragments"
+      },
+      "fixture_id": "synthetic-e-f-007",
+      "planned_tests": [
+        "tests/test_subject_fragments.py"
+      ],
+      "scenario": "A verifiably revoked synthetic fragment becomes inactive without rewriting local perspective assertions.",
+      "sbe_id": "E-F-007",
+      "source_locator": "synthetic://subject-distillation/e-f-007",
+      "subject_ref": "subject:synthetic:fragment-007",
+      "synthetic": true,
+      "title": "Revoked shared fragment stops future disclosure"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "identity_authority"
+      },
+      "fixture_id": "synthetic-e-f-009",
+      "planned_tests": [
+        "tests/test_subject_assertions.py",
+        "tests/test_subject_candidates.py",
+        "tests/test_subject_policy.py"
+      ],
+      "scenario": "A fabricated relayed first-person quote remains third-party reported until authenticated confirmation.",
+      "sbe_id": "E-F-009",
+      "source_locator": "synthetic://subject-distillation/e-f-009",
+      "subject_ref": "subject:synthetic:fragment-009",
+      "synthetic": true,
+      "title": "Relayed first-person quote is not an explicit self-statement"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "identity_authority"
+      },
+      "fixture_id": "synthetic-e-f-010",
+      "planned_tests": [
+        "tests/test_subject_fragments.py"
+      ],
+      "scenario": "A synthetic fragment from an unauthorized issuer is rejected before any self-model content is used.",
+      "sbe_id": "E-F-010",
+      "source_locator": "synthetic://subject-distillation/e-f-010",
+      "subject_ref": "subject:synthetic:fragment-010",
+      "synthetic": true,
+      "title": "Unauthorized fragment issuer is rejected"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "relationships_fragments"
+      },
+      "fixture_id": "synthetic-e-f-011",
+      "planned_tests": [
+        "tests/test_subject_fragments.py"
+      ],
+      "scenario": "A valid synthetic fragment addressed to another counterparty cannot attach to the local relationship.",
+      "sbe_id": "E-F-011",
+      "source_locator": "synthetic://subject-distillation/e-f-011",
+      "subject_ref": "subject:synthetic:fragment-011",
+      "synthetic": true,
+      "title": "Mismatched counterparty binding is rejected"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": true,
+        "primary_domain": "relationships_fragments"
+      },
+      "fixture_id": "synthetic-e-f-012",
+      "planned_tests": [
+        "tests/test_subject_fragments.py"
+      ],
+      "scenario": "A fabricated revocation with a mismatched fingerprint is rejected without mutating prior lifecycle state.",
+      "sbe_id": "E-F-012",
+      "source_locator": "synthetic://subject-distillation/e-f-012",
+      "subject_ref": "subject:synthetic:fragment-012",
+      "synthetic": true,
+      "title": "Unverifiable revocation does not mutate lifecycle state"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "context_access"
+      },
+      "fixture_id": "synthetic-e-f-013",
+      "planned_tests": [
+        "tests/test_subject_context.py",
+        "tests/test_subject_relationships.py"
+      ],
+      "scenario": "Synthetic primary-subject authorization exposes only minimized relationship data and never counterparty consent.",
+      "sbe_id": "E-F-013",
+      "source_locator": "synthetic://subject-distillation/e-f-013",
+      "subject_ref": "subject:synthetic:fragment-013",
+      "synthetic": true,
+      "title": "Primary-subject consent cannot disclose counterparty data"
+    }
+  ],
+  "schema_version": 1,
+  "synthetic_only": true
+}
