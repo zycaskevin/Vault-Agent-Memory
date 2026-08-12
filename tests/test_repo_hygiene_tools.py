@@ -90,9 +90,22 @@ def test_subject_progress_ci_separates_historical_and_current_phases():
         "            --manifest specs/subject-distillation/baseline-manifest.json"
     ) in test_job
     assert (
-        "python scripts/validate_subject_task_authorization_v2.py \\\n"
+        "python scripts/validate_subject_task_authorization_dispatch.py \\\n"
         "            --ledger"
     ) in test_job
+    trust_pins = {
+        "scripts/validate_subject_task_authorization_dispatch.py": "0e455b726ee09f35283f1975ad30a08d988a71ddc71efb0fd02fdba09a922f33",
+        "scripts/run_subject_task_authorization_v3.py": "7076d547be933c30e2e8321a3ee47799794137dfe295e6f09f558373cf959b8c",
+        "scripts/update_subject_task_progress_v3.py": "ef0cc8fe7e2fe27928160c28cb92821ac85dbe549acce3f3bf9e7a9528b969ab",
+        "scripts/validate_subject_task_authorization_v3.py": "1251ff4f35373ed8a5b54403f971fa54c3bc71b0b062f0caa939ed1415b2f01b",
+        "specs/subject-distillation/task-authorization-v3.contract.json": "9ff7ddceffdde6690fce4acf1b1f9d16f2d0f93412f5e5f55d94d118b7af5c5a",
+        "specs/subject-distillation/task-authorization-v3.schema.json": "f226e841e2e5442d9a2fe4443762764c984f409699d696e66cbe49aec79177df",
+        "specs/subject-distillation/task-scopes/T-003.json": "7bf80b0b2e0abf1a762663ca179361ef65d1bcaa5a2af373697f6a22dca1e359",
+    }
+    for path, digest in trust_pins.items():
+        assert f"{digest}  {path}" in test_job
+    assert "cat <<'EOF' | sha256sum -c -" in test_job
+    assert "validate_subject_task_authorization_v2.py \\\n" not in test_job
 
 
 def test_artifact_audit_classifies_safe_generated_cache(tmp_path: Path):

@@ -114,9 +114,18 @@ jobs:
             --tasks specs/subject-distillation/tasks.md \
             --progress specs/subject-distillation/implementation-progress.json
 
-      - name: Validate Subject task authorization v2 ledger overlay
+      - name: Validate active Subject task authorization ledger overlay
         run: |
-          python scripts/validate_subject_task_authorization_v2.py \
+          cat <<'EOF' | sha256sum -c -
+          0e455b726ee09f35283f1975ad30a08d988a71ddc71efb0fd02fdba09a922f33  scripts/validate_subject_task_authorization_dispatch.py
+          7076d547be933c30e2e8321a3ee47799794137dfe295e6f09f558373cf959b8c  scripts/run_subject_task_authorization_v3.py
+          ef0cc8fe7e2fe27928160c28cb92821ac85dbe549acce3f3bf9e7a9528b969ab  scripts/update_subject_task_progress_v3.py
+          1251ff4f35373ed8a5b54403f971fa54c3bc71b0b062f0caa939ed1415b2f01b  scripts/validate_subject_task_authorization_v3.py
+          9ff7ddceffdde6690fce4acf1b1f9d16f2d0f93412f5e5f55d94d118b7af5c5a  specs/subject-distillation/task-authorization-v3.contract.json
+          f226e841e2e5442d9a2fe4443762764c984f409699d696e66cbe49aec79177df  specs/subject-distillation/task-authorization-v3.schema.json
+          7bf80b0b2e0abf1a762663ca179361ef65d1bcaa5a2af373697f6a22dca1e359  specs/subject-distillation/task-scopes/T-003.json
+          EOF
+          python scripts/validate_subject_task_authorization_dispatch.py \
             --ledger \
             --json
 
