@@ -78,7 +78,7 @@ jobs:
           python -m pip install -e ".[dev]"
 
       - name: Run current-state tests
-        run: python -m pytest -q --ignore=tests/test_subject_progress.py
+        run: python -m pytest -q --ignore=tests/test_subject_progress.py --ignore=tests/test_subject_task_authorization_dispatch.py
 
       - name: Replay immutable T-001 progress controls at completion phase
         shell: bash
@@ -114,8 +114,20 @@ jobs:
             --tasks specs/subject-distillation/tasks.md \
             --progress specs/subject-distillation/implementation-progress.json
 
-      - name: Validate active Subject task authorization ledger overlay
+      - name: Replay immutable T-003 authorization checkpoint
+        shell: bash
+        env:
+          SUBJECT_T003_CHECKPOINT: f7aff39fecbc2fce7d612f396237afb0e094e460
         run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$SUBJECT_T003_CHECKPOINT" HEAD
+          replay_root="$RUNNER_TEMP/subject-t003-completion-${{ matrix.python-version }}"
+          cleanup() {
+            git worktree remove --force "$replay_root" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          git worktree add --detach "$replay_root" "$SUBJECT_T003_CHECKPOINT"
+          cd "$replay_root"
           cat <<'EOF' | sha256sum -c -
           0e455b726ee09f35283f1975ad30a08d988a71ddc71efb0fd02fdba09a922f33  scripts/validate_subject_task_authorization_dispatch.py
           7076d547be933c30e2e8321a3ee47799794137dfe295e6f09f558373cf959b8c  scripts/run_subject_task_authorization_v3.py
@@ -124,8 +136,31 @@ jobs:
           9ff7ddceffdde6690fce4acf1b1f9d16f2d0f93412f5e5f55d94d118b7af5c5a  specs/subject-distillation/task-authorization-v3.contract.json
           f226e841e2e5442d9a2fe4443762764c984f409699d696e66cbe49aec79177df  specs/subject-distillation/task-authorization-v3.schema.json
           7bf80b0b2e0abf1a762663ca179361ef65d1bcaa5a2af373697f6a22dca1e359  specs/subject-distillation/task-scopes/T-003.json
+          8601f9ff2b8475c6c9eda577cd27c26fe3c6665f3cf9ad9174dedb5975448616  tests/test_subject_task_authorization_dispatch.py
           EOF
+          PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider \
+            tests/test_subject_task_authorization_dispatch.py
           python scripts/validate_subject_task_authorization_dispatch.py \
+            --ledger \
+            --json
+
+      - name: Validate current Subject Development Mission v4 overlay
+        run: |
+          cat <<'EOF' | sha256sum -c -
+          055d1735befbc744262a5973c76d44a325f8619b85761d8b9c1fb68b124d23e7  scripts/run_subject_development_mission_v4.py
+          04c95a3158ceb60ac7250675a5b4385e92f0faecf69a1e995a668cba6a513306  scripts/update_subject_task_progress_v4.py
+          d5245ec373df5a70ee0a2e56d24b106056a800e62cdab05e0e9a693e0536b979  scripts/validate_subject_development_mission_v4.py
+          b54fb563730a152a6443c26c470f59ea8921e417e35fce2212d9eb15026e384c  scripts/validate_subject_task_authorization_dispatch_v4.py
+          e264da10e3b8e016eba78029307eaf1cefe6922b8f4172b29ce7ecc87bf411d3  specs/subject-distillation/development-mission-v4.contract.json
+          b561c8fb2c67bbf3f0360d535c287c6332b45098b846efc08fe1d5473397f06d  specs/subject-distillation/development-mission-v4.schema.json
+          3b0ae32a35af5ad4e5ef85558f612b6f2a78ba45b28b37fa2272337300b508c4  specs/subject-distillation/task-scope-manifest-v4.json
+          461ceca4a894d73c05414be7d0ba8f145b52cd1a4d2ab83b76e5ca62d3cbb499  docs/decision_records/2026-08-13-subject-development-mission-v4.md
+          7770e3fa0c441fda54adc112217afb8621e2104921d19217a30ead4af545e8c5  specs/subject-distillation/development-missions/README.md
+          2c847e9264e3c2dec9baa194cba1d995b162ba256b49fd8929f4111d892ca82d  tests/test_repo_hygiene_tools.py
+          03af99e1fd9519919bf835c86bd47740e6baea59274251153e51165debe50347  tests/test_subject_development_mission_v4.py
+          8b54f8c11aa748824483b5122c04aa28699bc0309c1a1eabc00d9fa3cecea3f0  tests/test_subject_task_authorization_dispatch_v4.py
+          EOF
+          python scripts/validate_subject_task_authorization_dispatch_v4.py \
             --ledger \
             --json
 
