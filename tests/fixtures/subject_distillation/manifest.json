@@ -1,0 +1,78 @@
+{
+  "artifact_kind": "subject-distillation-synthetic-fixture-manifest",
+  "files": [
+    {
+      "case_count": 8,
+      "path": "tests/fixtures/subject_distillation/fragments/failure-boundary-cases.json",
+      "sbe_ids": [
+        "E-F-002",
+        "E-F-005",
+        "E-F-007",
+        "E-F-009",
+        "E-F-010",
+        "E-F-011",
+        "E-F-012",
+        "E-F-013"
+      ],
+      "sha256": "63b60d163a16eea156597d5deb748d7ab6883e0ec018a6529703e4730577245d"
+    },
+    {
+      "case_count": 12,
+      "path": "tests/fixtures/subject_distillation/migration/migration-boundary-cases.json",
+      "sbe_ids": [
+        "E-F-001",
+        "E-F-003",
+        "E-F-004",
+        "E-F-006",
+        "E-F-008",
+        "E-F-014",
+        "E-F-015",
+        "E-F-016",
+        "E-F-017",
+        "E-F-018",
+        "E-F-019",
+        "E-F-020"
+      ],
+      "sha256": "93e50a98a21eb4122675954404f5d4cb6f06bc0ad8f76499cd9c8131f325c9f1"
+    },
+    {
+      "case_count": 5,
+      "path": "tests/fixtures/subject_distillation/organization/authority-boundary-cases.json",
+      "sbe_ids": [
+        "E-O-001",
+        "E-O-002",
+        "E-O-003",
+        "E-O-004",
+        "E-O-005"
+      ],
+      "sha256": "53457c485c17de8226731128779c5c833c9058deca4a582ffea97c45faff3aa8"
+    },
+    {
+      "case_count": 18,
+      "path": "tests/fixtures/subject_distillation/person/person-cases.json",
+      "sbe_ids": [
+        "E-P-001",
+        "E-P-002",
+        "E-P-003",
+        "E-P-004",
+        "E-P-005",
+        "E-P-006",
+        "E-P-007",
+        "E-P-008",
+        "E-P-009",
+        "E-P-010",
+        "E-P-011",
+        "E-P-012",
+        "E-P-013",
+        "E-P-014",
+        "E-P-015",
+        "E-P-016",
+        "E-P-017",
+        "E-P-018"
+      ],
+      "sha256": "98cb60e31f460bd18f66a42a7688744907fe30f7a7c994d727e909bdfe20aac6"
+    }
+  ],
+  "schema_version": 1,
+  "synthetic_only": true
+}
