@@ -77,8 +77,42 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
 
-      - name: Run tests
-        run: python -m pytest -q
+      - name: Run current-state tests
+        run: python -m pytest -q --ignore=tests/test_subject_progress.py
+
+      - name: Replay immutable T-001 progress controls at completion phase
+        shell: bash
+        env:
+          SUBJECT_PRE_T002_CHECKPOINT: 8ec045a7b39c5aa9684f61d9099eb62b3142983d
+          T001_PROGRESS_TEST_SHA256: 6be4d93375205ee1f9ba414aa2704ee075ca583050238892d54030e7adadd3e6
+          T001_PROGRESS_VALIDATOR_SHA256: 8cb33ef1f9b688be90fb093e0fd4437b245c2a9b2dbac3f3141c65005619416f
+          T001_PROGRESS_LEDGER_SHA256: ab723c1adde2739f54deba7fee85d86a95002f167703354695503363154d30e6
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor "$SUBJECT_PRE_T002_CHECKPOINT" HEAD
+          replay_root="$RUNNER_TEMP/subject-t001-completion-${{ matrix.python-version }}"
+          cleanup() {
+            git worktree remove --force "$replay_root" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          git worktree add --detach "$replay_root" "$SUBJECT_PRE_T002_CHECKPOINT"
+          cd "$replay_root"
+          printf '%s  %s\n' "$T001_PROGRESS_TEST_SHA256" \
+            tests/test_subject_progress.py | sha256sum -c -
+          printf '%s  %s\n' "$T001_PROGRESS_VALIDATOR_SHA256" \
+            scripts/validate_subject_progress.py | sha256sum -c -
+          printf '%s  %s\n' "$T001_PROGRESS_LEDGER_SHA256" \
+            specs/subject-distillation/implementation-progress.json | sha256sum -c -
+          PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider \
+            tests/test_subject_progress.py
+
+      - name: Validate current Subject progress ledger
+        run: |
+          python scripts/validate_subject_progress.py \
+            --manifest specs/subject-distillation/baseline-manifest.json \
+            --schema specs/subject-distillation/implementation-progress.schema.json \
+            --tasks specs/subject-distillation/tasks.md \
+            --progress specs/subject-distillation/implementation-progress.json
 
       - name: Validate Subject task authorization v2 ledger overlay
         run: |
