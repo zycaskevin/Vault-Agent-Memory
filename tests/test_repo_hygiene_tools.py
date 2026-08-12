@@ -33,6 +33,68 @@ def test_release_readiness_workflow_trigger_and_concurrency_contract():
     assert "  cancel-in-progress: true\n" in concurrency_block
 
 
+def test_subject_progress_ci_separates_historical_and_current_phases():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+    ).read_text(encoding="utf-8")
+    test_job = workflow.split("\n  test:\n", 1)[1].split(
+        "\n  readme-command-smoke:\n", 1
+    )[0]
+
+    current_command = (
+        "python -m pytest -q --ignore=tests/test_subject_progress.py"
+    )
+    assert test_job.count(current_command) == 1
+    assert test_job.count("--ignore=") == 1
+    assert "--deselect" not in test_job
+    assert "continue-on-error" not in test_job
+    assert " -k " not in test_job
+    assert "xfail" not in test_job.lower()
+
+    assert (
+        "SUBJECT_PRE_T002_CHECKPOINT: "
+        "8ec045a7b39c5aa9684f61d9099eb62b3142983d"
+    ) in test_job
+    assert (
+        "T001_PROGRESS_TEST_SHA256: "
+        "6be4d93375205ee1f9ba414aa2704ee075ca583050238892d54030e7adadd3e6"
+    ) in test_job
+    assert (
+        "T001_PROGRESS_VALIDATOR_SHA256: "
+        "8cb33ef1f9b688be90fb093e0fd4437b245c2a9b2dbac3f3141c65005619416f"
+    ) in test_job
+    assert (
+        "T001_PROGRESS_LEDGER_SHA256: "
+        "ab723c1adde2739f54deba7fee85d86a95002f167703354695503363154d30e6"
+    ) in test_job
+    assert (
+        'git merge-base --is-ancestor "$SUBJECT_PRE_T002_CHECKPOINT" HEAD'
+        in test_job
+    )
+    assert (
+        'git worktree add --detach "$replay_root" "$SUBJECT_PRE_T002_CHECKPOINT"'
+        in test_job
+    )
+    assert "tests/test_subject_progress.py | sha256sum -c -" in test_job
+    assert "scripts/validate_subject_progress.py | sha256sum -c -" in test_job
+    assert (
+        "specs/subject-distillation/implementation-progress.json | sha256sum -c -"
+        in test_job
+    )
+    assert (
+        "PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider \\\n"
+        "            tests/test_subject_progress.py"
+    ) in test_job
+    assert (
+        "python scripts/validate_subject_progress.py \\\n"
+        "            --manifest specs/subject-distillation/baseline-manifest.json"
+    ) in test_job
+    assert (
+        "python scripts/validate_subject_task_authorization_v2.py \\\n"
+        "            --ledger"
+    ) in test_job
+
+
 def test_artifact_audit_classifies_safe_generated_cache(tmp_path: Path):
     pycache = tmp_path / "pkg" / "__pycache__"
     pycache.mkdir(parents=True)
@@ -97,7 +159,7 @@ def test_artifact_cleanup_keeps_generic_build_dir_for_review(tmp_path: Path):
 
 
 def test_public_pr_gate_flags_forbidden_files_and_private_added_lines():
-    home_path = "/".join(["", "home", "example_user", "private"])
+    home_path = "/".join(["", "home", "example_user", "private"])  # noqa: FLY002
     channel_key = "chat" + "_id"
     channel_value = "oc_" + "123abc"
     diff = f"""diff --git a/PROGRESS.md b/PROGRESS.md
@@ -133,7 +195,9 @@ def test_public_pr_gate_passes_clean_public_diff():
 
 def test_public_pr_gate_flags_deleted_private_payload_and_rename_paths():
     private_dir = "." + "agent-runtime"
-    user_path = "/".join(["", "Users", "example_user", "private", "project"])
+    user_path = "/".join(  # noqa: FLY002 - keep scanner fixture non-literal
+        ["", "Users", "example_user", "private", "project"]
+    )
     secret_key = "ACCESS" + "_TOKEN"
     secret_value = "example" + "_secret_value_123"
     diff = f"""diff --git a/{private_dir}/secret.md b/docs/secret.md
@@ -160,7 +224,9 @@ diff --git a/docs/old.md b/docs/old.md
 
 def test_public_pr_gate_cleanup_mode_allows_removing_existing_internal_artifacts():
     private_dir = "." + "agent-runtime"
-    user_path = "/".join(["", "home", "example_user", "private", "project"])
+    user_path = "/".join(  # noqa: FLY002 - keep scanner fixture non-literal
+        ["", "home", "example_user", "private", "project"]
+    )
     diff = f"""diff --git a/PROGRESS.md b/PROGRESS.md
 deleted file mode 100644
 --- a/PROGRESS.md

@@ -66,6 +66,35 @@ def _canonical(value: object) -> bytes:
     ).encode()
 
 
+def _t002_prestart() -> dict[str, object]:
+    """Derive the stable T-002 prestart fixture from any later live ledger phase."""
+    current = json.loads(PROGRESS_PATH.read_text())
+    t001_events = [
+        copy.deepcopy(event)
+        for event in current["events"]
+        if event["task_id"] == "T-001"
+    ]
+    assert len(t001_events) == 2
+    assert t001_events[-1]["to"] == "COMPLETED"
+    contract = json.loads(
+        (
+            REPO_ROOT
+            / "specs/subject-distillation/task-authorization-v2.contract.json"
+        ).read_text()
+    )
+    assert hashlib.sha256(_canonical(t001_events)[:-1]).hexdigest() == (
+        contract["activation"]["t001_events"]["sha256"]
+    )
+    current["events"] = t001_events
+    current["tasks"] = {task: "PENDING" for task in current["tasks"]}
+    current["tasks"]["T-001"] = "COMPLETED"
+    current["updated_at_utc"] = t001_events[-1]["at_utc"]
+    assert hashlib.sha256(_canonical(current)).hexdigest() == (
+        contract["activation"]["progress"]["sha256"]
+    )
+    return current
+
+
 def _retained_trust(runner) -> dict[str, bytes]:
     paths = {
         runner.CONTRACT_PATH,
@@ -82,7 +111,7 @@ def _retained_trust(runner) -> dict[str, bytes]:
 
 
 def _synthetic_start(authorization_id: str, proof_raw: bytes) -> dict[str, object]:
-    value = json.loads(PROGRESS_PATH.read_text())
+    value = _t002_prestart()
     refs = [
         {"kind": "opaque", "id": f"t002-authorization:{authorization_id}"},
         {
@@ -219,7 +248,7 @@ def _review_value(
         ).hexdigest(),
     }
 def test_v1_accepts_bypass_shape_while_v2_rejects_it(validator) -> None:
-    value = json.loads(PROGRESS_PATH.read_text())
+    value = _t002_prestart()
     value["events"].append(
         {
             "at_utc": "2026-08-12T12:00:00Z",
@@ -245,7 +274,7 @@ def test_v1_accepts_bypass_shape_while_v2_rejects_it(validator) -> None:
 
 
 def test_pre_authorization_pending_to_blocked_denies(validator) -> None:
-    value = json.loads(PROGRESS_PATH.read_text())
+    value = _t002_prestart()
     value["events"].append(
         {
             "at_utc": "2026-08-12T12:00:00Z",
@@ -268,7 +297,7 @@ def test_t002_only_validator_rejects_t003_proof_review_and_start(validator) -> N
         validator._require_supported_task(REPO_ROOT, "T-003")
     with pytest.raises(validator.Denied):
         validator.validate_completion_review_value({}, b"{}\n", REPO_ROOT, "T-003")
-    value = json.loads(PROGRESS_PATH.read_text())
+    value = _t002_prestart()
     value["events"].append(
         {
             "at_utc": "2026-08-12T12:00:00Z",
@@ -298,10 +327,10 @@ def test_start_wrapper_publishes_only_inside_v2_validated_atomic_callbacks(
         "authorized_task": "T-002",
         "proof_repo_relative_path": PROOF_PATH,
         "progress_sequence": 2,
-        "progress_sha256": hashlib.sha256(PROGRESS_PATH.read_bytes()).hexdigest(),
+        "progress_sha256": hashlib.sha256(_canonical(_t002_prestart())).hexdigest(),
     }
     proof_raw = _canonical(proof_value)
-    current = json.loads(PROGRESS_PATH.read_text())
+    current = _t002_prestart()
     state = {"ledger": copy.deepcopy(current)}
     audit_calls = 0
 
@@ -641,7 +670,7 @@ def test_exact_proof_bound_t002_start_passes_overlay(
     proof_value: dict[str, object] = {
         "authorization_id": authorization_id,
         "progress_sequence": 2,
-        "progress_sha256": hashlib.sha256(PROGRESS_PATH.read_bytes()).hexdigest(),
+        "progress_sha256": hashlib.sha256(_canonical(_t002_prestart())).hexdigest(),
     }
     proof_raw = _canonical(proof_value)
     _install_proof_fakes(monkeypatch, runner, validator, proof_value, proof_raw)
@@ -660,7 +689,7 @@ def test_offline_overlay_uses_one_retained_proof_snapshot(
     proof_value = {
         "authorization_id": authorization_id,
         "progress_sequence": 2,
-        "progress_sha256": hashlib.sha256(PROGRESS_PATH.read_bytes()).hexdigest(),
+        "progress_sha256": hashlib.sha256(_canonical(_t002_prestart())).hexdigest(),
     }
     proof_raw = _canonical(proof_value)
     _install_proof_fakes(monkeypatch, runner, validator, proof_value, proof_raw)
@@ -691,7 +720,7 @@ def test_blocked_task_resume_reuses_the_original_exact_proof_refs(
     proof_value: dict[str, object] = {
         "authorization_id": authorization_id,
         "progress_sequence": 2,
-        "progress_sha256": hashlib.sha256(PROGRESS_PATH.read_bytes()).hexdigest(),
+        "progress_sha256": hashlib.sha256(_canonical(_t002_prestart())).hexdigest(),
     }
     proof_raw = _canonical(proof_value)
     _install_proof_fakes(monkeypatch, runner, validator, proof_value, proof_raw)
@@ -745,7 +774,7 @@ def test_t002_start_ref_mutations_deny(
     proof_value: dict[str, object] = {
         "authorization_id": authorization_id,
         "progress_sequence": 2,
-        "progress_sha256": hashlib.sha256(PROGRESS_PATH.read_bytes()).hexdigest(),
+        "progress_sha256": hashlib.sha256(_canonical(_t002_prestart())).hexdigest(),
     }
     proof_raw = _canonical(proof_value)
     _install_proof_fakes(monkeypatch, runner, validator, proof_value, proof_raw)
@@ -773,7 +802,7 @@ def test_cross_task_proof_result_denies(
     proof_value: dict[str, object] = {
         "authorization_id": authorization_id,
         "progress_sequence": 2,
-        "progress_sha256": hashlib.sha256(PROGRESS_PATH.read_bytes()).hexdigest(),
+        "progress_sha256": hashlib.sha256(_canonical(_t002_prestart())).hexdigest(),
     }
     proof_raw = _canonical(proof_value)
     _install_proof_fakes(monkeypatch, runner, validator, proof_value, proof_raw)
@@ -806,7 +835,7 @@ def test_t002_completion_requires_exact_outputs_proof_and_review(
     proof_value: dict[str, object] = {
         "authorization_id": authorization_id,
         "progress_sequence": 2,
-        "progress_sha256": hashlib.sha256(PROGRESS_PATH.read_bytes()).hexdigest(),
+        "progress_sha256": hashlib.sha256(_canonical(_t002_prestart())).hexdigest(),
         "implementation_base_commit": "git:" + "1" * 40,
         "baseline_id": "0dc10cfc4a429662",
         "baseline_full_digest": "0dc10cfc4a429662" + "0" * 48,
@@ -912,7 +941,7 @@ def test_t002_completion_requires_exact_outputs_proof_and_review(
 
 
 def test_prefix_reconstruction_is_byte_exact(validator) -> None:
-    original = json.loads(PROGRESS_PATH.read_text())
+    original = _t002_prestart()
     started = copy.deepcopy(original)
     started["events"].append(
         {
@@ -926,7 +955,7 @@ def test_prefix_reconstruction_is_byte_exact(validator) -> None:
         }
     )
     assert validator._prefix_value(started, 2) == original
-    assert _canonical(validator._prefix_value(started, 2)) == PROGRESS_PATH.read_bytes()
+    assert _canonical(validator._prefix_value(started, 2)) == _canonical(original)
 
 
 def test_review_time_cannot_precede_latest_resume(validator) -> None:

@@ -67,6 +67,45 @@ def _canonical(value: object) -> bytes:
     ).encode()
 
 
+def _t002_prestart_value() -> dict[str, object]:
+    """Rebuild the immutable T-001-complete prefix for phase-neutral tests."""
+    current = json.loads(PROGRESS_PATH.read_text())
+    t001_events = [
+        event for event in current["events"] if event["task_id"] == "T-001"
+    ]
+    assert len(t001_events) == 2
+    assert t001_events[-1]["to"] == "COMPLETED"
+    current["events"] = t001_events
+    current["tasks"] = {task: "PENDING" for task in current["tasks"]}
+    current["tasks"]["T-001"] = "COMPLETED"
+    current["updated_at_utc"] = t001_events[-1]["at_utc"]
+    contract = json.loads(
+        (
+            REPO_ROOT
+            / "specs/subject-distillation/task-authorization-v2.contract.json"
+        ).read_text()
+    )
+    assert hashlib.sha256(_canonical(t001_events)[:-1]).hexdigest() == (
+        contract["activation"]["t001_events"]["sha256"]
+    )
+    assert hashlib.sha256(_canonical(current)).hexdigest() == (
+        contract["activation"]["progress"]["sha256"]
+    )
+    return current
+
+
+def _t002_prestart_snapshot(runner):
+    raw = _canonical(_t002_prestart_value())
+    info = os.stat(PROGRESS_PATH, follow_symlinks=False)
+    return runner.TaskProgressSnapshot(
+        sequence=2,
+        raw_sha256=hashlib.sha256(raw).hexdigest(),
+        identity=runner._strong_identity(info),
+        task_state="PENDING",
+        completed_predecessors=("T-001",),
+    )
+
+
 def test_bridge_files_are_additive_and_executable() -> None:
     expected_modes = {
         RUNNER_PATH: 0o755,
@@ -255,12 +294,14 @@ def test_repository_change_set_is_derived_and_extra_dirt_denies(
     )] == ["progress.json", "proof.json"]
 
 
-def test_current_ledger_is_exact_t002_prestart(runner) -> None:
-    snapshot = runner._default_task_progress_snapshot(REPO_ROOT, EXPECTED_TASK)
+def test_t002_prestart_fixture_is_exact_and_phase_neutral(runner) -> None:
+    snapshot = _t002_prestart_snapshot(runner)
     assert snapshot.sequence == 2
     assert snapshot.task_state == "PENDING"
     assert snapshot.completed_predecessors == ("T-001",)
-    assert snapshot.raw_sha256 == hashlib.sha256(PROGRESS_PATH.read_bytes()).hexdigest()
+    assert snapshot.raw_sha256 == hashlib.sha256(
+        _canonical(_t002_prestart_value())
+    ).hexdigest()
 
 
 @pytest.mark.parametrize(
@@ -294,7 +335,10 @@ def test_scope_descriptor_mutation_denies(runner, tmp_path: Path, mutation: str,
 
 def test_proposal_binds_scope_ledger_and_bridge_bytes(runner) -> None:
     state = runner.v1.RepositoryState(os.fspath(REPO_ROOT), BASE_COMMIT, True)
-    runtime = runner.Runtime(repository_state=lambda: state)
+    runtime = runner.Runtime(
+        repository_state=lambda: state,
+        task_progress_snapshot=lambda _root, _task: _t002_prestart_snapshot(runner),
+    )
     raw = runner._propose(
         {
             "--implementation-base-commit": BASE_COMMIT,
@@ -307,7 +351,9 @@ def test_proposal_binds_scope_ledger_and_bridge_bytes(runner) -> None:
     assert proposal["authorized_task"] == EXPECTED_TASK
     assert proposal["implementation_base_commit"] == BASE_COMMIT
     assert proposal["progress_sequence"] == 2
-    assert proposal["progress_sha256"] == hashlib.sha256(PROGRESS_PATH.read_bytes()).hexdigest()
+    assert proposal["progress_sha256"] == hashlib.sha256(
+        _canonical(_t002_prestart_value())
+    ).hexdigest()
     assert proposal["scope_descriptor_sha256"] == hashlib.sha256(SCOPE_PATH.read_bytes()).hexdigest()
     assert proposal["authorization_runner_v1_sha256"] == runner.EXPECTED_V1_RUNNER_SHA256
     assert proposal["authorization_runner_v2_sha256"] == hashlib.sha256(
@@ -326,7 +372,10 @@ def test_proposal_rejects_task_header_digest_drift(
         lambda _root, _task: (descriptor, _canonical(descriptor)),
     )
     state = runner.v1.RepositoryState(os.fspath(REPO_ROOT), BASE_COMMIT, True)
-    runtime = runner.Runtime(repository_state=lambda: state)
+    runtime = runner.Runtime(
+        repository_state=lambda: state,
+        task_progress_snapshot=lambda _root, _task: _t002_prestart_snapshot(runner),
+    )
     with pytest.raises(runner.Denied):
         runner._propose(
             {
@@ -338,7 +387,7 @@ def test_proposal_rejects_task_header_digest_drift(
 
 
 def test_progress_state_or_digest_drift_denies(runner) -> None:
-    valid = runner._default_task_progress_snapshot(REPO_ROOT, EXPECTED_TASK)
+    valid = _t002_prestart_snapshot(runner)
     state = runner.v1.RepositoryState(os.fspath(REPO_ROOT), BASE_COMMIT, True)
     invalid = runner.TaskProgressSnapshot(
         sequence=valid.sequence,
@@ -361,12 +410,12 @@ def test_progress_state_or_digest_drift_denies(runner) -> None:
         )
 
 
-def test_validator_accepts_current_ledger_without_v2_started_tasks(validator) -> None:
-    result = validator.validate_ledger(REPO_ROOT)
+def test_validator_accepts_isolated_ledger_without_v2_started_tasks(validator) -> None:
+    result = validator.validate_ledger_value(_t002_prestart_value(), REPO_ROOT)
     assert result == {"proofs": 0, "sequence": 2, "status": "PASS"}
 
 
-def test_current_ledger_core_uses_retained_manifest_schema_tasks_and_progress(
+def test_activation_ledger_core_uses_retained_manifest_schema_tasks_and_progress(
     runner, validator, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     guard = runner._open_bridge_guard(
@@ -374,7 +423,9 @@ def test_current_ledger_core_uses_retained_manifest_schema_tasks_and_progress(
     )
     try:
         retained = guard.snapshot()
-        value = runner.v1.verifier._parse(retained[runner.PROGRESS_PATH])
+        activation_raw = _canonical(_t002_prestart_value())
+        retained[runner.PROGRESS_PATH] = activation_raw
+        value = runner.v1.verifier._parse(activation_raw)
         monkeypatch.setattr(
             validator.progress_v1,
             "validate",
@@ -409,7 +460,7 @@ def test_current_ledger_core_uses_retained_manifest_schema_tasks_and_progress(
 
 
 def test_validator_rejects_t002_start_without_exact_proof_refs(validator) -> None:
-    value = json.loads(PROGRESS_PATH.read_text())
+    value = _t002_prestart_value()
     value["events"].append(
         {
             "at_utc": "2026-08-12T00:00:00Z",
@@ -443,6 +494,7 @@ def _fixed_runtime(runner, now: datetime, tmp_path: Path):
     return runner.Runtime(
         now=lambda: now,
         repository_state=lambda: state,
+        task_progress_snapshot=lambda _root, _task: _t002_prestart_snapshot(runner),
         temp_root=os.fspath(tmp_path),
     )
 
@@ -626,7 +678,7 @@ def test_mid_verification_progress_drift_denies_after_cleanup(
     runner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     now = datetime(2026, 8, 12, 1, 2, 3, tzinfo=timezone.utc)
-    valid = runner._default_task_progress_snapshot(REPO_ROOT, EXPECTED_TASK)
+    valid = _t002_prestart_snapshot(runner)
     drifted = runner.TaskProgressSnapshot(
         sequence=valid.sequence + 1,
         raw_sha256="0" * 64,
