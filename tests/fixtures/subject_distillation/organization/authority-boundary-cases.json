@@ -1,0 +1,106 @@
+{
+  "artifact_kind": "subject-distillation-synthetic-fixtures",
+  "cases": [
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": true,
+        "primary_domain": "identity_authority"
+      },
+      "fixture_id": "synthetic-e-o-001",
+      "planned_tests": [
+        "tests/test_subject_organization_contract.py",
+        "tests/test_subject_policy.py"
+      ],
+      "scenario": "A fabricated approved retention strategy outranks a synthetic team's historical feature-volume habit.",
+      "sbe_id": "E-O-001",
+      "source_locator": "synthetic://subject-distillation/e-o-001",
+      "subject_ref": "subject:synthetic:organization-001",
+      "synthetic": true,
+      "title": "Official strategy outranks local habit"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "identity_authority"
+      },
+      "fixture_id": "synthetic-e-o-002",
+      "planned_tests": [
+        "tests/test_subject_organization_contract.py",
+        "tests/test_subject_policy.py"
+      ],
+      "scenario": "One fabricated employee's repeated vendor choice cannot become synthetic organization policy without approval.",
+      "sbe_id": "E-O-002",
+      "source_locator": "synthetic://subject-distillation/e-o-002",
+      "subject_ref": "subject:synthetic:organization-002",
+      "synthetic": true,
+      "title": "Employee preference is not company policy"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": false,
+        "contains_correction": true,
+        "contains_counter_evidence": true,
+        "primary_domain": "identity_authority"
+      },
+      "fixture_id": "synthetic-e-o-003",
+      "planned_tests": [
+        "tests/test_subject_organization_contract.py"
+      ],
+      "scenario": "A fabricated profitability strategy supersedes a growth strategy while preserving the historical version.",
+      "sbe_id": "E-O-003",
+      "source_locator": "synthetic://subject-distillation/e-o-003",
+      "subject_ref": "subject:synthetic:organization-003",
+      "synthetic": true,
+      "title": "Strategy supersession preserves history"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": true,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": true,
+        "primary_domain": "identity_authority"
+      },
+      "fixture_id": "synthetic-e-o-004",
+      "planned_tests": [
+        "tests/test_subject_organization_contract.py",
+        "tests/test_subject_policy.py"
+      ],
+      "scenario": "A synthetic team-lead proposal conflicts with a fabricated board-approved policy and remains lower authority.",
+      "sbe_id": "E-O-004",
+      "source_locator": "synthetic://subject-distillation/e-o-004",
+      "subject_ref": "subject:synthetic:organization-004",
+      "synthetic": true,
+      "title": "Authority conflict is visible"
+    },
+    {
+      "evaluation": {
+        "abstention_probe": false,
+        "contains_contextual_constraint": true,
+        "contains_correction": false,
+        "contains_counter_evidence": false,
+        "primary_domain": "context_access"
+      },
+      "fixture_id": "synthetic-e-o-005",
+      "planned_tests": [
+        "tests/test_subject_context.py",
+        "tests/test_subject_organization_contract.py"
+      ],
+      "scenario": "Fabricated finance and content agents receive only role-scoped synthetic organization context.",
+      "sbe_id": "E-O-005",
+      "source_locator": "synthetic://subject-distillation/e-o-005",
+      "subject_ref": "subject:synthetic:organization-005",
+      "synthetic": true,
+      "title": "Organization Context Pack is role-scoped"
+    }
+  ],
+  "schema_version": 1,
+  "synthetic_only": true
+}
