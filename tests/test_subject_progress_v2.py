@@ -1043,8 +1043,18 @@ def test_real_git_completion_reconstructs_progress_prefix_and_passes_final_overl
         ["git", "clone", "-q", "--no-hardlinks", os.fspath(REPO_ROOT), os.fspath(repo)],
         check=True,
     )
+    contract = json.loads(
+        (
+            REPO_ROOT
+            / "specs/subject-distillation/task-authorization-v2.contract.json"
+        ).read_text()
+    )
+    activation_base = contract["activation"]["implementation_base_commit"]
+    assert activation_base.startswith("git:")
     subprocess.run(
-        ["git", "checkout", "-q", "--detach", "HEAD^"], cwd=repo, check=True
+        ["git", "checkout", "-q", "--detach", activation_base.removeprefix("git:")],
+        cwd=repo,
+        check=True,
     )
     delivery_paths = [
         ".github/workflows/ci.yml",
