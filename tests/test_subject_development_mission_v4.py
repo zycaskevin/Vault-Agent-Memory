@@ -429,6 +429,145 @@ def test_direct_cli_dependency_bootstrap_is_fixed_no_echo(
     assert marker not in completed.stdout + completed.stderr
 
 
+@pytest.mark.parametrize(
+    ("path", "error_text"),
+    [
+        ("scripts/run_subject_development_mission_v4.py", mission.ERROR_TEXT),
+        ("scripts/update_subject_task_progress_v4.py", updater.ERROR_TEXT),
+        (
+            "scripts/validate_subject_development_mission_v4.py",
+            validator.ERROR_TEXT,
+        ),
+        (
+            "scripts/validate_subject_task_authorization_dispatch_v4.py",
+            "SUBJECT_TASK_AUTHORIZATION_DISPATCH_V4_ERROR\n",
+        ),
+    ],
+)
+def test_direct_cli_rejects_installed_dependency_shadow(
+    tmp_path: Path, path: str, error_text: str
+) -> None:
+    copied = tmp_path / Path(path).name
+    copied.write_bytes(_raw(path))
+    shadow = tmp_path / "shadow"
+    package = shadow / "scripts"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("")
+    payload_marker = tmp_path / "shadow-payload-executed"
+    payload = f"from pathlib import Path\nPath({str(payload_marker)!r}).write_text('bad')\n"
+    for name in (
+        "run_subject_development_mission_v4",
+        "run_subject_task_authorization_v3",
+        "update_subject_progress",
+        "validate_subject_development_mission_v4",
+        "validate_subject_progress",
+        "validate_subject_task_authorization_v3",
+    ):
+        (package / f"{name}.py").write_text(payload)
+    command = (
+        "import runpy,sys;"
+        f"sys.path.insert(0,{str(shadow)!r});"
+        f"runpy.run_path({str(copied)!r},run_name='__main__')"
+    )
+    completed = subprocess.run(
+        [sys.executable, "-I", "-c", command],
+        cwd=tmp_path,
+        capture_output=True,
+        check=False,
+        timeout=10,
+    )
+    marker = str(tmp_path).encode()
+    assert completed.returncode == 3
+    assert completed.stdout == b""
+    assert completed.stderr == error_text.encode()
+    assert marker not in completed.stdout + completed.stderr
+    assert not payload_marker.exists()
+
+
+@pytest.mark.parametrize(
+    ("path", "dependency", "error_text"),
+    [
+        (
+            "scripts/run_subject_development_mission_v4.py",
+            "run_subject_task_authorization_v3.py",
+            mission.ERROR_TEXT,
+        ),
+        (
+            "scripts/update_subject_task_progress_v4.py",
+            "run_subject_development_mission_v4.py",
+            updater.ERROR_TEXT,
+        ),
+        (
+            "scripts/validate_subject_development_mission_v4.py",
+            "run_subject_development_mission_v4.py",
+            validator.ERROR_TEXT,
+        ),
+        (
+            "scripts/validate_subject_task_authorization_dispatch_v4.py",
+            "run_subject_development_mission_v4.py",
+            "SUBJECT_TASK_AUTHORIZATION_DISPATCH_V4_ERROR\n",
+        ),
+    ],
+)
+def test_direct_cli_rejects_symlinked_sibling_before_payload_execution(
+    tmp_path: Path, path: str, dependency: str, error_text: str
+) -> None:
+    copied = tmp_path / Path(path).name
+    copied.write_bytes(_raw(path))
+    payload_marker = tmp_path / "symlink-payload-executed"
+    target = tmp_path / "payload.py"
+    target.write_text(
+        f"from pathlib import Path\nPath({str(payload_marker)!r}).write_text('bad')\n"
+    )
+    (tmp_path / dependency).symlink_to(target)
+    completed = subprocess.run(
+        [sys.executable, "-I", str(copied)],
+        cwd=tmp_path,
+        capture_output=True,
+        check=False,
+        timeout=10,
+    )
+    marker = str(tmp_path).encode()
+    assert completed.returncode == 3
+    assert completed.stdout == b""
+    assert completed.stderr == error_text.encode()
+    assert marker not in completed.stdout + completed.stderr
+    assert not payload_marker.exists()
+
+
+def test_repository_identity_accepts_only_canonical_github_remote_forms(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    accepted = (
+        "git@github.com:zycaskevin/Vault-Agent-Memory.git",
+        "https://github.com/zycaskevin/Vault-Agent-Memory",
+        "https://github.com/zycaskevin/Vault-Agent-Memory.git",
+    )
+    for remote in accepted:
+        monkeypatch.setattr(
+            mission, "_git", lambda *_args, value=remote: (value + "\n").encode()
+        )
+        mission.check_repository_identity(ROOT)
+
+    rejected = (
+        "git@github.com:zycaskevin/Vault-Agent-Memory",
+        "https://github.com/other/Vault-Agent-Memory",
+        "https://github.com/zycaskevin/Vault-Agent-Memory/",
+        "https://github.com/zycaskevin/Vault-Agent-Memory.git?ref=main",
+        "https://token@github.com/zycaskevin/Vault-Agent-Memory.git",
+        "https://github.com/zycaskevin/Vault-Agent-Memory-evil",
+        " https://github.com/zycaskevin/Vault-Agent-Memory",
+        "https://github.com/zycaskevin/Vault-Agent-Memory ",
+        "https://github.com/zycaskevin/Vault-Agent-Memory\nextra",
+    )
+    for remote in rejected:
+        monkeypatch.setattr(
+            mission, "_git", lambda *_args, value=remote: (value + "\n").encode()
+        )
+        with pytest.raises(mission.Denied):
+            mission.check_repository_identity(ROOT)
+
+
 @pytest.mark.parametrize("phase", ["pending", "linked", "final"])
 def test_task_proof_publication_recovery_topologies(
     tmp_path: Path, monkeypatch, phase: str

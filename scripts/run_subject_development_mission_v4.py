@@ -9,22 +9,77 @@ import re
 import stat
 import subprocess
 import sys
+import types
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-try:
-    from scripts import run_subject_task_authorization_v3 as legacy
-except ImportError:  # pragma: no cover - direct script execution
+
+def _load_sibling_dependency(module_name: str, filename: str) -> object:
+    path = Path(os.path.abspath(Path(__file__).with_name(filename)))
+    flags = os.O_RDONLY
+    for name in ("O_NOFOLLOW", "O_CLOEXEC"):
+        if not hasattr(os, name):
+            raise RuntimeError
+        flags |= int(getattr(os, name))
+    before_path = os.lstat(path)
+    if stat.S_ISLNK(before_path.st_mode):
+        raise RuntimeError
+    fd = os.open(path, flags)
     try:
-        import run_subject_task_authorization_v3 as legacy
+        before = os.fstat(fd)
+        raw = b""
+        while len(raw) <= 1_048_576:
+            chunk = os.read(fd, min(65_536, 1_048_577 - len(raw)))
+            if not chunk:
+                break
+            raw += chunk
+        after = os.fstat(fd)
+    finally:
+        os.close(fd)
+    identity = lambda info: (
+        info.st_dev,
+        info.st_ino,
+        info.st_mode,
+        info.st_nlink,
+        info.st_size,
+        info.st_mtime_ns,
+        info.st_ctime_ns,
+    )
+    if (
+        not stat.S_ISREG(before.st_mode)
+        or stat.S_IMODE(before.st_mode) != 0o755
+        or before.st_nlink != 1
+        or len(raw) > 1_048_576
+        or identity(before_path) != identity(before)
+        or identity(before) != identity(after)
+        or identity(os.lstat(path)) != identity(before)
+    ):
+        raise RuntimeError
+    existing = sys.modules.get(module_name)
+    if existing is not None:
+        if getattr(existing, "__file__", None) != os.fspath(path):
+            raise RuntimeError
+        return existing
+    module = types.ModuleType(module_name)
+    module.__file__ = os.fspath(path)
+    module.__package__ = module_name.rpartition(".")[0]
+    sys.modules[module_name] = module
+    try:
+        exec(compile(raw, "<subject-v4-sibling>", "exec"), module.__dict__)  # noqa: S102
     except Exception:
-        if __name__ == "__main__":
-            sys.stderr.write("SUBJECT_DEVELOPMENT_MISSION_V4_ERROR\n")
-            raise SystemExit(3) from None
+        sys.modules.pop(module_name, None)
         raise
+    return module
+
+
+try:
+    legacy = _load_sibling_dependency(
+        "scripts.run_subject_task_authorization_v3",
+        "run_subject_task_authorization_v3.py",
+    )
 except Exception:
     if __name__ == "__main__":
         sys.stderr.write("SUBJECT_DEVELOPMENT_MISSION_V4_ERROR\n")
@@ -782,8 +837,16 @@ def _git(repo_root: Path, *args: str) -> bytes:
 
 
 def check_repository_identity(repo_root: Path) -> None:
-    if _git(repo_root, "remote", "get-url", "origin").strip().decode() not in {
+    raw = _git(repo_root, "remote", "get-url", "origin")
+    if not raw.endswith(b"\n") or b"\n" in raw[:-1]:
+        raise Denied
+    try:
+        remote = raw[:-1].decode("ascii")
+    except UnicodeDecodeError:
+        raise Denied from None
+    if remote not in {
         "git@github.com:zycaskevin/Vault-Agent-Memory.git",
+        "https://github.com/zycaskevin/Vault-Agent-Memory",
         "https://github.com/zycaskevin/Vault-Agent-Memory.git",
     }:
         raise Denied
