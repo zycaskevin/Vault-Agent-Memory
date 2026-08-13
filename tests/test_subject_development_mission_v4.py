@@ -15,6 +15,7 @@ import pytest
 from scripts import run_subject_development_mission_v4 as mission
 from scripts import update_subject_task_progress_v4 as updater
 from scripts import validate_subject_development_mission_v4 as validator
+from scripts import verify_subject_implementation_authorization as authorization_verifier
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -120,6 +121,50 @@ def test_contract_is_closed_and_inactive_before_owner_confirmation() -> None:
         "mission_id": None,
         "mission_state": "INACTIVE",
         "sequence": 6,
+        "status": "PASS",
+    }
+
+
+def test_mission_scope_passes_the_shared_private_authorization_verifier(
+    tmp_path: Path,
+) -> None:
+    issued = datetime(2026, 8, 13, 0, 0, tzinfo=timezone.utc)
+    proposal, receipt_raw, scope_raw = mission._derive_proposal(
+        ROOT,
+        mission.BRIDGE_BASE,
+        issued,
+    )
+    receipt_path = tmp_path / "receipt.json"
+    scope_path = tmp_path / "scope.json"
+    receipt_path.write_bytes(receipt_raw)
+    scope_path.write_bytes(scope_raw)
+
+    result = authorization_verifier._verify(
+        [
+            "--receipt",
+            os.fspath(receipt_path),
+            "--expected-receipt-sha256",
+            proposal["receipt_sha256"],
+            "--scope",
+            os.fspath(scope_path),
+            "--manifest",
+            authorization_verifier.MANIFEST_PATH,
+            "--schema",
+            authorization_verifier.SCHEMA_PATH,
+            "--expected-authority",
+            mission.AUTHORITY,
+            "--expected-task",
+            "T-004",
+            "--json",
+        ],
+        issued,
+        None,
+    )
+
+    assert result == {
+        "authorization_id": proposal["authorization_id"],
+        "authorized_task": "T-004",
+        "baseline_id": proposal["baseline_id"],
         "status": "PASS",
     }
 
