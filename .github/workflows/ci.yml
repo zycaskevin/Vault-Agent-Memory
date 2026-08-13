@@ -147,7 +147,7 @@ jobs:
       - name: Validate current Subject Development Mission v4 overlay
         run: |
           cat <<'EOF' | sha256sum -c -
-          a4d36c15addc5102615d3fff2c260f43728f80701747da86f0ae1952d3245f90  scripts/run_subject_development_mission_v4.py
+          6a3721de9f6211972d2cadc22fcc427d65eb4d3a2f66352940e03f8c928dee70  scripts/run_subject_development_mission_v4.py
           6873bcb7a217901f75ca7c4271202869a3ac348259f5ca7ebcefdba80a5ac61f  scripts/update_subject_task_progress_v4.py
           1ebcb46928474c3b305456b98ab2517872edd52a41e0cd0c83f2b9f273f4fa8e  scripts/validate_subject_development_mission_v4.py
           8253fabeebaef5a6aa5655280e0210f90250882da46081951a4a2183891f3d37  scripts/validate_subject_task_authorization_dispatch_v4.py
@@ -157,7 +157,7 @@ jobs:
           461ceca4a894d73c05414be7d0ba8f145b52cd1a4d2ab83b76e5ca62d3cbb499  docs/decision_records/2026-08-13-subject-development-mission-v4.md
           7770e3fa0c441fda54adc112217afb8621e2104921d19217a30ead4af545e8c5  specs/subject-distillation/development-missions/README.md
           2c847e9264e3c2dec9baa194cba1d995b162ba256b49fd8929f4111d892ca82d  tests/test_repo_hygiene_tools.py
-          bf4cc02c384df6fae9e7ce27d717879ba54142c7dc9be53737d156a2b94bae3d  tests/test_subject_development_mission_v4.py
+          cd79b8513a1e746643946e2340703c29fb6721b6645e11c82c0de0bb862f51d0  tests/test_subject_development_mission_v4.py
           8b54f8c11aa748824483b5122c04aa28699bc0309c1a1eabc00d9fa3cecea3f0  tests/test_subject_task_authorization_dispatch_v4.py
           EOF
           python scripts/validate_subject_task_authorization_dispatch_v4.py \

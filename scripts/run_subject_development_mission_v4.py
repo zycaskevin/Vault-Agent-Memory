@@ -1474,9 +1474,9 @@ def _scope(contract: dict[str, Any], registry_raw: bytes) -> dict[str, Any]:
         "allowed_repo_relative_paths": sorted([MISSION_PROOF_PATH, PENDING_PATH]),
         "non_goals": [
             "no.live.private.data",
-            "no.production.migration",
             "no.release",
             "no.t032.private.operation",
+            "no_production_migration",
         ],
         "prohibited_operations": sorted(legacy.v1.verifier.REQUIRED_PROHIBITED),
     }
