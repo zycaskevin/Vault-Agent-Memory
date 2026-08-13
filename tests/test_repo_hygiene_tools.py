@@ -42,10 +42,11 @@ def test_subject_progress_ci_separates_historical_and_current_phases():
     )[0]
 
     current_command = (
-        "python -m pytest -q --ignore=tests/test_subject_progress.py"
+        "python -m pytest -q --ignore=tests/test_subject_progress.py "
+        "--ignore=tests/test_subject_task_authorization_dispatch.py"
     )
     assert test_job.count(current_command) == 1
-    assert test_job.count("--ignore=") == 1
+    assert test_job.count("--ignore=") == 2
     assert "--deselect" not in test_job
     assert "continue-on-error" not in test_job
     assert " -k " not in test_job
@@ -101,10 +102,15 @@ def test_subject_progress_ci_separates_historical_and_current_phases():
         "specs/subject-distillation/task-authorization-v3.contract.json": "9ff7ddceffdde6690fce4acf1b1f9d16f2d0f93412f5e5f55d94d118b7af5c5a",
         "specs/subject-distillation/task-authorization-v3.schema.json": "f226e841e2e5442d9a2fe4443762764c984f409699d696e66cbe49aec79177df",
         "specs/subject-distillation/task-scopes/T-003.json": "7bf80b0b2e0abf1a762663ca179361ef65d1bcaa5a2af373697f6a22dca1e359",
+        "tests/test_subject_task_authorization_dispatch.py": "8601f9ff2b8475c6c9eda577cd27c26fe3c6665f3cf9ad9174dedb5975448616",
     }
     for path, digest in trust_pins.items():
         assert f"{digest}  {path}" in test_job
     assert "cat <<'EOF' | sha256sum -c -" in test_job
+    assert (
+        "PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider \\\n"
+        "            tests/test_subject_task_authorization_dispatch.py"
+    ) in test_job
     assert "validate_subject_task_authorization_v2.py \\\n" not in test_job
 
 
