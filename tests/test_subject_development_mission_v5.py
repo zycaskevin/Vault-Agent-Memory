@@ -993,6 +993,67 @@ def test_mission_activation_requires_one_exact_direct_child_commit(
         )
 
 
+def test_mission_activation_accepts_only_exact_two_parent_merge_delivery(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "activation-merge"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "https://github.com/zycaskevin/Vault-Agent-Memory.git"],
+        cwd=repo,
+        check=True,
+    )
+    (repo / "README.md").write_text("base\n")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "protocol"], cwd=repo, check=True)
+    protocol = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "-c", "activation"], cwd=repo, check=True)
+    proof_raw = b'{"mission":"owner-confirmed"}\n'
+    proof = repo / mission.MISSION_PROOF_PATH
+    proof.parent.mkdir(parents=True)
+    proof.write_bytes(proof_raw)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "activate"], cwd=repo, check=True)
+    activation = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "main"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "merge", "-q", "--no-ff", "--no-edit", activation],
+        cwd=repo,
+        check=True,
+    )
+    delivery = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    assert mission.validate_mission_activation_delivery(
+        repo,
+        protocol_base=protocol,
+        mission_raw=proof_raw,
+    ) == delivery
+
+    subprocess.run(["git", "reset", "--hard", "-q", protocol], cwd=repo, check=True)
+    (repo / "extra.txt").write_text("outside activation scope\n")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "extra"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "merge", "-q", "--no-ff", "--no-edit", activation],
+        cwd=repo,
+        check=True,
+    )
+    with pytest.raises(mission.Denied):
+        mission.validate_mission_activation_delivery(
+            repo,
+            protocol_base=protocol,
+            mission_raw=proof_raw,
+        )
+
+
 def test_required_read_snapshots_are_sorted_unique_mode_and_hash_bound() -> None:
     registry = _json(mission.SCOPE_REGISTRY_PATH)
     descriptor = next(item for item in registry["tasks"] if item["task"] == "T-020")

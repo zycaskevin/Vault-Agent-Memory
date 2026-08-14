@@ -1021,7 +1021,7 @@ def validate_mission_activation_delivery(
     protocol_base: str,
     mission_raw: bytes,
 ) -> str:
-    """Locate the one direct-child commit that publishes the mission proof."""
+    """Locate the exact proof commit and its current-main delivery anchor."""
     if COMMIT.fullmatch(protocol_base) is None or type(mission_raw) is not bytes:
         raise Denied
     check_repository_identity(repo_root)
@@ -1069,7 +1069,26 @@ def validate_mission_activation_delivery(
             matches.append(commit)
     if len(matches) != 1:
         raise Denied
-    return matches[0]
+    activation = matches[0]
+    if head == activation:
+        return activation
+    parents = _git(repo_root, "rev-list", "--parents", "-n", "1", head).decode().split()
+    if parents != [head, protocol_base, activation]:
+        raise Denied
+    if _git(repo_root, "diff", "--name-only", f"{protocol_base}..{head}").decode().splitlines() != [MISSION_PROOF_PATH]:
+        raise Denied
+    if _git(
+        repo_root,
+        "diff",
+        "--name-status",
+        "--no-renames",
+        f"{protocol_base}..{head}",
+    ).decode().splitlines() != [f"A\t{MISSION_PROOF_PATH}"]:
+        raise Denied
+    mode, raw = _git_object(repo_root, head, MISSION_PROOF_PATH)
+    if mode != "100644" or raw != mission_raw:
+        raise Denied
+    return head
 
 
 def validate_progress_only_delivery(
