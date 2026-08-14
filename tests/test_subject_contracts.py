@@ -9,6 +9,7 @@ import pytest
 
 from vault.subject_contracts import (
     BUILTIN_SUBJECT_TYPES,
+    MAX_CANONICAL_JSON_BYTES,
     AssertionClass,
     AssertionDescriptor,
     AssertionNamespace,
@@ -123,6 +124,22 @@ def test_value_state_is_closed_and_semantically_valid() -> None:
         ValueState("known", value=True)  # type: ignore[arg-type]
 
 
+def test_known_value_state_keeps_an_immutable_canonical_snapshot() -> None:
+    original = {"roles": ["owner"]}
+    state = ValueState.known(original)
+    digest = public_sha256(state.to_dict())
+
+    original["roles"].append("mutated")
+    projected = state.to_dict()
+    projected["value"]["roles"].append("also-mutated")
+
+    assert state.to_dict() == {
+        "state": "known",
+        "value": {"roles": ["owner"]},
+    }
+    assert public_sha256(state.to_dict()) == digest
+
+
 def test_assertion_taxonomy_and_output_kinds_are_exact() -> None:
     assert {item.value for item in AssertionClass} == {
         "explicit",
@@ -176,6 +193,13 @@ def test_canonical_json_and_digests_are_stable_and_domain_separated() -> None:
     assert digest != private_hmac_sha256(first, key=key, domain="subject-assertion-v1")
 
 
+def test_canonical_json_enforces_exact_total_byte_budget() -> None:
+    boundary = "x" * (MAX_CANONICAL_JSON_BYTES - 2)
+    assert len(canonical_json_bytes(boundary)) == MAX_CANONICAL_JSON_BYTES
+    with pytest.raises(ContractError):
+        canonical_json_bytes(boundary + "x")
+
+
 @pytest.mark.parametrize(
     "value",
     [math.nan, math.inf, -math.inf, datetime.now(timezone.utc), {"unordered"}, {1: "x"}],
@@ -191,9 +215,12 @@ def test_contract_module_has_no_database_or_network_imports() -> None:
     imported: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
-            imported.update(alias.name.split(".", 1)[0] for alias in node.names)
+            imported.update(alias.name for alias in node.names)
         elif isinstance(node, ast.ImportFrom) and node.module:
-            imported.add(node.module.split(".", 1)[0])
-    assert imported.isdisjoint(
-        {"sqlite3", "socket", "requests", "httpx", "urllib", "vault.db"}
-    )
+            imported.add(node.module)
+    prohibited = {"sqlite3", "socket", "requests", "httpx", "http", "urllib", "vault.db"}
+    assert not {
+        module
+        for module in imported
+        if any(module == path or module.startswith(path + ".") for path in prohibited)
+    }

@@ -23,6 +23,7 @@ class ContractError(ValueError):
 
 
 BUILTIN_SUBJECT_TYPES = frozenset({"person", "organization", "team", "project", "role"})
+MAX_CANONICAL_JSON_BYTES = 1_048_576
 
 _SUBJECT_TYPE = re.compile(r"^[a-z][a-z0-9_.-]{0,63}$")
 _UTC_RFC3339 = re.compile(
@@ -163,22 +164,41 @@ def _validate_reason(value: str | None) -> str:
     return value
 
 
-@dataclass(frozen=True, slots=True)
+_MISSING = object()
+
+
+@dataclass(frozen=True, slots=True, init=False)
 class ValueState:
     state: ValueStateKind
-    value: Any = None
-    reason: str | None = None
+    reason: str | None
+    _value_json: bytes | None
 
-    def __post_init__(self) -> None:
-        _require_enum(self.state, ValueStateKind, "state")
-        if self.state is ValueStateKind.KNOWN:
-            if self.value is None or self.reason is not None:
+    def __init__(
+        self,
+        state: ValueStateKind,
+        value: Any = _MISSING,
+        reason: str | None = None,
+    ) -> None:
+        _require_enum(state, ValueStateKind, "state")
+        object.__setattr__(self, "state", state)
+        object.__setattr__(self, "reason", reason)
+        if state is ValueStateKind.KNOWN:
+            if value is _MISSING or value is None or reason is not None:
                 raise ContractError("known state requires value and forbids reason")
-            canonical_json_bytes(self.value)
+            object.__setattr__(self, "_value_json", canonical_json_bytes(value))
             return
-        if self.value is not None:
+        if value is not _MISSING:
             raise ContractError("non-known state forbids value")
-        _validate_reason(self.reason)
+        _validate_reason(reason)
+        object.__setattr__(self, "_value_json", None)
+
+    @property
+    def value(self) -> Any:
+        """Return a fresh JSON value so callers cannot mutate the stored snapshot."""
+
+        if self._value_json is None:
+            return None
+        return json.loads(self._value_json)
 
     @classmethod
     def known(cls, value: Any) -> ValueState:
@@ -221,29 +241,91 @@ class AssertionDescriptor:
         }
 
 
-def _validate_json_value(value: Any, *, depth: int = 0) -> None:
+def _consume_budget(remaining: list[int], amount: int) -> None:
+    if amount < 0 or amount > remaining[0]:
+        raise ContractError(
+            f"canonical JSON exceeds {MAX_CANONICAL_JSON_BYTES} bytes"
+        )
+    remaining[0] -= amount
+
+
+def _json_string_size(value: str) -> int:
+    size = 2
+    for character in value:
+        codepoint = ord(character)
+        if 0xD800 <= codepoint <= 0xDFFF:
+            raise ContractError("canonical JSON forbids surrogate code points")
+        if character in {'"', "\\"} or character in "\b\f\n\r\t":
+            size += 2
+        elif codepoint < 0x20:
+            size += 6
+        elif codepoint < 0x80:
+            size += 1
+        elif codepoint < 0x800:
+            size += 2
+        elif codepoint < 0x10000:
+            size += 3
+        else:
+            size += 4
+        if size > MAX_CANONICAL_JSON_BYTES:
+            raise ContractError(
+                f"canonical JSON exceeds {MAX_CANONICAL_JSON_BYTES} bytes"
+            )
+    return size
+
+
+def _validate_json_value(
+    value: Any,
+    *,
+    depth: int = 0,
+    remaining: list[int],
+) -> None:
     if depth > 32:
         raise ContractError("canonical JSON nesting exceeds 32")
     value_type = type(value)
-    if value is None or value_type in {str, bool, int}:
+    if value is None:
+        _consume_budget(remaining, 4)
+        return
+    if value_type is str:
+        _consume_budget(remaining, _json_string_size(value))
+        return
+    if value_type is bool:
+        _consume_budget(remaining, 4 if value else 5)
+        return
+    if value_type is int:
+        estimated_digits = max(1, (value.bit_length() * 30103) // 100000 + 1)
+        if value < 0:
+            estimated_digits += 1
+        if estimated_digits > remaining[0] + 1:
+            raise ContractError(
+                f"canonical JSON exceeds {MAX_CANONICAL_JSON_BYTES} bytes"
+            )
+        _consume_budget(remaining, len(str(value)))
         return
     if value_type is float:
         if not math.isfinite(value):
             raise ContractError("canonical JSON forbids non-finite floats")
+        _consume_budget(
+            remaining,
+            len(json.dumps(value, allow_nan=False, separators=(",", ":"))),
+        )
         return
     if value_type is list:
         if len(value) > 4096:
             raise ContractError("canonical JSON array exceeds 4096 items")
+        _consume_budget(remaining, 2 + max(0, len(value) - 1))
         for item in value:
-            _validate_json_value(item, depth=depth + 1)
+            _validate_json_value(item, depth=depth + 1, remaining=remaining)
         return
     if value_type is dict:
         if len(value) > 4096:
             raise ContractError("canonical JSON object exceeds 4096 members")
+        _consume_budget(remaining, 2 + max(0, len(value) - 1))
         for key, item in value.items():
             if type(key) is not str:
                 raise ContractError("canonical JSON object keys must be strings")
-            _validate_json_value(item, depth=depth + 1)
+            _consume_budget(remaining, _json_string_size(key) + 1)
+            _validate_json_value(item, depth=depth + 1, remaining=remaining)
         return
     raise ContractError("value is not an exact JSON builtin")
 
@@ -251,7 +333,8 @@ def _validate_json_value(value: Any, *, depth: int = 0) -> None:
 def canonical_json_bytes(value: Any) -> bytes:
     """Return recursively key-sorted UTF-8 JSON without whitespace or final LF."""
 
-    _validate_json_value(value)
+    remaining = [MAX_CANONICAL_JSON_BYTES]
+    _validate_json_value(value, remaining=remaining)
     try:
         encoded = json.dumps(
             value,
@@ -280,6 +363,7 @@ def private_hmac_sha256(value: Any, *, key: bytes, domain: str) -> str:
 
 __all__ = [
     "BUILTIN_SUBJECT_TYPES",
+    "MAX_CANONICAL_JSON_BYTES",
     "AssertionClass",
     "AssertionDescriptor",
     "AssertionNamespace",
