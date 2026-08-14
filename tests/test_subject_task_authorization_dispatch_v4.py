@@ -15,9 +15,19 @@ def _restore_repo_cwd(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.chdir(ROOT)
 
 
-def test_dispatch_accepts_exact_current_mission_phase_at_t003_terminal_prefix() -> None:
+def test_dispatch_accepts_exact_current_mission_phase_at_t003_terminal_prefix(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     proof_path = ROOT / mission.MISSION_PROOF_PATH
     revocation_path = ROOT / mission.REVOCATION_PATH
+    reference_now = mission._now().replace(microsecond=0)
+    reference_text = mission._time(reference_now)
+    validate = dispatch.validator.validate
+    monkeypatch.setattr(
+        dispatch.validator,
+        "validate",
+        lambda repo_root: validate(repo_root, now_utc=reference_text),
+    )
     if not proof_path.exists():
         assert not revocation_path.exists()
         expected = {
@@ -34,7 +44,7 @@ def test_dispatch_accepts_exact_current_mission_phase_at_t003_terminal_prefix() 
         assert proof_raw == mission.canonical(proof)
         if revocation_path.exists():
             expected_state = "REVOKED"
-        elif mission._now() >= mission._timestamp(proof["mission_not_after_utc"]):
+        elif reference_now >= mission._timestamp(proof["mission_not_after_utc"]):
             expected_state = "EXPIRED"
         else:
             expected_state = "ACTIVE"

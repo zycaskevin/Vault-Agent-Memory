@@ -114,7 +114,8 @@ def test_contract_is_closed_and_current_mission_phase_is_exact() -> None:
     )
     proof_path = ROOT / mission.MISSION_PROOF_PATH
     revocation_path = ROOT / mission.REVOCATION_PATH
-    result = validator.validate(ROOT)
+    reference_now = mission._now().replace(microsecond=0)
+    result = validator.validate(ROOT, now_utc=mission._time(reference_now))
     if not proof_path.exists():
         assert not revocation_path.exists()
         assert result == {
@@ -132,7 +133,7 @@ def test_contract_is_closed_and_current_mission_phase_is_exact() -> None:
     assert proof_raw == mission.canonical(proof)
     if revocation_path.exists():
         expected_state = "REVOKED"
-    elif mission._now() >= mission._timestamp(proof["mission_not_after_utc"]):
+    elif reference_now >= mission._timestamp(proof["mission_not_after_utc"]):
         expected_state = "EXPIRED"
     else:
         expected_state = "ACTIVE"
