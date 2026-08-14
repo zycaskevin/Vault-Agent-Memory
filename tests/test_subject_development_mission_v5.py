@@ -1037,6 +1037,15 @@ def test_mission_activation_accepts_only_exact_two_parent_merge_delivery(
         mission_raw=proof_raw,
     ) == delivery
 
+    (repo / "task-output.txt").write_text("governed descendant\n")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "task descendant"], cwd=repo, check=True)
+    assert mission.validate_mission_activation_delivery(
+        repo,
+        protocol_base=protocol,
+        mission_raw=proof_raw,
+    ) == delivery
+
     subprocess.run(["git", "reset", "--hard", "-q", protocol], cwd=repo, check=True)
     (repo / "extra.txt").write_text("outside activation scope\n")
     subprocess.run(["git", "add", "."], cwd=repo, check=True)
