@@ -91,7 +91,7 @@ def _t020_authorization_fixture() -> tuple[
     )
 
 
-def test_contract_is_closed_and_inactive_before_owner_confirmation() -> None:
+def test_contract_is_closed_and_current_mission_phase_is_exact() -> None:
     contract = _json(mission.CONTRACT_PATH)
     assert contract["schema_version"] == 4
     assert contract["artifact_kind"] == "subject-development-mission-v4-contract"
@@ -112,14 +112,35 @@ def test_contract_is_closed_and_inactive_before_owner_confirmation() -> None:
     assert contract["activation"]["progress"]["sha256"] == (
         "28478445e3eeb5b838b010fa81518d4fcbbb5c6a37422cb3aa58dabdcbf87626"
     )
-    assert not (ROOT / mission.MISSION_PROOF_PATH).exists()
-    assert not (ROOT / mission.REVOCATION_PATH).exists()
+    proof_path = ROOT / mission.MISSION_PROOF_PATH
+    revocation_path = ROOT / mission.REVOCATION_PATH
     result = validator.validate(ROOT)
+    if not proof_path.exists():
+        assert not revocation_path.exists()
+        assert result == {
+            "active": False,
+            "authorized_tasks": 0,
+            "mission_id": None,
+            "mission_state": "INACTIVE",
+            "sequence": 6,
+            "status": "PASS",
+        }
+        return
+
+    proof_raw = proof_path.read_bytes()
+    proof = mission._parse(proof_raw)
+    assert proof_raw == mission.canonical(proof)
+    if revocation_path.exists():
+        expected_state = "REVOKED"
+    elif mission._now() >= mission._timestamp(proof["mission_not_after_utc"]):
+        expected_state = "EXPIRED"
+    else:
+        expected_state = "ACTIVE"
     assert result == {
-        "active": False,
-        "authorized_tasks": 0,
-        "mission_id": None,
-        "mission_state": "INACTIVE",
+        "active": expected_state == "ACTIVE",
+        "authorized_tasks": 30 if expected_state == "ACTIVE" else 0,
+        "mission_id": proof["mission_id"],
+        "mission_state": expected_state,
         "sequence": 6,
         "status": "PASS",
     }
@@ -255,6 +276,11 @@ def test_required_ci_pins_every_nonrecursive_v4_bridge_root() -> None:
         assert line in workflow
     assert "Replay immutable T-003 authorization checkpoint" in workflow
     assert "SUBJECT_T003_CHECKPOINT: f7aff39fecbc2fce7d612f396237afb0e094e460" in workflow
+    assert "Replay inactive V4 bridge checkpoint" in workflow
+    assert (
+        "SUBJECT_V4_INACTIVE_CHECKPOINT: "
+        "5ce070ddfdf2511b76e497f6c296826b6a70c050"
+    ) in workflow
 
 
 def test_mission_proof_is_not_self_authority() -> None:
