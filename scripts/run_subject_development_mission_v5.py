@@ -906,7 +906,7 @@ def _git(repo_root: Path, *args: str) -> bytes:
     completed = subprocess.run(
         ["git", *args], cwd=repo_root, capture_output=True, check=False, timeout=30
     )
-    if completed.returncode or completed.stderr:
+    if completed.returncode:
         raise Denied
     return completed.stdout
 
@@ -1756,7 +1756,10 @@ def derive_task_authorization(
     now_utc: str,
     revocation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    from scripts import validate_subject_development_mission_v5 as validator
+    validator = _load_sibling_dependency(
+        "scripts.validate_subject_development_mission_v5",
+        "validate_subject_development_mission_v5.py",
+    )
 
     validator.validate_mission_proof_value(
         mission_proof, canonical(mission_proof), repo_root, now_utc=now_utc

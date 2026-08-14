@@ -497,6 +497,40 @@ def test_only_next_pending_task_can_be_derived(monkeypatch) -> None:
         )
 
 
+def test_task_derivation_loads_the_pinned_sibling_validator(monkeypatch) -> None:
+    proof = mission.build_signed_test_proof(
+        _json(mission.CONTRACT_PATH),
+        recorded_at_utc="2026-08-13T00:00:00Z",
+    )
+    loaded: list[tuple[str, str]] = []
+
+    def load(module_name: str, filename: str):
+        loaded.append((module_name, filename))
+        return validator
+
+    monkeypatch.setattr(mission, "_load_sibling_dependency", load)
+    monkeypatch.setattr(mission, "check_task_base", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        mission,
+        "validate_mission_activation_delivery",
+        lambda *_args, **_kwargs: mission.BRIDGE_BASE,
+    )
+    grant = mission.derive_task_authorization(
+        ROOT,
+        proof,
+        "T-004",
+        mission.BRIDGE_BASE,
+        now_utc="2026-08-13T00:00:01Z",
+    )
+    assert grant["authorized_task"] == "T-004"
+    assert loaded == [
+        (
+            "scripts.validate_subject_development_mission_v5",
+            "validate_subject_development_mission_v5.py",
+        )
+    ]
+
+
 def test_next_task_base_must_equal_previous_final_delivery(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -713,7 +747,6 @@ def test_repository_identity_accepts_only_canonical_github_remote_forms(
             mission, "_git", lambda *_args, value=remote: (value + "\n").encode()
         )
         mission.check_repository_identity(ROOT)
-
     rejected = (
         "git@github.com:zycaskevin/Vault-Agent-Memory",
         "https://github.com/other/Vault-Agent-Memory",
@@ -731,6 +764,33 @@ def test_repository_identity_accepts_only_canonical_github_remote_forms(
         )
         with pytest.raises(mission.Denied):
             mission.check_repository_identity(ROOT)
+
+
+def test_git_accepts_success_diagnostics_and_denies_nonzero(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def success(*_args, **_kwargs):
+        return subprocess.CompletedProcess(
+            args=["git", "rev-parse", "HEAD"],
+            returncode=0,
+            stdout=b"a" * 40 + b"\n",
+            stderr=b"trace: diagnostic only\n",
+        )
+
+    monkeypatch.setattr(mission.subprocess, "run", success)
+    assert mission._git(ROOT, "rev-parse", "HEAD") == b"a" * 40 + b"\n"
+
+    def failure(*_args, **_kwargs):
+        return subprocess.CompletedProcess(
+            args=["git", "rev-parse", "HEAD"],
+            returncode=1,
+            stdout=b"",
+            stderr=b"fatal: failure\n",
+        )
+
+    monkeypatch.setattr(mission.subprocess, "run", failure)
+    with pytest.raises(mission.Denied):
+        mission._git(ROOT, "rev-parse", "HEAD")
 
 
 @pytest.mark.parametrize("phase", ["pending", "linked", "final"])

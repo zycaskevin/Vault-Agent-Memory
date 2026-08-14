@@ -217,7 +217,7 @@ jobs:
       - name: Validate current Subject Development Mission v5 overlay
         run: |
           cat <<'EOF' | sha256sum -c -
-          279321bb45530a757b4f9a5ebbc65695b7d9bc06276adccf14d7c091ad804102  scripts/run_subject_development_mission_v5.py
+          86a76900bf772ccc43a446b12d43ee9a8b2b3a74d10a0ad3e8e584dd9a9fcdf9  scripts/run_subject_development_mission_v5.py
           64d10f43f4a92ae1ca047e1516e93d4c5b0c0b78098601889e9152e240df365c  scripts/update_subject_task_progress_v5.py
           d79bf1ee1268e2fc8a0cbaafb6f9abec9e5057643dc4c1dcb34b4db68446737e  scripts/validate_subject_development_mission_v5.py
           a70e365e5691981b4d19a80929667c50014800e77f04bdf825296e6ead953c58  scripts/validate_subject_task_authorization_dispatch_v5.py
@@ -226,7 +226,7 @@ jobs:
           c2d55591e677f923981fa6dc242c47d98cd0e13fb43a844f8cf9b5a9060dd1db  specs/subject-distillation/task-scope-manifest-v5.json
           84ef6b33f18bc3f02a4c8576a5e2f76b0a7f0ce3a7afd8299b46f704b416acd4  docs/decision_records/2026-08-14-subject-development-mission-v5-recovery.md
           48ab486c3326f1903c625bb9b1fa162c3a44ea3fdd120c63777f636b13a657e4  specs/subject-distillation/development-missions/README.md
-          3721c4c818ac5a3722abe52b44f4f3e0afd66002289f9479fe996baefd586ca1  tests/test_subject_development_mission_v5.py
+          26c5bdcaa28b3b78d0538775162970678d85770009183ab62e5eedc1532b492c  tests/test_subject_development_mission_v5.py
           50a6385edcbb3ae4ca92fbef227a41029b9708584d711eeb40383b81699fd64d  tests/test_subject_task_authorization_dispatch_v5.py
           87588cfd884ecbe47aa0275c3fc7317a2b309d6ac9b9bfb786c8cd75ca3da4ec  tests/test_repo_hygiene_tools.py
           EOF
