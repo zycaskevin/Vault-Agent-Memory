@@ -53,6 +53,27 @@ historical state, while current validation executes against current bytes.
 Unknown phases, altered checkpoints, hash drift, or an unvalidated current
 ledger deny the required job.
 
+The first owner-confirmed V5 activation later exposed one additional
+phase-routing defect on the T-004 preliminary head: activation delivery replay
+required the live `HEAD` itself to be the activation merge. A valid governed
+task descendant therefore made both the V5 tests and current dispatcher deny,
+even though the activation proof and merge remained unchanged in its ancestry.
+The repair locates exactly one byte-identical proof commit and exactly one
+closed two-parent activation merge in the current ancestry, then returns that
+merge as the immutable activation delivery anchor. Governed descendants may
+replay that anchor, but they do not replace it. T-004 start still requires its
+implementation base to equal the anchor, and later tasks still use the prior
+task's exact final delivery anchor. A direct proof-branch descendant, ambiguous
+activation merge, changed parent order, extra activation path, mode drift, or
+proof-byte drift remains denied.
+
+Because the runner, test, CI pin, and this decision record are V5 trust roots,
+the earlier V5 mission proof and its sequence-7 T-004 branch are invalidated by
+this repair. After the hotfix merge and hosted-CI readback, activation must
+restart from the exact sequence-6 main ledger with a fresh canonical proposal,
+fresh owner confirmation, and fresh proof. No proof, review, progress event, or
+authorization artifact from the invalidated branch may be reused.
+
 ## Authority and delivery
 
 The inactive V5 bridge creates no task authority. After the bridge is merged

@@ -1072,23 +1072,34 @@ def validate_mission_activation_delivery(
     activation = matches[0]
     if head == activation:
         return activation
-    parents = _git(repo_root, "rev-list", "--parents", "-n", "1", head).decode().split()
-    if parents != [head, protocol_base, activation]:
+    deliveries: list[str] = []
+    for commit in commits:
+        parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).decode().split()
+        if parents != [commit, protocol_base, activation]:
+            continue
+        if _git(
+            repo_root, "diff", "--name-only", f"{protocol_base}..{commit}"
+        ).decode().splitlines() != [MISSION_PROOF_PATH]:
+            continue
+        if _git(
+            repo_root,
+            "diff",
+            "--name-status",
+            "--no-renames",
+            f"{protocol_base}..{commit}",
+        ).decode().splitlines() != [f"A\t{MISSION_PROOF_PATH}"]:
+            continue
+        try:
+            mode, raw = _git_object(repo_root, commit, MISSION_PROOF_PATH)
+        except Denied:
+            continue
+        if mode == "100644" and raw == mission_raw:
+            deliveries.append(commit)
+    if len(deliveries) != 1:
         raise Denied
-    if _git(repo_root, "diff", "--name-only", f"{protocol_base}..{head}").decode().splitlines() != [MISSION_PROOF_PATH]:
-        raise Denied
-    if _git(
-        repo_root,
-        "diff",
-        "--name-status",
-        "--no-renames",
-        f"{protocol_base}..{head}",
-    ).decode().splitlines() != [f"A\t{MISSION_PROOF_PATH}"]:
-        raise Denied
-    mode, raw = _git_object(repo_root, head, MISSION_PROOF_PATH)
-    if mode != "100644" or raw != mission_raw:
-        raise Denied
-    return head
+    return deliveries[0]
 
 
 def validate_progress_only_delivery(
