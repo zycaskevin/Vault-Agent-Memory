@@ -62,6 +62,16 @@ may publish `MISSION-V5-T004-T033.json`. Its activation commit must be the
 single-parent direct child of the reviewed V5 protocol release and add only
 that proof.
 
+GitHub may deliver that exact proof commit through an exact two-parent merge
+whose first parent is the protocol release and whose second parent is the
+single-parent proof commit. In that closed topology, the merge tree must differ
+from the protocol release by only the byte-identical mode-0644 proof, and the
+merge commit becomes the T-004 implementation base because it is the exact
+current `origin/main`. A different parent order, intervening commit, extra path,
+mode drift, or proof-byte drift is denied. If this delivery rule itself changes,
+the old proof is removed as invalidated authority, CI returns to the sequence-6
+inactive state, and a fresh post-merge owner-confirmed proposal is mandatory.
+
 Once active, V5 retains the V4 serial task protocol: exact descriptor-bound
 start proof, IN_PROGRESS preliminary commit, independent P0/P1=0 source review,
 hosted required-CI readback, atomic completion, final two-path delivery, and
