@@ -2,8 +2,12 @@
 
 This directory stores public-safe, owner-confirmed Development Mission roots
 and append-only revocation records. Mission proposals and private receipt/scope
-material are never stored here. Absence of the exact v4 proof means the v4
-bridge is inactive and T-004 remains fail-closed.
+material are never stored here. V4 was activated at the immutable sequence-6
+checkpoint, but its first post-start required-CI run exposed a phase-sensitive
+test-routing defect. V5 therefore supersedes V4 only for T-004 through T-033
+task authority and CI routing. Absence of the exact V5 proof means the V5
+bridge is inactive and T-004 remains fail-closed; the V4 proof remains
+historical evidence and is never interpreted as V5 authority.
 
 The activated execution history is deliberately linear: the mission-proof
 commit is the direct child of the reviewed protocol release, T-004 starts from
@@ -26,7 +30,9 @@ with the exact revocation record as the sole additional path when revoked.
 Current CI validates activation and T-032 BLOCKED
 delivery immediately in their own phases.
 
-V4 has one irreversible epoch. A valid revocation or expiry keeps historical
-CI replay valid but permanently disables new V4 actions. Resumption requires a
-separately reviewed and owner-approved successor protocol; V4 cannot un-revoke
-itself.
+V4 and V5 each have one irreversible epoch. A valid revocation or expiry keeps
+historical CI replay valid but permanently disables new actions for that
+protocol. Resumption requires a separately reviewed and owner-approved
+successor protocol; neither protocol can un-revoke itself. V5 independently
+replays the exact V4 activation proof, immutable V4 roots and sequence-6 ledger
+prefix before it can activate or authorize any task.

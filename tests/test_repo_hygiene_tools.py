@@ -41,12 +41,16 @@ def test_subject_progress_ci_separates_historical_and_current_phases():
         "\n  readme-command-smoke:\n", 1
     )[0]
 
-    current_command = (
-        "python -m pytest -q --ignore=tests/test_subject_progress.py "
-        "--ignore=tests/test_subject_task_authorization_dispatch.py"
-    )
-    assert test_job.count(current_command) == 1
-    assert test_job.count("--ignore=") == 2
+    assert test_job.count("      - name: Run current-state tests\n") == 1
+    ignored = {
+        "tests/test_subject_progress.py",
+        "tests/test_subject_task_authorization_dispatch.py",
+        "tests/test_subject_development_mission_v4.py",
+        "tests/test_subject_task_authorization_dispatch_v4.py",
+    }
+    for path in ignored:
+        assert test_job.count(f"--ignore={path}") == 1
+    assert test_job.count("--ignore=") == len(ignored)
     assert "--deselect" not in test_job
     assert "continue-on-error" not in test_job
     assert " -k " not in test_job
@@ -112,6 +116,22 @@ def test_subject_progress_ci_separates_historical_and_current_phases():
         "            tests/test_subject_task_authorization_dispatch.py"
     ) in test_job
     assert "validate_subject_task_authorization_v2.py \\\n" not in test_job
+    assert (
+        "SUBJECT_V4_ACTIVATION_CHECKPOINT: "
+        "03dcdabc873658cd7de24dfeeef8b85090cf2321"
+    ) in test_job
+    assert (
+        'git worktree add --detach "$replay_root" '
+        '"$SUBJECT_V4_ACTIVATION_CHECKPOINT"'
+    ) in test_job
+    assert (
+        "tests/test_subject_development_mission_v4.py \\\n"
+        "            tests/test_subject_task_authorization_dispatch_v4.py"
+    ) in test_job
+    assert (
+        "python scripts/validate_subject_task_authorization_dispatch_v5.py \\\n"
+        "            --ledger"
+    ) in test_job
 
 
 def test_artifact_audit_classifies_safe_generated_cache(tmp_path: Path):
