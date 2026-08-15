@@ -112,6 +112,7 @@ POST_SDG_TOPIC = "cbdfd04db9697bc465d1e5d4b6ab14528ef9aa0e"
 POST_SDG_TREE = "701a59ae858927c59c9876bc57efcad220695ee2"
 POST_SDG_GATE_SHA256 = "c209b63bab683165dcca49289bf09f536c966bbb1b50dd054c3e30b8a6198dd0"
 POST_SDG_RECEIPT_SHA256 = "5e16e217ab75052065e12bf7abde476aea801d6d37a8f3dbec7740923890479f"
+SDG004_BASE = "3374ac372930ee6200d38c1f02289a0c8fa1eb84"
 TASKS_SHA256 = "0150935a1a16e51dc30dff9dff8d01104d7127ee3cf57333caec7586d93f5007"
 ACTIVATION_PROGRESS_SHA256 = "28478445e3eeb5b838b010fa81518d4fcbbb5c6a37422cb3aa58dabdcbf87626"
 AUTHORITY = "github:zycaskevin"
@@ -276,6 +277,66 @@ POST_SDG_COMPATIBILITY_PATHS = sorted(
     ]
 )
 POST_SDG_COMPATIBILITY_MODIFIED_PATHS = {
+    ".github/workflows/ci.yml",
+    ".sddgov/ci-cost-guard.json",
+    ".sddgov/events.jsonl",
+    ".sddgov/merge-gate.json",
+    ".sddgov/work-claims.json",
+    "scripts/run_subject_development_mission_v5.py",
+    "tests/test_subject_development_mission_v5.py",
+}
+ACTIVATION_SDG_PATHS = sorted(
+    [
+        ".sddgov/events.jsonl",
+        ".sddgov/merge-gate.json",
+        ".sddgov/reviews/REV-SDG-005.json",
+        ".sddgov/work-claims.json",
+        "docs/work-packages/SDG-005-mission-v5-activation.md",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/fix-scope.md",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/manifest.json",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/redaction-report.json",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/regression-evidence.md",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/reproduction.md",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/rollback.md",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/root-cause-hypothesis.md",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/shareable/artifacts/terminal--mission-v5-activation-green.txt",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/summary.yaml",
+        "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/verification.md",
+        MISSION_PROOF_PATH,
+    ]
+)
+ACTIVATION_SDG_MODIFIED_PATHS = {
+    ".sddgov/events.jsonl",
+    ".sddgov/merge-gate.json",
+    ".sddgov/work-claims.json",
+}
+SDG004_COMPATIBILITY_PATHS = sorted(
+    [
+        ".github/workflows/ci.yml",
+        ".sddgov/ci-cost-guard.json",
+        ".sddgov/events.jsonl",
+        ".sddgov/merge-gate.json",
+        ".sddgov/reviews/REV-SDG-004.json",
+        ".sddgov/work-claims.json",
+        "docs/decision_records/2026-08-15-mission-v5-activation-sdg-gate.md",
+        "docs/work-packages/SDG-004-mission-v5-activation-gate.md",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/fix-scope.md",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/manifest.json",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/redaction-report.json",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/regression-evidence.md",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/reproduction.md",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/rollback.md",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/root-cause-hypothesis.md",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/shareable/artifacts/terminal--activation-gate-red.txt",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/shareable/artifacts/terminal--local-green-identity-red.txt",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/summary.yaml",
+        "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/verification.md",
+        "scripts/run_subject_development_mission_v5.py",
+        "scripts/run_subject_identity_test_isolation.py",
+        "tests/test_subject_development_mission_v5.py",
+    ]
+)
+SDG004_COMPATIBILITY_MODIFIED_PATHS = {
     ".github/workflows/ci.yml",
     ".sddgov/ci-cost-guard.json",
     ".sddgov/events.jsonl",
@@ -1095,42 +1156,85 @@ def validate_mission_activation_delivery(
     ).decode().splitlines()
     if len(commits) > 128 or any(COMMIT.fullmatch(item) is None for item in commits):
         raise Denied
-    matches: list[str] = []
-    for commit in commits:
-        parents = _git(repo_root, "rev-list", "--parents", "-n", "1", commit).decode().split()
-        if parents != [commit, protocol_base]:
-            continue
-        if _git(repo_root, "diff", "--name-only", f"{protocol_base}..{commit}").decode().splitlines() != [MISSION_PROOF_PATH]:
-            continue
+    expected_status = [
+        ("M" if path in ACTIVATION_SDG_MODIFIED_PATHS else "A") + "\t" + path
+        for path in ACTIVATION_SDG_PATHS
+    ]
+
+    def valid_topic(candidate: str) -> bool:
+        topic_commits = _git(
+            repo_root,
+            "rev-list",
+            "--reverse",
+            "--topo-order",
+            f"{protocol_base}..{candidate}",
+        ).decode().splitlines()
+        if not topic_commits or len(topic_commits) > 32 or topic_commits[-1] != candidate:
+            return False
+        previous = protocol_base
+        known = set(ACTIVATION_SDG_MODIFIED_PATHS)
+        allowed = set(ACTIVATION_SDG_PATHS)
+        for commit in topic_commits:
+            parents = _git(
+                repo_root, "rev-list", "--parents", "-n", "1", commit
+            ).decode().split()
+            if parents != [commit, previous]:
+                return False
+            changes = _git(
+                repo_root,
+                "diff",
+                "--name-status",
+                "--no-renames",
+                f"{previous}..{commit}",
+            ).decode().splitlines()
+            if not changes:
+                return False
+            for line in changes:
+                fields = line.split("\t")
+                if len(fields) != 2:
+                    return False
+                action, path = fields
+                if path not in allowed or action != ("M" if path in known else "A"):
+                    return False
+                try:
+                    mode, _raw = _git_object(repo_root, commit, path)
+                except Denied:
+                    return False
+                if mode != "100644":
+                    return False
+                known.add(path)
+            previous = commit
         if _git(
             repo_root,
             "diff",
             "--name-status",
             "--no-renames",
-            f"{protocol_base}..{commit}",
-        ).decode().splitlines() != [f"A\t{MISSION_PROOF_PATH}"]:
-            continue
+            f"{protocol_base}..{candidate}",
+        ).decode().splitlines() != expected_status:
+            return False
         try:
-            mode, raw = _git_object(repo_root, commit, MISSION_PROOF_PATH)
+            mode, raw = _git_object(repo_root, candidate, MISSION_PROOF_PATH)
         except Denied:
-            continue
-        if mode == "100644" and raw == mission_raw:
-            matches.append(commit)
-    if len(matches) != 1:
-        raise Denied
-    activation = matches[0]
-    if head == activation:
-        return activation
+            return False
+        return mode == "100644" and raw == mission_raw
+
     deliveries: list[str] = []
     for commit in commits:
         parents = _git(
             repo_root, "rev-list", "--parents", "-n", "1", commit
         ).decode().split()
-        if parents != [commit, protocol_base, activation]:
+        if len(parents) != 3 or parents[0] != commit or parents[1] != protocol_base:
+            continue
+        topic = parents[2]
+        if not valid_topic(topic):
+            continue
+        if _git(repo_root, "rev-parse", f"{commit}^{{tree}}").strip() != _git(
+            repo_root, "rev-parse", f"{topic}^{{tree}}"
+        ).strip():
             continue
         if _git(
             repo_root, "diff", "--name-only", f"{protocol_base}..{commit}"
-        ).decode().splitlines() != [MISSION_PROOF_PATH]:
+        ).decode().splitlines() != ACTIVATION_SDG_PATHS:
             continue
         if _git(
             repo_root,
@@ -1138,7 +1242,7 @@ def validate_mission_activation_delivery(
             "--name-status",
             "--no-renames",
             f"{protocol_base}..{commit}",
-        ).decode().splitlines() != [f"A\t{MISSION_PROOF_PATH}"]:
+        ).decode().splitlines() != expected_status:
             continue
         try:
             mode, raw = _git_object(repo_root, commit, MISSION_PROOF_PATH)
@@ -1653,17 +1757,94 @@ def _check_post_sdg_compatibility_release(repo_root: Path, base: str) -> None:
             raise Denied
 
 
+def _check_sdg004_compatibility_release(repo_root: Path, base: str) -> None:
+    parents = _git(repo_root, "rev-list", "--parents", "-n", "1", base).decode().split()
+    if len(parents) != 3 or parents[0] != base or parents[1] != SDG004_BASE:
+        raise Denied
+    topic = parents[2]
+    if _git(repo_root, "rev-parse", f"{base}^{{tree}}").strip() != _git(
+        repo_root, "rev-parse", f"{topic}^{{tree}}"
+    ).strip():
+        raise Denied
+
+    commits = _git(
+        repo_root,
+        "rev-list",
+        "--reverse",
+        "--topo-order",
+        f"{SDG004_BASE}..{topic}",
+    ).decode().splitlines()
+    if not commits or len(commits) > 64:
+        raise Denied
+    previous = SDG004_BASE
+    known_paths = set(SDG004_COMPATIBILITY_MODIFIED_PATHS)
+    allowed_paths = set(SDG004_COMPATIBILITY_PATHS)
+    for commit in commits:
+        commit_parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).decode().split()
+        if commit_parents != [commit, previous]:
+            raise Denied
+        changes = _git(
+            repo_root,
+            "diff",
+            "--name-status",
+            "--no-renames",
+            f"{previous}..{commit}",
+        ).decode().splitlines()
+        if not changes:
+            raise Denied
+        for line in changes:
+            fields = line.split("\t")
+            if len(fields) != 2:
+                raise Denied
+            action, path = fields
+            if path not in allowed_paths or action != ("M" if path in known_paths else "A"):
+                raise Denied
+            expected_mode = (
+                "100755" if path.startswith("scripts/") and path.endswith(".py") else "100644"
+            )
+            mode, _raw = _git_object(repo_root, commit, path)
+            if mode != expected_mode:
+                raise Denied
+            known_paths.add(path)
+        previous = commit
+    if previous != topic:
+        raise Denied
+
+    expected_status = [
+        ("M" if path in SDG004_COMPATIBILITY_MODIFIED_PATHS else "A") + "\t" + path
+        for path in SDG004_COMPATIBILITY_PATHS
+    ]
+    if _git(
+        repo_root,
+        "diff",
+        "--name-status",
+        "--no-renames",
+        f"{SDG004_BASE}..{base}",
+    ).decode().splitlines() != expected_status:
+        raise Denied
+    for path in SDG004_COMPATIBILITY_PATHS:
+        expected_mode = (
+            "100755" if path.startswith("scripts/") and path.endswith(".py") else "100644"
+        )
+        mode, _raw = _git_object(repo_root, base, path)
+        if mode != expected_mode:
+            raise Denied
+
+
 def _check_protocol_release_commit(repo_root: Path, base: str) -> None:
     check_repository_identity(repo_root)
     _check_predecessor_activation_commit(repo_root)
     _check_post_sdg_base(repo_root)
-    if COMMIT.fullmatch(base) is None or base == POST_SDG_BASE:
+    _check_post_sdg_compatibility_release(repo_root, SDG004_BASE)
+    if COMMIT.fullmatch(base) is None or base == SDG004_BASE:
         raise Denied
     if _git(repo_root, "rev-parse", "HEAD").strip() != base.encode():
         raise Denied
     if _git(repo_root, "rev-parse", "origin/main").strip() != base.encode():
         raise Denied
-    _check_post_sdg_compatibility_release(repo_root, base)
+    _check_sdg004_compatibility_release(repo_root, base)
 
 
 def _check_predecessor_activation_commit(repo_root: Path) -> None:

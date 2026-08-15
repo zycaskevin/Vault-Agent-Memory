@@ -1,5 +1,10 @@
 name: Release Readiness CI
 
+env:
+  GIT_CONFIG_COUNT: "1"
+  GIT_CONFIG_KEY_0: "core.abbrev"
+  GIT_CONFIG_VALUE_0: "40"
+
 on:
   workflow_dispatch:
   push:
@@ -232,7 +237,8 @@ jobs:
       - name: Validate current Subject Development Mission v5 overlay
         run: |
           cat <<'EOF' | sha256sum -c -
-          c08210b82f512e6953b976d5402cfe5d17259235e39a3d6d6c912a914d47dea6  scripts/run_subject_development_mission_v5.py
+          8d9cf43099982bbd7bdda35ca487368c3f6cdeb4113c5c3b7aa32b2d7173a4e2  scripts/run_subject_development_mission_v5.py
+          35aacb08b4236ed4781ea1dde477badda23393f87f75c991403fe85dc236d6bf  scripts/run_subject_identity_test_isolation.py
           64d10f43f4a92ae1ca047e1516e93d4c5b0c0b78098601889e9152e240df365c  scripts/update_subject_task_progress_v5.py
           d79bf1ee1268e2fc8a0cbaafb6f9abec9e5057643dc4c1dcb34b4db68446737e  scripts/validate_subject_development_mission_v5.py
           a70e365e5691981b4d19a80929667c50014800e77f04bdf825296e6ead953c58  scripts/validate_subject_task_authorization_dispatch_v5.py
@@ -241,7 +247,7 @@ jobs:
           c2d55591e677f923981fa6dc242c47d98cd0e13fb43a844f8cf9b5a9060dd1db  specs/subject-distillation/task-scope-manifest-v5.json
           78bbc6fde5c60d96c6bd642636b4516536717489d34ad47dbdd2cc812b491a91  docs/decision_records/2026-08-14-subject-development-mission-v5-recovery.md
           48ab486c3326f1903c625bb9b1fa162c3a44ea3fdd120c63777f636b13a657e4  specs/subject-distillation/development-missions/README.md
-          f77733dac92e3260c4b61e3538a06742bb7646f4e698ec4902dc8d0087ed5a79  tests/test_subject_development_mission_v5.py
+          a816c20ecd413d81079e6b28064a9009658be526e82c503cb8dd8f702f5fc6a6  tests/test_subject_development_mission_v5.py
           50a6385edcbb3ae4ca92fbef227a41029b9708584d711eeb40383b81699fd64d  tests/test_subject_task_authorization_dispatch_v5.py
           87588cfd884ecbe47aa0275c3fc7317a2b309d6ac9b9bfb786c8cd75ca3da4ec  tests/test_repo_hygiene_tools.py
           EOF

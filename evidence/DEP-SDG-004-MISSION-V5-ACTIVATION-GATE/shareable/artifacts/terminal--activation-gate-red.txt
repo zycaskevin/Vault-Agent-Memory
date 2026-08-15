@@ -1,0 +1,10 @@
+commit=0a865b2b58a1fd69012dffffc037417bc840f16b
+base=3374ac372930ee6200d38c1f02289a0c8fa1eb84
+diff=A specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json
+command=python3 scripts/validate_subject_development_mission_v5.py --json
+exit_status=0
+result={"active":true,"authorized_tasks":30,"mission_state":"ACTIVE","sequence":6,"status":"PASS"}
+command=sddgov merge verify . --base-ref 3374ac372930ee6200d38c1f02289a0c8fa1eb84
+exit_status=2
+result=[ERROR] merge gate base_sha does not match the trusted exact base
+classification=deterministic Mission V5 activation and SDG exact-head gate incompatibility

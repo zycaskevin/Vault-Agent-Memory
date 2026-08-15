@@ -1,0 +1,13 @@
+command=sddgov ci local-gate .
+exit_status=1
+result=1 failed, 3260 passed, 12 skipped, 1 warning
+failure=tests/test_subject_authorization_bootstrap.py::test_injected_internal_fault_is_fixed_error
+actual=fail-closed DENY occurred before injected fixed ERROR boundary
+classification=filesystem identity interference during combined full-suite process
+isolated_command=python -m pytest -q -p no:cacheprovider tests/test_subject_authorization_bootstrap.py::test_injected_internal_fault_is_fixed_error
+isolated_result=1 passed
+repair=run the complete authorization bootstrap file in its own process, then exclude only that already-executed file from the disjoint remainder
+second_revision_result=1 failed, 3164 passed, 12 skipped, 1 warning
+second_failure=tests/test_subject_task_authorization_v2.py::test_mid_verification_progress_drift_denies_after_cleanup
+second_isolated_result=1 passed
+final_repair=run six complete identity-sensitive authorization/progress test files in separate processes, then exclude exactly those already-executed files from the disjoint remainder

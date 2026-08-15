@@ -1,16 +1,13 @@
 {
   "schema_version": "1.0",
-  "base_sha": "4c4c29a16decfeedda59b685886801f65b9fd878",
-  "head_sha": "3d3f08bf17d0e2e62575157d465bf9b4f4fcbc2d",
+  "base_sha": "3374ac372930ee6200d38c1f02289a0c8fa1eb84",
+  "head_sha": "66191a54e04e8e852e8622556a022d3cbdaa81e4",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "d1ef6854f01a436c5c4cdca4ed833b0ae08918a4c3f5056200742090b1f25828",
+  "change_digest": "4b4f26f86261309a390a23b0883c5cccfe268764a2765c2e6251cea6fe489082",
   "deps": [
-    "DEP-SDG-001-CLAIM-CLI",
-    "evidence/DEP-SDG-001-INTEGRATION",
-    "evidence/DEP-SDG-002-FILESYSTEM-IDENTITY",
-    "evidence/DEP-SDG-003-MISSION-V5-POST-SDG"
+    "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE"
   ],
-  "rollback_path": "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/rollback.md",
-  "protected_file_review": ".sddgov/reviews/REV-SDG-003.json"
+  "rollback_path": "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/rollback.md",
+  "protected_file_review": ".sddgov/reviews/REV-SDG-004.json"
 }

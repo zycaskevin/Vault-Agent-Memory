@@ -1,0 +1,46 @@
+{
+  "$schema": "../../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-004-MISSION-V5-ACTIVATION-GATE",
+  "issue": "477",
+  "sdd_references": [
+    "SD-MISSION-V5-POST-START-CI-RECOVERY"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-15T11:14:07Z",
+  "updated_at": "2026-08-15T11:42:18Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-15T11:14:07Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-15T11:21:47Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-15T11:21:47Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-15T11:26:58Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-15T11:42:18Z"
+      }
+    ]
+  },
+  "expected_behavior": "One exact activation delivery satisfies Mission V5 and the signed SDG merge gate.",
+  "actual_behavior": "Mission V5 proof-only delivery and SDG exact-head records are mutually exclusive.",
+  "environment": {
+    "commit": "3374ac372930ee6200d38c1f02289a0c8fa1eb84",
+    "branch": "agent/sdg004-mission-v5-activation-gate",
+    "runtime": "Python 3; sddgov 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}
