@@ -14,6 +14,10 @@ The job had created `.venv-sddgov` inside the checkout. Python virtual environme
 
 The first full Local Green attempt reached 3,282 passing tests and one known fail-closed filesystem-identity failure in the T-003 real-Git pending recovery case. An immediate isolated rerun of the exact parameterized case passed (`1 passed`). This class had already been observed as an ancestor-directory metadata race and does not exercise the CI workflow edit. The permitted single full rerun is therefore used as the transient control; any repeated failure remains blocking.
 
+## Hosted command portability (revision 3)
+
+Independent review reproduced a second fail-closed configuration defect: the external governance runtime could launch `merge verify`, but the Cost Guard contract still named repository-local `.venv-sddgov/bin/*` executables. A clean hosted checkout therefore could not begin Local Green. The repair makes contract commands portable (`sddgov` and `python`) and adds the external virtual environment's `bin` directory to GitHub Actions `PATH` for subsequent steps. The repository-local developer environment remains usable by prefixing the same venv directory on `PATH`.
+
 ## Regression test added or strengthened
 
 The CI Cost Guard itself is the machine-readable regression contract. It now

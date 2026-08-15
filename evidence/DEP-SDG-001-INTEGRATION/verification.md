@@ -14,6 +14,13 @@
 - Isolated rerun: PASS, 1 passed.
 - Classification: transient fail-closed filesystem identity race; this satisfies the Cost Guard evidence prerequisite for one full rerun of the same revision.
 
+## Independent clean-checkout portability finding
+
+- RED: an external-venv invocation of `sddgov ci local-gate` failed before commands ran because `.sddgov/ci-cost-guard.json` referenced missing repository-local executables.
+- Root cause: the workflow runtime location and the executable names embedded in the project contract were inconsistent.
+- FIX: use PATH-resolved `sddgov`/`python` contract commands and publish only `$RUNNER_TEMP/sddgov-venv/bin` to subsequent workflow steps.
+- Required GREEN: external-venv clean-checkout Local Green must execute successfully while `git status --porcelain` remains empty.
+
 ## Green command and result
 
 `.venv-sddgov/bin/sddgov ci local-gate .` returned `ok: true`. Its final pytest

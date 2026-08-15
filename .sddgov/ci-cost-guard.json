@@ -6,12 +6,12 @@
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "commands": [
-      [".venv-sddgov/bin/sddgov", "doctor", "."],
-      [".venv-sddgov/bin/sddgov", "ci", "verify", "."],
-      [".venv-sddgov/bin/python", "scripts/readme_command_smoke.py"],
-      [".venv-sddgov/bin/python", "scripts/check_release_parity.py"],
+      ["sddgov", "doctor", "."],
+      ["sddgov", "ci", "verify", "."],
+      ["python", "scripts/readme_command_smoke.py"],
+      ["python", "scripts/check_release_parity.py"],
       [
-        ".venv-sddgov/bin/python",
+        "python",
         "-m",
         "pytest",
         "-q",

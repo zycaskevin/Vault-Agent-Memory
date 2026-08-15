@@ -841,6 +841,7 @@ jobs:
           "$RUNNER_TEMP/sddgov-venv/bin/python" -m pip install --upgrade pip
           "$RUNNER_TEMP/sddgov-venv/bin/python" -m pip install -e ".[dev]" \
             "https://github.com/zycaskevin/Agentic-SDD-Governance/releases/download/v0.2.0-experimental.6/agentic_sdd_governance-0.2.0.dev6-py3-none-any.whl"
+          printf '%s\n' "$RUNNER_TEMP/sddgov-venv/bin" >> "$GITHUB_PATH"
 
       - name: Materialize public reviewer trust outside the repository
         env:
