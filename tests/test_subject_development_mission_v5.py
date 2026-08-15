@@ -101,6 +101,13 @@ def _authority_snapshot() -> dict[str, bytes]:
     }
 
 
+def _write_activation_records(repo: Path, proof_raw: bytes) -> None:
+    for relative in mission.ACTIVATION_SDG_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(proof_raw if relative == mission.MISSION_PROOF_PATH else b"record\n")
+
+
 def _t020_authorization_fixture() -> tuple[
     dict[str, object],
     dict[str, object],
@@ -995,7 +1002,7 @@ def test_protocol_release_accepts_only_exact_post_sdg_compatibility_merge(
         "_check_predecessor_activation_commit",
         lambda _repo_root: None,
     )
-    mission._check_protocol_release_commit(repo, release)
+    mission._check_post_sdg_compatibility_release(repo, release)
 
     (repo / "unauthorized.txt").write_text("not in the closed hotfix\n")
     subprocess.run(["git", "add", "unauthorized.txt"], cwd=repo, check=True)
@@ -1009,7 +1016,7 @@ def test_protocol_release_accepts_only_exact_post_sdg_compatibility_merge(
         check=True,
     )
     with pytest.raises(mission.Denied):
-        mission._check_protocol_release_commit(repo, unauthorized)
+        mission._check_post_sdg_compatibility_release(repo, unauthorized)
 
 
 def test_protocol_release_denies_hidden_topic_scope_and_mode_drift(
@@ -1070,7 +1077,7 @@ def test_protocol_release_denies_hidden_topic_scope_and_mode_drift(
         ["git", "update-ref", "refs/remotes/origin/main", hidden_release], cwd=repo, check=True
     )
     with pytest.raises(mission.Denied):
-        mission._check_protocol_release_commit(repo, hidden_release)
+        mission._check_post_sdg_compatibility_release(repo, hidden_release)
 
     subprocess.run(["git", "reset", "--hard", "-q", anchor], cwd=repo, check=True)
     subprocess.run(["git", "switch", "-q", "-c", "wrong-mode"], cwd=repo, check=True)
@@ -1095,26 +1102,92 @@ def test_protocol_release_denies_hidden_topic_scope_and_mode_drift(
         ["git", "update-ref", "refs/remotes/origin/main", mode_release], cwd=repo, check=True
     )
     with pytest.raises(mission.Denied):
-        mission._check_protocol_release_commit(repo, mode_release)
+        mission._check_post_sdg_compatibility_release(repo, mode_release)
 
 
 def test_reviewed_post_sdg_anchor_binds_signed_gate_and_receipt() -> None:
     mission._check_post_sdg_base(LIVE_ROOT)
 
 
+def test_sdg004_release_accepts_only_exact_linear_reviewed_merge(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = tmp_path / "sdg004-release"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    for relative in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("base\n")
+        if relative.startswith("scripts/"):
+            path.chmod(0o755)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "anchor"], cwd=repo, check=True)
+    anchor = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    monkeypatch.setattr(mission, "SDG004_BASE", anchor)
+    subprocess.run(["git", "switch", "-q", "-c", "reviewed"], cwd=repo, check=True)
+    for relative in mission.SDG004_COMPATIBILITY_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("reviewed\n")
+        if relative.startswith("scripts/"):
+            path.chmod(0o755)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "reviewed source"], cwd=repo, check=True)
+    topic = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "merge", "-q", "--no-ff", "--no-edit", topic], cwd=repo, check=True)
+    release = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    mission._check_sdg004_compatibility_release(repo, release)
+
+    subprocess.run(["git", "reset", "--hard", "-q", anchor], cwd=repo, check=True)
+    subprocess.run(["git", "switch", "-q", "-C", "hostile"], cwd=repo, check=True)
+    for relative in mission.SDG004_COMPATIBILITY_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("reviewed\n")
+        if relative.startswith("scripts/"):
+            path.chmod(0o755)
+    (repo / "extra.txt").write_text("unauthorized\n")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "hostile source"], cwd=repo, check=True)
+    hostile = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "merge", "-q", "--no-ff", "--no-edit", hostile], cwd=repo, check=True)
+    hostile_release = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    with pytest.raises(mission.Denied):
+        mission._check_sdg004_compatibility_release(repo, hostile_release)
+
+
 def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     config = json.loads((LIVE_ROOT / ".sddgov/ci-cost-guard.json").read_text())
     commands = config["local_green"]["commands"]
-    assert [
-        "python",
-        "-m",
-        "pytest",
-        "-q",
-        "tests/test_subject_progress_v3.py",
-    ] in commands
     full = next(command for command in commands if "--ignore=tests/test_subject_progress.py" in command)
-    assert "--ignore=tests/test_subject_progress_v3.py" in full
+    identity_files = [
+        "tests/test_subject_authorization_bootstrap.py",
+        "tests/test_subject_authorization_runner.py",
+        "tests/test_subject_progress_v2.py",
+        "tests/test_subject_progress_v3.py",
+        "tests/test_subject_task_authorization_v2.py",
+        "tests/test_subject_task_authorization_v3.py",
+    ]
+    for path in identity_files:
+        assert ["python", "-m", "pytest", "-q", path] in commands
+        assert f"--ignore={path}" in full
     assert ".sddgov/ci-cost-guard.json" in mission.POST_SDG_COMPATIBILITY_MODIFIED_PATHS
+    assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS
 
 
 def test_mission_activation_requires_one_exact_direct_child_commit(
@@ -1131,15 +1204,17 @@ def test_mission_activation_requires_one_exact_direct_child_commit(
         check=True,
     )
     (repo / "README.md").write_text("base\n")
+    for relative in mission.ACTIVATION_SDG_MODIFIED_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("base\n")
     subprocess.run(["git", "add", "."], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-q", "-m", "protocol"], cwd=repo, check=True)
     protocol = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=repo, text=True
     ).strip()
     proof_raw = b'{"mission":"owner-confirmed"}\n'
-    proof = repo / mission.MISSION_PROOF_PATH
-    proof.parent.mkdir(parents=True)
-    proof.write_bytes(proof_raw)
+    _write_activation_records(repo, proof_raw)
     subprocess.run(["git", "add", "."], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-q", "-m", "activate"], cwd=repo, check=True)
     activation = subprocess.check_output(
@@ -1155,8 +1230,7 @@ def test_mission_activation_requires_one_exact_direct_child_commit(
     (repo / "rogue.txt").write_text("outside mission scope\n")
     subprocess.run(["git", "add", "."], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-q", "-m", "rogue"], cwd=repo, check=True)
-    proof.parent.mkdir(parents=True)
-    proof.write_bytes(proof_raw)
+    _write_activation_records(repo, proof_raw)
     subprocess.run(["git", "add", "."], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-q", "-m", "late activation"], cwd=repo, check=True)
     with pytest.raises(mission.Denied):
@@ -1181,6 +1255,10 @@ def test_mission_activation_accepts_only_exact_two_parent_merge_delivery(
         check=True,
     )
     (repo / "README.md").write_text("base\n")
+    for relative in mission.ACTIVATION_SDG_MODIFIED_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("base\n")
     subprocess.run(["git", "add", "."], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-q", "-m", "protocol"], cwd=repo, check=True)
     protocol = subprocess.check_output(
@@ -1188,9 +1266,7 @@ def test_mission_activation_accepts_only_exact_two_parent_merge_delivery(
     ).strip()
     subprocess.run(["git", "switch", "-q", "-c", "activation"], cwd=repo, check=True)
     proof_raw = b'{"mission":"owner-confirmed"}\n'
-    proof = repo / mission.MISSION_PROOF_PATH
-    proof.parent.mkdir(parents=True)
-    proof.write_bytes(proof_raw)
+    _write_activation_records(repo, proof_raw)
     subprocess.run(["git", "add", "."], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-q", "-m", "activate"], cwd=repo, check=True)
     activation = subprocess.check_output(
@@ -1229,6 +1305,97 @@ def test_mission_activation_accepts_only_exact_two_parent_merge_delivery(
         cwd=repo,
         check=True,
     )
+    with pytest.raises(mission.Denied):
+        mission.validate_mission_activation_delivery(
+            repo,
+            protocol_base=protocol,
+            mission_raw=proof_raw,
+        )
+
+
+def test_mission_activation_accepts_exact_sdg_review_records_only(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "activation-sdg-review"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "https://github.com/zycaskevin/Vault-Agent-Memory.git"],
+        cwd=repo,
+        check=True,
+    )
+    for relative in mission.ACTIVATION_SDG_MODIFIED_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("base\n")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "protocol"], cwd=repo, check=True)
+    protocol = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "-c", "activation"], cwd=repo, check=True)
+    proof_raw = b'{"mission":"owner-confirmed"}\n'
+    _write_activation_records(repo, proof_raw)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "activate with review"], cwd=repo, check=True)
+    topic = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "merge", "-q", "--no-ff", "--no-edit", topic], cwd=repo, check=True)
+    delivery = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    assert mission.validate_mission_activation_delivery(
+        repo,
+        protocol_base=protocol,
+        mission_raw=proof_raw,
+    ) == delivery
+
+    subprocess.run(["git", "reset", "--hard", "-q", protocol], cwd=repo, check=True)
+    subprocess.run(["git", "switch", "-q", "-C", "hostile"], cwd=repo, check=True)
+    _write_activation_records(repo, proof_raw)
+    (repo / "extra.txt").write_text("outside closed activation records\n")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "hostile activation"], cwd=repo, check=True)
+    with pytest.raises(mission.Denied):
+        mission.validate_mission_activation_delivery(
+            repo,
+            protocol_base=protocol,
+            mission_raw=proof_raw,
+        )
+
+
+def test_mission_activation_denies_proof_without_sdg_review_records(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "activation-proof-only"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "remote", "add", "origin", "https://github.com/zycaskevin/Vault-Agent-Memory.git"],
+        cwd=repo,
+        check=True,
+    )
+    for relative in mission.ACTIVATION_SDG_MODIFIED_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("base\n")
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "protocol"], cwd=repo, check=True)
+    protocol = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    proof_raw = b'{"mission":"owner-confirmed"}\n'
+    proof = repo / mission.MISSION_PROOF_PATH
+    proof.parent.mkdir(parents=True, exist_ok=True)
+    proof.write_bytes(proof_raw)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "proof only"], cwd=repo, check=True)
     with pytest.raises(mission.Denied):
         mission.validate_mission_activation_delivery(
             repo,

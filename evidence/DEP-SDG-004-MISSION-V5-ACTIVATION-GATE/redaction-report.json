@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--artifact-1.txt",
+      "output": "terminal--activation-gate-red.txt",
+      "source_sha256": "19e03dcc1d12c0526211728467c05eb9d71fb42cc614cfa150a6c62741a63243",
+      "output_sha256": "19e03dcc1d12c0526211728467c05eb9d71fb42cc614cfa150a6c62741a63243",
+      "redactions": {}
+    },
+    {
+      "source": "terminal-local-green-identity-red.txt",
+      "output": "terminal--local-green-identity-red.txt",
+      "source_sha256": "31e9b15ccd636e1f1984075fc33d76c7480f7b18640e327ed1c8c017aca1df52",
+      "output_sha256": "31e9b15ccd636e1f1984075fc33d76c7480f7b18640e327ed1c8c017aca1df52",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-SDG-004-MISSION-V5-ACTIVATION-GATE",
+  "generated_at": "2026-08-15T11:14:42Z"
+}

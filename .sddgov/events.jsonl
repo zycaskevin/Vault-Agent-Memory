@@ -1,3 +1,4 @@
 {"schema_version": "1.0", "event_type": "governance_initialized", "risk_level": "L0", "at": "2026-08-15T01:50:06Z", "payload": {"profile": "team-standard"}}
 {"schema_version": "1.0", "event_type": "work_claimed", "risk_level": "L0", "at": "2026-08-15T01:59:29Z", "payload": {"work_package": "SDG-001", "agent": "codex", "status": "active", "claimed_at": "2026-08-15T01:59:29Z", "expires_at": "2026-08-15T05:59:29Z"}}
 {"schema_version": "1.0", "event_type": "work_claimed", "risk_level": "L0", "at": "2026-08-15T04:47:35Z", "payload": {"work_package": "SDG-003", "agent": "codex", "status": "active", "claimed_at": "2026-08-15T04:47:35Z", "expires_at": "2026-08-15T08:47:35Z"}}
+{"schema_version": "1.0", "event_type": "work_claimed", "risk_level": "L0", "at": "2026-08-15T11:14:12Z", "payload": {"work_package": "SDG-004", "agent": "codex", "status": "active", "claimed_at": "2026-08-15T11:14:12Z", "expires_at": "2026-08-15T15:14:12Z"}}
