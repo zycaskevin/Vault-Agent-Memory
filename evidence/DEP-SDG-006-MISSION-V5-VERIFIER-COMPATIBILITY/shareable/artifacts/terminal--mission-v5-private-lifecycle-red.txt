@@ -1,0 +1,9 @@
+command=python -m pytest -q tests/test_subject_development_mission_v5.py -k mission_private_lifecycle_ignores_unrelated_external_sibling_churn
+exit_status=1
+expected=Mission V5 compatibility audit accepts unrelated external sibling churn
+actual=compatibility helper absent and production post-verifier lifecycle path denies
+shared_private_verifier=PASS
+private_cleanup=PASS
+mission_proof=ABSENT
+pending_artifact=ABSENT
+private_path_redacted=true

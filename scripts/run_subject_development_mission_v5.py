@@ -113,6 +113,7 @@ POST_SDG_TREE = "701a59ae858927c59c9876bc57efcad220695ee2"
 POST_SDG_GATE_SHA256 = "c209b63bab683165dcca49289bf09f536c966bbb1b50dd054c3e30b8a6198dd0"
 POST_SDG_RECEIPT_SHA256 = "5e16e217ab75052065e12bf7abde476aea801d6d37a8f3dbec7740923890479f"
 SDG004_BASE = "3374ac372930ee6200d38c1f02289a0c8fa1eb84"
+SDG006_BASE = "d2b62eea0f130df7e02aa230f3592e28fd118617"
 TASKS_SHA256 = "0150935a1a16e51dc30dff9dff8d01104d7127ee3cf57333caec7586d93f5007"
 ACTIVATION_PROGRESS_SHA256 = "28478445e3eeb5b838b010fa81518d4fcbbb5c6a37422cb3aa58dabdcbf87626"
 AUTHORITY = "github:zycaskevin"
@@ -339,6 +340,37 @@ SDG004_COMPATIBILITY_PATHS = sorted(
 SDG004_COMPATIBILITY_MODIFIED_PATHS = {
     ".github/workflows/ci.yml",
     ".sddgov/ci-cost-guard.json",
+    ".sddgov/events.jsonl",
+    ".sddgov/merge-gate.json",
+    ".sddgov/work-claims.json",
+    "scripts/run_subject_development_mission_v5.py",
+    "tests/test_subject_development_mission_v5.py",
+}
+SDG006_COMPATIBILITY_PATHS = sorted(
+    [
+        ".github/workflows/ci.yml",
+        ".sddgov/events.jsonl",
+        ".sddgov/merge-gate.json",
+        ".sddgov/reviews/REV-SDG-006.json",
+        ".sddgov/work-claims.json",
+        "docs/work-packages/SDG-006-mission-v5-verifier-compatibility.md",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/fix-scope.md",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/manifest.json",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/redaction-report.json",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/regression-evidence.md",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/reproduction.md",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/rollback.md",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/root-cause-hypothesis.md",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/shareable/artifacts/terminal--mission-v5-private-lifecycle-green.txt",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/shareable/artifacts/terminal--mission-v5-private-lifecycle-red.txt",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/summary.yaml",
+        "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/verification.md",
+        "scripts/run_subject_development_mission_v5.py",
+        "tests/test_subject_development_mission_v5.py",
+    ]
+)
+SDG006_COMPATIBILITY_MODIFIED_PATHS = {
+    ".github/workflows/ci.yml",
     ".sddgov/events.jsonl",
     ".sddgov/merge-gate.json",
     ".sddgov/work-claims.json",
@@ -1833,18 +1865,99 @@ def _check_sdg004_compatibility_release(repo_root: Path, base: str) -> None:
             raise Denied
 
 
+def _check_sdg006_compatibility_release(repo_root: Path, base: str) -> None:
+    _check_sdg004_compatibility_release(repo_root, SDG006_BASE)
+    parents = _git(repo_root, "rev-list", "--parents", "-n", "1", base).decode().split()
+    if len(parents) != 3 or parents[0] != base or parents[1] != SDG006_BASE:
+        raise Denied
+    topic = parents[2]
+    if _git(repo_root, "rev-parse", f"{base}^{{tree}}").strip() != _git(
+        repo_root, "rev-parse", f"{topic}^{{tree}}"
+    ).strip():
+        raise Denied
+
+    commits = _git(
+        repo_root,
+        "rev-list",
+        "--reverse",
+        "--topo-order",
+        f"{SDG006_BASE}..{topic}",
+    ).decode().splitlines()
+    if not commits or len(commits) > 64:
+        raise Denied
+    previous = SDG006_BASE
+    known_paths = set(SDG006_COMPATIBILITY_MODIFIED_PATHS)
+    allowed_paths = set(SDG006_COMPATIBILITY_PATHS)
+    for commit in commits:
+        commit_parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).decode().split()
+        if commit_parents != [commit, previous]:
+            raise Denied
+        changes = _git(
+            repo_root,
+            "diff",
+            "--name-status",
+            "--no-renames",
+            f"{previous}..{commit}",
+        ).decode().splitlines()
+        if not changes:
+            raise Denied
+        for line in changes:
+            fields = line.split("\t")
+            if len(fields) != 2:
+                raise Denied
+            action, path = fields
+            if path not in allowed_paths or action != ("M" if path in known_paths else "A"):
+                raise Denied
+            expected_mode = (
+                "100755"
+                if path.startswith("scripts/") and path.endswith(".py")
+                else "100644"
+            )
+            mode, _raw = _git_object(repo_root, commit, path)
+            if mode != expected_mode:
+                raise Denied
+            known_paths.add(path)
+        previous = commit
+    if previous != topic:
+        raise Denied
+
+    expected_status = [
+        ("M" if path in SDG006_COMPATIBILITY_MODIFIED_PATHS else "A")
+        + "\t"
+        + path
+        for path in SDG006_COMPATIBILITY_PATHS
+    ]
+    if _git(
+        repo_root,
+        "diff",
+        "--name-status",
+        "--no-renames",
+        f"{SDG006_BASE}..{base}",
+    ).decode().splitlines() != expected_status:
+        raise Denied
+    for path in SDG006_COMPATIBILITY_PATHS:
+        expected_mode = (
+            "100755" if path.startswith("scripts/") and path.endswith(".py") else "100644"
+        )
+        mode, _raw = _git_object(repo_root, base, path)
+        if mode != expected_mode:
+            raise Denied
+
+
 def _check_protocol_release_commit(repo_root: Path, base: str) -> None:
     check_repository_identity(repo_root)
     _check_predecessor_activation_commit(repo_root)
     _check_post_sdg_base(repo_root)
     _check_post_sdg_compatibility_release(repo_root, SDG004_BASE)
-    if COMMIT.fullmatch(base) is None or base == SDG004_BASE:
+    if COMMIT.fullmatch(base) is None or base == SDG006_BASE:
         raise Denied
     if _git(repo_root, "rev-parse", "HEAD").strip() != base.encode():
         raise Denied
     if _git(repo_root, "rev-parse", "origin/main").strip() != base.encode():
         raise Denied
-    _check_sdg004_compatibility_release(repo_root, base)
+    _check_sdg006_compatibility_release(repo_root, base)
 
 
 def _check_predecessor_activation_commit(repo_root: Path) -> None:
@@ -2223,6 +2336,57 @@ class Runtime:
     )
 
 
+def _audit_private_lifecycle_v5(value: Any) -> None:
+    """Audit the owned private slot without treating ancestor membership as drift."""
+    if (
+        value.receipt_fd is None
+        or value.scope_fd is None
+        or value.receipt_identity is None
+        or value.scope_identity is None
+    ):
+        raise Denied
+    try:
+        legacy.v1._audit_directory_handle_identity(value.parent_handle)
+        current_dir = os.stat(
+            value.dirname,
+            dir_fd=value.parent_fd,
+            follow_symlinks=False,
+        )
+        retained_dir = os.fstat(value.dir_fd)
+        if (
+            legacy.v1._identity(current_dir) != value.dir_identity
+            or legacy.v1._identity(retained_dir) != value.dir_identity
+            or not stat.S_ISDIR(retained_dir.st_mode)
+            or stat.S_IMODE(retained_dir.st_mode) != 0o700
+            or set(os.listdir(value.dir_fd)) != {"receipt.json", "scope.json"}
+        ):
+            raise Denied
+        for name, fd, identity, raw in (
+            (
+                "receipt.json",
+                value.receipt_fd,
+                value.receipt_identity,
+                value.receipt_raw,
+            ),
+            ("scope.json", value.scope_fd, value.scope_identity, value.scope_raw),
+        ):
+            current = os.stat(name, dir_fd=value.dir_fd, follow_symlinks=False)
+            retained = os.fstat(fd)
+            if (
+                legacy.v1._identity(current) != identity
+                or legacy.v1._identity(retained) != identity
+                or not stat.S_ISREG(retained.st_mode)
+                or stat.S_IMODE(retained.st_mode) != 0o600
+                or retained.st_nlink != 1
+                or legacy.v1._read_retained(fd, legacy.v1.verifier.MAX_BYTES) != raw
+            ):
+                raise Denied
+    except legacy.v1.Denied:
+        raise Denied from None
+    except OSError:
+        raise Denied from None
+
+
 def _propose(values: dict[str, str], runtime: Runtime) -> bytes:
     base = values["--implementation-base-commit"]
     repo_root = Path.cwd().absolute()
@@ -2402,7 +2566,7 @@ def _verify_confirmed(_values: dict[str, str], _runtime: Runtime) -> bytes:
                 lifecycle = slot.value
                 if lifecycle is None:
                     raise InternalFailure
-                legacy.v1._audit_lifecycle(lifecycle)
+                _audit_private_lifecycle_v5(lifecycle)
                 legacy.v1._run_verifier(
                     lifecycle,
                     state.repo_root,
@@ -2413,7 +2577,7 @@ def _verify_confirmed(_values: dict[str, str], _runtime: Runtime) -> bytes:
                 )
                 audit_lock()
                 audit_clean()
-                legacy.v1._audit_lifecycle(lifecycle)
+                _audit_private_lifecycle_v5(lifecycle)
             except (
                 Denied,
                 legacy.v1.Denied,
