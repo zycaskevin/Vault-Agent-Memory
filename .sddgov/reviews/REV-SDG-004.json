@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "algorithm": "ed25519",
+  "review": {
+    "review_id": "REV-SDG-004",
+    "reviewer_id": "codex-sdg-independent-reviewer",
+    "builder_id": "codex",
+    "change_digest": "130fd538bd7f320ac6c71d98c64016a9aedc5e3cce9073e356455314df294bc7",
+    "gate_metadata_digest": "17a7fd4a95be0440825557adc4d4c2a384da1994de81f9667f94be0a88cc01ac",
+    "verdict": "approved",
+    "issued_at": "2026-08-15T12:43:54Z",
+    "expires_at": "2026-08-15T13:43:54Z",
+    "nonce": "bB_NUlFdBsCI7a3p2jEDMugc"
+  },
+  "signature": "lVXEDdzXcwdyPGaQKApXiW2xmcUtSV6D83tOPZ0hQ8GpFkY2hOUdXfM68YeT9GuY9wuzV0Wagjoi8YPXNiFzDQ=="
+}
