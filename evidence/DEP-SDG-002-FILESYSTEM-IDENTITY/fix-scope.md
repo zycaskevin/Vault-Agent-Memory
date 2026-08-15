@@ -32,19 +32,3 @@ them invalidates the review.
 Only the local independent-review execution location and SDG evidence/gate
 metadata change. Hosted CI already uses an isolated hosted workspace. Runtime
 authorization behavior and its fail-closed security boundary remain unchanged.
-
-## Smallest sufficient change
-
-TODO
-
-## Files or components in scope
-
-TODO
-
-## Explicit non-scope
-
-TODO
-
-## Blast radius
-
-TODO

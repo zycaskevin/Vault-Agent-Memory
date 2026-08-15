@@ -19,12 +19,12 @@
   ],
   "shareable": [
     {
-      "path": "shareable/artifacts/terminal--deterministic-red.log",
+      "path": "shareable/artifacts/terminal--deterministic-red.txt",
       "sha256": "b5dd617e3857bdfd9c42268c36475b3f2158376aaa2833d4cc81a5578203f911",
       "shareable": true
     },
     {
-      "path": "shareable/artifacts/terminal--stable-checkout-green.log",
+      "path": "shareable/artifacts/terminal--stable-checkout-green.txt",
       "sha256": "401e61096d776c52f953778de7848235fee2c37777fa330a54d62c6fe9037fa2",
       "shareable": true
     }

@@ -18,22 +18,9 @@ This is an availability and test-environment isolation defect, not evidence of
 a successful pathname-replacement bypass. The verifier remained fail-closed in
 every observed failure.
 
-## Hypothesis
+## Falsification
 
-TODO
-
-## Supporting evidence
-
-TODO
-
-## Contradicting evidence
-
-TODO
-
-## Falsification test
-
-TODO
-
-## Conclusion
-
-TODO
+The hypothesis would be false if the same exact candidate failed the same
+identity-class checks in a dedicated stable checkout with no target drift, or
+if a hostile target inode/type/mode replacement were accepted. The stable-root
+full gate passed, and existing hostile replacement tests remained green.

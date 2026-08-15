@@ -29,14 +29,5 @@ file-byte, replacement, cleanup, no-echo, and historical replay tests remain in
 the full gate. The mitigation changes where the reviewer runs, not what the
 authorization code accepts.
 
-## Regression test added or strengthened
-
-TODO
-
-## Related tests executed
-
-TODO
-
-## Unaffected paths sampled
-
-TODO
+The related full gate also sampled the unaffected README, release-parity,
+governance-doctor, CI-contract, and non-Subject test paths.

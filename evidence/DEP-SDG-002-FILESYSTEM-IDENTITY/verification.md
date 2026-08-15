@@ -24,15 +24,3 @@ not change the frozen runtime audit or claim that unrelated directory metadata
 can never cause a fail-closed denial in every possible operator environment.
 Any future need to change that runtime behavior requires a separately versioned
 Subject authority protocol; it is not hidden inside this SDG integration.
-
-## Green command and result
-
-TODO
-
-## Before/after evidence
-
-TODO
-
-## Remaining limitations
-
-TODO

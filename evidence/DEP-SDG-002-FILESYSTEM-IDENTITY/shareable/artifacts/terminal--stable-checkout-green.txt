@@ -1,0 +1,12 @@
+command=sddgov ci local-gate .
+checkout_class=stable-non-runtime-root
+checkout_outside_codex_runtime=true
+checkout_outside_shared_os_temp=true
+doctor=PASS
+ci_cost_guard=PASS
+readme_smoke=PASS
+release_parity=PASS
+pytest_passed=3283
+pytest_skipped=12
+pytest_failed=0
+exit_status=0

@@ -8,20 +8,4 @@ verify: python scripts/readme_command_smoke.py
 The DEP itself has no runtime effect. If the SDG integration merge must be
 rolled back, revert its two-parent GitHub merge commit from the exact main HEAD
 and run the existing README documented-command smoke. Do not rewrite or delete
-T-001 through T-003 history.
-
-## Trigger
-
-TODO
-
-## Reversible steps
-
-TODO
-
-## Data compatibility
-
-TODO
-
-## Post-rollback verification
-
-TODO
+T-001 through T-003 history. Rollback does not migrate or transform data.
