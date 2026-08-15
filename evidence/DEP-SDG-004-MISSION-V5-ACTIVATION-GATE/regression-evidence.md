@@ -19,9 +19,9 @@ The Darwin default-temp integration node alone retains the real OS temp root it
 is specified to test. A disjoint remainder excludes only those six fully
 executed files. No test is skipped or xfailed by the routing change.
 
-Final collection proof: `expected=3302`, `selected=3302`, with zero duplicate,
-missing, or extra nodes. The executed result is 3290 passed plus 12 declared
-skips, exactly 3302.
+Final collection proof: `expected=3303`, `selected=3303`, with zero duplicate,
+missing, or extra nodes. The executed result is 3291 passed plus 12 declared
+skips, exactly 3303.
 
 ## Related tests executed
 

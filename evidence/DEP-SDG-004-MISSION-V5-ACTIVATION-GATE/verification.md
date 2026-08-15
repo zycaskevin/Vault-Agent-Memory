@@ -13,10 +13,10 @@ Result: PASS, 71 passed. Ruff, Python 3.10 grammar, `git diff --check`,
 independent review remain pending until the exact candidate is frozen.
 
 Final Local Green routing revision: PASS. Six identity-sensitive files passed
-301 tests with one pytest node per process; the disjoint remainder passed 2989
-tests with 12 skipped. Total executed nodes are therefore 3290 passed and 12 skipped.
-Independent collection parity reports `full=3473`, historical-adjusted
-`expected=3302`, `selected=3302`, `duplicates=0`, `missing=0`, and `extra=0`.
+301 tests with one pytest node per process; the disjoint remainder passed 2990
+tests with 12 skipped. Total executed nodes are therefore 3291 passed and 12 skipped.
+Independent collection parity reports `full=3474`, historical-adjusted
+`expected=3303`, `selected=3303`, `duplicates=0`, `missing=0`, and `extra=0`.
 
 The first combined Local Green correctly failed closed at one unchanged
 authorization-bootstrap identity test (3260 passed, 12 skipped). The exact case
