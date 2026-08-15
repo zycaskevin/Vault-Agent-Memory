@@ -1,0 +1,9 @@
+review_revision=v9
+pre_sign_local_green=DENY
+failed=2
+passed=3281
+skipped=12
+failure_class=noncanonical_bundle_origin
+receipt_created=false
+post_sign_merge_verify_run=false
+checkout_clean=true

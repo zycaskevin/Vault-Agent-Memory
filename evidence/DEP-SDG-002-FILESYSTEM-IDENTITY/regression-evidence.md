@@ -31,3 +31,12 @@ authorization code accepts.
 
 The related full gate also sampled the unaffected README, release-parity,
 governance-doctor, CI-contract, and non-Subject test paths.
+
+## Bundle-origin negative control
+
+The first bundle-based v9 review intentionally remained fail closed: its clone
+retained the local bundle pathname as `origin`, and two Mission V5 repository
+identity checks denied it. The reviewer did not retry or sign. This proves the
+identity gate cannot be bypassed by moving an exact tree through a local
+transport. The v10 preflight therefore sets the canonical GitHub origin before
+the first gate while retaining the bundle as read-only object provenance.

@@ -11,10 +11,18 @@ The same stable checkout must perform both the pre-sign Local Green Gate and
 the post-sign `sddgov merge verify`; changing checkout or source bytes between
 them invalidates the review.
 
+When an unpushed candidate is transferred by a read-only Git bundle, the fresh
+clone must set `origin` to the canonical repository URL
+`https://github.com/zycaskevin/Vault-Agent-Memory.git` before its first gate.
+The reviewer then verifies that repository identity without fetching or
+pushing. A local bundle pathname is transport provenance, not repository
+identity, and must not be left as `origin`.
+
 ## In scope
 
 - Issue #474 and this public-safe L1 DEP.
 - A fresh exact-source independent review checkout under a stable root.
+- Canonical GitHub `origin` preflight before any Subject or SDG gate.
 - Recomputed SDG Merge Gate metadata and a new independent receipt.
 - Full Local Green before signing and the mandatory Local Green embedded in
   post-sign Merge Gate verification.

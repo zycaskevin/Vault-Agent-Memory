@@ -12,9 +12,11 @@
 1. Add this strict DEP to the exact SDG-001 Merge Gate.
 2. Recompute the reviewed source and gate metadata digests.
 3. Use a new distinct independent reviewer in a fresh stable-root checkout.
-4. Require pre-sign Local Green and post-sign `sddgov merge verify` on the same
+4. Before any gate, require `git remote get-url origin` to equal the canonical
+   GitHub HTTPS URL; a bundle pathname is not accepted as repository identity.
+5. Require pre-sign Local Green and post-sign `sddgov merge verify` on the same
    exact source; either red result rejects the receipt.
-5. Run hosted CI once on the final revision and merge only when required checks
+6. Run hosted CI once on the final revision and merge only when required checks
    are green.
 
 ## Limitations

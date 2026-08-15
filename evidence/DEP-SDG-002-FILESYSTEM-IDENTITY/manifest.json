@@ -15,6 +15,13 @@
       "sha256": "401e61096d776c52f953778de7848235fee2c37777fa330a54d62c6fe9037fa2",
       "collected_at": "2026-08-15T04:07:28Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--v9-origin-deny.txt",
+      "sha256": "354f6129421843351c501a34ef3a6e41650ddedd0f9fda7d75649f6502b29101",
+      "collected_at": "2026-08-15T04:20:35Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -26,6 +33,11 @@
     {
       "path": "shareable/artifacts/terminal--stable-checkout-green.txt",
       "sha256": "401e61096d776c52f953778de7848235fee2c37777fa330a54d62c6fe9037fa2",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--v9-origin-deny.txt",
+      "sha256": "354f6129421843351c501a34ef3a6e41650ddedd0f9fda7d75649f6502b29101",
       "shareable": true
     }
   ]

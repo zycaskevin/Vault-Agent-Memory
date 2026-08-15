@@ -14,10 +14,17 @@
       "source_sha256": "401e61096d776c52f953778de7848235fee2c37777fa330a54d62c6fe9037fa2",
       "output_sha256": "401e61096d776c52f953778de7848235fee2c37777fa330a54d62c6fe9037fa2",
       "redactions": {}
+    },
+    {
+      "source": "terminal--v9-origin-deny.txt",
+      "output": "terminal--v9-origin-deny.txt",
+      "source_sha256": "354f6129421843351c501a34ef3a6e41650ddedd0f9fda7d75649f6502b29101",
+      "output_sha256": "354f6129421843351c501a34ef3a6e41650ddedd0f9fda7d75649f6502b29101",
+      "redactions": {}
     }
   ],
   "blocked": [],
   "totals": {},
   "dep_id": "DEP-SDG-002-FILESYSTEM-IDENTITY",
-  "generated_at": "2026-08-15T04:07:28Z"
+  "generated_at": "2026-08-15T04:20:35Z"
 }
