@@ -8,8 +8,8 @@ gate, or inability to create a fresh post-merge proposal.
 ## Reversible steps
 
 rollback_version: 1.0
-target: immutable mergeCommit.oid of the unique merged Pull Request from agent/sdg004-mission-v5-activation-gate in zycaskevin/Vault-Agent-Memory
-command: test "$(gh pr list --repo zycaskevin/Vault-Agent-Memory --state merged --head agent/sdg004-mission-v5-activation-gate --limit 2 --json number --jq length)" = 1 && git revert --no-edit -m 1 "$(gh pr list --repo zycaskevin/Vault-Agent-Memory --state merged --head agent/sdg004-mission-v5-activation-gate --limit 2 --json mergeCommit --jq '.[0].mergeCommit.oid')"
+target: immutable mergeCommit.oid of Pull Request 478 from agent/sdg004-mission-v5-activation-gate in zycaskevin/Vault-Agent-Memory
+command: merge_oid="$(gh pr view 478 --repo zycaskevin/Vault-Agent-Memory --json state,headRefName,mergeCommit --jq 'select(.state == "MERGED" and .headRefName == "agent/sdg004-mission-v5-activation-gate" and .mergeCommit.oid != null) | .mergeCommit.oid')" && test -n "$merge_oid" && test "$(git rev-list --parents -n 1 "$merge_oid" | awk '{print NF - 1}')" = 2 && git revert --no-edit -m 1 "$merge_oid"
 verify: python scripts/validate_subject_task_authorization_dispatch_v5.py --ledger --json
 
 Resolve the immutable merge commit from the GitHub Pull Request readback before

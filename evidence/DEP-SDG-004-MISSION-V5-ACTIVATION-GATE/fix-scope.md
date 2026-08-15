@@ -2,9 +2,11 @@
 
 ## Smallest sufficient change
 
-Add one exact SDG-004 hotfix release layer and replace proof-only activation
-delivery with a closed SDG-005 record set whose actions, modes, ancestry, and
-merge topology are mechanically replayed.
+Add one exact SDG-004 compatibility release layer and replace proof-only
+activation acceptance with validation of the closed future SDG-005 record set
+whose actions, modes, ancestry, and merge topology are mechanically replayed.
+The SDG-005 records exercised here are non-authorizing test fixtures; a fresh
+proposal and owner confirmation remain required after this hotfix is merged.
 
 ## Files or components in scope
 

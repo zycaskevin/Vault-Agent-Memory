@@ -238,7 +238,7 @@ jobs:
         run: |
           cat <<'EOF' | sha256sum -c -
           8d9cf43099982bbd7bdda35ca487368c3f6cdeb4113c5c3b7aa32b2d7173a4e2  scripts/run_subject_development_mission_v5.py
-          047b72dc9a5c1bcd038fa98d6e8fcbe11fc956bed221e18faa8f730ac0f86760  scripts/run_subject_identity_test_isolation.py
+          35aacb08b4236ed4781ea1dde477badda23393f87f75c991403fe85dc236d6bf  scripts/run_subject_identity_test_isolation.py
           64d10f43f4a92ae1ca047e1516e93d4c5b0c0b78098601889e9152e240df365c  scripts/update_subject_task_progress_v5.py
           d79bf1ee1268e2fc8a0cbaafb6f9abec9e5057643dc4c1dcb34b4db68446737e  scripts/validate_subject_development_mission_v5.py
           a70e365e5691981b4d19a80929667c50014800e77f04bdf825296e6ead953c58  scripts/validate_subject_task_authorization_dispatch_v5.py

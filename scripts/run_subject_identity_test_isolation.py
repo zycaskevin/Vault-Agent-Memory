@@ -81,6 +81,7 @@ def main() -> int:
                     timeout=180,
                 )
                 if result.returncode != 0:
+                    print(f"identity-isolated node failed: {node}", file=sys.stderr)
                     return 1
                 continue
             outer = Path(tempfile.mkdtemp(prefix="node-", dir=parent))
@@ -106,6 +107,7 @@ def main() -> int:
             finally:
                 shutil.rmtree(outer, ignore_errors=True)
             if result.returncode != 0:
+                print(f"identity-isolated node failed: {node}", file=sys.stderr)
                 return 1
         print(f"identity-isolated subject tests passed: {len(nodes)} nodes")
         return 0

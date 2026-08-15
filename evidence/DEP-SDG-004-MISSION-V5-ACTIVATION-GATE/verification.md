@@ -8,15 +8,32 @@ Focused gate:
 python -m pytest -q tests/test_subject_development_mission_v5.py tests/test_subject_task_authorization_dispatch_v5.py
 ```
 
-Result: PASS, 71 passed. Ruff, Python 3.10 grammar, `git diff --check`,
-`sddgov doctor .`, and `sddgov ci verify .` also pass. Full Local Green and
-independent review remain pending until the exact candidate is frozen.
+Earlier focused-gate snapshot: PASS, 71 passed. Ruff, Python 3.10 grammar,
+`git diff --check`, `sddgov doctor .`, and `sddgov ci verify .` also passed at
+that checkpoint. Full Local Green and independent review were still pending at
+that historical point; the current final result is recorded below.
 
 Final Local Green routing revision: PASS. Six identity-sensitive files passed
 301 tests with one pytest node per process; the disjoint remainder passed 2990
 tests with 12 skipped. Total executed nodes are therefore 3291 passed and 12 skipped.
 Independent collection parity reports `full=3474`, historical-adjusted
 `expected=3303`, `selected=3303`, `duplicates=0`, `missing=0`, and `extra=0`.
+
+Protected review revision 3 and the exact hosted Pull Request head both passed
+the full Local Green and Merge Gate. CodeRabbit subsequently identified a
+bounded documentation/evidence/rollback consistency repair; those follow-up
+bytes require a fresh protected receipt and hosted gate before merge.
+
+CodeRabbit repair disposition: the Work Package trace, compatibility wording,
+redaction timestamp, single-read rollback, historical status wording, and safe
+failing-node identifier were corrected. The hosted-isolation comment is not a
+code defect: the hosted Agentic SDD Governance Merge Gate invokes the pinned
+Local Green contract, which runs the 301-node harness before the disjoint
+remainder. Collection continues to reject any unexpected stderr and emits only
+a fixed failure marker; returning captured pytest output or exception text would
+weaken the public no-echo boundary. The shared-chain-helper suggestion is a
+non-blocking refactor deferred to avoid changing reviewed authorization logic in
+this bounded compatibility repair. The repaired focused gate passes 72 tests.
 
 The first combined Local Green correctly failed closed at one unchanged
 authorization-bootstrap identity test (3260 passed, 12 skipped). The exact case

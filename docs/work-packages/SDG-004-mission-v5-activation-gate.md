@@ -4,7 +4,8 @@
 
 - Issue: #477
 - SDD: `docs/decision_records/2026-08-14-subject-development-mission-v5-recovery.md`,
-  `docs/decision_records/2026-08-15-mission-v5-post-sdg-activation.md`, and
+  `docs/decision_records/2026-08-15-mission-v5-post-sdg-activation.md`,
+  `docs/decision_records/2026-08-15-mission-v5-activation-sdg-gate.md`, and
   `.agentic-sdd-governance/core/POLICY_KERNEL.md`
 - Risk: L1
 
