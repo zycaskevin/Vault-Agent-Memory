@@ -1,13 +1,14 @@
 {
   "schema_version": "1.0",
   "base_sha": "5587cc099d544e2f83f4db87dad3b0d882f52a10",
-  "head_sha": "faadcac425e08bf523a04d4a0d2aa6bd7d2345a8",
+  "head_sha": "a6bc7b7423eb27e7221ab5cdea790df365f0e05d",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "924dd61215fbf068e255dcc633d3cad6a8554672de65f0f7da2de8dc957d1b61",
+  "change_digest": "b361f2cc18582f752e93338719b6e446b6414e5af44a93662cb56c4dcd13c2ea",
   "deps": [
     "DEP-SDG-001-CLAIM-CLI",
-    "evidence/DEP-SDG-001-INTEGRATION"
+    "evidence/DEP-SDG-001-INTEGRATION",
+    "evidence/DEP-SDG-002-FILESYSTEM-IDENTITY"
   ],
   "rollback_path": "evidence/DEP-SDG-001-INTEGRATION/rollback.md",
   "protected_file_review": ".sddgov/reviews/REV-SDG-001.json"
