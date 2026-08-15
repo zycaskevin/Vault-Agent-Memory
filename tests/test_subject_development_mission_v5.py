@@ -1183,9 +1183,15 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
         "tests/test_subject_task_authorization_v2.py",
         "tests/test_subject_task_authorization_v3.py",
     ]
+    assert ["python", "scripts/run_subject_identity_test_isolation.py"] in commands
+    harness = (LIVE_ROOT / "scripts/run_subject_identity_test_isolation.py").read_text()
+    workflow = (LIVE_ROOT / ".github/workflows/ci.yml").read_text()
+    harness_pin = hashlib.sha256(harness.encode()).hexdigest()
+    assert f"{harness_pin}  scripts/run_subject_identity_test_isolation.py" in workflow
     for path in identity_files:
-        assert ["python", "-m", "pytest", "-q", path] in commands
+        assert path in harness
         assert f"--ignore={path}" in full
+    assert "len(nodes) != sum(count for _path, count in FILES)" in harness
     assert ".sddgov/ci-cost-guard.json" in mission.POST_SDG_COMPATIBILITY_MODIFIED_PATHS
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS
 

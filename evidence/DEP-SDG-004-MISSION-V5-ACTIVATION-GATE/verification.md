@@ -13,8 +13,8 @@ Result: PASS, 71 passed. Ruff, Python 3.10 grammar, `git diff --check`,
 independent review remain pending until the exact candidate is frozen.
 
 Final Local Green routing revision: PASS. Six identity-sensitive files passed
-301 tests in dedicated processes; the disjoint remainder passed 2989 tests with
-12 skipped. Total executed nodes are therefore 3290 passed and 12 skipped.
+301 tests with one pytest node per process; the disjoint remainder passed 2989
+tests with 12 skipped. Total executed nodes are therefore 3290 passed and 12 skipped.
 Independent collection parity reports `full=3473`, historical-adjusted
 `expected=3302`, `selected=3302`, `duplicates=0`, `missing=0`, and `extra=0`.
 
@@ -28,6 +28,14 @@ A second revision exposed the same filesystem-identity class in an unchanged
 T-002 authorization test (3164 passed, 12 skipped); the exact case passed in
 isolation. The final routing revision isolates the six complete lifecycle-heavy
 files and requires node-set equality with ordinary full collection.
+
+The first file-isolated routing revision still found an unchanged T-001 runner
+case that denied inside its 74-node process, although the exact node passed in
+isolation. A node-isolated prototype then found the APFS directory-metadata
+settling class in one T-003 Git fixture. The final harness gives every node a
+fresh external HOME/TMPDIR/basetemp and retains the true Darwin default temp
+root only for the exact alias integration node. All 301 closed nodes then pass
+without retry.
 
 ## Before/after evidence
 

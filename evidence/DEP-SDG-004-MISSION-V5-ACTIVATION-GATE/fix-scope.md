@@ -11,7 +11,9 @@ merge topology are mechanically replayed.
 - `scripts/run_subject_development_mission_v5.py`
 - `tests/test_subject_development_mission_v5.py`
 - the current V5 SHA pin in `.github/workflows/ci.yml`
-- `.sddgov/ci-cost-guard.json` process isolation without collection reduction
+- `.sddgov/ci-cost-guard.json` and the closed
+  `scripts/run_subject_identity_test_isolation.py` harness for per-node process
+  isolation without collection reduction
 - SDG-004 Work Package, decision record, strict DEP, gate, and review receipt
 
 ## Explicit non-scope

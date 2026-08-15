@@ -12,10 +12,12 @@ the exact two-parent delivery merge exists. The same test proves that the
 byte-identical merged tree is accepted and an intervening rogue commit remains
 denied.
 
-Six complete authorization/progress identity-sensitive files run in dedicated
-processes before a disjoint remainder. Each file remains fully collected; no
-test is skipped or xfailed by the routing change. Final proof must compare the
-union of isolated and remainder node IDs with ordinary full collection.
+Six complete authorization/progress identity-sensitive files are closed at
+exact per-file collection counts, then every one of their 301 nodes runs in a
+fresh process with a dedicated repo-external HOME, TMPDIR, and pytest basetemp.
+The Darwin default-temp integration node alone retains the real OS temp root it
+is specified to test. A disjoint remainder excludes only those six fully
+executed files. No test is skipped or xfailed by the routing change.
 
 Final collection proof: `expected=3302`, `selected=3302`, with zero duplicate,
 missing, or extra nodes. The executed result is 3290 passed plus 12 declared

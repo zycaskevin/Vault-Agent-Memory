@@ -332,6 +332,7 @@ SDG004_COMPATIBILITY_PATHS = sorted(
         "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/summary.yaml",
         "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/verification.md",
         "scripts/run_subject_development_mission_v5.py",
+        "scripts/run_subject_identity_test_isolation.py",
         "tests/test_subject_development_mission_v5.py",
     ]
 )

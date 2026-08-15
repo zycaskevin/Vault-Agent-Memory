@@ -31,6 +31,10 @@ current gate records passes SDG but violates Mission V5's proof-only replay.
 6. After this repair is independently reviewed, merged, and read back, discard
    every earlier Mission V5 proposal/proof and generate a fresh owner-confirmed
    proposal from the new trust root.
+7. Run the six immutable identity-sensitive authorization/progress suites one
+   pytest node per process, with exact per-file collection counts and a disjoint
+   remainder. This changes execution isolation only; no test is skipped,
+   xfailed, weakened, or removed from Local Green.
 
 ## Preserved boundaries
 

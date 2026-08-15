@@ -28,8 +28,8 @@
 
 - In scope: the minimum Mission V5 release and activation-delivery validators,
   genuine RED/GREEN temp-Git tests, current CI trust pin, deterministic local
-  process isolation for the complete authorization-bootstrap suite, this Work Package,
-  one decision record, and a strict public-safe DEP.
+  per-node process isolation for the six complete identity-sensitive suites,
+  this Work Package, one decision record, and a strict public-safe DEP.
 - Non-scope: Mission activation, T-004 implementation, canonical rebaseline,
   private/live data, production, deployment, release, Billing, credentials,
   provider consoles, destructive operations, or new product decisions.
