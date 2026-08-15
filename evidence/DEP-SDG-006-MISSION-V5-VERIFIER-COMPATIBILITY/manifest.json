@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--mission-v5-private-lifecycle-red",
+      "sha256": "5de9709806cf2503bd6445964fefe436e42cffb9be4231e75ec238377c2758d1",
+      "collected_at": "2026-08-15T16:16:37Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--mission-v5-private-lifecycle-red.txt",
+      "sha256": "5de9709806cf2503bd6445964fefe436e42cffb9be4231e75ec238377c2758d1",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--mission-v5-private-lifecycle-green.txt",
+      "sha256": "bc64c1b8419045cdb2cd1c38d931412d5a37e12d95195000fef3a8a6208c941a",
+      "shareable": true
+    }
+  ]
+}

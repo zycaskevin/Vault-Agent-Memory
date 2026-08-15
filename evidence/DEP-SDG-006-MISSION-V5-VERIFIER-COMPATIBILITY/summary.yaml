@@ -1,0 +1,46 @@
+{
+  "$schema": "../../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY",
+  "issue": "474",
+  "sdd_references": [
+    "SD-MISSION-V5-POST-START-CI-RECOVERY"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-15T16:09:47Z",
+  "updated_at": "2026-08-15T16:31:17Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-15T16:09:47Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-15T16:17:04Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-15T16:17:04Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-15T16:31:16Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-15T16:31:17Z"
+      }
+    ]
+  },
+  "expected_behavior": "Mission V5 accepts unrelated sibling churn in an external ancestor while exact private file bytes, identity, mode, link count, no-follow path, and cleanup remain fail closed.",
+  "actual_behavior": "The shared verifier passes, but the post-verifier legacy lifecycle audit denies after release replay changes only shared ancestor directory membership metadata.",
+  "environment": {
+    "commit": "d2b62eea0f130df7e02aa230f3592e28fd118617",
+    "branch": "agent/sdg006-mission-v5-verifier-compatibility",
+    "runtime": "CPython 3.14.3; macOS arm64; sddgov 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}
