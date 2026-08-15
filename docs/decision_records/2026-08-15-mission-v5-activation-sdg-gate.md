@@ -35,6 +35,10 @@ current gate records passes SDG but violates Mission V5's proof-only replay.
    pytest node per process, with exact per-file collection counts and a disjoint
    remainder. This changes execution isolation only; no test is skipped,
    xfailed, weakened, or removed from Local Green.
+8. Force `core.abbrev=40` for every local, reviewer, and hosted SDG merge-digest
+   operation. Agentic SDD Governance experimental.6 otherwise hashes Git's
+   object-database-dependent abbreviated blob IDs, so identical commits can
+   produce different review digests in a shared worktree and a fresh clone.
 
 ## Preserved boundaries
 

@@ -3,6 +3,9 @@
   "profile": "team-standard",
   "local_green": {
     "environment": {
+      "GIT_CONFIG_COUNT": "1",
+      "GIT_CONFIG_KEY_0": "core.abbrev",
+      "GIT_CONFIG_VALUE_0": "40",
       "PYTHONDONTWRITEBYTECODE": "1"
     },
     "commands": [

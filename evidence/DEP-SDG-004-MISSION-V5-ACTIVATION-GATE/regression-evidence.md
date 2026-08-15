@@ -35,6 +35,11 @@ independent digest. Revision 2 removes topic-head activation, uses a fixed
 repository and exact head-branch GitHub merge query for rollback, and rebuilds
 the review gate from the repaired source commit.
 
+Revision 2 then proved that experimental.6 abbreviated blob IDs differently in
+the shared Builder object database and a fresh review clone. The full-object-ID
+test creates extra loose objects and proves that the configured 40-digit index
+lines and executable patch digest remain byte-identical.
+
 ## Unaffected paths sampled
 
 Canonical five, v1-v4, T-001 through T-003 trust roots, sequence-6 ledger,

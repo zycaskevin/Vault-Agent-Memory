@@ -1196,6 +1196,49 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS
 
 
+def test_sdg_merge_digest_uses_full_git_object_ids(tmp_path: Path) -> None:
+    config = json.loads((LIVE_ROOT / ".sddgov/ci-cost-guard.json").read_text())
+    environment = config["local_green"]["environment"]
+    assert environment["GIT_CONFIG_COUNT"] == "1"
+    assert environment["GIT_CONFIG_KEY_0"] == "core.abbrev"
+    assert environment["GIT_CONFIG_VALUE_0"] == "40"
+    workflow = (LIVE_ROOT / ".github/workflows/ci.yml").read_text()
+    for key, value in environment.items():
+        if key.startswith("GIT_CONFIG_"):
+            assert f'{key}: "{value}"' in workflow
+
+    repo = tmp_path / "digest"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    tracked = repo / "tracked.txt"
+    tracked.write_text("base\n")
+    subprocess.run(["git", "add", "tracked.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "base"], cwd=repo, check=True)
+    base = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip()
+    tracked.write_text("changed\n")
+    subprocess.run(["git", "commit", "-qam", "change"], cwd=repo, check=True)
+    git_environment = dict(os.environ)
+    git_environment.update(environment)
+    command = ["git", "diff", "--binary", f"{base}...HEAD"]
+    before = subprocess.check_output(command, cwd=repo, env=git_environment)
+    for number in range(128):
+        subprocess.run(
+            ["git", "hash-object", "-w", "--stdin"],
+            cwd=repo,
+            env=git_environment,
+            input=f"extra-object-{number}\n".encode(),
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+    after = subprocess.check_output(command, cwd=repo, env=git_environment)
+    assert after == before
+    index_line = next(line for line in before.decode().splitlines() if line.startswith("index "))
+    left, right = index_line.split()[1].split("..")
+    assert len(left) == len(right) == 40
+
+
 def test_mission_activation_requires_exact_two_parent_merge_before_active(
     tmp_path: Path,
 ) -> None:

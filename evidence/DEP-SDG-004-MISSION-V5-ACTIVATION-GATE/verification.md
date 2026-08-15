@@ -56,3 +56,10 @@ receipt was signed. Revision 2 changes the validator and RED/GREEN test so only
 the exact two-parent delivery merge activates Mission V5, replaces the
 placeholder with a fixed repository/head query that requires one merged Pull
 Request, and regenerates the exact gate from the repaired source commit.
+
+Protected review revision 2: FAIL-CLOSED before full Local Green, with P0=0
+and P1=1. A fresh clone computed a different executable digest from the same
+commit because experimental.6 hashes Git's locally abbreviated blob IDs. No
+receipt was signed. Revision 3 sets `core.abbrev=40` in the Local Green and
+Hosted CI environments and adds a temp-Git regression proving that additional
+objects cannot change the full-index patch bytes.

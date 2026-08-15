@@ -28,3 +28,12 @@ and extra paths, the hypothesis is confirmed.
 
 Confirmed. A bounded compatibility layer is required. Bypassing either gate or
 loosening activation to arbitrary governance paths is not acceptable.
+
+Protected review also exposed a second integration defect in experimental.6:
+its executable change digest invokes `git diff --binary` without
+`--full-index`. Git therefore abbreviates blob IDs according to the local object
+database; the shared Builder database used eight digits while fresh review
+clones used seven for the exact same commit. The repository closes that
+consumer-side nondeterminism by setting `core.abbrev=40` in both Local Green and
+Hosted CI, and by requiring review/sign/verify commands to use the same fixed
+Git environment.
