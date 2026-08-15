@@ -1217,8 +1217,6 @@ def validate_mission_activation_delivery(
             return False
         return mode == "100644" and raw == mission_raw
 
-    if head in commits and valid_topic(head):
-        return head
     deliveries: list[str] = []
     for commit in commits:
         parents = _git(

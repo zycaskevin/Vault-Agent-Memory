@@ -8,8 +8,8 @@ gate, or inability to create a fresh post-merge proposal.
 ## Reversible steps
 
 rollback_version: 1.0
-target: SDG-004 GitHub merge commit for the Pull Request linked to Issue #477
-command: git revert --no-edit -m 1 <verified-sdg004-merge-commit>
+target: immutable mergeCommit.oid of the unique merged Pull Request from agent/sdg004-mission-v5-activation-gate in zycaskevin/Vault-Agent-Memory
+command: test "$(gh pr list --repo zycaskevin/Vault-Agent-Memory --state merged --head agent/sdg004-mission-v5-activation-gate --limit 2 --json number --jq length)" = 1 && git revert --no-edit -m 1 "$(gh pr list --repo zycaskevin/Vault-Agent-Memory --state merged --head agent/sdg004-mission-v5-activation-gate --limit 2 --json mergeCommit --jq '.[0].mergeCommit.oid')"
 verify: python scripts/validate_subject_task_authorization_dispatch_v5.py --ledger --json
 
 Resolve the immutable merge commit from the GitHub Pull Request readback before

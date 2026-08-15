@@ -1190,7 +1190,7 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS
 
 
-def test_mission_activation_requires_one_exact_direct_child_commit(
+def test_mission_activation_requires_exact_two_parent_merge_before_active(
     tmp_path: Path,
 ) -> None:
     repo = tmp_path / "activation-chain"
@@ -1220,11 +1220,29 @@ def test_mission_activation_requires_one_exact_direct_child_commit(
     activation = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=repo, text=True
     ).strip()
+    with pytest.raises(mission.Denied):
+        mission.validate_mission_activation_delivery(
+            repo,
+            protocol_base=protocol,
+            mission_raw=proof_raw,
+        )
+
+    subprocess.run(
+        ["git", "switch", "-q", "-c", "delivery", protocol], cwd=repo, check=True
+    )
+    subprocess.run(
+        ["git", "merge", "-q", "--no-ff", "--no-edit", activation],
+        cwd=repo,
+        check=True,
+    )
+    delivery = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
     assert mission.validate_mission_activation_delivery(
         repo,
         protocol_base=protocol,
         mission_raw=proof_raw,
-    ) == activation
+    ) == delivery
 
     subprocess.run(["git", "reset", "--hard", "-q", protocol], cwd=repo, check=True)
     (repo / "rogue.txt").write_text("outside mission scope\n")

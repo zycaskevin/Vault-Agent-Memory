@@ -40,3 +40,11 @@ proof-only and extra-path activation controls deny.
 The earlier proof is intentionally unusable after trust-root changes. A fresh
 proposal and exact owner confirmation remain required after the hotfix merge.
 Independent protected review, hosted CI, and merge readback are still pending.
+
+Protected review revision 1: FAIL-CLOSED before full Local Green, with P0=0
+and P1=3. The reviewer independently rejected unmerged-topic activation, the
+non-executable rollback placeholder, and mismatched frozen gate metadata. No
+receipt was signed. Revision 2 changes the validator and RED/GREEN test so only
+the exact two-parent delivery merge activates Mission V5, replaces the
+placeholder with a fixed repository/head query that requires one merged Pull
+Request, and regenerates the exact gate from the repaired source commit.
