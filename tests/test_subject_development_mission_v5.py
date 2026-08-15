@@ -277,6 +277,144 @@ def test_mission_scope_passes_the_shared_private_authorization_verifier(
     }
 
 
+def test_mission_private_lifecycle_ignores_unrelated_external_sibling_churn(
+    tmp_path: Path,
+) -> None:
+    """Directory membership churn outside the owned private slot is not drift."""
+    issued = mission._now()
+    proposal, receipt_raw, scope_raw = mission._derive_proposal(
+        ROOT,
+        mission.BRIDGE_BASE,
+        issued,
+    )
+    external = tmp_path / "external"
+    external.mkdir(mode=0o700)
+    runtime = mission.legacy.v1.Runtime(temp_root=os.fspath(external))
+    slot = mission.legacy.v1.LifecycleSlot()
+    cleanup_ok = False
+    with mission.legacy.v1._signal_boundary() as signals:
+        try:
+            lifecycle = mission.legacy.v1._new_lifecycle(
+                os.fspath(external),
+                receipt_raw,
+                scope_raw,
+                runtime,
+                signals,
+                slot,
+            )
+            sibling = external / "unrelated-sibling"
+            sibling.write_text("unrelated\n")
+            sibling.unlink()
+
+            mission._audit_private_lifecycle_v5(lifecycle)
+            expected = mission.canonical(
+                {
+                    "authorization_id": proposal["authorization_id"],
+                    "authorized_task": "T-004",
+                    "baseline_id": proposal["baseline_id"],
+                    "status": "PASS",
+                }
+            )
+            mission.legacy.v1._run_verifier(
+                lifecycle,
+                os.fspath(ROOT),
+                proposal["receipt_sha256"],
+                "T-004",
+                expected,
+                runtime,
+            )
+            mission._audit_private_lifecycle_v5(lifecycle)
+        finally:
+            signals.cleanup_active = True
+            if slot.value is not None:
+                cleanup_ok = mission.legacy.v1._cleanup(slot.value, runtime)
+                mission.legacy.v1._close_lifecycle(slot.value)
+                slot.value = None
+    assert cleanup_ok
+
+
+def test_mission_private_lifecycle_denies_private_file_replacement(
+    tmp_path: Path,
+) -> None:
+    issued = datetime(2026, 8, 15, 15, 54, 44, tzinfo=timezone.utc)
+    _proposal, receipt_raw, scope_raw = mission._derive_proposal(
+        ROOT,
+        mission.BRIDGE_BASE,
+        issued,
+    )
+    external = tmp_path / "external"
+    external.mkdir(mode=0o700)
+    runtime = mission.legacy.v1.Runtime(temp_root=os.fspath(external))
+    slot = mission.legacy.v1.LifecycleSlot()
+    cleanup_ok = False
+    with mission.legacy.v1._signal_boundary() as signals:
+        try:
+            lifecycle = mission.legacy.v1._new_lifecycle(
+                os.fspath(external),
+                receipt_raw,
+                scope_raw,
+                runtime,
+                signals,
+                slot,
+            )
+            receipt_path = external / lifecycle.dirname / "receipt.json"
+            saved_path = external / lifecycle.dirname / "receipt.saved"
+            receipt_path.rename(saved_path)
+            receipt_path.write_bytes(receipt_raw)
+            receipt_path.chmod(0o600)
+            with pytest.raises(mission.Denied):
+                mission._audit_private_lifecycle_v5(lifecycle)
+            receipt_path.unlink()
+            saved_path.rename(receipt_path)
+        finally:
+            signals.cleanup_active = True
+            if slot.value is not None:
+                cleanup_ok = mission.legacy.v1._cleanup(slot.value, runtime)
+                mission.legacy.v1._close_lifecycle(slot.value)
+                slot.value = None
+    assert cleanup_ok
+
+
+def test_mission_private_lifecycle_denies_external_directory_replacement(
+    tmp_path: Path,
+) -> None:
+    issued = mission._now()
+    _proposal, receipt_raw, scope_raw = mission._derive_proposal(
+        ROOT,
+        mission.BRIDGE_BASE,
+        issued,
+    )
+    external = tmp_path / "external"
+    displaced = tmp_path / "external.displaced"
+    external.mkdir(mode=0o700)
+    runtime = mission.legacy.v1.Runtime(temp_root=os.fspath(external))
+    slot = mission.legacy.v1.LifecycleSlot()
+    cleanup_ok = False
+    with mission.legacy.v1._signal_boundary() as signals:
+        try:
+            lifecycle = mission.legacy.v1._new_lifecycle(
+                os.fspath(external),
+                receipt_raw,
+                scope_raw,
+                runtime,
+                signals,
+                slot,
+            )
+            external.rename(displaced)
+            external.mkdir(mode=0o700)
+            with pytest.raises(mission.Denied):
+                mission._audit_private_lifecycle_v5(lifecycle)
+            external.rmdir()
+            displaced.rename(external)
+        finally:
+            signals.cleanup_active = True
+            if slot.value is not None:
+                cleanup_ok = mission.legacy.v1._cleanup(slot.value, runtime)
+                mission.legacy.v1._close_lifecycle(slot.value)
+                slot.value = None
+    assert cleanup_ok
+
+
 def test_v4_predecessor_roots_are_exact_and_drift_denies() -> None:
     snapshot = _authority_snapshot()
     contract, _raw_contract = mission.load_contract(ROOT, retained=snapshot)
@@ -1171,6 +1309,81 @@ def test_sdg004_release_accepts_only_exact_linear_reviewed_merge(
         mission._check_sdg004_compatibility_release(repo, hostile_release)
 
 
+def test_sdg006_release_accepts_only_exact_linear_reviewed_merge(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = tmp_path / "sdg006-release"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    for relative in mission.SDG006_COMPATIBILITY_MODIFIED_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("base\n")
+        if relative.startswith("scripts/"):
+            path.chmod(0o755)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "sdg004 anchor"], cwd=repo, check=True)
+    anchor = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    monkeypatch.setattr(mission, "SDG006_BASE", anchor)
+    monkeypatch.setattr(
+        mission,
+        "_check_sdg004_compatibility_release",
+        lambda _repo_root, candidate: None
+        if candidate == anchor
+        else (_ for _ in ()).throw(mission.Denied()),
+    )
+
+    subprocess.run(["git", "switch", "-q", "-c", "reviewed"], cwd=repo, check=True)
+    for relative in mission.SDG006_COMPATIBILITY_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("reviewed\n")
+        if relative.startswith("scripts/"):
+            path.chmod(0o755)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "reviewed source"], cwd=repo, check=True)
+    topic = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "merge", "-q", "--no-ff", "--no-edit", topic], cwd=repo, check=True)
+    release = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    mission._check_sdg006_compatibility_release(repo, release)
+
+    subprocess.run(["git", "reset", "--hard", "-q", anchor], cwd=repo, check=True)
+    subprocess.run(["git", "switch", "-q", "-C", "hostile"], cwd=repo, check=True)
+    for relative in mission.SDG006_COMPATIBILITY_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("reviewed\n")
+        if relative.startswith("scripts/"):
+            path.chmod(0o755)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "closed source"], cwd=repo, check=True)
+    (repo / "hidden.txt").write_text("unauthorized intermediate path\n")
+    subprocess.run(["git", "add", "hidden.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "hidden add"], cwd=repo, check=True)
+    (repo / "hidden.txt").unlink()
+    subprocess.run(["git", "add", "-u"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "hidden delete"], cwd=repo, check=True)
+    hostile = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "merge", "-q", "--no-ff", "--no-edit", hostile], cwd=repo, check=True)
+    hostile_release = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    with pytest.raises(mission.Denied):
+        mission._check_sdg006_compatibility_release(repo, hostile_release)
+
+
 def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     config = json.loads((LIVE_ROOT / ".sddgov/ci-cost-guard.json").read_text())
     commands = config["local_green"]["commands"]
@@ -1194,6 +1407,9 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     assert "len(nodes) != sum(count for _path, count in FILES)" in harness
     assert ".sddgov/ci-cost-guard.json" in mission.POST_SDG_COMPATIBILITY_MODIFIED_PATHS
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS
+    assert "scripts/run_subject_development_mission_v5.py" in (
+        mission.SDG006_COMPATIBILITY_MODIFIED_PATHS
+    )
 
 
 def test_sdg_merge_digest_uses_full_git_object_ids(tmp_path: Path) -> None:

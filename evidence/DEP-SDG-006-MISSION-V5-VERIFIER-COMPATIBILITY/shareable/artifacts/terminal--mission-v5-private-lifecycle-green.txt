@@ -1,0 +1,14 @@
+focused_command=python -m pytest -q tests/test_subject_development_mission_v5.py tests/test_subject_authorization_runner.py tests/test_subject_authorization_bootstrap.py
+focused_result=244 passed
+compatibility_controls=unrelated sibling PASS; private file replacement DENY; external directory replacement DENY; hidden release history DENY
+ruff=PASS
+python310_grammar=PASS
+git_diff_check=PASS
+doctor=PASS
+ci_cost_guard=PASS
+local_green_environment=unsandboxed required for the configured external identity-node root
+identity_isolation=301 passed
+disjoint_remainder=2994 passed; 12 skipped; 1 pre-existing warning
+local_green=PASS
+private_material=NOT_COLLECTED
+mission_activation=NOT_PERFORMED

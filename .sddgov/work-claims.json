@@ -2,11 +2,11 @@
   "schema_version": "1.0",
   "claims": [
     {
-      "work_package": "SDG-004",
+      "work_package": "SDG-006",
       "agent": "codex",
       "status": "active",
-      "claimed_at": "2026-08-15T11:14:12Z",
-      "expires_at": "2026-08-15T15:14:12Z"
+      "claimed_at": "2026-08-15T16:10:57Z",
+      "expires_at": "2026-08-15T20:10:57Z"
     }
   ]
 }
