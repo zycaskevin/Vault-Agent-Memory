@@ -1,0 +1,16 @@
+protected:
+  - .agentic-sdd-governance/
+  - .agents/skills/agentic-sdd-governance/
+  - .github/workflows/
+  - .sddgov/
+  - AGENTS.md
+  - .gitignore
+  - policies/
+  - pyproject.toml
+  - scripts/
+  - tests/
+rules:
+  builder_may_modify: true
+  independent_review_required: true
+  acceptance_weakening_forbidden: true
+  security_gate_deletion_forbidden: true
