@@ -26,6 +26,11 @@
   ],
   "shareable": [
     {
+      "path": "shareable/artifacts/terminal--external-clean-checkout-green.txt",
+      "sha256": "e7ccb3c79fc72a055622f10fd16c781808324a4629bf61dce4a5b41d99394a7b",
+      "shareable": true
+    },
+    {
       "path": "shareable/artifacts/terminal--final-local-green.txt",
       "sha256": "459089030e4b406c11fa44d77f2e3fe1fe6337a694134af94cf0a4e1fde4cba8",
       "shareable": true

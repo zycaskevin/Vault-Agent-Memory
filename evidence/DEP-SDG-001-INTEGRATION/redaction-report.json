@@ -2,6 +2,13 @@
   "schema_version": "1.0",
   "files": [
     {
+      "source": "terminal--external-clean-checkout-green.txt",
+      "output": "terminal--external-clean-checkout-green.txt",
+      "source_sha256": "e7ccb3c79fc72a055622f10fd16c781808324a4629bf61dce4a5b41d99394a7b",
+      "output_sha256": "e7ccb3c79fc72a055622f10fd16c781808324a4629bf61dce4a5b41d99394a7b",
+      "redactions": {}
+    },
+    {
       "source": "terminal--final-local-green.txt",
       "output": "terminal--final-local-green.txt",
       "source_sha256": "459089030e4b406c11fa44d77f2e3fe1fe6337a694134af94cf0a4e1fde4cba8",
@@ -26,5 +33,5 @@
   "blocked": [],
   "totals": {},
   "dep_id": "DEP-SDG-001-INTEGRATION",
-  "generated_at": "2026-08-15T03:16:46Z"
+  "generated_at": "2026-08-15T03:38:22Z"
 }

@@ -839,8 +839,23 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/sddgov-venv"
           "$RUNNER_TEMP/sddgov-venv/bin/python" -m pip install --upgrade pip
+          governance_wheel="$RUNNER_TEMP/agentic_sdd_governance-0.2.0.dev6-py3-none-any.whl"
+          curl --fail --location --silent --show-error \
+            "https://github.com/zycaskevin/Agentic-SDD-Governance/releases/download/v0.2.0-experimental.6/agentic_sdd_governance-0.2.0.dev6-py3-none-any.whl" \
+            --output "$governance_wheel"
+          python - "$governance_wheel" <<'PY'
+          import hashlib
+          import sys
+          from pathlib import Path
+
+          expected = "e89eb0b5d6c3497068b4335ac45b91cc92d5c4e4705921f8348c844ea73b9cf5"
+          actual = hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest()
+          if actual != expected:
+              raise SystemExit("governance wheel SHA-256 mismatch")
+          print(f"governance wheel SHA-256 verified: {actual}")
+          PY
           "$RUNNER_TEMP/sddgov-venv/bin/python" -m pip install -e ".[dev]" \
-            "https://github.com/zycaskevin/Agentic-SDD-Governance/releases/download/v0.2.0-experimental.6/agentic_sdd_governance-0.2.0.dev6-py3-none-any.whl"
+            "$governance_wheel"
           printf '%s\n' "$RUNNER_TEMP/sddgov-venv/bin" >> "$GITHUB_PATH"
 
       - name: Materialize public reviewer trust outside the repository

@@ -1,5 +1,9 @@
 # Reproduction
 
+Precondition: run `git status --porcelain` and stop unless it emits no output.
+The fixed baseline checkout must be clean so the result is attributable to its
+committed workflow and contract bytes.
+
 ## Expected
 
 `sddgov ci verify .` accepts a project-specific team-standard contract and

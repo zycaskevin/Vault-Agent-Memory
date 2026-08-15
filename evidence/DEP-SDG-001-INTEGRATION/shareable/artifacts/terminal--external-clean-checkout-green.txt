@@ -1,0 +1,14 @@
+SDG-001 independent external-runtime clean-checkout evidence
+
+Reviewed source: e2e37da4e6b08875e82ce6772c3abfeb88bb3448
+Base: 5587cc099d544e2f83f4db87dad3b0d882f52a10
+Command shape: PATH=<external-sddgov-venv>/bin:$PATH sddgov ci local-gate <clean-detached-checkout>
+
+git status --porcelain before installation: <empty>
+git status --porcelain after installation: <empty>
+Local Green run 1: 3283 passed, 12 skipped, 1 warning
+git status --porcelain after run 1: <empty>
+Local Green run 2: 3283 passed, 12 skipped, 1 warning
+git status --porcelain after run 2: <empty>
+
+Independent security verdict: P0=0, P1=0

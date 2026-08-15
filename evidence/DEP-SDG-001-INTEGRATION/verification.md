@@ -20,6 +20,7 @@
 - Root cause: the workflow runtime location and the executable names embedded in the project contract were inconsistent.
 - FIX: use PATH-resolved `sddgov`/`python` contract commands and publish only `$RUNNER_TEMP/sddgov-venv/bin` to subsequent workflow steps.
 - Required GREEN: external-venv clean-checkout Local Green must execute successfully while `git status --porcelain` remains empty.
+- GREEN: the independent reviewer ran `PATH=<external-sddgov-venv>/bin:$PATH sddgov ci local-gate <clean-detached-checkout>`; `git status --porcelain` was empty before installation, after installation, and after two complete Local Green executions. Both runs reported `3283 passed, 12 skipped, 1 warning`. See `shareable/artifacts/terminal--external-clean-checkout-green.txt`.
 
 ## Green command and result
 
@@ -31,9 +32,13 @@ the consumer policy bootstrap and executable hosted merge-gate job were added.
 
 Before: `ci verify` exited 2 because the contract did not exist. After: static
 verification returns `ok: true`, lists both governed automatic workflows and
-all 15 hosted jobs, and reports no errors. The first Local Green run saw one
-fail-closed macOS temporary-directory identity flake in unchanged T-002 code;
-the isolated case passed, and the single policy-permitted full rerun passed.
+all 15 hosted jobs, and reports no errors. The original integration revision's
+artifact records a T-002 filesystem-identity flake; its isolated case and
+permitted rerun passed (`shareable/artifacts/terminal--local-green.txt`). A
+later revision separately saw the named T-003 pending-written real-Git case
+deny on the same fail-closed identity class; that exact case passed in isolation
+and the revision's permitted full rerun passed. These are two distinct events,
+not conflicting identifiers for one failure.
 
 ## Remaining limitations
 

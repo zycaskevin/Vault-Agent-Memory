@@ -18,6 +18,8 @@ The first full Local Green attempt reached 3,282 passing tests and one known fai
 
 Independent review reproduced a second fail-closed configuration defect: the external governance runtime could launch `merge verify`, but the Cost Guard contract still named repository-local `.venv-sddgov/bin/*` executables. A clean hosted checkout therefore could not begin Local Green. The repair makes contract commands portable (`sddgov` and `python`) and adds the external virtual environment's `bin` directory to GitHub Actions `PATH` for subsequent steps. The repository-local developer environment remains usable by prefixing the same venv directory on `PATH`.
 
+The hosted job also downloads the exact `0.2.0.dev6` wheel to `RUNNER_TEMP` and verifies SHA-256 `e89eb0b5d6c3497068b4335ac45b91cc92d5c4e4705921f8348c844ea73b9cf5` before installation. That value matches the GitHub release asset digest; a mismatch stops the job before governance code executes.
+
 ## Regression test added or strengthened
 
 The CI Cost Guard itself is the machine-readable regression contract. It now
@@ -29,9 +31,13 @@ reviewer trust materialized outside the repository.
 
 ## Related tests executed
 
-`sddgov doctor .`, `sddgov ci verify .`, README command smoke, release parity,
-the current-state pytest suite, workflow YAML/contract JSON parsing, and
-`git diff --check`.
+`sddgov doctor .`, `sddgov ci verify .`, `sddgov ci local-gate .`, README
+command smoke, release parity, the current-state pytest suite, workflow
+YAML/contract JSON parsing, and `git diff --check`. The independent
+clean-checkout result is recorded in
+`shareable/artifacts/terminal--external-clean-checkout-green.txt`; the signed
+review is `.sddgov/reviews/REV-SDG-001.json`; hosted final-revision evidence is
+GitHub Actions run `31862061773` on PR #473.
 
 ## Unaffected paths sampled
 
