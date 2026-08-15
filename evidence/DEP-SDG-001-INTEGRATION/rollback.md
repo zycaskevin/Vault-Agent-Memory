@@ -1,9 +1,9 @@
 # Rollback
 
 rollback_version: 1.0
-target: merged SDG-001 team-standard integration HEAD
-command: git revert --no-edit HEAD
-verify: git diff --check
+target: SDG-001 GitHub merge commit at rollback-time HEAD
+command: git revert --no-edit -m 1 HEAD
+verify: python scripts/readme_command_smoke.py
 
 ## Trigger
 
