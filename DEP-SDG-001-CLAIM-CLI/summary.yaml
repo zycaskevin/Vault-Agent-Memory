@@ -1,0 +1,46 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-001-CLAIM-CLI",
+  "issue": "470",
+  "sdd_references": [
+    "SDG-001"
+  ],
+  "risk_level": "L0",
+  "created_at": "2026-08-15T01:57:05Z",
+  "updated_at": "2026-08-15T02:00:15Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-15T01:57:05Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-15T01:59:06Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-15T01:59:25Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-15T02:00:02Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-15T02:00:15Z"
+      }
+    ]
+  },
+  "expected_behavior": "Record the SDG-001 claim in the repository governance state.",
+  "actual_behavior": "The command treated the Work Package Markdown path as the project root and exited with NotADirectoryError.",
+  "environment": {
+    "commit": "ab0637b55f3202c57bd0a11ee28386abe566c84d",
+    "branch": "agent/mission-v5-reactivation-post-hotfix",
+    "runtime": "Agentic SDD Governance 0.2.0-experimental.6; Python 3.14"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

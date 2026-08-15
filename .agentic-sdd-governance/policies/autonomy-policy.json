@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.2",
+  "principle": "AUTONOMY BY DEFAULT. ESCALATION BY EXCEPTION.",
+  "default_state": "CONTINUE",
+  "no_human_escalation_if_machine_verifiable": true,
+  "action_classifier": {
+    "unknown_category_state": "BLOCKED",
+    "dangerous_downgrade_state": "BLOCKED",
+    "sensitive_effects_require_l3": true
+  },
+  "approval_budget": {
+    "L0": 0,
+    "L1": 0,
+    "L2": "1_per_independent_decision",
+    "L3": "1_per_concrete_operation",
+    "milestone_uat": 1
+  },
+  "checkpoint": {
+    "requires_response": false,
+    "next_state": "CONTINUE"
+  },
+  "integrity": {
+    "algorithm": "sha256",
+    "machine_generated": true,
+    "machine_verified": true,
+    "human_copy_paste_forbidden": true,
+    "mismatch_state": "BLOCKED",
+    "mismatch_requires_human_approval": false
+  },
+  "l3_approval_receipts": {
+    "algorithm": "ed25519",
+    "auditable_approver_store": ".sddgov/trusted-approvers.json",
+    "authority_sources": ["trusted_base_ref", "out_of_band_file"],
+    "candidate_worktree_store_is_authority": false,
+    "caller_strings_are_authority": false,
+    "consume_atomically_on_continue": true,
+    "reuse_state": "ACTION_REQUIRED"
+  },
+  "allowed_escalations": [
+    "unresolved_l2_product_decision",
+    "concrete_l3_operation",
+    "operational_action",
+    "necessary_uat"
+  ],
+  "production_deploy": {
+    "l0_pre_authorized": false,
+    "l1_pre_authorized": false,
+    "l1_autonomous_with_recorded_baseline_authorization": true,
+    "l1_requires_recorded_baseline_authorization": true,
+    "l2_requires_recorded_decision": true,
+    "l3_requires_fresh_explicit_approval": true,
+    "required_guardrails": [
+      "all_required_checks_pass",
+      "rollback_available",
+      "no_unresolved_security_findings",
+      "no_destructive_schema_change",
+      "no_secret_change",
+      "no_permission_boundary_change",
+      "health_check_pass",
+      "blast_radius_within_policy"
+    ]
+  }
+}

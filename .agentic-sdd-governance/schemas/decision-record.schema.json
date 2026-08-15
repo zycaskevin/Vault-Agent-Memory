@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDG Decision Record",
+  "type": "object",
+  "required": ["decision_id", "risk_level", "summary", "scope", "basis", "status", "recorded_at", "reopen_condition"],
+  "properties": {
+    "decision_id": {"type": "string", "minLength": 1},
+    "risk_level": {"enum": ["L2", "L3"]},
+    "summary": {"type": "string", "minLength": 1},
+    "scope": {"type": "string", "minLength": 1},
+    "basis": {"type": "string", "minLength": 1},
+    "status": {"enum": ["approved", "completed", "superseded"]},
+    "recorded_at": {"type": "string", "format": "date-time"},
+    "reopen_condition": {"type": "string", "minLength": 1},
+    "operation_id": {"type": "string", "minLength": 1},
+    "approved_by": {"type": "string", "minLength": 1},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "consumed_at": {"type": ["string", "null"], "format": "date-time"},
+    "approval_nonce": {"type": "string", "minLength": 12},
+    "receipt_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "signature_algorithm": {"const": "ed25519"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"risk_level": {"const": "L3"}}},
+      "then": {
+        "required": ["operation_id", "approved_by", "expires_at", "consumed_at", "approval_nonce", "receipt_sha256", "signature_algorithm"],
+        "allOf": [
+          {
+            "if": {"properties": {"status": {"const": "approved"}}},
+            "then": {"properties": {"consumed_at": {"type": "null"}}}
+          },
+          {
+            "if": {"properties": {"status": {"const": "completed"}}},
+            "then": {"properties": {"consumed_at": {"type": "string", "format": "date-time"}}}
+          }
+        ]
+      }
+    }
+  ],
+  "additionalProperties": false
+}

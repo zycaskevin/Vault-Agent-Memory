@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDG Signed Protected-file Review Receipt",
+  "description": "Sign UTF-8 bytes of json.dumps(review, ensure_ascii=False, sort_keys=True, separators=(',', ':')); encode the Ed25519 signature as padded Base64.",
+  "type": "object",
+  "required": ["schema_version", "algorithm", "review", "signature"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "algorithm": {"const": "ed25519"},
+    "review": {
+      "type": "object",
+      "required": ["review_id", "reviewer_id", "builder_id", "change_digest", "gate_metadata_digest", "verdict", "issued_at", "expires_at", "nonce"],
+      "properties": {
+        "review_id": {"type": "string", "minLength": 1},
+        "reviewer_id": {"type": "string", "minLength": 1},
+        "builder_id": {"type": "string", "minLength": 1},
+        "change_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "gate_metadata_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "verdict": {"const": "approved"},
+        "issued_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time"},
+        "nonce": {"type": "string", "minLength": 12}
+      },
+      "additionalProperties": false
+    },
+    "signature": {"type": "string", "minLength": 88, "maxLength": 88}
+  },
+  "additionalProperties": false
+}

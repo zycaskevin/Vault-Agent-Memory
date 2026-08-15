@@ -1,0 +1,21 @@
+version: "1.0"
+purpose: prevent GitHub-hosted Actions from becoming a remote debugging loop
+rules:
+  - local_green_is_required_before_push
+  - stale_automatic_runs_are_cancelled
+  - draft_pull_requests_do_not_allocate_runners
+  - every_hosted_job_has_a_timeout
+  - automatic_workflows_use_read_only_default_permissions
+  - same_revision_rerun_requires_transient_failure_evidence
+  - full_matrix_is_reserved_for_ready_review_manual_or_release_gates
+authority:
+  workflow_optimization: L1
+  acceptance_criteria_change: L2
+  billing_budget_change: L3
+  self_hosted_runner_installation: L3
+prohibited:
+  - blind_rerun
+  - push_before_local_green
+  - disabling_required_checks_to_save_minutes
+  - unbounded_matrix
+  - unbounded_scheduled_workflow

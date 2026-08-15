@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Governance Event",
+  "type": "object",
+  "required": ["schema_version", "event_type", "risk_level", "at", "payload"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "event_type": {"type": "string", "minLength": 1},
+    "risk_level": {"enum": ["L0", "L1", "L2", "L3"]},
+    "at": {"type": "string", "format": "date-time"},
+    "payload": {"type": "object"}
+  },
+  "additionalProperties": false
+}

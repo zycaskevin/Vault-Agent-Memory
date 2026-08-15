@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--final-local-green.txt",
+      "output": "terminal--final-local-green.txt",
+      "source_sha256": "459089030e4b406c11fa44d77f2e3fe1fe6337a694134af94cf0a4e1fde4cba8",
+      "output_sha256": "459089030e4b406c11fa44d77f2e3fe1fe6337a694134af94cf0a4e1fde4cba8",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--local-green.txt",
+      "output": "terminal--local-green.txt",
+      "source_sha256": "5d5eeeeb73c94cf4eea5ec2af35f632d109ebfddbb34bfe17c37486e7a883216",
+      "output_sha256": "5d5eeeeb73c94cf4eea5ec2af35f632d109ebfddbb34bfe17c37486e7a883216",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--red-baseline.txt",
+      "output": "terminal--red-baseline.txt",
+      "source_sha256": "2396551eb142905b039b60a78c4ff2095ff558848ddcd893d6b3b2b473e4fcbd",
+      "output_sha256": "2396551eb142905b039b60a78c4ff2095ff558848ddcd893d6b3b2b473e4fcbd",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-SDG-001-INTEGRATION",
+  "generated_at": "2026-08-15T02:34:05Z"
+}

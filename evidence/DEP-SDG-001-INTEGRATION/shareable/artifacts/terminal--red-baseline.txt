@@ -1,0 +1,7 @@
+Command: .venv-sddgov/bin/sddgov ci verify .
+Exit: 2
+Output:
+[ERROR] .sddgov/ci-cost-guard.json; copy templates/CI_COST_GUARD.json and customize it
+
+Additional bounded diagnostic:
+.venv-sddgov/bin/ruff check . reported 1557 pre-existing repository-wide lint findings. Ruff is installed, but repository-wide Ruff is not an existing required gate and is outside SDG-001 scope. The Local Green contract therefore preserves the repository's existing required pytest, smoke, parity, and governance validation commands instead of introducing a new failing acceptance criterion.

@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-001-CLAIM-CLI",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--claim-cli-red.txt",
+      "sha256": "3b7de123179b42767dce155e84c1ee478bda8eca6ba7ec21ed47b6eda706a15f",
+      "collected_at": "2026-08-15T01:59:00Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--claim-cli-green.txt",
+      "sha256": "d6843189d82ddd3a8fbd0c7c9994dc86221e8412519fb73bb8a3d0e2a948afd8",
+      "collected_at": "2026-08-15T02:00:01Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--claim-cli-green.txt",
+      "sha256": "d6843189d82ddd3a8fbd0c7c9994dc86221e8412519fb73bb8a3d0e2a948afd8",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--claim-cli-red.txt",
+      "sha256": "3b7de123179b42767dce155e84c1ee478bda8eca6ba7ec21ed47b6eda706a15f",
+      "shareable": true
+    }
+  ]
+}

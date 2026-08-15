@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDG Signed L3 Operation Approval Receipt",
+  "description": "Sign UTF-8 bytes of json.dumps(receipt, ensure_ascii=False, sort_keys=True, separators=(',', ':')); encode the Ed25519 signature as padded Base64.",
+  "type": "object",
+  "required": ["schema_version", "algorithm", "receipt", "signature"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "algorithm": {"const": "ed25519"},
+    "receipt": {
+      "type": "object",
+      "required": ["approval_id", "operation_id", "summary", "scope", "approved_by", "issued_at", "expires_at", "nonce"],
+      "properties": {
+        "approval_id": {"type": "string", "minLength": 1},
+        "operation_id": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1},
+        "scope": {"type": "string", "minLength": 1},
+        "approved_by": {"type": "string", "minLength": 1},
+        "issued_at": {"type": "string", "format": "date-time"},
+        "expires_at": {"type": "string", "format": "date-time"},
+        "nonce": {"type": "string", "minLength": 12}
+      },
+      "additionalProperties": false
+    },
+    "signature": {"type": "string", "minLength": 88, "maxLength": 88}
+  },
+  "additionalProperties": false
+}

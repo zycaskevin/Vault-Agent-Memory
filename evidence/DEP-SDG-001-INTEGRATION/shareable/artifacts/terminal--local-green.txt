@@ -1,0 +1,26 @@
+SDG-001 Local Green evidence
+
+First full Local Green attempt:
+- doctor: PASS
+- ci verify: PASS
+- README smoke: PASS
+- release parity: PASS
+- pytest: 1 failed, 3282 passed, 12 skipped
+- failing test: tests/test_subject_progress_v2.py::test_real_git_completion_reconstructs_progress_prefix_and_passes_final_overlay
+- failure class: fail-closed lifecycle directory identity audit in unchanged T-002 authorization code
+
+Isolated rerun:
+- 1 passed in 6.37s
+
+Only permitted full Local Green rerun for this revision:
+- doctor: PASS
+- ci verify: PASS
+- README smoke: PASS
+- release parity: PASS
+- pytest: 3283 passed, 12 skipped, 1 warning in 162.24s
+- local Green result: ok=true
+
+Additional static verification:
+- workflow YAML parse: PASS
+- CI Cost Guard JSON parse: PASS
+- git diff --check: PASS

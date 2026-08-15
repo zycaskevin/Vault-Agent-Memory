@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agentic SDD Governance"
+  short_description: "Govern development with evidence and L0-L3 gates"
+  default_prompt: "Use $agentic-sdd-governance to execute this repository task with the smallest relevant policy, profile, and evidence playbooks."

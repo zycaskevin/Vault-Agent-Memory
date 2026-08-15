@@ -1,0 +1,26 @@
+profile: team-standard
+intended_for: normal product and multi-agent development
+issue_required: true
+pull_request_required: true
+independent_review:
+  default: required
+evidence:
+  L0: targeted-test-proof
+  L1: full-dep
+  L2: full-dep-plus-decision-package
+  L3: full-dep-plus-explicit-approval-and-rollback-drill
+debugging:
+  screenshot_only_fix_allowed: false
+  red_evidence_fix_green_proof_required: true
+ci_cost_guard:
+  local_green_required: true
+  hosted_runs_per_work_package: 1
+  reruns_per_revision: 1
+  full_matrix: manual_or_ready_for_review
+approval_budget:
+  l0_engineering: 0
+  l1_engineering: 0
+  l2_per_decision: 1
+  l3_per_operation: 1
+  milestone_uat: 1
+  enforced_by: policies/autonomy-policy.json

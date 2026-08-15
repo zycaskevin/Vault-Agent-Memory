@@ -1,0 +1,46 @@
+{
+  "$schema": "../../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-001-INTEGRATION",
+  "issue": "470",
+  "sdd_references": [
+    "SDG-001"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-15T02:04:16Z",
+  "updated_at": "2026-08-15T02:15:31Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-15T02:04:16Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-15T02:05:19Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-15T02:08:34Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-15T02:15:31Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-15T02:15:31Z"
+      }
+    ]
+  },
+  "expected_behavior": "team-standard governance has a repo-specific CI Cost Guard contract and all governed automatic workflows satisfy its bounded execution controls",
+  "actual_behavior": "static CI Cost Guard verification exits 2 because .sddgov/ci-cost-guard.json is absent; automatic workflows also lack required job timeouts and draft-PR controls",
+  "environment": {
+    "commit": "ab0637b55f3202c57bd0a11ee28386abe566c84d",
+    "branch": "agent/mission-v5-reactivation-post-hotfix",
+    "runtime": "CPython 3.14 virtual environment; Agentic SDD Governance 0.2.0-experimental.6; team-standard"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

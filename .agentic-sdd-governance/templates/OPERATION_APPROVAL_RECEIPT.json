@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "algorithm": "ed25519",
+  "receipt": {
+    "approval_id": "APP-EXACT-OPERATION-001",
+    "operation_id": "PROD-OPERATION-001",
+    "summary": "One exact high-risk operation",
+    "scope": "One operation and destination only",
+    "approved_by": "replace-with-owner-id",
+    "issued_at": "REPLACE_WITH_CURRENT_TIME_RFC3339",
+    "expires_at": "REPLACE_WITH_EXPIRY_TIME_RFC3339",
+    "nonce": "replace-with-unique-random-nonce"
+  },
+  "signature": "replace-with-base64-ed25519-signature"
+}

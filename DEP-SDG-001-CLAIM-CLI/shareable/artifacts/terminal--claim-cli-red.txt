@@ -1,0 +1,6 @@
+command=.venv-sddgov/bin/sddgov claim SDG-001 --agent codex --ttl-minutes 240 --path docs/work-packages/SDG-001-team-standard-integration.md
+exit_status=1
+actual=NotADirectoryError while attempting to create the project state below the Markdown Work Package path
+expected=claim recorded in the repository .sddgov/work-claims.json
+runtime=Agentic SDD Governance 0.2.0-experimental.6 on Python 3.14
+git_state=governance integration worktree with only the current SDG-001 changes
