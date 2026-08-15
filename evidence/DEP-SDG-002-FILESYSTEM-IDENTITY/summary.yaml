@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-002-FILESYSTEM-IDENTITY",
+  "issue": "474",
+  "sdd_references": [
+    "SDG-001"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-15T04:02:05Z",
+  "updated_at": "2026-08-15T04:08:13Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-15T04:02:05Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-15T04:03:23Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-15T04:07:28Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-15T04:07:54Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-15T04:08:13Z"
+      }
+    ]
+  },
+  "expected_behavior": "Independent SDG merge verification remains deterministic while Subject authorization retains no-follow descriptor and pathname replacement protections.",
+  "actual_behavior": "Two different unchanged Subject authorization integration tests failed closed across one fresh review because legacy full directory size and mtime identity comparisons treat unrelated ancestor sibling churn as target drift.",
+  "environment": {
+    "commit": "5587cc099d544e2f83f4db87dad3b0d882f52a10",
+    "branch": "agent/subject-identity-audit-v2",
+    "runtime": "CPython 3.14; macOS arm64; sddgov 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-002-FILESYSTEM-IDENTITY",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--deterministic-red.log",
+      "sha256": "b5dd617e3857bdfd9c42268c36475b3f2158376aaa2833d4cc81a5578203f911",
+      "collected_at": "2026-08-15T04:02:49Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--stable-checkout-green.log",
+      "sha256": "401e61096d776c52f953778de7848235fee2c37777fa330a54d62c6fe9037fa2",
+      "collected_at": "2026-08-15T04:07:28Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--deterministic-red.log",
+      "sha256": "b5dd617e3857bdfd9c42268c36475b3f2158376aaa2833d4cc81a5578203f911",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--stable-checkout-green.log",
+      "sha256": "401e61096d776c52f953778de7848235fee2c37777fa330a54d62c6fe9037fa2",
+      "shareable": true
+    }
+  ]
+}

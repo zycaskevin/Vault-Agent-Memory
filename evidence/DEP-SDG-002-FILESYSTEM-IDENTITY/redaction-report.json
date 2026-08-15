@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--deterministic-red.log",
+      "output": "terminal--deterministic-red.log",
+      "source_sha256": "b5dd617e3857bdfd9c42268c36475b3f2158376aaa2833d4cc81a5578203f911",
+      "output_sha256": "b5dd617e3857bdfd9c42268c36475b3f2158376aaa2833d4cc81a5578203f911",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--stable-checkout-green.log",
+      "output": "terminal--stable-checkout-green.log",
+      "source_sha256": "401e61096d776c52f953778de7848235fee2c37777fa330a54d62c6fe9037fa2",
+      "output_sha256": "401e61096d776c52f953778de7848235fee2c37777fa330a54d62c6fe9037fa2",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-SDG-002-FILESYSTEM-IDENTITY",
+  "generated_at": "2026-08-15T04:07:28Z"
+}
