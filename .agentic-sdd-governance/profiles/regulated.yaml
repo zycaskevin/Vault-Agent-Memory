@@ -1,0 +1,29 @@
+profile: regulated
+intended_for: medical, payment, high-impact personal data, or regulated delivery
+issue_required: true
+pull_request_required: true
+independent_review:
+  default: required
+  second_risk_review: true
+evidence:
+  L0: targeted-test-proof-with-retention
+  L1: full-dep-with-provenance
+  L2: full-dep-plus-decision-package-and-risk-review
+  L3: full-dep-plus-explicit-approval-rollback-drill-and-audit-receipt
+debugging:
+  screenshot_only_fix_allowed: false
+  local_redaction_gateway_required: true
+  raw_export: forbidden
+  binary_artifact_manual_review: required
+ci_cost_guard:
+  local_green_required: true
+  hosted_runs_per_work_package: 1
+  reruns_per_revision: 0
+  full_matrix: release
+approval_budget:
+  l0_engineering: 0
+  l1_engineering: 0
+  l2_per_decision: 1
+  l3_per_operation: 1
+  milestone_uat: 1
+  enforced_by: policies/autonomy-policy.json

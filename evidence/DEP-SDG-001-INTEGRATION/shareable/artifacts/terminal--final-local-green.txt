@@ -1,0 +1,19 @@
+SDG-001 final Local Green after consumer policy bootstrap
+
+Trusted base: 5587cc099d544e2f83f4db87dad3b0d882f52a10
+Governed hosted jobs: 15
+Managed files: 59
+
+- doctor: PASS
+- ci verify: PASS
+- README command smoke: PASS
+- release parity: PASS
+- pytest: 3283 passed, 12 skipped, 1 warning in 162.80s
+- workflow YAML and CI contract JSON parse: PASS
+- both strict Debug Evidence Packages: PASS
+- git diff --check: PASS
+- local Green result: ok=true
+
+The executable pull-request merge-gate job checks out the exact PR head,
+materializes only the public reviewer trust store outside the repository, and
+runs the pinned experimental.6 merge verifier against the exact PR base.

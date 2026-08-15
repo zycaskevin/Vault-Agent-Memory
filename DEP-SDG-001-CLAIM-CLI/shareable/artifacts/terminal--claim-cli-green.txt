@@ -1,0 +1,5 @@
+command=.venv-sddgov/bin/sddgov claim SDG-001 --agent codex --ttl-minutes 240 --path .
+exit_status=0
+result=one active SDG-001 claim for agent codex in the repository governance state
+claimed_at=2026-08-15T01:59:29Z
+expires_at=2026-08-15T05:59:29Z

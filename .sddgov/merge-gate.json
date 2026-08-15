@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "base_sha": "5587cc099d544e2f83f4db87dad3b0d882f52a10",
+  "head_sha": "7d98d89f172a3ead8915b4dbb387cc75111093df",
+  "risk_level": "L1",
+  "builder_id": "codex",
+  "change_digest": "0ea48ab761faa1c48fc48172506e44063f59f5bfa748969d61c93c76e3fc0698",
+  "deps": [
+    "DEP-SDG-001-CLAIM-CLI",
+    "evidence/DEP-SDG-001-INTEGRATION",
+    "evidence/DEP-SDG-002-FILESYSTEM-IDENTITY"
+  ],
+  "rollback_path": "evidence/DEP-SDG-001-INTEGRATION/rollback.md",
+  "protected_file_review": ".sddgov/reviews/REV-SDG-001.json"
+}

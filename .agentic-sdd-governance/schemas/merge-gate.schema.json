@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDG Executable Merge Gate",
+  "type": "object",
+  "required": ["schema_version", "base_sha", "head_sha", "risk_level", "builder_id", "change_digest", "deps", "rollback_path", "protected_file_review"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "base_sha": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"},
+    "head_sha": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"},
+    "risk_level": {"enum": ["L0", "L1", "L2", "L3"]},
+    "builder_id": {"type": "string", "minLength": 1},
+    "change_digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "deps": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "rollback_path": {"type": "string", "minLength": 1},
+    "protected_file_review": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "pattern": "^\\.sddgov/reviews/[A-Za-z0-9._-]+\\.json$"}
+      ]
+    }
+  },
+  "additionalProperties": false
+}

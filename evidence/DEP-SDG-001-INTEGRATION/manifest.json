@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-001-INTEGRATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--red-baseline.txt",
+      "sha256": "2396551eb142905b039b60a78c4ff2095ff558848ddcd893d6b3b2b473e4fcbd",
+      "collected_at": "2026-08-15T02:05:19Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green.txt",
+      "sha256": "5d5eeeeb73c94cf4eea5ec2af35f632d109ebfddbb34bfe17c37486e7a883216",
+      "collected_at": "2026-08-15T02:15:18Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final-local-green.txt",
+      "sha256": "459089030e4b406c11fa44d77f2e3fe1fe6337a694134af94cf0a4e1fde4cba8",
+      "collected_at": "2026-08-15T02:34:05Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--external-clean-checkout-green.txt",
+      "sha256": "e7ccb3c79fc72a055622f10fd16c781808324a4629bf61dce4a5b41d99394a7b",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--final-local-green.txt",
+      "sha256": "459089030e4b406c11fa44d77f2e3fe1fe6337a694134af94cf0a4e1fde4cba8",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--local-green.txt",
+      "sha256": "5d5eeeeb73c94cf4eea5ec2af35f632d109ebfddbb34bfe17c37486e7a883216",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--red-baseline.txt",
+      "sha256": "2396551eb142905b039b60a78c4ff2095ff558848ddcd893d6b3b2b473e4fcbd",
+      "shareable": true
+    }
+  ]
+}

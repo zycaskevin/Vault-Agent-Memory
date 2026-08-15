@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/ci-cost-guard.schema.json",
+  "title": "CI Cost Guard Contract",
+  "type": "object",
+  "required": ["schema_version", "profile", "local_green", "hosted", "workflow_controls"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "profile": {"enum": ["solo-fast", "team-standard", "regulated"]},
+    "local_green": {
+      "type": "object",
+      "required": ["commands"],
+      "properties": {
+        "environment": {"type": "object", "additionalProperties": {"type": "string"}},
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1}
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "hosted": {
+      "type": "object",
+      "required": ["max_runs_per_work_package", "max_reruns_per_revision", "expected_minutes", "full_matrix"],
+      "properties": {
+        "max_runs_per_work_package": {"type": "integer", "minimum": 1},
+        "max_reruns_per_revision": {"type": "integer", "minimum": 0},
+        "expected_minutes": {"type": "integer", "minimum": 1},
+        "full_matrix": {"enum": ["manual", "ready_for_review", "manual_or_ready_for_review", "release"]}
+      },
+      "additionalProperties": false
+    },
+    "workflow_controls": {
+      "type": "object",
+      "required": ["require_concurrency", "cancel_in_progress", "require_job_timeouts", "require_read_only_permissions", "skip_draft_pull_requests"],
+      "properties": {
+        "require_concurrency": {"type": "boolean"},
+        "cancel_in_progress": {"type": "boolean"},
+        "require_job_timeouts": {"type": "boolean"},
+        "require_read_only_permissions": {"type": "boolean"},
+        "skip_draft_pull_requests": {"type": "boolean"},
+        "exempt_workflows": {"type": "array", "items": {"type": "string"}}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,24 @@
+allowed_interruptions:
+  - unresolved_l2_product_decision
+  - concrete_l3_operation
+  - operational_action
+  - necessary_uat
+forbidden_interruptions:
+  - commit_permission
+  - pull_request_permission
+  - routine_test_or_review
+  - continuation_when_unblocked_work_exists
+  - issue_branch_or_feature_push_permission
+  - lint_typecheck_test_e2e_or_security_scan_permission
+  - retry_or_reversible_conflict_permission
+  - checksum_copy_paste_or_approval
+  - machine_verifiable_uncertainty
+same_decision_reopen_requires: recorded_reopen_condition
+default_state: CONTINUE
+machine_verifiable_resolution_order:
+  - repository_and_sdd
+  - decision_log_and_adr
+  - tests_ci_and_tools
+  - safest_reversible_l0_l1_default
+action_required_contract: templates/ACTION_REQUIRED.md
+subagent_escalation_target: main_agent

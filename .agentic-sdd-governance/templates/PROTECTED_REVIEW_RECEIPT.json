@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "algorithm": "ed25519",
+  "review": {
+    "review_id": "REV-EXACT-CHANGE-001",
+    "reviewer_id": "replace-with-independent-reviewer-id",
+    "builder_id": "replace-with-builder-id",
+    "change_digest": "replace-with-sddgov-change-digest",
+    "gate_metadata_digest": "replace-with-sddgov-gate-metadata-digest",
+    "verdict": "approved",
+    "issued_at": "REPLACE_WITH_CURRENT_TIME_RFC3339",
+    "expires_at": "REPLACE_WITH_EXPIRY_TIME_RFC3339",
+    "nonce": "replace-with-unique-random-nonce"
+  },
+  "signature": "replace-with-base64-ed25519-signature"
+}

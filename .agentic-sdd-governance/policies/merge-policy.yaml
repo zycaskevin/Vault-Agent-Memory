@@ -1,0 +1,16 @@
+merge_requires:
+  - acceptance_checks_pass
+  - required_evidence_verified
+  - redaction_blockers_zero
+  - protected_file_review_when_changed
+  - rollback_recorded
+merge_human_approval:
+  L0: forbidden_when_required_checks_pass
+  L1: forbidden_when_required_checks_pass
+  L2: recorded_decision_only
+  L3: fresh_concrete_operation_approval
+prohibited:
+  - raw_evidence_attachment
+  - acceptance_criteria_weakening
+  - hidden_scope_change
+  - unapproved_l2_or_l3

@@ -1,0 +1,11 @@
+{
+  "schema_version": "1.0",
+  "reviewers": [
+    {
+      "reviewer_id": "replace-with-independent-reviewer-id",
+      "algorithm": "ed25519",
+      "public_key": "replace-with-base64-encoded-32-byte-public-key",
+      "status": "active"
+    }
+  ]
+}

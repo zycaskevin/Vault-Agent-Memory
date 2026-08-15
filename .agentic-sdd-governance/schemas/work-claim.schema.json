@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Work Claim",
+  "type": "object",
+  "required": ["work_package", "agent", "status", "claimed_at", "expires_at"],
+  "properties": {
+    "work_package": {"type": "string", "minLength": 1},
+    "agent": {"type": "string", "minLength": 1},
+    "status": {"enum": ["active", "released", "expired"]},
+    "claimed_at": {"type": "string", "format": "date-time"},
+    "expires_at": {"type": "string", "format": "date-time"}
+  },
+  "additionalProperties": false
+}

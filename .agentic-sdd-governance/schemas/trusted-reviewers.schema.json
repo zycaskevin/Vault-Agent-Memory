@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SDG Trusted Independent Reviewers",
+  "type": "object",
+  "required": ["schema_version", "reviewers"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "reviewers": {
+      "type": "array",
+      "uniqueItems": true,
+      "x-sddgov-unique-key": "reviewer_id",
+      "items": {
+        "type": "object",
+        "required": ["reviewer_id", "algorithm", "public_key", "status"],
+        "properties": {
+          "reviewer_id": {"type": "string", "minLength": 1},
+          "algorithm": {"const": "ed25519"},
+          "public_key": {"type": "string", "minLength": 44, "maxLength": 44},
+          "status": {"enum": ["active", "revoked"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,19 @@
+protected:
+  - core/POLICY_KERNEL.md
+  - core/policy-kernel.yaml
+  - profiles/
+  - schemas/
+  - policies/
+  - tests/
+  - redaction/rules.json
+  - .github/workflows/governance.yml
+  - src/sddgov/autonomy.py
+  - src/sddgov/merge_gate.py
+  - src/sddgov/cli.py
+  - .sddgov/trusted-approvers.json
+  - .sddgov/trusted-reviewers.json
+rules:
+  builder_may_modify: true
+  independent_review_required: true
+  acceptance_weakening_forbidden: true
+  security_gate_deletion_forbidden: true

@@ -1,0 +1,23 @@
+version: "0.2.0-experimental.5"
+runtime_load_set:
+  - core/POLICY_KERNEL.md
+  - selected_project_profile
+  - current_work_package
+  - relevant_playbook_only
+invariants:
+  preauthorize_l0_l1: true
+  raw_evidence_export: false
+  builder_controls_final_verification: false
+  checkpoint_requires_reply: false
+  continue_when_unblocked_work_exists: true
+  default_state: CONTINUE
+  no_human_escalation_if_machine_verifiable: true
+  sha256_human_copy_paste_forbidden: true
+  subagent_direct_owner_escalation: false
+interruptions:
+  allowed:
+    - unresolved_l2_product_decision
+    - concrete_l3_operation
+    - operational_action
+    - necessary_uat
+  strict_action_required_package: true

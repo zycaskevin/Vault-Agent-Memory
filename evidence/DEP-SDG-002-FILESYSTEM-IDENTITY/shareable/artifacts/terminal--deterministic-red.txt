@@ -1,0 +1,6 @@
+command=deterministic retained-file audit with unrelated sibling creation
+exit_status=0
+target_bytes_unchanged=true
+target_inode_unchanged=true
+unrelated_sibling_only=true
+legacy_full_directory_metadata_audit=DENY

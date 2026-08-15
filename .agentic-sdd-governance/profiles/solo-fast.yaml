@@ -1,0 +1,27 @@
+profile: solo-fast
+intended_for: low-risk prototypes and single-owner tools
+issue_required: false
+pull_request_required: false
+independent_review:
+  default: optional
+  required_for: [authentication, payment, personal_data, production]
+evidence:
+  L0: concise-proof
+  L1: dep-lite
+  L2: dep-plus-decision-package
+  L3: full-dep-plus-explicit-approval
+debugging:
+  screenshot_only_fix_allowed: false
+  dep_required_when: [failure_not_locally_obvious, cross_module, regression, security_sensitive]
+ci_cost_guard:
+  local_green_required: true
+  hosted_runs_per_work_package: 1
+  reruns_per_revision: 1
+  full_matrix: manual_or_ready_for_review
+approval_budget:
+  l0_engineering: 0
+  l1_engineering: 0
+  l2_per_decision: 1
+  l3_per_operation: 1
+  milestone_uat: 1
+  enforced_by: policies/autonomy-policy.json

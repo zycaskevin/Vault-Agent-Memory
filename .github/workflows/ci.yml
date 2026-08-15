@@ -15,6 +15,12 @@ on:
       - 'pyproject.toml'
       - 'uv.lock'
       - '.gitignore'
+      - 'AGENTS.md'
+      - '.agentic-sdd-governance/**'
+      - '.agents/skills/agentic-sdd-governance/**'
+      - '.sddgov/**'
+      - 'DEP-*/**'
+      - 'evidence/**'
       - '.github/workflows/**'
       - 'docs/**'
       - 'specs/**'
@@ -24,6 +30,7 @@ on:
       - 'raw/**'
       - 'benchmarks/**'
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
     branches:
       - 'main'
     paths:
@@ -34,6 +41,12 @@ on:
       - 'pyproject.toml'
       - 'uv.lock'
       - '.gitignore'
+      - 'AGENTS.md'
+      - '.agentic-sdd-governance/**'
+      - '.agents/skills/agentic-sdd-governance/**'
+      - '.sddgov/**'
+      - 'DEP-*/**'
+      - 'evidence/**'
       - '.github/workflows/**'
       - 'docs/**'
       - 'specs/**'
@@ -54,6 +67,8 @@ jobs:
   test:
     name: Tests (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -240,6 +255,8 @@ jobs:
   readme-command-smoke:
     name: README documented command smoke
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -264,6 +281,8 @@ jobs:
   one-click-install-smoke-linux:
     name: One-click installer smoke (Linux)
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -285,6 +304,8 @@ jobs:
   one-click-install-smoke-windows:
     name: One-click installer smoke (Windows)
     runs-on: windows-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -310,6 +331,8 @@ jobs:
   uv-dev-smoke:
     name: uv dev workflow smoke
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -340,6 +363,8 @@ jobs:
   search-qa-regression:
     name: Search QA regression gate
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -364,6 +389,8 @@ jobs:
   memory-foundation-contract:
     name: Memory foundation governance contract
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 20
 
     steps:
       - name: Check out repository
@@ -473,6 +500,8 @@ jobs:
   build-smoke:
     name: Build, twine check, and wheel smoke
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -518,6 +547,8 @@ jobs:
   release-parity:
     name: Release version parity
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -553,6 +584,8 @@ jobs:
   module-size:
     name: Module size gate
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -571,6 +604,8 @@ jobs:
   lint-knowledge:
     name: Lint raw/ knowledge files
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 15
 
     steps:
       - name: Check out repository
@@ -680,6 +715,8 @@ jobs:
   secret-scan-light:
     name: Lightweight secret scan
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 10
 
     steps:
       - name: Check out repository
@@ -707,8 +744,17 @@ jobs:
           included_roots = [
               Path('vault'), Path('scripts'), Path('tests'), Path('docs'), Path('raw'),
               Path('benchmarks'), Path('.github/workflows'),
+              Path('.agentic-sdd-governance'),
+              Path('.agents/skills/agentic-sdd-governance'), Path('.sddgov'),
+              Path('evidence'),
           ]
-          included_files = [Path('README.md'), Path('CHANGELOG.md'), Path('pyproject.toml')]
+          included_roots.extend(
+              path for path in Path('.').glob('DEP-*') if path.is_dir()
+          )
+          included_files = [
+              Path('README.md'), Path('CHANGELOG.md'), Path('pyproject.toml'),
+              Path('AGENTS.md'),
+          ]
           suffixes = {'.py', '.md', '.toml', '.yml', '.yaml', '.json', '.txt'}
           patterns = {
               'private key block': re.compile(r'-----BEGIN [A-Z ]+ PRIVATE KEY-----'),
@@ -756,6 +802,8 @@ jobs:
   history-privacy-scan:
     name: Full history privacy scan
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    timeout-minutes: 15
 
     steps:
       - name: Check out full repository history
@@ -766,3 +814,75 @@ jobs:
 
       - name: Scan reachable history for private context
         run: python scripts/history_privacy_scan.py
+
+  governance-merge-gate:
+    name: Agentic SDD Governance merge gate
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out exact pull request head
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install project and pinned governance runtime
+        run: |
+          python -m venv "$RUNNER_TEMP/sddgov-venv"
+          "$RUNNER_TEMP/sddgov-venv/bin/python" -m pip install --upgrade pip
+          governance_wheel="$RUNNER_TEMP/agentic_sdd_governance-0.2.0.dev6-py3-none-any.whl"
+          curl --fail --location --silent --show-error \
+            "https://github.com/zycaskevin/Agentic-SDD-Governance/releases/download/v0.2.0-experimental.6/agentic_sdd_governance-0.2.0.dev6-py3-none-any.whl" \
+            --output "$governance_wheel"
+          python - "$governance_wheel" <<'PY'
+          import hashlib
+          import sys
+          from pathlib import Path
+
+          expected = "e89eb0b5d6c3497068b4335ac45b91cc92d5c4e4705921f8348c844ea73b9cf5"
+          actual = hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest()
+          if actual != expected:
+              raise SystemExit("governance wheel SHA-256 mismatch")
+          print(f"governance wheel SHA-256 verified: {actual}")
+          PY
+          "$RUNNER_TEMP/sddgov-venv/bin/python" -m pip install -e ".[dev]" \
+            "$governance_wheel"
+          printf '%s\n' "$RUNNER_TEMP/sddgov-venv/bin" >> "$GITHUB_PATH"
+
+      - name: Materialize public reviewer trust outside the repository
+        env:
+          SDDGOV_TRUSTED_REVIEWERS_JSON: ${{ vars.SDDGOV_TRUSTED_REVIEWERS_JSON }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          raw = os.environ.get("SDDGOV_TRUSTED_REVIEWERS_JSON", "")
+          if not raw:
+              raise SystemExit("SDDGOV_TRUSTED_REVIEWERS_JSON is not configured")
+          value = json.loads(raw)
+          if set(value) != {"schema_version", "reviewers"}:
+              raise SystemExit("trusted reviewer JSON has an invalid top-level shape")
+          target = Path(os.environ["RUNNER_TEMP"]) / "sddgov-trusted-reviewers.json"
+          target.write_text(json.dumps(value, ensure_ascii=False) + "\n", encoding="utf-8")
+          target.chmod(0o600)
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"SDDGOV_TRUSTED_REVIEWERS_FILE={target}\n")
+          PY
+
+      - name: Verify exact merge gate
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: >-
+          "$RUNNER_TEMP/sddgov-venv/bin/sddgov" merge verify .
+          --base-ref "$PR_BASE_SHA"
