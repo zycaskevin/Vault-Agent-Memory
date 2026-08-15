@@ -7,6 +7,13 @@
 - Classification: reproducible CI configuration defect, not a transient provider failure.
 - Action: create a new reviewed revision with the governance virtual environment outside the repository; do not rerun the failed revision.
 
+## Revision-2 Local Green attempt 1
+
+- Result: 3,282 passed, 12 skipped, 1 failed, 1 warning.
+- Failure: the existing T-003 real-Git pending-written recovery case denied on retained repository-input identity.
+- Isolated rerun: PASS, 1 passed.
+- Classification: transient fail-closed filesystem identity race; this satisfies the Cost Guard evidence prerequisite for one full rerun of the same revision.
+
 ## Green command and result
 
 `.venv-sddgov/bin/sddgov ci local-gate .` returned `ok: true`. Its final pytest
