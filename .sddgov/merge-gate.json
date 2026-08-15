@@ -1,14 +1,14 @@
 {
   "schema_version": "1.0",
   "base_sha": "5587cc099d544e2f83f4db87dad3b0d882f52a10",
-  "head_sha": "6e9def75a1bb5b54c4b236c30654a8ad7eef6ac3",
+  "head_sha": "6e2ca871e2db0539622ef0a378dd1c20b656875e",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "986ef818bbb6640285a82924cb8b8962b36758fa59323fd3378a4308a3c570e2",
+  "change_digest": "13d24625223ba23f8be9ca7a04f0c713bb64752a3ca2220f747b5864c2f4ee69",
   "deps": [
     "DEP-SDG-001-CLAIM-CLI",
     "evidence/DEP-SDG-001-INTEGRATION"
   ],
   "rollback_path": "evidence/DEP-SDG-001-INTEGRATION/rollback.md",
-  "protected_file_review": null
+  "protected_file_review": ".sddgov/reviews/REV-SDG-001.json"
 }
