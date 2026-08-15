@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-003-MISSION-V5-POST-SDG",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--post-sdg-proposal-red.txt",
+      "sha256": "30763eb96eea94283a1fcac5b4af6886f91cc2c87b621cefdfde18dfcf08653e",
+      "collected_at": "2026-08-15T04:50:13Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--post-sdg-compatibility-green.txt",
+      "sha256": "333356e2fc2d00bacb680fec73fe81e5ab77bc8381383b5543b6a2ba86843bcd",
+      "collected_at": "2026-08-15T05:03:48Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--unstable-root-local-gate-deny.txt",
+      "sha256": "61681dc633cb76f0ffeb1ec4a1d4fbf7b81293ff50ca027587dcbb2faf92c388",
+      "collected_at": "2026-08-15T05:03:48Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--post-sdg-compatibility-green.txt",
+      "sha256": "bb4a6a93f12b9d0f65b17e22a504dcf99a97fa7295704cc3b207d327db7583f7",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--post-sdg-proposal-red.txt",
+      "sha256": "b00181534eda1271d3f4f86f77aa6d2dcad1a24d34b83f9e739484a99d7c11e8",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--unstable-root-local-gate-deny.txt",
+      "sha256": "4883afe2d69fda8cf693967cc10b86374b20db9e6196a0918b9151d0fc53bffc",
+      "shareable": true
+    }
+  ]
+}

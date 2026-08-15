@@ -1,0 +1,46 @@
+{
+  "$schema": "../../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-003-MISSION-V5-POST-SDG",
+  "issue": "475",
+  "sdd_references": [
+    "docs/decision_records/2026-08-14-subject-development-mission-v5-recovery.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-15T04:47:35Z",
+  "updated_at": "2026-08-15T05:10:00Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-15T04:47:35Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-15T04:51:02Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-15T04:53:21Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-15T05:04:50Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-15T05:10:00Z"
+      }
+    ]
+  },
+  "expected_behavior": "Exact reviewed post-SDG main emits a fresh inactive Mission V5 proposal while arbitrary intervening history remains denied.",
+  "actual_behavior": "The clean exact main is denied because the release check treats reviewed governance descendants as unauthorized cumulative diff paths.",
+  "environment": {
+    "commit": "4c4c29a16decfeedda59b685886801f65b9fd878",
+    "branch": "agent/mission-v5-activation-post-sdg",
+    "runtime": "CPython 3.14.3; macOS arm64; sddgov 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}
