@@ -1,5 +1,15 @@
 # Regression Evidence
 
+## Hosted merge-gate reproduction (revision 2)
+
+The first ready-for-review hosted run failed closed in the Agentic SDD Governance merge gate with:
+
+```text
+[ERROR] merge verification requires a clean exact-HEAD worktree
+```
+
+The job had created `.venv-sddgov` inside the checkout. Python virtual environments include a local `.gitignore`; that untracked file made the exact-HEAD worktree dirty. The repair creates the pinned governance environment under `RUNNER_TEMP` and invokes the runtime from that external path. No merge-gate cleanliness rule was weakened.
+
 ## Regression test added or strengthened
 
 The CI Cost Guard itself is the machine-readable regression contract. It now

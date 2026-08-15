@@ -1,5 +1,12 @@
 # Verification
 
+## Hosted revision-1 result
+
+- Ordinary project checks: passed or continued normally.
+- Agentic SDD Governance merge gate: failed closed before review verification because the job-created repository-local virtual environment made the checkout dirty.
+- Classification: reproducible CI configuration defect, not a transient provider failure.
+- Action: create a new reviewed revision with the governance virtual environment outside the repository; do not rerun the failed revision.
+
 ## Green command and result
 
 `.venv-sddgov/bin/sddgov ci local-gate .` returned `ok: true`. Its final pytest

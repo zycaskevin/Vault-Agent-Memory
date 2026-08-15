@@ -837,9 +837,9 @@ jobs:
 
       - name: Install project and pinned governance runtime
         run: |
-          python -m venv .venv-sddgov
-          .venv-sddgov/bin/python -m pip install --upgrade pip
-          .venv-sddgov/bin/python -m pip install -e ".[dev]" \
+          python -m venv "$RUNNER_TEMP/sddgov-venv"
+          "$RUNNER_TEMP/sddgov-venv/bin/python" -m pip install --upgrade pip
+          "$RUNNER_TEMP/sddgov-venv/bin/python" -m pip install -e ".[dev]" \
             "https://github.com/zycaskevin/Agentic-SDD-Governance/releases/download/v0.2.0-experimental.6/agentic_sdd_governance-0.2.0.dev6-py3-none-any.whl"
 
       - name: Materialize public reviewer trust outside the repository
@@ -868,5 +868,5 @@ jobs:
         env:
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: >-
-          .venv-sddgov/bin/sddgov merge verify .
+          "$RUNNER_TEMP/sddgov-venv/bin/sddgov" merge verify .
           --base-ref "$PR_BASE_SHA"
