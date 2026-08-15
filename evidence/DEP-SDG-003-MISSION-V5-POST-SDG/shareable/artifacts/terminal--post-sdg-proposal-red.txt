@@ -1,0 +1,8 @@
+command=PYTHONDONTWRITEBYTECODE=1 python3 scripts/run_subject_development_mission_v5.py propose-mission --implementation-base-commit 4c4c29a16decfeedda59b685886801f65b9fd878 --json
+exit_status=2
+stdout=
+stderr=SUBJECT_DEVELOPMENT_MISSION_V5_DENY
+head=4c4c29a16decfeedda59b685886801f65b9fd878
+origin_main=4c4c29a16decfeedda59b685886801f65b9fd878
+mission_proof_present=false
+worktree_clean_before_command=true

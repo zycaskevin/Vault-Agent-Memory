@@ -1,0 +1,8 @@
+command=PATH=<external-sdg-venv>/bin:$PATH sddgov ci local-gate .
+exit_status=2
+result=2 failed, 3284 passed, 12 skipped, 1 warning in 170.08s
+failure_1=tests/test_subject_authorization_runner.py::test_real_verifier_accepts_exact_normative_scope
+failure_2=tests/test_subject_progress_v2.py::test_real_git_completion_reconstructs_progress_prefix_and_passes_final_overlay
+classification=known frozen filesystem identity fail-closed class in active Codex runtime tree
+retry_performed=false
+required_next_gate=fresh exact-source checkout under stable dedicated root

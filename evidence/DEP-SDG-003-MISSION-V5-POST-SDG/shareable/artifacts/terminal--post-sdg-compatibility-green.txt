@@ -1,0 +1,19 @@
+command=python -m pytest -q tests/test_subject_development_mission_v5.py tests/test_subject_task_authorization_dispatch_v5.py
+exit_status=0
+result=67 passed in 28.03s
+command=python -m ruff check scripts/run_subject_development_mission_v5.py tests/test_subject_development_mission_v5.py
+exit_status=0
+result=All checks passed
+command=python -m py_compile scripts/run_subject_development_mission_v5.py tests/test_subject_development_mission_v5.py
+exit_status=0
+command=git diff --check
+exit_status=0
+hostile_controls=extra descendant DENY; intermediate unauthorized add-and-revert DENY; wrong script mode DENY
+stable_checkout=<STABLE_CHECKOUT>/vault-sdg003-builder-green
+stable_source=2c47002b59644eb1c367dfef41e8a6454ff17bf3
+stable_origin=https://github.com/zycaskevin/Vault-Agent-Memory.git
+command=PATH=<external-sdg-venv>/bin:$PATH sddgov ci local-gate .
+exit_status=0
+result=3286 passed, 12 skipped, 1 warning in 169.87s
+stable_git_status_before=clean
+stable_git_status_after=clean

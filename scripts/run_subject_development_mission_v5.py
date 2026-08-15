@@ -104,6 +104,14 @@ TASKS_PATH = legacy.TASKS_PATH
 BRIDGE_BASE = "03dcdabc873658cd7de24dfeeef8b85090cf2321"
 V4_PROTOCOL_BASE = "0308ebe37929ee0cdf5a8de748d5ae99c6e246f0"
 V4_MISSION_ID = "a9f3ffe1c5628fd4425a119797717174ccd7096c46e782f8aea143efb6fde0bc"
+V5_INACTIVE_RELEASE = "ab0637b55f3202c57bd0a11ee28386abe566c84d"
+POLICY_BOOTSTRAP_MERGE = "5587cc099d544e2f83f4db87dad3b0d882f52a10"
+POLICY_BOOTSTRAP_TOPIC = "b3f3dbdb4119cbc1b12ee422cfd5669bf8d622f8"
+POST_SDG_BASE = "4c4c29a16decfeedda59b685886801f65b9fd878"
+POST_SDG_TOPIC = "cbdfd04db9697bc465d1e5d4b6ab14528ef9aa0e"
+POST_SDG_TREE = "701a59ae858927c59c9876bc57efcad220695ee2"
+POST_SDG_GATE_SHA256 = "c209b63bab683165dcca49289bf09f536c966bbb1b50dd054c3e30b8a6198dd0"
+POST_SDG_RECEIPT_SHA256 = "5e16e217ab75052065e12bf7abde476aea801d6d37a8f3dbec7740923890479f"
 TASKS_SHA256 = "0150935a1a16e51dc30dff9dff8d01104d7127ee3cf57333caec7586d93f5007"
 ACTIVATION_PROGRESS_SHA256 = "28478445e3eeb5b838b010fa81518d4fcbbb5c6a37422cb3aa58dabdcbf87626"
 AUTHORITY = "github:zycaskevin"
@@ -235,6 +243,45 @@ BRIDGE_PATHS = sorted(
         "tests/test_subject_task_authorization_dispatch_v5.py",
     ]
 )
+POLICY_BOOTSTRAP_PATHS = sorted(
+    [
+        "docs/decision_records/2026-08-15-sddgov-consumer-policy-bootstrap.md",
+        "policies/protected-files.yaml",
+    ]
+)
+POST_SDG_COMPATIBILITY_PATHS = sorted(
+    [
+        ".github/workflows/ci.yml",
+        ".sddgov/events.jsonl",
+        ".sddgov/merge-gate.json",
+        ".sddgov/reviews/REV-SDG-003.json",
+        ".sddgov/work-claims.json",
+        "docs/decision_records/2026-08-15-mission-v5-post-sdg-activation.md",
+        "docs/work-packages/SDG-003-mission-v5-post-sdg-activation.md",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/fix-scope.md",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/manifest.json",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/redaction-report.json",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/regression-evidence.md",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/reproduction.md",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/rollback.md",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/root-cause-hypothesis.md",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/shareable/artifacts/terminal--post-sdg-compatibility-green.txt",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/shareable/artifacts/terminal--post-sdg-proposal-red.txt",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/shareable/artifacts/terminal--unstable-root-local-gate-deny.txt",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/summary.yaml",
+        "evidence/DEP-SDG-003-MISSION-V5-POST-SDG/verification.md",
+        "scripts/run_subject_development_mission_v5.py",
+        "tests/test_subject_development_mission_v5.py",
+    ]
+)
+POST_SDG_COMPATIBILITY_MODIFIED_PATHS = {
+    ".github/workflows/ci.yml",
+    ".sddgov/events.jsonl",
+    ".sddgov/merge-gate.json",
+    ".sddgov/work-claims.json",
+    "scripts/run_subject_development_mission_v5.py",
+    "tests/test_subject_development_mission_v5.py",
+}
 
 
 def canonical(value: Any, *, newline: bool = True) -> bytes:
@@ -1434,14 +1481,8 @@ def validate_final_delivery(
     return matches[0]
 
 
-def _check_protocol_release_commit(repo_root: Path, base: str) -> None:
-    check_repository_identity(repo_root)
-    _check_predecessor_activation_commit(repo_root)
+def _check_v5_inactive_release_commit(repo_root: Path, base: str) -> None:
     if COMMIT.fullmatch(base) is None or base == BRIDGE_BASE:
-        raise Denied
-    if _git(repo_root, "rev-parse", "HEAD").strip() != base.encode():
-        raise Denied
-    if _git(repo_root, "rev-parse", "origin/main").strip() != base.encode():
         raise Denied
     ancestor = subprocess.run(
         ["git", "merge-base", "--is-ancestor", BRIDGE_BASE, base],
@@ -1480,6 +1521,147 @@ def _check_protocol_release_commit(repo_root: Path, base: str) -> None:
             "\t" + path
         ):
             raise Denied
+
+
+def _check_post_sdg_base(repo_root: Path) -> None:
+    """Bind the exact inactive V5, policy bootstrap, and reviewed SDG ancestry."""
+    _check_v5_inactive_release_commit(repo_root, V5_INACTIVE_RELEASE)
+    policy_parents = _git(
+        repo_root, "rev-list", "--parents", "-n", "1", POLICY_BOOTSTRAP_MERGE
+    ).decode().split()
+    if policy_parents != [
+        POLICY_BOOTSTRAP_MERGE,
+        V5_INACTIVE_RELEASE,
+        POLICY_BOOTSTRAP_TOPIC,
+    ]:
+        raise Denied
+    if _git(repo_root, "rev-parse", f"{POLICY_BOOTSTRAP_MERGE}^{{tree}}").strip() != _git(
+        repo_root, "rev-parse", f"{POLICY_BOOTSTRAP_TOPIC}^{{tree}}"
+    ).strip():
+        raise Denied
+    policy_changes = _git(
+        repo_root,
+        "diff",
+        "--name-status",
+        "--no-renames",
+        f"{V5_INACTIVE_RELEASE}..{POLICY_BOOTSTRAP_MERGE}",
+    ).decode().splitlines()
+    if policy_changes != [f"A\t{path}" for path in POLICY_BOOTSTRAP_PATHS]:
+        raise Denied
+    for path in POLICY_BOOTSTRAP_PATHS:
+        mode, _raw = _git_object(repo_root, POLICY_BOOTSTRAP_MERGE, path)
+        if mode != "100644":
+            raise Denied
+
+    sdg_parents = _git(
+        repo_root, "rev-list", "--parents", "-n", "1", POST_SDG_BASE
+    ).decode().split()
+    if sdg_parents != [POST_SDG_BASE, POLICY_BOOTSTRAP_MERGE, POST_SDG_TOPIC]:
+        raise Denied
+    if (
+        _git(repo_root, "rev-parse", f"{POST_SDG_BASE}^{{tree}}").decode().strip()
+        != POST_SDG_TREE
+        or _git(repo_root, "rev-parse", f"{POST_SDG_TOPIC}^{{tree}}").decode().strip()
+        != POST_SDG_TREE
+    ):
+        raise Denied
+    for path, expected_sha256 in (
+        (".sddgov/merge-gate.json", POST_SDG_GATE_SHA256),
+        (".sddgov/reviews/REV-SDG-001.json", POST_SDG_RECEIPT_SHA256),
+    ):
+        mode, raw = _git_object(repo_root, POST_SDG_BASE, path)
+        if mode != "100644" or hashlib.sha256(raw).hexdigest() != expected_sha256:
+            raise Denied
+
+
+def _check_post_sdg_compatibility_release(repo_root: Path, base: str) -> None:
+    parents = _git(repo_root, "rev-list", "--parents", "-n", "1", base).decode().split()
+    if len(parents) != 3 or parents[0] != base or parents[1] != POST_SDG_BASE:
+        raise Denied
+    topic = parents[2]
+    if _git(repo_root, "rev-parse", f"{base}^{{tree}}").strip() != _git(
+        repo_root, "rev-parse", f"{topic}^{{tree}}"
+    ).strip():
+        raise Denied
+
+    commits = _git(
+        repo_root,
+        "rev-list",
+        "--reverse",
+        "--topo-order",
+        f"{POST_SDG_BASE}..{topic}",
+    ).decode().splitlines()
+    if not commits:
+        raise Denied
+    previous = POST_SDG_BASE
+    known_paths = set(POST_SDG_COMPATIBILITY_MODIFIED_PATHS)
+    allowed_paths = set(POST_SDG_COMPATIBILITY_PATHS)
+    for commit in commits:
+        commit_parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).decode().split()
+        if commit_parents != [commit, previous]:
+            raise Denied
+        changes = _git(
+            repo_root,
+            "diff",
+            "--name-status",
+            "--no-renames",
+            f"{previous}..{commit}",
+        ).decode().splitlines()
+        if not changes:
+            raise Denied
+        for line in changes:
+            fields = line.split("\t")
+            if len(fields) != 2:
+                raise Denied
+            action, path = fields
+            if path not in allowed_paths or action != ("M" if path in known_paths else "A"):
+                raise Denied
+            expected_mode = (
+                "100755" if path.startswith("scripts/") and path.endswith(".py") else "100644"
+            )
+            mode, _raw = _git_object(repo_root, commit, path)
+            if mode != expected_mode:
+                raise Denied
+            known_paths.add(path)
+        previous = commit
+    if previous != topic:
+        raise Denied
+
+    expected_status = [
+        ("M" if path in POST_SDG_COMPATIBILITY_MODIFIED_PATHS else "A") + "\t" + path
+        for path in POST_SDG_COMPATIBILITY_PATHS
+    ]
+    final_status = _git(
+        repo_root,
+        "diff",
+        "--name-status",
+        "--no-renames",
+        f"{POST_SDG_BASE}..{base}",
+    ).decode().splitlines()
+    if final_status != expected_status:
+        raise Denied
+    for path in POST_SDG_COMPATIBILITY_PATHS:
+        expected_mode = (
+            "100755" if path.startswith("scripts/") and path.endswith(".py") else "100644"
+        )
+        mode, _raw = _git_object(repo_root, base, path)
+        if mode != expected_mode:
+            raise Denied
+
+
+def _check_protocol_release_commit(repo_root: Path, base: str) -> None:
+    check_repository_identity(repo_root)
+    _check_predecessor_activation_commit(repo_root)
+    _check_post_sdg_base(repo_root)
+    if COMMIT.fullmatch(base) is None or base == POST_SDG_BASE:
+        raise Denied
+    if _git(repo_root, "rev-parse", "HEAD").strip() != base.encode():
+        raise Denied
+    if _git(repo_root, "rev-parse", "origin/main").strip() != base.encode():
+        raise Denied
+    _check_post_sdg_compatibility_release(repo_root, base)
 
 
 def _check_predecessor_activation_commit(repo_root: Path) -> None:
