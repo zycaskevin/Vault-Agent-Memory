@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "base_sha": "5587cc099d544e2f83f4db87dad3b0d882f52a10",
-  "head_sha": "e2e37da4e6b08875e82ce6772c3abfeb88bb3448",
+  "head_sha": "faadcac425e08bf523a04d4a0d2aa6bd7d2345a8",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "02a1154a3b6802e4867355032d44bb56fe871901d9d751be77283628083ccb90",
+  "change_digest": "924dd61215fbf068e255dcc633d3cad6a8554672de65f0f7da2de8dc957d1b61",
   "deps": [
     "DEP-SDG-001-CLAIM-CLI",
     "evidence/DEP-SDG-001-INTEGRATION"
