@@ -37,7 +37,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--unstable-root-local-gate-deny.txt",
-      "sha256": "a58141861f20f94ac8eec109d238f6df2f311b7bae94cc9cbaef293b5526581f",
+      "sha256": "4883afe2d69fda8cf693967cc10b86374b20db9e6196a0918b9151d0fc53bffc",
       "shareable": true
     }
   ]

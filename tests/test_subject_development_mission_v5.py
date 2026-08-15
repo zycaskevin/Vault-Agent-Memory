@@ -1102,6 +1102,21 @@ def test_reviewed_post_sdg_anchor_binds_signed_gate_and_receipt() -> None:
     mission._check_post_sdg_base(LIVE_ROOT)
 
 
+def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
+    config = json.loads((LIVE_ROOT / ".sddgov/ci-cost-guard.json").read_text())
+    commands = config["local_green"]["commands"]
+    assert [
+        "python",
+        "-m",
+        "pytest",
+        "-q",
+        "tests/test_subject_progress_v3.py",
+    ] in commands
+    full = next(command for command in commands if "--ignore=tests/test_subject_progress.py" in command)
+    assert "--ignore=tests/test_subject_progress_v3.py" in full
+    assert ".sddgov/ci-cost-guard.json" in mission.POST_SDG_COMPATIBILITY_MODIFIED_PATHS
+
+
 def test_mission_activation_requires_one_exact_direct_child_commit(
     tmp_path: Path,
 ) -> None:

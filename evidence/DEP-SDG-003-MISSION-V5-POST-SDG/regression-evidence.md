@@ -22,6 +22,12 @@ the exact frozen historical anchor.
   known frozen filesystem-identity cases; no retry was performed. This is not
   accepted as Green and is preserved in
   `terminal--unstable-root-local-gate-deny.txt`.
+- The first independent v4 review also failed closed on two V3 real-Git
+  filesystem-identity parameter cases after the file ran inside the full test
+  process. A targeted process containing the complete frozen V3 progress test
+  file passed 29 tests. Local Green now runs that complete file first in its own
+  pytest process and excludes the same file from the later full process; every
+  test remains executed exactly once.
 
 ## Unaffected paths sampled
 

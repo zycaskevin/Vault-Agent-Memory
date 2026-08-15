@@ -252,6 +252,7 @@ POLICY_BOOTSTRAP_PATHS = sorted(
 POST_SDG_COMPATIBILITY_PATHS = sorted(
     [
         ".github/workflows/ci.yml",
+        ".sddgov/ci-cost-guard.json",
         ".sddgov/events.jsonl",
         ".sddgov/merge-gate.json",
         ".sddgov/reviews/REV-SDG-003.json",
@@ -276,6 +277,7 @@ POST_SDG_COMPATIBILITY_PATHS = sorted(
 )
 POST_SDG_COMPATIBILITY_MODIFIED_PATHS = {
     ".github/workflows/ci.yml",
+    ".sddgov/ci-cost-guard.json",
     ".sddgov/events.jsonl",
     ".sddgov/merge-gate.json",
     ".sddgov/work-claims.json",

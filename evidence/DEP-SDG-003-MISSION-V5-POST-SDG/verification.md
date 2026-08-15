@@ -22,6 +22,10 @@ was empty before and after the gate.
   hidden add-and-revert history, wrong mode, parent/tree/path drift all deny.
 - The active-runtime full gate fail-closed evidence is preserved separately and
   is not relabelled as Green.
+- The rejected v4 protected review is likewise preserved as fail-closed. Its
+  two identity-sensitive V3 cases motivated process isolation rather than a
+  test skip, xfail, retry, or frozen verifier change; the isolated complete V3
+  progress file passed 29 tests.
 
 ## Remaining limitations
 

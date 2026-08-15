@@ -25,8 +25,9 @@
 ## Scope
 
 - In scope: the minimum V5 trust-root compatibility code, focused regression
-  tests, CI pin updates required by those exact bytes, this Work Package, and a
-  strict public-safe DEP.
+  tests, CI pin updates required by those exact bytes, deterministic Local
+  Green process isolation for the frozen V3 filesystem-identity suite, this
+  Work Package, and a strict public-safe DEP.
 - Non-scope: product semantics, T-004 implementation, private/live data,
   credentials, production, deployment, release, Billing, provider consoles,
   destructive operations, and canonical rebaseline.
