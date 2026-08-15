@@ -1,5 +1,10 @@
 # Rollback
 
+rollback_version: 1.0
+target: merged SDG-001 team-standard integration HEAD
+command: git revert --no-edit HEAD
+verify: git diff --check
+
 ## Trigger
 
 Any managed-file mismatch, CI Cost Guard regression, required-test weakening,
