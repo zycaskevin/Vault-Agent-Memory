@@ -1,8 +1,8 @@
 # Rollback
 
 rollback_version: 1.0
-target: SDG-006 GitHub merge commit resolved from PR repository and mergeCommit oid
-command: git revert --no-edit -m 1 "$(gh pr view --repo zycaskevin/Vault-Agent-Memory --json mergeCommit --jq .mergeCommit.oid)"
+target: SDG-006 GitHub merge commit resolved from the exact agent/sdg006-mission-v5-verifier-compatibility PR branch and mergeCommit oid
+command: git revert --no-edit -m 1 "$(gh pr view agent/sdg006-mission-v5-verifier-compatibility --repo zycaskevin/Vault-Agent-Memory --json mergeCommit --jq .mergeCommit.oid)"
 verify: python scripts/readme_command_smoke.py
 
 Trigger rollback if any hostile private-file or external-directory replacement
