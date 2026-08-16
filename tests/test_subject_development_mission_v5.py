@@ -138,6 +138,79 @@ def _write_activation_records(repo: Path, proof_raw: bytes) -> None:
         path.write_bytes(proof_raw if relative == mission.MISSION_PROOF_PATH else b"record\n")
 
 
+def _git_commit(repo: Path, message: str, *, allow_empty: bool = False) -> str:
+    subprocess.run(["git", "add", "-A"], cwd=repo, check=True)
+    command = ["git", "commit", "-q", "-m", message]
+    if allow_empty:
+        command.insert(2, "--allow-empty")
+    subprocess.run(command, cwd=repo, check=True)
+    return subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+
+
+def _closed_release_fixture(tmp_path: Path, mutation: str) -> tuple[Path, str, str]:
+    repo = tmp_path / mutation
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    (repo / "existing.txt").write_text("base\n")
+    if mutation == "wrong-action":
+        (repo / "new.txt").write_text("unexpected base\n")
+    anchor = _git_commit(repo, "anchor")
+
+    subprocess.run(["git", "switch", "-q", "-c", "topic"], cwd=repo, check=True)
+    if mutation == "delete":
+        (repo / "existing.txt").unlink()
+    else:
+        (repo / "existing.txt").write_text("topic\n")
+    (repo / "new.txt").write_text("topic\n")
+    if mutation == "mode":
+        (repo / "existing.txt").chmod(0o755)
+    if mutation == "extra":
+        (repo / "rogue.txt").write_text("outside closed scope\n")
+    _git_commit(repo, "topic source")
+    if mutation == "hidden-add-delete":
+        (repo / "hidden.txt").write_text("hidden history\n")
+        _git_commit(repo, "hidden add")
+        (repo / "hidden.txt").unlink()
+        _git_commit(repo, "hidden delete")
+    topic = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+
+    if mutation == "reversed-order":
+        tree = subprocess.check_output(
+            ["git", "rev-parse", f"{topic}^{{tree}}"], cwd=repo, text=True
+        ).strip()
+        release = subprocess.check_output(
+            ["git", "commit-tree", tree, "-p", topic, "-p", anchor, "-m", "reversed"],
+            cwd=repo,
+            text=True,
+        ).strip()
+    elif mutation == "tree-mismatch":
+        tree = subprocess.check_output(
+            ["git", "rev-parse", f"{anchor}^{{tree}}"], cwd=repo, text=True
+        ).strip()
+        release = subprocess.check_output(
+            ["git", "commit-tree", tree, "-p", anchor, "-p", topic, "-m", "bad tree"],
+            cwd=repo,
+            text=True,
+        ).strip()
+    else:
+        subprocess.run(["git", "switch", "-q", "main"], cwd=repo, check=True)
+        if mutation == "wrong-parent":
+            _git_commit(repo, "unexpected first parent", allow_empty=True)
+        subprocess.run(
+            ["git", "merge", "-q", "--no-ff", "--no-edit", topic], cwd=repo, check=True
+        )
+        release = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+        ).strip()
+    return repo, anchor, release
+
+
 def _t020_authorization_fixture() -> tuple[
     dict[str, object],
     dict[str, object],
@@ -1573,6 +1646,97 @@ def test_sdg008_release_accepts_only_exact_linear_reviewed_merge(
     ).strip()
     with pytest.raises(mission.Denied):
         mission._check_sdg008_compatibility_release(repo, hostile_release)
+
+
+def test_sdg010_anchor_is_exact_and_current_main_still_requires_sdg011() -> None:
+    mission._check_sdg010_compatibility_release(LIVE_ROOT)
+    with pytest.raises(mission.Denied):
+        mission._check_sdg011_compatibility_release(LIVE_ROOT, mission.SDG010_RELEASE)
+
+
+@pytest.mark.parametrize("field", ["gate", "receipt"])
+def test_sdg010_anchor_denies_trusted_gate_or_receipt_drift(
+    monkeypatch: pytest.MonkeyPatch, field: str
+) -> None:
+    constant = "SDG010_GATE_SHA256" if field == "gate" else "SDG010_RECEIPT_SHA256"
+    monkeypatch.setattr(mission, constant, "0" * 64)
+    with pytest.raises(mission.Denied):
+        mission._check_sdg010_compatibility_release(LIVE_ROOT)
+
+
+def test_closed_sdg011_release_accepts_exact_two_parent_topic(tmp_path: Path) -> None:
+    repo, anchor, release = _closed_release_fixture(tmp_path, "exact")
+    assert (
+        mission._check_closed_compatibility_release(
+            repo,
+            release,
+            expected_parent=anchor,
+            expected_topic=None,
+            expected_tree=None,
+            allowed_paths=["existing.txt", "new.txt"],
+            modified_paths={"existing.txt"},
+        )
+        == subprocess.check_output(
+            ["git", "rev-parse", f"{release}^2"], cwd=repo, text=True
+        ).strip()
+    )
+
+
+def test_protocol_release_requires_sdg011_merge_after_sdg010_anchor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo, anchor, release = _closed_release_fixture(tmp_path, "protocol-release")
+    subprocess.run(
+        ["git", "update-ref", "refs/remotes/origin/main", release], cwd=repo, check=True
+    )
+    monkeypatch.setattr(mission, "SDG010_RELEASE", anchor)
+    monkeypatch.setattr(mission, "SDG011_COMPATIBILITY_PATHS", ["existing.txt", "new.txt"])
+    monkeypatch.setattr(mission, "SDG011_COMPATIBILITY_MODIFIED_PATHS", {"existing.txt"})
+    monkeypatch.setattr(mission, "check_repository_identity", lambda _repo_root: None)
+    monkeypatch.setattr(mission, "_check_predecessor_activation_commit", lambda _repo: None)
+    monkeypatch.setattr(mission, "_check_post_sdg_base", lambda _repo: None)
+    monkeypatch.setattr(
+        mission, "_check_post_sdg_compatibility_release", lambda _repo, _base: None
+    )
+    monkeypatch.setattr(mission, "_check_sdg010_compatibility_release", lambda _repo: None)
+
+    mission._check_protocol_release_commit(repo, release)
+
+    subprocess.run(["git", "reset", "--hard", "-q", anchor], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "update-ref", "refs/remotes/origin/main", anchor], cwd=repo, check=True
+    )
+    with pytest.raises(mission.Denied):
+        mission._check_protocol_release_commit(repo, anchor)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "wrong-parent",
+        "reversed-order",
+        "tree-mismatch",
+        "extra",
+        "hidden-add-delete",
+        "wrong-action",
+        "delete",
+        "mode",
+    ],
+)
+def test_closed_sdg011_release_denies_topology_scope_action_or_mode_drift(
+    tmp_path: Path, mutation: str
+) -> None:
+    repo, anchor, release = _closed_release_fixture(tmp_path, mutation)
+    with pytest.raises(mission.Denied):
+        mission._check_closed_compatibility_release(
+            repo,
+            release,
+            expected_parent=anchor,
+            expected_topic=None,
+            expected_tree=None,
+            allowed_paths=["existing.txt", "new.txt"],
+            modified_paths={"existing.txt"},
+        )
 
 
 def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:

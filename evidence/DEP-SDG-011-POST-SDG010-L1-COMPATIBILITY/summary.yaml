@@ -1,0 +1,40 @@
+{
+  "$schema": "../../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY",
+  "issue": "485",
+  "sdd_references": ["SD-MISSION-V5-POST-START-CI-RECOVERY"],
+  "risk_level": "L1",
+  "created_at": "2026-08-16T08:18:38Z",
+  "updated_at": "2026-08-16T08:45:14Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {"phase": "red", "at": "2026-08-16T08:18:38Z"},
+      {"phase": "evidence", "at": "2026-08-16T08:18:38Z"},
+      {"phase": "fix", "at": "2026-08-16T08:18:38Z"},
+      {"phase": "green", "at": "2026-08-16T08:44:30Z"},
+      {"phase": "proof", "at": "2026-08-16T08:45:14Z"}
+    ]
+  },
+  "expected_behavior": "Validate exact merged SDG-010, keep that anchor ineligible as the new proposal base, and accept only one future exact closed two-parent SDG-011 delivery from it.",
+  "actual_behavior": "The terminal release checker passes merged SDG-010 directly to the SDG-008 checker, causing deterministic parent mismatch denial; the merged SDG-010 rollback queries a stale non-v4 branch; and the first source revision retained a 77-node Mission V5 collection pin after adding 13 nodes.",
+  "environment": {
+    "commit": "efa43a4dfb305cd51d8a57a20838be6123ccb514",
+    "branch": "agent/sdg011-post-sdg010-l1-compatibility",
+    "runtime": "CPython 3; Git; Agentic SDD Governance 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--anchor-red.txt",
+      "sha256": "b57b827156fe231f937c3be79bb6b43d8dd4aa9d19d19fceb4a35dd10a08da59",
+      "collector": "terminal"
+    },
+    {
+      "path": "shareable/artifacts/terminal--verification.txt",
+      "sha256": "6d3c3079efc31fcfc964ea639dc79beb878a1e7921e195fdcaa1766fc75420fa",
+      "collector": "terminal"
+    }
+  ]
+}

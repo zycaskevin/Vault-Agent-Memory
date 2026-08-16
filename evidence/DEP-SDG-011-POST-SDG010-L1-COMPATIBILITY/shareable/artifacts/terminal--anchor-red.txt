@@ -1,0 +1,36 @@
+SDG-011 public-safe RED and evidence summary
+
+Issue: #485
+Base: efa43a4dfb305cd51d8a57a20838be6123ccb514
+Branch: agent/sdg011-post-sdg010-l1-compatibility
+Risk: L1
+
+Confirmed protocol-chain defect:
+- _check_protocol_release_commit passed merged SDG-010 directly to the SDG-008
+  release checker.
+- SDG-008 expected first parent 6d499e41ac41b8cd0f560146b0f18939b55a5f3f.
+- Exact SDG-010 merge efa43a4 has first parent
+  46690372e532c50761f9232ff5b2e20e18779d28 and second parent
+  7e155ca8907b31a14d5abadeeeb73e3edac71c14.
+- Merge and topic trees are exact
+  781beb6d3f8ef626d058394d14103c9512550637.
+- Trusted SDG-010 gate SHA-256 is
+  bd7b1935271533653a1cbae1a35032d444009b4387ffe327e6ed5d5757ed6658.
+- Trusted SDG-010 reviewer receipt SHA-256 is
+  07ee1f5845be27aa81e7c8b4257d98ec22b7047e3d0e1020583f9acac484ead4.
+
+Confirmed rollback defect:
+- The merged record queried agent/sdg010-mission-v5-ci-phase-routing.
+- PR #484 used agent/sdg010-mission-v5-ci-phase-routing-v4.
+- The corrected record binds exact PR number, state, base name/oid, head
+  name/oid, merge oid, parent order, and topic-tree equality.
+
+First source Local Green finding:
+- Doctor, CI verification, README smoke, and release parity passed.
+- Identity collection then denied before node execution because 13 new Mission
+  V5 regression nodes raised the exact count from 77 to 90.
+- The bounded repair pins 90 and includes the identity harness in SDG-011's
+  closed paths and CI bytes.
+
+No Mission proof, private data, credential, progress ledger, activation,
+deployment, production, release, L2, or L3 operation was performed.
