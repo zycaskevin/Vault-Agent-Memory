@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import json
 from pathlib import Path
 
@@ -67,14 +68,101 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert "validate_mission_activation_delivery(" in mission_test
     assert "replay_commit = protocol_base" in mission_test
     assert "replay_commit = mission.validate_mission_activation_delivery(" in mission_test
-    dispatcher_test = (
+    dispatcher_source = (
         root / "tests" / "test_subject_task_authorization_dispatch_v5.py"
     ).read_text(encoding="utf-8")
-    assert "def _phase_neutral_dispatch_root(" in dispatcher_test
-    assert "replay_commit = protocol_base" in dispatcher_test
-    assert "replay_commit = mission.validate_mission_activation_delivery(" in dispatcher_test
-    assert "pytest.skip" not in dispatcher_test
-    assert "pytest.mark.xfail" not in dispatcher_test
+    dispatcher_tree = ast.parse(dispatcher_source)
+    dispatcher_functions = {
+        node.name: node
+        for node in dispatcher_tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    exact_dispatcher_nodes = tuple(
+        "tests/test_subject_task_authorization_dispatch_v5.py::" + name
+        for name in dispatcher_functions
+        if name.startswith("test_")
+    )
+    assert exact_dispatcher_nodes == identity_isolation.DISPATCHER_NODES
+    authorization_test = dispatcher_functions[
+        "test_dispatch_accepts_exact_current_mission_phase"
+    ]
+    authorization_assertions = {
+        ast.unparse(node.test)
+        for node in ast.walk(authorization_test)
+        if isinstance(node, ast.Assert)
+    }
+    authorization_calls = [
+        ast.unparse(node.func)
+        for node in ast.walk(authorization_test)
+        if isinstance(node, ast.Call)
+    ]
+    assert "dispatch.validate(ROOT) == expected" in authorization_assertions
+    assert authorization_calls.count("dispatch.validate") == 1
+    cli_test = dispatcher_functions[
+        "test_dispatch_cli_is_exact_and_no_abbreviation"
+    ]
+    cli_assertions = {
+        ast.unparse(node.test)
+        for node in ast.walk(cli_test)
+        if isinstance(node, ast.Assert)
+    }
+    cli_calls = [
+        ast.unparse(node.func)
+        for node in ast.walk(cli_test)
+        if isinstance(node, ast.Call)
+    ]
+    assert "dispatch.main(['--ledger', '--json']) == 0" in cli_assertions
+    assert "dispatch.main(['--led', '--json']) == 2" in cli_assertions
+    assert cli_calls.count("dispatch.main") == 2
+    fixture = dispatcher_functions["_phase_neutral_dispatch_root"]
+    phase_branch = next(
+        node
+        for node in fixture.body
+        if isinstance(node, ast.If)
+        and ast.unparse(node.test) == "_mission_phase() == CANDIDATE_PHASE"
+    )
+    candidate_tree = ast.Module(body=phase_branch.body, type_ignores=[])
+    active_tree = ast.Module(body=phase_branch.orelse, type_ignores=[])
+    candidate_calls = [
+        ast.unparse(node.func)
+        for node in ast.walk(candidate_tree)
+        if isinstance(node, ast.Call)
+    ]
+    active_calls = [
+        ast.unparse(node.func)
+        for node in ast.walk(active_tree)
+        if isinstance(node, ast.Call)
+    ]
+    assert candidate_calls.count(
+        "mission.validate_mission_activation_candidate"
+    ) == 1
+    assert "mission.validate_mission_activation_delivery" not in candidate_calls
+    assert active_calls.count("mission.validate_mission_activation_delivery") == 1
+    candidate_assignments = {
+        (ast.unparse(target), ast.unparse(node.value))
+        for node in ast.walk(candidate_tree)
+        if isinstance(node, ast.Assign)
+        for target in node.targets
+    }
+    assert ("replay_commit", "protocol_base") in candidate_assignments
+    assert ("replay_commit", "candidate_commit") in candidate_assignments
+    semantic_names = {
+        ast.unparse(node)
+        for node in ast.walk(dispatcher_tree)
+        if isinstance(node, ast.Attribute)
+    } | {
+        ast.unparse(node.func)
+        for node in ast.walk(dispatcher_tree)
+        if isinstance(node, ast.Call)
+    }
+    assert {
+        "pytest.mark.skip",
+        "pytest.mark.skipif",
+        "pytest.mark.xfail",
+        "pytest.skip",
+        "pytest.xfail",
+        "pytest.importorskip",
+    }.isdisjoint(semantic_names)
     assert "def validate_mission_activation_topic(" in runner
     assert "len(deliveries) != 1" in runner
     isolation = (root / "scripts" / "run_subject_identity_test_isolation.py").read_text(
@@ -87,13 +175,18 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
         '("tests/test_subject_task_authorization_dispatch_v5.py", 2)' in isolation
     )
     assert sum(count for _path, count in identity_isolation.FILES) == 446
+    assert identity_isolation.DISPATCHER_NODES == exact_dispatcher_nodes
     for path in (
         "scripts/update_subject_task_progress_v5.py",
+        "scripts/validate_subject_development_mission_v5.py",
         "scripts/validate_subject_task_authorization_dispatch_v5.py",
     ):
-        assert "SUBJECT_MISSION_V5_PHASE" not in (root / path).read_text(
-            encoding="utf-8"
-        )
+        production_tree = ast.parse((root / path).read_text(encoding="utf-8"))
+        assert "SUBJECT_MISSION_V5_PHASE" not in {
+            node.value
+            for node in ast.walk(production_tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
 
 
 def test_identity_phase_cli_is_closed_and_exact():

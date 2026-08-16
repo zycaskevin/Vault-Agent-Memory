@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import json
@@ -1768,6 +1769,16 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     dispatcher_tests = (
         LIVE_ROOT / "tests/test_subject_task_authorization_dispatch_v5.py"
     ).read_text()
+    dispatcher_tree = ast.parse(dispatcher_tests)
+    semantic_names = {
+        ast.unparse(node)
+        for node in ast.walk(dispatcher_tree)
+        if isinstance(node, ast.Attribute)
+    } | {
+        ast.unparse(node.func)
+        for node in ast.walk(dispatcher_tree)
+        if isinstance(node, ast.Call)
+    }
     harness_pin = hashlib.sha256(harness.encode()).hexdigest()
     dispatcher_pin = hashlib.sha256(dispatcher_tests.encode()).hexdigest()
     assert f"{harness_pin}  scripts/run_subject_identity_test_isolation.py" in workflow
@@ -1784,9 +1795,14 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
         "tests/test_subject_task_authorization_dispatch_v5.py",
         2,
     ) in identity_isolation.FILES
-    assert "pytest.skip" not in dispatcher_tests
-    assert "pytest.mark.skip" not in dispatcher_tests
-    assert "pytest.mark.xfail" not in dispatcher_tests
+    assert {
+        "pytest.mark.skip",
+        "pytest.mark.skipif",
+        "pytest.mark.xfail",
+        "pytest.skip",
+        "pytest.xfail",
+        "pytest.importorskip",
+    }.isdisjoint(semantic_names)
     assert "len(nodes) != sum(count for _path, count in FILES)" in harness
     assert ".sddgov/ci-cost-guard.json" in mission.POST_SDG_COMPATIBILITY_MODIFIED_PATHS
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS

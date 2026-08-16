@@ -22,7 +22,8 @@
   activation semantics. Do not use skip, xfail, deselect, `-k`, abbreviation,
   `continue-on-error`, or a production runtime phase environment.
 - Keep condition: the identity harness contains the dispatcher file at exact
-  count 2 and total count 446; both local and hosted remainders contain one
+  count 2, both exact node IDs, and total count 446; AST guards reject every
+  skip/xfail/importorskip bypass; both local and hosted remainders contain one
   exact ignore; candidate remains unauthorized while active assertions remain
   unchanged.
 - Rollback condition: either phase admits incorrect authority, a node is lost
@@ -44,6 +45,21 @@
   focused candidate and active Green, exact 446-node collection, disjoint
   remainder, strict DEP, full Local Green under an external exclusive lease,
   independent review, one hosted run, and exact merge readback.
+
+## CodeRabbit remediation v2
+
+- PR #489 reported five valid review findings: rollback branch/worktree safety,
+  two-phase rollback verification, semantic node/bypass guards, and exact proof
+  state wording.
+- The remediation topic is rebuilt from exact protocol base
+  `9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0` on branch
+  `agent/sdg012-mission-v5-dispatch-phase-isolation-v2`. It does not contain or
+  descend from PR #489's stale receipt commit.
+- The Builder source keeps `.sddgov/reviews/REV-SDG-012.json` absent. A fresh
+  gate must bind the final source before an independent reviewer adds the only
+  receipt commit.
+- Pre-merge checks bind only their exact topic head. Merge/readback, proposal,
+  task start, and production outcome remain post-delivery and unclaimed.
 
 ## Claim
 

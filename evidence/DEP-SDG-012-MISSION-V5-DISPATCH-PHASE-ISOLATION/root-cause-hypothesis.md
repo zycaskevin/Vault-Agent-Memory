@@ -38,8 +38,10 @@ passes the unconditional production dispatch replay.
 ## Falsification
 
 The hypothesis is false if the same two failures remain after the dispatcher
-nodes run from phase-neutral snapshots exactly once, or if active phase no
-longer returns ACTIVE.
+nodes run from phase-neutral snapshots exactly once, if candidate dispatch
+authorizes, if active replay is not the exact two-parent delivery or no longer
+returns ACTIVE, or if the exact 2-node, 446-total, and one-ignore-per-remainder
+collection invariants drift.
 
 ## Conclusion
 

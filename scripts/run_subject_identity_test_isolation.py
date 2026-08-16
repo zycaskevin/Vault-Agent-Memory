@@ -23,6 +23,16 @@ FILES = (
     ("tests/test_subject_task_authorization_dispatch_v5.py", 2),
     ("tests/test_subject_baseline_control.py", 53),
 )
+DISPATCHER_NODES = (
+    (
+        "tests/test_subject_task_authorization_dispatch_v5.py::"
+        "test_dispatch_accepts_exact_current_mission_phase"
+    ),
+    (
+        "tests/test_subject_task_authorization_dispatch_v5.py::"
+        "test_dispatch_cli_is_exact_and_no_abbreviation"
+    ),
+)
 DARWIN_DEFAULT_TEMP_NODE = (
     "tests/test_subject_authorization_runner.py::"
     "test_verify_uses_canonicalized_default_temp_root_and_cleans"
@@ -63,6 +73,13 @@ def _collect(environment: dict[str, str]) -> list[str]:
     for path, expected in FILES:
         if sum(node.startswith(path + "::") for node in nodes) != expected:
             raise RuntimeError("identity test collection count drift")
+    dispatcher_nodes = tuple(
+        node
+        for node in nodes
+        if node.startswith("tests/test_subject_task_authorization_dispatch_v5.py::")
+    )
+    if dispatcher_nodes != DISPATCHER_NODES:
+        raise RuntimeError("dispatcher identity test node drift")
     if len(nodes) != sum(count for _path, count in FILES):
         raise RuntimeError("identity test collection total drift")
     return nodes

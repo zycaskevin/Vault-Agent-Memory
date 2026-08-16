@@ -15,14 +15,38 @@
   446-node candidate identity isolation, and the disjoint remainder all PASS.
   The remainder reported 2868 passed, 12 skipped, and one pre-existing warning.
 
-## Required final proof
+## Review remediation and exact proof state
+
+The original PR #489 topic `bbc6e476ae3444cef77400f28710de73f9cf7f73`
+had a valid independent review receipt and all 17 hosted checks passed in run
+`31945978098`. Those results are retained as historical evidence bound only to
+that exact head. This rebuilt `-v2` topic starts from exact base
+`9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0`, does not descend from the stale
+receipt commit, and keeps `.sddgov/reviews/REV-SDG-012.json` absent until fresh
+independent review.
+
+The remediation source remains explicitly pre-proof and not merge-ready until
+its focused checks, Local Green, strict DEP, new independent receipt, and hosted
+CI all pass on their exact recorded revisions. No result is inferred from the
+earlier receipt or hosted run.
+
+## Required pre-merge proof
 
 - Ruff, Python 3.10 grammar, JSON parse, CI pins, closed-path/action/mode audit,
   and `git diff --check`.
 - Candidate and active dispatcher-focused Green.
 - Exact 446-node identity collection and disjoint remainder proof.
-- Doctor, CI verification, strict DEP, full Local Green, independent review,
-  hosted CI, and exact SDG-012 two-parent merge readback.
+- Doctor, CI verification, strict DEP, full Local Green, fresh independent
+  review, and hosted CI on the final reviewed topic.
 
-Strict DEP is completed at Builder proof freeze. Independent review, hosted CI,
-merge readback, activation, task start, and production outcome remain unclaimed.
+## Post-delivery proof
+
+Exact two-parent merge/readback, a fresh Mission V5 proposal, any task start,
+and production outcome can exist only after delivery to the new `main`. They
+remain mandatory at their protocol phases and are currently unclaimed. This
+pre-merge DEP neither fabricates nor predicts those outcomes.
+
+The earlier Builder proof freeze is retained as historical evidence. Review-
+remediation focused/Local Green, new strict proof, and a fresh receipt are
+pending. Merge readback, proposal, task start, and production outcome remain
+post-delivery and unclaimed.

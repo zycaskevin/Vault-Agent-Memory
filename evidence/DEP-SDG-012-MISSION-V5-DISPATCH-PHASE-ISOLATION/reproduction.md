@@ -32,5 +32,5 @@ one CLI return-code mismatch (`2` versus expected `0`): 2 failed, 2870 passed,
 ## Environment and preconditions
 
 Issue #488; base `9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0`; branch
-`agent/sdg012-mission-v5-dispatch-phase-isolation`; GitHub Actions Python 3.12;
+`agent/sdg012-mission-v5-dispatch-phase-isolation-v2`; GitHub Actions Python 3.12;
 Agentic SDD Governance 0.2.0-experimental.6. No private/live data is involved.

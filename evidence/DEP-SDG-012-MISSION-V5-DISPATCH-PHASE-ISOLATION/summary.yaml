@@ -21,7 +21,7 @@
   "actual_behavior": "PR 487 Local Green remainder ran both active-only dispatcher nodes outside phase isolation and failed exactly twice.",
   "environment": {
     "commit": "9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0",
-    "branch": "agent/sdg012-mission-v5-dispatch-phase-isolation",
+    "branch": "agent/sdg012-mission-v5-dispatch-phase-isolation-v2",
     "runtime": "GitHub Actions Python 3.12; CPython 3; Git; Agentic SDD Governance 0.2.0-experimental.6"
   },
   "root_cause_status": "confirmed",

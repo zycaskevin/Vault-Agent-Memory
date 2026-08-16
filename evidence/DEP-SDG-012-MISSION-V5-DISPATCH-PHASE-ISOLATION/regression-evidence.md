@@ -7,6 +7,9 @@
   dispatcher assertions pass without authority.
 - Active phase retains active delivery replay and both assertions pass ACTIVE.
 - Dispatcher V5 collection is exactly 2; identity total is exactly 446.
+- The two exact dispatcher node IDs are pinned, and AST guards reject
+  `pytest.mark.skip`, `pytest.mark.skipif`, `pytest.mark.xfail`, `pytest.skip`,
+  `pytest.xfail`, and `pytest.importorskip`.
 - Both generic remainders ignore the file exactly once; no skip/xfail/deselect,
   `-k`, abbreviation, or `continue-on-error` is introduced.
 - Production dispatcher, validator, and updater bytes remain unchanged.
@@ -34,5 +37,8 @@
 
 ## Unverified boundary
 
-Independent receipt, hosted Green, and exact merge readback remain unclaimed
-until their separate review/delivery phases.
+The original PR #489 head `bbc6e476ae3444cef77400f28710de73f9cf7f73`
+receipt and hosted Green are historical exact-head evidence only and are not in
+this rebuilt topic. Review-remediation focused/Local Green, a fresh independent
+receipt, and a new hosted Green remain pending. Exact merge readback, proposal,
+task start, and production outcome remain unclaimed until post-delivery.
