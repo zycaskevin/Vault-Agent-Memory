@@ -14,12 +14,12 @@ this is the required phase boundary, not a product regression.
 
 ## Deterministic steps
 
-1. Start from clean merged main `6d499e41ac41b8cd0f560146b0f18939b55a5f3f`.
+1. Start from clean merged main `46690372e532c50761f9232ff5b2e20e18779d28`.
 2. Reconstruct proposal
-   `6c10560ab4addc7c185a2247895cd409a447afb5200b318b08752632d0bccd56`
+   `8acdc645348e625cdfacf1f42ca0185c787d042654d18c31fd541c966447b2c9`
    and verify the exact owner-confirmed receipt digest.
 3. Run the retained private verifier and publish the canonical Mission proof.
-4. Confirm proof SHA-256 `81762961548312e69823a097911000ac4b15756a7e403f022dd3fec789f8ff97`,
+4. Confirm proof SHA-256 `69afd990e5d7d9bdf7fde4a1f7fe97183c909855371445e49eebe50dadbab681`,
    mode `0644`, single link, and both pending paths absent.
 5. Run the current Mission validator on the unmerged topic and observe DENY.
 6. In a clean detached protocol-base clone, run the four exact activation
@@ -30,6 +30,6 @@ this is the required phase boundary, not a product regression.
 ## Environment and preconditions
 
 macOS; CPython 3; SDG `0.2.0-experimental.6`; branch
-`agent/mission-v5-activation-post-sdg007`; sequence-6 ledger with T-001 through
+`agent/mission-v5-activation-post-sdg008`; sequence-6 ledger with T-001 through
 T-003 COMPLETED and T-004 through T-033 PENDING. No private packet or secret is
 stored in Git.

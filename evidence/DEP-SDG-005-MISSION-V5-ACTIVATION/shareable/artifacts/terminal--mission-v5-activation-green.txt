@@ -1,10 +1,10 @@
 artifact=mission-v5-activation-candidate
 repository=zycaskevin/Vault-Agent-Memory
-protocol_base=6d499e41ac41b8cd0f560146b0f18939b55a5f3f
-mission_proof_sha256=81762961548312e69823a097911000ac4b15756a7e403f022dd3fec789f8ff97
-mission_id=d83f39e553a1821c95799ff80ec9c4b6e25aa50bef625653d4b27de3c18f00d4
-recorded_at_utc=2026-08-16T02:53:59Z
-mission_not_after_utc=2026-11-14T02:53:59Z
+protocol_base=46690372e532c50761f9232ff5b2e20e18779d28
+mission_proof_sha256=69afd990e5d7d9bdf7fde4a1f7fe97183c909855371445e49eebe50dadbab681
+mission_id=855538120d6519f7e57f7286e51cbb827cfe46e07d4f1894c5eae64912a4aeb1
+recorded_at_utc=2026-08-16T05:35:57Z
+mission_not_after_utc=2026-11-14T05:35:57Z
 private_verifier=PASS
 private_cleanup=PASS
 pending_absent=PASS

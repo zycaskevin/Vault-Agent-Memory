@@ -38,7 +38,7 @@ and current-main ACTIVE readback must all pass before T-004 starts.
 This DEP does not claim activation or hosted verification yet. The final
 protected receipt, hosted checks, merge commit, and post-merge ACTIVE result
 are appended only when each gate actually completes. The Mission
-expires at `2026-11-14T02:53:59Z` and remains subject to irreversible owner
+expires at `2026-11-14T05:35:57Z` and remains subject to irreversible owner
 revocation and the frozen L2/L3 prohibitions.
 
 The live-worktree control invocation was denied by the expected pre-merge

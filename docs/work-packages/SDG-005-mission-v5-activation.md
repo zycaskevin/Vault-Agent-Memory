@@ -20,7 +20,7 @@
   sequence-6 progress, Mission V5 protocol/trust-root/registry bytes, and all
   L2/L3 boundaries. Do not start T-004 in this Work Package.
 - Keep condition: only the exact proof SHA-256
-  `81762961548312e69823a097911000ac4b15756a7e403f022dd3fec789f8ff97`
+  `69afd990e5d7d9bdf7fde4a1f7fe97183c909855371445e49eebe50dadbab681`
   is delivered, both Mission pending paths are absent, the topic is linear, and
   activation is impossible before exact merge delivery.
 - Rollback condition: any authority expansion, extra path/action/mode,
@@ -36,10 +36,11 @@
   canonical SDD, frozen authorization generations, task descriptors, progress
   ledger, private/live data, production, deployment, release, Billing,
   credentials, provider consoles, destructive operations, or L2/L3 actions.
-- Dependencies: merged SDG-007 PR #481 at
-  `6d499e41ac41b8cd0f560146b0f18939b55a5f3f`; exact owner confirmation for
-  proposal `6c10560ab4addc7c185a2247895cd409a447afb5200b318b08752632d0bccd56`;
-  Mission V5 compatibility, activation-gate, and phase-isolation releases.
+- Dependencies: merged SDG-008 PR #482 at
+  `46690372e532c50761f9232ff5b2e20e18779d28`; exact owner confirmation for
+  proposal `8acdc645348e625cdfacf1f42ca0185c787d042654d18c31fd541c966447b2c9`;
+  Mission V5 compatibility, activation-gate, phase-isolation, and large-file
+  identity-isolation releases.
 - Evidence requirement: strict DEP, synthetic exact-merge tests, expected live
   pre-merge DENY, doctor, CI Cost Guard, phase-correct full Local Green,
   independent protected review, one hosted CI run, and exact merge readback.
@@ -61,5 +62,5 @@
 ## Claim
 
 - Agent: codex
-- Claimed at: 2026-08-16T02:55:38Z
-- Expires at: 2026-08-16T10:55:38Z
+- Claimed at: 2026-08-16T05:40:38Z
+- Expires at: 2026-08-17T05:40:38Z
