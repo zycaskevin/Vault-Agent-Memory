@@ -1,4 +1,4 @@
-SDG-012 public-safe Builder verification placeholder
+SDG-012 public-safe Builder verification
 
 Static design:
 - Candidate/active selection remains test-only.
@@ -14,7 +14,31 @@ First focused source finding:
   sets, not production or dispatcher behavior.
 - The repair removes exactly those two entries, retains the hygiene path only
   in SDG-012, and refreshes exact CI hashes.
-- The run remains RED evidence; focused v2 is not yet claimed.
+- The run remains RED evidence and is not used as Green; focused v2 follows.
 
-Focused tests, full Local Green, strict DEP, independent review, hosted CI, and
-merge readback remain pending at initial Builder freeze.
+Focused v2:
+- Source selection: 8 passed in 28.15 seconds.
+- Exact PR #487 proof-present candidate topology: 2 passed in 5.40 seconds.
+- Synthetic exact two-parent active topology: 2 passed in 5.80 seconds.
+- Combined exit: 0.
+- Log SHA-256:
+  7f26ef3ecd60cf3ac637a1e3dd391e604b2893c3f36be673611fdd26b1996fb3.
+- Exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Full Local Green v2:
+- sddgov doctor: returncode 0.
+- sddgov ci verify: returncode 0.
+- README smoke: returncode 0.
+- Release parity: returncode 0.
+- Candidate identity isolation: exact 446 nodes, returncode 0.
+- Disjoint remainder: 2868 passed, 12 skipped, one pre-existing warning,
+  returncode 0.
+- Full wrapper exit: 0.
+- Log SHA-256:
+  bb35a2e62845a88fd3ceeeceef7e647a6415733a58d058692d80391d0ffd0073.
+- Exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Independent protected review, hosted CI, and exact merge readback remain
+separate mandatory gates.
