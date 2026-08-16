@@ -1,6 +1,21 @@
 {
   "schema_version": "1.0",
-  "files": [],
+  "files": [
+    {
+      "source": "terminal--anchor-red.txt",
+      "output": "terminal--anchor-red.txt",
+      "source_sha256": "b57b827156fe231f937c3be79bb6b43d8dd4aa9d19d19fceb4a35dd10a08da59",
+      "output_sha256": "b57b827156fe231f937c3be79bb6b43d8dd4aa9d19d19fceb4a35dd10a08da59",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--verification.txt",
+      "output": "terminal--verification.txt",
+      "source_sha256": "6d3c3079efc31fcfc964ea639dc79beb878a1e7921e195fdcaa1766fc75420fa",
+      "output_sha256": "6d3c3079efc31fcfc964ea639dc79beb878a1e7921e195fdcaa1766fc75420fa",
+      "redactions": {}
+    }
+  ],
   "blocked": [],
   "totals": {},
   "dep_id": "DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY",

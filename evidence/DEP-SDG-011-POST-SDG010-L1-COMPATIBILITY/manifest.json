@@ -1,6 +1,32 @@
 {
   "schema_version": "1.0",
   "dep_id": "DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY",
-  "raw": [],
-  "shareable": []
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v2",
+      "sha256": "83e01cb96a3ef9487f43b3ed751c69a1426260cfc5a6bb2b9045ffe98512bd2e",
+      "collected_at": "2026-08-16T08:47:05Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-v2",
+      "sha256": "a084d5b4ba0276f05bb55ed25ab5b0161055eb6f73214bd6fe8abcaea97e0268",
+      "collected_at": "2026-08-16T08:47:15Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--anchor-red.txt",
+      "sha256": "b57b827156fe231f937c3be79bb6b43d8dd4aa9d19d19fceb4a35dd10a08da59",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--verification.txt",
+      "sha256": "6d3c3079efc31fcfc964ea639dc79beb878a1e7921e195fdcaa1766fc75420fa",
+      "shareable": true
+    }
+  ]
 }

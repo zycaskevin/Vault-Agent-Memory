@@ -1,0 +1,45 @@
+SDG-011 public-safe Builder verification summary
+
+Verified source revision: a9318c8c5d34a7570943e5994b240029e08967f2
+
+Static verification:
+- git diff --check: PASS
+- Ruff on runner, identity harness, and affected tests: PASS
+- Python 3.10 AST parse: PASS
+- DEP JSON-compatible YAML/JSON parse: PASS
+- CI byte pins recomputed exactly: PASS
+
+Focused v2:
+- Compatibility and rollback regressions: 14 passed in 46.28 seconds.
+- Identity collection: 444 total nodes; Mission V5 exactly 90.
+- Exact combined exit: 0.
+- Log SHA-256:
+  83e01cb96a3ef9487f43b3ed751c69a1426260cfc5a6bb2b9045ffe98512bd2e.
+- Exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Full Builder Local Green v2:
+- sddgov doctor: returncode 0.
+- sddgov ci verify: returncode 0.
+- README documented command smoke: returncode 0.
+- Release parity: returncode 0.
+- Candidate identity isolation: 444 nodes passed, returncode 0, 280.061s.
+- Disjoint remainder: 2870 passed, 12 skipped, 1 pre-existing SyntaxWarning,
+  returncode 0, 96.41s pytest / 96.808s command.
+- Exact Local Green wrapper exit: 0.
+- Log SHA-256:
+  a084d5b4ba0276f05bb55ed25ab5b0161055eb6f73214bd6fe8abcaea97e0268.
+- Exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Limitations and telemetry:
+- Two pre-v2 focused executions printed 14 passed, but their pytest exit
+  telemetry was not retained due wrapper/yield handling; neither is used as
+  exit proof. The final pre-v2 capture and focused v2 each retained exit 0.
+- One pre-test Local Green invocation ran zero repository tests because the
+  pinned child sddgov binary was absent from PATH. It is classified as an
+  environment-bootstrap failure, not Green and not a product failure.
+- Source db4f142ab Local Green stopped at the 77-versus-90 collection drift;
+  no identity node or remainder test ran in that failed revision.
+- Independent protected review, hosted CI, and exact merge readback remain
+  separate mandatory delivery gates.

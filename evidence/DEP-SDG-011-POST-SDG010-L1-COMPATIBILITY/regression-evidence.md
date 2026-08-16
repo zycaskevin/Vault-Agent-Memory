@@ -26,10 +26,13 @@
 - A prior invocation stopped before all configured commands because PATH did
   not expose the pinned `sddgov` child command. It ran zero repo tests and is
   retained only as environment-bootstrap evidence.
-- Focused v2 and one new-revision Local Green remain pending after the bounded
-  90-node pin repair.
+- Focused v2 passed 14/14 with exact exit 0; collection proved 444 total nodes
+  and exactly 90 Mission V5 nodes.
+- Full Local Green v2 passed all six configured commands. Identity isolation
+  passed 444 nodes; the disjoint remainder passed 2870 tests with 12 skipped
+  and one pre-existing SyntaxWarning.
 
 ## Unverified boundary
 
 The future protected review receipt and hosted/merged commit do not exist at
-the source-building phase. They remain mandatory before delivery.
+Builder proof freeze. They remain mandatory before delivery.
