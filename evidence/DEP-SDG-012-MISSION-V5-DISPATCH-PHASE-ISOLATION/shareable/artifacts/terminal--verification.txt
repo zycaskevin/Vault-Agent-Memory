@@ -1,0 +1,193 @@
+SDG-012 public-safe Builder verification
+
+Static design:
+- Candidate/active selection remains test-only.
+- Production dispatcher, validator, and updater are unchanged.
+- Dispatcher V5 is owned by the phase-isolated harness at exact count 2.
+- Identity total is pinned at 446.
+- Both generic remainders exclude dispatcher V5 exactly once.
+- CI pins and the closed SDG-012 compatibility path set are mandatory.
+
+First focused source finding:
+- 7 selected checks passed; exact SDG-011 anchor replay failed once.
+- Cause was Builder contamination of historical SDG-004 and SDG-007 path
+  sets, not production or dispatcher behavior.
+- The repair removes exactly those two entries, retains the hygiene path only
+  in SDG-012, and refreshes exact CI hashes.
+- The run remains RED evidence and is not used as Green; focused v2 follows.
+
+Focused v2:
+- Source selection: 8 passed in 28.15 seconds.
+- Exact PR #487 proof-present candidate topology: 2 passed in 5.40 seconds.
+- Synthetic exact two-parent active topology: 2 passed in 5.80 seconds.
+- Combined exit: 0.
+- Log SHA-256:
+  7f26ef3ecd60cf3ac637a1e3dd391e604b2893c3f36be673611fdd26b1996fb3.
+- Exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Full Local Green v2:
+- sddgov doctor: returncode 0.
+- sddgov ci verify: returncode 0.
+- README smoke: returncode 0.
+- Release parity: returncode 0.
+- Candidate identity isolation: exact 446 nodes, returncode 0.
+- Disjoint remainder: 2868 passed, 12 skipped, one pre-existing warning,
+  returncode 0.
+- Full wrapper exit: 0.
+- Log SHA-256:
+  bb35a2e62845a88fd3ceeeceef7e647a6415733a58d058692d80391d0ffd0073.
+- Exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Independent protected review, hosted CI, and exact merge readback remain
+separate mandatory gates.
+
+CodeRabbit remediation v2B:
+- Exact rebuilt source:
+  bcd2686eb9dff28365a8bd24ae600e808506885e.
+- A prior remediation lease had concurrent writers and its overwritten log is
+  invalid. No result or digest from that lease is accepted.
+- Fresh focused static/current-pin selection: 3 passed in 0.30 seconds.
+- Proof-bearing preliminary dispatcher topology: 2 passed in 4.50 seconds.
+- Exact two-parent active topology: 2 passed in 6.24 seconds.
+- A malformed two-parent delivery with a non-topic tree raised Denied for both
+  dispatcher nodes; the negative wrapper accepted only that denial.
+- Fresh focused wrapper exit: 0.
+- Fresh focused log SHA-256:
+  f3afee7e3e2befff2bec1c3d25661b49147e1113bb37de9a0334955757408bd5.
+- Fresh focused exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Full Local Green v2B on the same exact source:
+- sddgov doctor: returncode 0, 0.122 seconds.
+- sddgov ci verify: returncode 0, 0.106 seconds.
+- README smoke: returncode 0, 6.108 seconds.
+- Release parity: returncode 0, 0.050 seconds.
+- Candidate identity isolation: exact 446 nodes, returncode 0,
+  284.934 seconds.
+- Disjoint remainder: 2868 passed, 12 skipped, one pre-existing
+  SyntaxWarning; returncode 0, 95.147 seconds.
+- Full wrapper exit: 0.
+- Full log SHA-256:
+  fd4f765c6c32575936fa7c811db2488932fb44a2fb17f803f03d9c01e6ff2e4f.
+- Full exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+The exact source worktree was clean before and after both fresh runs. A fresh
+independent receipt, hosted CI, and exact two-parent merge readback remain
+separate mandatory gates.
+
+Security re-review v2C static finding:
+- Independent security review reported P0=0/P1=3.
+- Return code zero did not mechanically distinguish one true pass from skip or
+  non-strict xfail in the identity harness.
+- The prior rollback attempted phase verification only after reverting the
+  phase-aware test bytes and lacked a canonical freshly fetched delivery bind.
+- The bounded source repair adds unique per-node JUnit XML,
+  `xfail_strict=true`, exact tests=1/skipped=failures=errors=0 parsing, and AST
+  rejection of alias/getattr/subscript/string-spelled bypasses.
+- Rollback now retains exact reviewed bytes externally, proves canonical
+  candidate/active/malformed semantics before revert, and limits post-revert
+  proof to first-parent-compatible INACTIVE behavior.
+- This section records the pre-run static state. The subsequent exact v2C RED
+  is retained below; no v2C Full Local Green ran.
+
+Focused v2C trust-root RED:
+- Exact source: be70e16fa1dca30aa6fd99a97cd02b38dda2a5ac.
+- Static/historical-current/JUnit-bypass/rollback selection: 3 passed.
+- Proof-bearing candidate: both exact nodes errored with Denied because the
+  fixture overlaid later reviewed SDG-012 runner bytes into PR #487's proof,
+  whose immutable trust root binds the activation runner.
+- Wrapper exit: 1.
+- Log SHA-256:
+  b6fdc829d0082fc66fea989ff2e94905895161c15ed7c45db27f9dc31c20519a.
+- v2D preserves the proof-bound runner in proof-bearing fixtures. It still
+  retains and hashes the reviewed runner, but executes it only on the no-proof
+  post-revert baseline and requires INACTIVE, sequence 6, T-004 PENDING, and
+  absent pending/proof files.
+- No Local Green ran. Fresh v2D focused and Full Local Green remain mandatory.
+
+Focused v2D accepted proof:
+- Exact source: 1e1c23eae226446bd79b8d9809bc7716658fa546.
+- Static/JUnit/bypass/rollback distinction: 3 passed.
+- Proof-bound candidate: exact 2 genuine JUnit passes.
+- Proof-bound exact two-parent active: exact 2 genuine JUnit passes.
+- Proof-bound malformed active: exact 2 expected Denied errors, accepted only
+  as the fail-closed negative outcome.
+- No-proof baseline with retained reviewed runner: exact 2 genuine JUnit passes;
+  INACTIVE, sequence 6, T-004 PENDING, pending absent, and proof absent.
+- Focused wrapper exit: 0.
+- Focused log SHA-256:
+  553ff380be518be95122fc560936344779cabd4c0a1f6241841935741da6d29a.
+
+Full Local Green v2D on the same exact source:
+- sddgov doctor: returncode 0, 0.122 seconds.
+- sddgov ci verify: returncode 0, 0.111 seconds.
+- README smoke: returncode 0, 2.778 seconds.
+- Release parity: returncode 0, 0.049 seconds.
+- Candidate identity isolation: exact 446 nodes, returncode 0,
+  287.455 seconds.
+- Disjoint remainder: 2868 passed, 12 skipped, one pre-existing SyntaxWarning;
+  returncode 0, 92.516 seconds.
+- Full wrapper exit: 0; final source worktree clean.
+- Full log SHA-256:
+  2821ec3171aec734adc28bb6689f68f6078d14fe39f22de7c9361696c40a9dee.
+
+Independent receipt, hosted CI, and exact delivery readback remain pending.
+
+Post-sign dev6 rollback parser RED and v2E static repair:
+- Exact fail-fast: rollback record is missing or incomplete.
+- The attempted reviewer receipt is unusable and absent from the Builder topic.
+- Root cause: v2D declared rollback_version 1.1 and omitted the pinned parser's
+  top-level command and verify fields.
+- v2E declares exact version 1.0 plus one non-placeholder target, command, and
+  verify value while retaining the complete fail-closed rollback body.
+- Pinned experimental.6 direct _real_rollback evaluation returns True and the
+  retained fenced shell body passes bash syntax validation.
+- v2E has static proof only. Fresh focused, Full Local Green, independent
+  review, hosted CI, and exact delivery readback remain mandatory.
+
+Accepted v2E2 Builder proof on exact source
+97728ce5f524cc6029a798abe7f34c2828231697:
+- Corrected focused matrix: direct dev6 parser and rollback syntax PASS; three
+  static/JUnit/bypass checks PASS; candidate exact 2 PASS; exact two-parent
+  active 2 PASS; malformed active DENIED; no-proof baseline exact 2 PASS with
+  INACTIVE, sequence 6, T-004 PENDING, pending absent, and proof absent.
+- Focused wrapper exit 0; log SHA-256:
+  ebc6624607b6a7fe52824d24e2963891465ad31f277556b5ef3ceb1e76b37f83.
+- One Full Local Green: all six commands return 0; identity exact 446 nodes;
+  remainder 2868 passed, 12 skipped, one pre-existing SyntaxWarning.
+- Full wrapper exit 0; log SHA-256:
+  e98fe7fe12f477a84fcee51c1e55335718efb3e10faf90ae9c366d4d73a09049.
+- Source worktree clean. Fresh independent review, hosted CI, and exact
+  delivery readback remain mandatory.
+
+Hosted platform-skip v3 source state:
+- PR #490 run 31953893529 at exact head
+  0ebb5ae33c5ed69a78356c35a2a6fa3b8248430f is RED.
+- Linux Python 3.10/3.11/3.12 and governance Local Green each reached the one
+  historical Darwin-only node, reported one skip, and failed the over-broad
+  one-PASS parser.
+- v3 is rebuilt from exact base 9ddc508 on branch
+  agent/sdg012-identity-junit-dispatcher-only-v3 with old receipt/gate history
+  unreachable.
+- One exact off-Darwin node/reason/pytest.skip JUnit outcome is allowlisted.
+  Every other identity node, including both dispatcher nodes, still requires
+  one genuine PASS. Nonzero, xfail, arbitrary skip, malformed/multi-case,
+  failure, and error outcomes remain denied.
+- Static source verification only; fresh focused, Full Local Green, review,
+  hosted CI, and delivery readback remain mandatory.
+
+CodeRabbit v3 dispositions:
+- Accepted P1: rollback atomically holds one external exclusive lease across
+  initial preflight, phase proof, immediate pre-revert fresh fetch/recheck,
+  revert, and postproof. Collision, missing owner no-proposal confirmation,
+  dirty state, proof presence, and changed remote main are denied.
+- Accepted P1: a real extra-path descendant reaches the SDG-012 topology
+  checker and is denied; the exact anchor retains its early denial boundary.
+- Accepted P2: the historical SDG-011 test reuses the imported release constant
+  and separately pins its exact literal value.
+- Rejected architecture mismatches: audit-only gate ancestry and absent receipt
+  are intentional pre-sign chronology, and signature trust remains in the
+  governed external trust root rather than a repository key.
