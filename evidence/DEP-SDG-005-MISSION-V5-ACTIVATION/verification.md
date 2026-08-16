@@ -45,3 +45,10 @@ The live-worktree control invocation was denied by the expected pre-merge
 activation fixture. The phase-correct detached protocol-base invocation above
 is the authoritative focused result. SDG-007 isolates all 75 Mission V5 test
 nodes from the shared remainder for the later protected Local Green gate.
+
+Protected review revision 1 passed pre-sign Local Green but the mandatory
+post-sign verifier stopped before tests because the rollback command contained
+the literal shell redirection token `>`, which experimental.6 reserves for
+unresolved placeholders. Revision 2 removes that token while preserving the
+same detached-base INACTIVE verification. The revision-1 receipt is invalid
+and is not present in this candidate history.
