@@ -260,7 +260,7 @@ jobs:
           c2d55591e677f923981fa6dc242c47d98cd0e13fb43a844f8cf9b5a9060dd1db  specs/subject-distillation/task-scope-manifest-v5.json
           78bbc6fde5c60d96c6bd642636b4516536717489d34ad47dbdd2cc812b491a91  docs/decision_records/2026-08-14-subject-development-mission-v5-recovery.md
           48ab486c3326f1903c625bb9b1fa162c3a44ea3fdd120c63777f636b13a657e4  specs/subject-distillation/development-missions/README.md
-          fd4d576b209af9f7e5efdc5bcc9fd6872ef46009e9fc6358ccce30fd2aeba46b  tests/test_subject_development_mission_v5.py
+          c303d11a175daebf569643718b13883c2fb6737fe3b8668237b00f3568917fe3  tests/test_subject_development_mission_v5.py
           50a6385edcbb3ae4ca92fbef227a41029b9708584d711eeb40383b81699fd64d  tests/test_subject_task_authorization_dispatch_v5.py
           4e0185489d5598fd312c824ad40952efaa7a9d2c87c1ee3d772237ccfd882188  tests/test_repo_hygiene_tools.py
           fad00cb5058f80fd074553ec399e72a76f91c113d42569a4ce6d606fa301dbc7  evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md

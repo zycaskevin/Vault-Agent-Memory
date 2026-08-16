@@ -1682,6 +1682,34 @@ def test_closed_sdg011_release_accepts_exact_two_parent_topic(tmp_path: Path) ->
     )
 
 
+def test_protocol_release_requires_sdg011_merge_after_sdg010_anchor(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo, anchor, release = _closed_release_fixture(tmp_path, "protocol-release")
+    subprocess.run(
+        ["git", "update-ref", "refs/remotes/origin/main", release], cwd=repo, check=True
+    )
+    monkeypatch.setattr(mission, "SDG010_RELEASE", anchor)
+    monkeypatch.setattr(mission, "SDG011_COMPATIBILITY_PATHS", ["existing.txt", "new.txt"])
+    monkeypatch.setattr(mission, "SDG011_COMPATIBILITY_MODIFIED_PATHS", {"existing.txt"})
+    monkeypatch.setattr(mission, "check_repository_identity", lambda _repo_root: None)
+    monkeypatch.setattr(mission, "_check_predecessor_activation_commit", lambda _repo: None)
+    monkeypatch.setattr(mission, "_check_post_sdg_base", lambda _repo: None)
+    monkeypatch.setattr(
+        mission, "_check_post_sdg_compatibility_release", lambda _repo, _base: None
+    )
+    monkeypatch.setattr(mission, "_check_sdg010_compatibility_release", lambda _repo: None)
+
+    mission._check_protocol_release_commit(repo, release)
+
+    subprocess.run(["git", "reset", "--hard", "-q", anchor], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "update-ref", "refs/remotes/origin/main", anchor], cwd=repo, check=True
+    )
+    with pytest.raises(mission.Denied):
+        mission._check_protocol_release_commit(repo, anchor)
+
+
 @pytest.mark.parametrize(
     "mutation",
     [
