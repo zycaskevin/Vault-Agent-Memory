@@ -12,7 +12,7 @@ python -m pytest -q \
   tests/test_subject_development_mission_v5.py::test_mission_activation_denies_proof_without_sdg_review_records
 ```
 
-Result: `4 passed in 5.82s`.
+Result: `4 passed in 8.25s` on the refreshed SDG-008 protocol base.
 
 Phase-correct full Local Green on an exact synthetic two-parent delivery:
 
@@ -42,9 +42,10 @@ expires at `2026-11-14T05:35:57Z` and remains subject to irreversible owner
 revocation and the frozen L2/L3 prohibitions.
 
 The live-worktree control invocation was denied by the expected pre-merge
-activation fixture. The phase-correct detached protocol-base invocation above
-is the authoritative focused result. SDG-007 isolates all 75 Mission V5 test
-nodes from the shared remainder for the later protected Local Green gate.
+activation fixture. The phase-correct exact two-parent invocation above is the
+authoritative focused result. SDG-007 isolates all 75 Mission V5 test nodes and
+SDG-008 expands the identity-isolated boundary for the later protected Local
+Green gate.
 
 Protected review revision 1 passed pre-sign Local Green but the mandatory
 post-sign verifier stopped before tests because the rollback command contained

@@ -8,8 +8,8 @@ required, and a proof without those records is denied.
 
 ## Related tests executed
 
-In a clean detached checkout at the protocol base, the four exact activation
-controls passed `4/4` in `5.82s`. The first attempted invocation incorrectly ran from the
+In a clean exact two-parent synthetic delivery checkout, the four activation
+controls passed `4/4` in `8.25s`. The first attempted invocation ran from the
 live proof worktree and therefore hit the intended pre-merge session guard;
 the phase-correct isolated invocation changed cwd to the detached clone and
 passed without modifying the proof or weakening the guard.

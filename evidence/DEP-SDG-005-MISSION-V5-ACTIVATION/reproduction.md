@@ -23,7 +23,7 @@ this is the required phase boundary, not a product regression.
    mode `0644`, single link, and both pending paths absent.
 5. Run the current Mission validator on the unmerged topic and observe DENY.
 6. In a clean detached protocol-base clone, run the four exact activation
-   topology and SDG-record controls; observe `4 passed in 5.82s`.
+   topology and SDG-record controls; observe `4 passed in 8.25s`.
 7. Require protected review, Local Green, hosted required CI, exact merge, and
    post-merge ACTIVE readback before any T-task start.
 
