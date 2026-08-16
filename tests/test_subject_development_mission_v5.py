@@ -19,11 +19,20 @@ from scripts import verify_subject_implementation_authorization as authorization
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_ROOT = ROOT
+PRELIMINARY_PHASE = "preliminary"
+ACTIVE_PHASE = "active"
+
+
+def _mission_phase() -> str:
+    phase = os.environ.get("SUBJECT_MISSION_V5_PHASE")
+    if phase not in {PRELIMINARY_PHASE, ACTIVE_PHASE}:
+        raise AssertionError("invalid Mission V5 CI phase")
+    return phase
 
 
 @pytest.fixture(scope="session", autouse=True)
 def _phase_neutral_mission_root(tmp_path_factory: pytest.TempPathFactory):
-    """Replay V5 controls at activation after the live ledger advances."""
+    """Replay the exact V5 control appropriate to the checked Git phase."""
     global ROOT
     proof_path = LIVE_ROOT / mission.MISSION_PROOF_PATH
     if not proof_path.exists():
@@ -33,11 +42,27 @@ def _phase_neutral_mission_root(tmp_path_factory: pytest.TempPathFactory):
     proof = mission._parse(proof_raw)
     if proof_raw != mission.canonical(proof):
         raise AssertionError("non-canonical V5 mission proof")
-    activation = mission.validate_mission_activation_delivery(
-        LIVE_ROOT,
-        protocol_base=proof["protocol_base_commit"][4:],
-        mission_raw=proof_raw,
-    )
+    protocol_base = proof["protocol_base_commit"][4:]
+    if _mission_phase() == PRELIMINARY_PHASE:
+        validator.validate_mission_proof_value(
+            proof,
+            proof_raw,
+            LIVE_ROOT,
+            now_utc=proof["active_from_utc"],
+        )
+        mission.check_active_protocol_ancestry(LIVE_ROOT, protocol_base)
+        mission.validate_mission_activation_topic(
+            LIVE_ROOT,
+            protocol_base=protocol_base,
+            mission_raw=proof_raw,
+        )
+        replay_commit = protocol_base
+    else:
+        replay_commit = mission.validate_mission_activation_delivery(
+            LIVE_ROOT,
+            protocol_base=protocol_base,
+            mission_raw=proof_raw,
+        )
     snapshot = tmp_path_factory.mktemp("mission-v5-activation") / "repo"
     subprocess.run(
         [
@@ -52,7 +77,7 @@ def _phase_neutral_mission_root(tmp_path_factory: pytest.TempPathFactory):
         check=True,
     )
     subprocess.run(
-        ["git", "checkout", "--quiet", "--detach", activation],
+        ["git", "checkout", "--quiet", "--detach", replay_commit],
         cwd=snapshot,
         check=True,
     )
@@ -68,7 +93,7 @@ def _phase_neutral_mission_root(tmp_path_factory: pytest.TempPathFactory):
         check=True,
     )
     subprocess.run(
-        ["git", "update-ref", "refs/remotes/origin/main", activation],
+        ["git", "update-ref", "refs/remotes/origin/main", replay_commit],
         cwd=snapshot,
         check=True,
     )
@@ -231,6 +256,17 @@ def test_contract_is_closed_and_current_mission_phase_is_exact() -> None:
         "sequence": 6,
         "status": "PASS",
     }
+
+
+def test_mission_v5_phase_rejects_missing_or_unknown_values(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv("SUBJECT_MISSION_V5_PHASE", raising=False)
+    with pytest.raises(AssertionError, match="invalid Mission V5 CI phase"):
+        _mission_phase()
+    monkeypatch.setenv("SUBJECT_MISSION_V5_PHASE", "bypass")
+    with pytest.raises(AssertionError, match="invalid Mission V5 CI phase"):
+        _mission_phase()
 
 
 def test_mission_scope_passes_the_shared_private_authorization_verifier(
@@ -1548,7 +1584,12 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
         "tests/test_subject_development_mission_v5.py",
         "tests/test_subject_baseline_control.py",
     ]
-    assert ["python", "scripts/run_subject_identity_test_isolation.py"] in commands
+    assert [
+        "python",
+        "scripts/run_subject_identity_test_isolation.py",
+        "--phase",
+        "preliminary",
+    ] in commands
     harness = (LIVE_ROOT / "scripts/run_subject_identity_test_isolation.py").read_text()
     workflow = (LIVE_ROOT / ".github/workflows/ci.yml").read_text()
     harness_pin = hashlib.sha256(harness.encode()).hexdigest()
@@ -1646,6 +1687,11 @@ def test_mission_activation_requires_exact_two_parent_merge_before_active(
     activation = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=repo, text=True
     ).strip()
+    assert mission.validate_mission_activation_topic(
+        repo,
+        protocol_base=protocol,
+        mission_raw=proof_raw,
+    ) == activation
     with pytest.raises(mission.Denied):
         mission.validate_mission_activation_delivery(
             repo,
@@ -1669,6 +1715,26 @@ def test_mission_activation_requires_exact_two_parent_merge_before_active(
         protocol_base=protocol,
         mission_raw=proof_raw,
     ) == delivery
+    with pytest.raises(mission.Denied):
+        mission.validate_mission_activation_topic(
+            repo,
+            protocol_base=protocol,
+            mission_raw=proof_raw,
+        )
+
+    subprocess.run(["git", "reset", "--hard", "-q", protocol], cwd=repo, check=True)
+    _write_activation_records(repo, proof_raw)
+    pending = repo / mission.PENDING_PATH
+    pending.parent.mkdir(parents=True, exist_ok=True)
+    pending.write_bytes(proof_raw)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "pending activation"], cwd=repo, check=True)
+    with pytest.raises(mission.Denied):
+        mission.validate_mission_activation_topic(
+            repo,
+            protocol_base=protocol,
+            mission_raw=proof_raw,
+        )
 
     subprocess.run(["git", "reset", "--hard", "-q", protocol], cwd=repo, check=True)
     (repo / "rogue.txt").write_text("outside mission scope\n")
@@ -1677,6 +1743,12 @@ def test_mission_activation_requires_exact_two_parent_merge_before_active(
     _write_activation_records(repo, proof_raw)
     subprocess.run(["git", "add", "."], cwd=repo, check=True)
     subprocess.run(["git", "commit", "-q", "-m", "late activation"], cwd=repo, check=True)
+    with pytest.raises(mission.Denied):
+        mission.validate_mission_activation_topic(
+            repo,
+            protocol_base=protocol,
+            mission_raw=proof_raw,
+        )
     with pytest.raises(mission.Denied):
         mission.validate_mission_activation_delivery(
             repo,

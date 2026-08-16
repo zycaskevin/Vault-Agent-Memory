@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-1.txt",
+      "sha256": "64c090752e6977241ef1ed3922fef0ac490875ede48e6dc050db6b48cc51eadb",
+      "collected_at": "2026-08-16T07:12:11Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--artifact-1.txt",
+      "sha256": "64c090752e6977241ef1ed3922fef0ac490875ede48e6dc050db6b48cc51eadb",
+      "shareable": true
+    }
+  ]
+}

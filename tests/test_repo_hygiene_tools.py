@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts import artifact_audit, artifact_cleanup, public_pr_gate
+from scripts import run_subject_identity_test_isolation as identity_isolation
 
 
 def test_release_readiness_workflow_trigger_and_concurrency_contract():
@@ -33,6 +36,59 @@ def test_release_readiness_workflow_trigger_and_concurrency_contract():
     assert "  cancel-in-progress: true\n" in concurrency_block
 
 
+def test_mission_v5_ci_routes_premerge_and_postmerge_controls_without_skips():
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github" / "workflows" / "ci.yml").read_text(
+        encoding="utf-8"
+    )
+    gate_job = workflow.split("\n  governance-merge-gate:\n", 1)[1]
+    test_job = workflow.split("\n  test:\n", 1)[1].split(
+        "\n  readme-command-smoke:\n", 1
+    )[0]
+    mission_test = (root / "tests" / "test_subject_development_mission_v5.py").read_text(
+        encoding="utf-8"
+    )
+    runner = (root / "scripts" / "run_subject_development_mission_v5.py").read_text(
+        encoding="utf-8"
+    )
+
+    assert "continue-on-error" not in gate_job
+    assert "--deselect" not in gate_job
+    assert test_job.count("--ignore=tests/test_subject_development_mission_v5.py") == 1
+    assert "Run preliminary Mission V5 identity controls" in test_job
+    assert "--phase preliminary" in test_job
+    assert "Run active Mission V5 identity controls" in test_job
+    assert "--phase active" in test_job
+    assert "validate_mission_activation_topic(" in mission_test
+    assert "validate_mission_activation_delivery(" in mission_test
+    assert "replay_commit = protocol_base" in mission_test
+    assert "replay_commit = mission.validate_mission_activation_delivery(" in mission_test
+    assert "def validate_mission_activation_topic(" in runner
+    assert "len(deliveries) != 1" in runner
+    isolation = (root / "scripts" / "run_subject_identity_test_isolation.py").read_text(
+        encoding="utf-8"
+    )
+    assert "ArgumentParser(allow_abbrev=False)" in isolation
+    assert 'choices=("preliminary", "active")' in isolation
+    assert "SUBJECT_MISSION_V5_PHASE" in isolation
+    for path in (
+        "scripts/update_subject_task_progress_v5.py",
+        "scripts/validate_subject_task_authorization_dispatch_v5.py",
+    ):
+        assert "SUBJECT_MISSION_V5_PHASE" not in (root / path).read_text(
+            encoding="utf-8"
+        )
+
+
+def test_identity_phase_cli_is_closed_and_exact():
+    assert identity_isolation._arguments(["--phase", "preliminary"]).phase == "preliminary"
+    assert identity_isolation._arguments(["--phase", "active"]).phase == "active"
+    with pytest.raises(SystemExit):
+        identity_isolation._arguments(["--phase", "prelim"])
+    with pytest.raises(SystemExit):
+        identity_isolation._arguments([])
+
+
 def test_subject_progress_ci_separates_historical_and_current_phases():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
@@ -47,6 +103,7 @@ def test_subject_progress_ci_separates_historical_and_current_phases():
         "tests/test_subject_task_authorization_dispatch.py",
         "tests/test_subject_development_mission_v4.py",
         "tests/test_subject_task_authorization_dispatch_v4.py",
+        "tests/test_subject_development_mission_v5.py",
     }
     for path in ignored:
         assert test_job.count(f"--ignore={path}") == 1

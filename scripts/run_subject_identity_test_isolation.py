@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import os
 import shutil
 import stat
@@ -18,7 +19,7 @@ FILES = (
     ("tests/test_subject_progress_v3.py", 29),
     ("tests/test_subject_task_authorization_v2.py", 37),
     ("tests/test_subject_task_authorization_v3.py", 39),
-    ("tests/test_subject_development_mission_v5.py", 76),
+    ("tests/test_subject_development_mission_v5.py", 77),
     ("tests/test_subject_baseline_control.py", 53),
 )
 DARWIN_DEFAULT_TEMP_NODE = (
@@ -27,11 +28,12 @@ DARWIN_DEFAULT_TEMP_NODE = (
 )
 
 
-def _environment(home: Path, temp_root: Path) -> dict[str, str]:
+def _environment(home: Path, temp_root: Path, phase: str) -> dict[str, str]:
     environment = dict(os.environ)
     environment["HOME"] = os.fspath(home)
     environment["TMPDIR"] = os.fspath(temp_root)
     environment["PYTHONDONTWRITEBYTECODE"] = "1"
+    environment["SUBJECT_MISSION_V5_PHASE"] = phase
     return environment
 
 
@@ -65,21 +67,32 @@ def _collect(environment: dict[str, str]) -> list[str]:
     return nodes
 
 
-def main() -> int:
+def _arguments(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser.add_argument("--phase", choices=("preliminary", "active"), required=True)
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
     try:
+        arguments = _arguments(argv)
         parent = Path.home() / ".codex" / "sddgov-test-temp" / "identity-nodes"
         parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         parent_info = parent.lstat()
         if not stat.S_ISDIR(parent_info.st_mode) or stat.S_ISLNK(parent_info.st_mode):
             raise RuntimeError("identity test root is not a physical directory")
-        environment = _environment(Path.home(), Path(tempfile.gettempdir()))
+        environment = _environment(
+            Path.home(), Path(tempfile.gettempdir()), arguments.phase
+        )
         nodes = _collect(environment)
         for node in nodes:
             if sys.platform == "darwin" and node == DARWIN_DEFAULT_TEMP_NODE:
                 result = subprocess.run(
                     [sys.executable, "-m", "pytest", "-q", node],
                     check=False,
-                    env=_environment(Path.home(), Path(tempfile.gettempdir())),
+                    env=_environment(
+                        Path.home(), Path(tempfile.gettempdir()), arguments.phase
+                    ),
                     timeout=180,
                 )
                 if result.returncode != 0:
@@ -91,7 +104,7 @@ def main() -> int:
             temp_root = outer / "tmp"
             home.mkdir(mode=0o700)
             temp_root.mkdir(mode=0o700)
-            environment = _environment(home, temp_root)
+            environment = _environment(home, temp_root, arguments.phase)
             try:
                 result = subprocess.run(
                     [
