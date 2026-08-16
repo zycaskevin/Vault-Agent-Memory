@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -8,6 +10,95 @@ from scripts import run_subject_development_mission_v5 as mission
 from scripts import validate_subject_task_authorization_dispatch_v5 as dispatch
 
 ROOT = Path(__file__).resolve().parents[1]
+LIVE_ROOT = ROOT
+CANDIDATE_PHASE = "candidate"
+ACTIVE_PHASE = "active"
+
+
+def _mission_phase() -> str:
+    phase = os.environ.get("SUBJECT_MISSION_V5_PHASE")
+    if phase not in {CANDIDATE_PHASE, ACTIVE_PHASE}:
+        raise AssertionError("invalid Mission V5 CI phase")
+    return phase
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _phase_neutral_dispatch_root(tmp_path_factory: pytest.TempPathFactory):
+    """Replay dispatcher assertions at the authority anchor for this CI phase."""
+    global ROOT
+    proof_path = LIVE_ROOT / mission.MISSION_PROOF_PATH
+    if not proof_path.exists():
+        yield
+        return
+    proof_raw = proof_path.read_bytes()
+    proof = mission._parse(proof_raw)
+    if proof_raw != mission.canonical(proof):
+        raise AssertionError("non-canonical V5 mission proof")
+    protocol_base = proof["protocol_base_commit"][4:]
+    if _mission_phase() == CANDIDATE_PHASE:
+        dispatch.validator.validate_mission_proof_value(
+            proof,
+            proof_raw,
+            LIVE_ROOT,
+            now_utc=proof["active_from_utc"],
+        )
+        mission.check_active_protocol_ancestry(LIVE_ROOT, protocol_base)
+        candidate_phase, candidate_commit = mission.validate_mission_activation_candidate(
+            LIVE_ROOT,
+            protocol_base=protocol_base,
+            mission_raw=proof_raw,
+        )
+        if candidate_phase == "preliminary":
+            replay_commit = protocol_base
+        elif candidate_phase == "active":
+            replay_commit = candidate_commit
+        else:
+            raise AssertionError("invalid Mission V5 candidate phase")
+    else:
+        replay_commit = mission.validate_mission_activation_delivery(
+            LIVE_ROOT,
+            protocol_base=protocol_base,
+            mission_raw=proof_raw,
+        )
+    snapshot = tmp_path_factory.mktemp("mission-v5-dispatch") / "repo"
+    subprocess.run(
+        [
+            "git",
+            "clone",
+            "--quiet",
+            "--no-hardlinks",
+            "--no-checkout",
+            os.fspath(LIVE_ROOT),
+            os.fspath(snapshot),
+        ],
+        check=True,
+    )
+    subprocess.run(
+        ["git", "checkout", "--quiet", "--detach", replay_commit],
+        cwd=snapshot,
+        check=True,
+    )
+    subprocess.run(
+        [
+            "git",
+            "remote",
+            "set-url",
+            "origin",
+            "https://github.com/zycaskevin/Vault-Agent-Memory.git",
+        ],
+        cwd=snapshot,
+        check=True,
+    )
+    subprocess.run(
+        ["git", "update-ref", "refs/remotes/origin/main", replay_commit],
+        cwd=snapshot,
+        check=True,
+    )
+    ROOT = snapshot
+    try:
+        yield
+    finally:
+        ROOT = LIVE_ROOT
 
 
 @pytest.fixture(autouse=True)

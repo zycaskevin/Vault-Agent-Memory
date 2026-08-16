@@ -342,6 +342,7 @@ SDG004_COMPATIBILITY_PATHS = sorted(
         "evidence/DEP-SDG-004-MISSION-V5-ACTIVATION-GATE/verification.md",
         "scripts/run_subject_development_mission_v5.py",
         "scripts/run_subject_identity_test_isolation.py",
+        "tests/test_repo_hygiene_tools.py",
         "tests/test_subject_development_mission_v5.py",
     ]
 )
@@ -418,6 +419,7 @@ SDG007_COMPATIBILITY_MODIFIED_PATHS = {
     ".sddgov/work-claims.json",
     "scripts/run_subject_development_mission_v5.py",
     "scripts/run_subject_identity_test_isolation.py",
+    "tests/test_repo_hygiene_tools.py",
     "tests/test_subject_development_mission_v5.py",
 }
 SDG008_COMPATIBILITY_PATHS = sorted(
@@ -528,6 +530,46 @@ SDG011_COMPATIBILITY_MODIFIED_PATHS = {
     "scripts/run_subject_identity_test_isolation.py",
     "tests/test_repo_hygiene_tools.py",
     "tests/test_subject_development_mission_v5.py",
+}
+SDG011_RELEASE = "9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0"
+SDG012_COMPATIBILITY_PATHS = sorted(
+    [
+        ".github/workflows/ci.yml",
+        ".sddgov/ci-cost-guard.json",
+        ".sddgov/events.jsonl",
+        ".sddgov/merge-gate.json",
+        ".sddgov/reviews/REV-SDG-012.json",
+        ".sddgov/work-claims.json",
+        "docs/work-packages/SDG-012-mission-v5-dispatch-phase-isolation.md",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/fix-scope.md",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/manifest.json",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/redaction-report.json",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/regression-evidence.md",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/reproduction.md",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/rollback.md",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/root-cause-hypothesis.md",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/shareable/artifacts/terminal--hosted-red.txt",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/shareable/artifacts/terminal--verification.txt",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/summary.yaml",
+        "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/verification.md",
+        "scripts/run_subject_development_mission_v5.py",
+        "scripts/run_subject_identity_test_isolation.py",
+        "tests/test_repo_hygiene_tools.py",
+        "tests/test_subject_development_mission_v5.py",
+        "tests/test_subject_task_authorization_dispatch_v5.py",
+    ]
+)
+SDG012_COMPATIBILITY_MODIFIED_PATHS = {
+    ".github/workflows/ci.yml",
+    ".sddgov/ci-cost-guard.json",
+    ".sddgov/events.jsonl",
+    ".sddgov/merge-gate.json",
+    ".sddgov/work-claims.json",
+    "scripts/run_subject_development_mission_v5.py",
+    "scripts/run_subject_identity_test_isolation.py",
+    "tests/test_repo_hygiene_tools.py",
+    "tests/test_subject_development_mission_v5.py",
+    "tests/test_subject_task_authorization_dispatch_v5.py",
 }
 
 
@@ -2531,18 +2573,31 @@ def _check_sdg011_compatibility_release(repo_root: Path, base: str) -> None:
     )
 
 
+def _check_sdg012_compatibility_release(repo_root: Path, base: str) -> None:
+    _check_sdg011_compatibility_release(repo_root, SDG011_RELEASE)
+    _check_closed_compatibility_release(
+        repo_root,
+        base,
+        expected_parent=SDG011_RELEASE,
+        expected_topic=None,
+        expected_tree=None,
+        allowed_paths=SDG012_COMPATIBILITY_PATHS,
+        modified_paths=SDG012_COMPATIBILITY_MODIFIED_PATHS,
+    )
+
+
 def _check_protocol_release_commit(repo_root: Path, base: str) -> None:
     check_repository_identity(repo_root)
     _check_predecessor_activation_commit(repo_root)
     _check_post_sdg_base(repo_root)
     _check_post_sdg_compatibility_release(repo_root, SDG004_BASE)
-    if COMMIT.fullmatch(base) is None or base == SDG010_RELEASE:
+    if COMMIT.fullmatch(base) is None or base in {SDG010_RELEASE, SDG011_RELEASE}:
         raise Denied
     if _git(repo_root, "rev-parse", "HEAD").strip() != base.encode():
         raise Denied
     if _git(repo_root, "rev-parse", "origin/main").strip() != base.encode():
         raise Denied
-    _check_sdg011_compatibility_release(repo_root, base)
+    _check_sdg012_compatibility_release(repo_root, base)
 
 
 def _check_predecessor_activation_commit(repo_root: Path) -> None:

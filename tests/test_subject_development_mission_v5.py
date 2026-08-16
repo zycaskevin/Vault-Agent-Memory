@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 from scripts import run_subject_development_mission_v5 as mission
+from scripts import run_subject_identity_test_isolation as identity_isolation
 from scripts import update_subject_task_progress_v5 as updater
 from scripts import validate_subject_development_mission_v5 as validator
 from scripts import verify_subject_implementation_authorization as authorization_verifier
@@ -1648,10 +1649,10 @@ def test_sdg008_release_accepts_only_exact_linear_reviewed_merge(
         mission._check_sdg008_compatibility_release(repo, hostile_release)
 
 
-def test_sdg010_anchor_is_exact_and_current_main_still_requires_sdg011() -> None:
-    mission._check_sdg010_compatibility_release(LIVE_ROOT)
+def test_sdg011_anchor_is_exact_and_current_main_still_requires_sdg012() -> None:
+    mission._check_sdg011_compatibility_release(LIVE_ROOT, mission.SDG011_RELEASE)
     with pytest.raises(mission.Denied):
-        mission._check_sdg011_compatibility_release(LIVE_ROOT, mission.SDG010_RELEASE)
+        mission._check_sdg012_compatibility_release(LIVE_ROOT, mission.SDG011_RELEASE)
 
 
 @pytest.mark.parametrize("field", ["gate", "receipt"])
@@ -1682,23 +1683,25 @@ def test_closed_sdg011_release_accepts_exact_two_parent_topic(tmp_path: Path) ->
     )
 
 
-def test_protocol_release_requires_sdg011_merge_after_sdg010_anchor(
+def test_protocol_release_requires_sdg012_merge_after_sdg011_anchor(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repo, anchor, release = _closed_release_fixture(tmp_path, "protocol-release")
     subprocess.run(
         ["git", "update-ref", "refs/remotes/origin/main", release], cwd=repo, check=True
     )
-    monkeypatch.setattr(mission, "SDG010_RELEASE", anchor)
-    monkeypatch.setattr(mission, "SDG011_COMPATIBILITY_PATHS", ["existing.txt", "new.txt"])
-    monkeypatch.setattr(mission, "SDG011_COMPATIBILITY_MODIFIED_PATHS", {"existing.txt"})
+    monkeypatch.setattr(mission, "SDG011_RELEASE", anchor)
+    monkeypatch.setattr(mission, "SDG012_COMPATIBILITY_PATHS", ["existing.txt", "new.txt"])
+    monkeypatch.setattr(mission, "SDG012_COMPATIBILITY_MODIFIED_PATHS", {"existing.txt"})
     monkeypatch.setattr(mission, "check_repository_identity", lambda _repo_root: None)
     monkeypatch.setattr(mission, "_check_predecessor_activation_commit", lambda _repo: None)
     monkeypatch.setattr(mission, "_check_post_sdg_base", lambda _repo: None)
     monkeypatch.setattr(
         mission, "_check_post_sdg_compatibility_release", lambda _repo, _base: None
     )
-    monkeypatch.setattr(mission, "_check_sdg010_compatibility_release", lambda _repo: None)
+    monkeypatch.setattr(
+        mission, "_check_sdg011_compatibility_release", lambda _repo, _base: None
+    )
 
     mission._check_protocol_release_commit(repo, release)
 
@@ -1723,7 +1726,7 @@ def test_protocol_release_requires_sdg011_merge_after_sdg010_anchor(
         "mode",
     ],
 )
-def test_closed_sdg011_release_denies_topology_scope_action_or_mode_drift(
+def test_closed_sdg012_release_denies_topology_scope_action_or_mode_drift(
     tmp_path: Path, mutation: str
 ) -> None:
     repo, anchor, release = _closed_release_fixture(tmp_path, mutation)
@@ -1751,6 +1754,7 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
         "tests/test_subject_task_authorization_v2.py",
         "tests/test_subject_task_authorization_v3.py",
         "tests/test_subject_development_mission_v5.py",
+        "tests/test_subject_task_authorization_dispatch_v5.py",
         "tests/test_subject_baseline_control.py",
     ]
     assert [
@@ -1761,11 +1765,28 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     ] in commands
     harness = (LIVE_ROOT / "scripts/run_subject_identity_test_isolation.py").read_text()
     workflow = (LIVE_ROOT / ".github/workflows/ci.yml").read_text()
+    dispatcher_tests = (
+        LIVE_ROOT / "tests/test_subject_task_authorization_dispatch_v5.py"
+    ).read_text()
     harness_pin = hashlib.sha256(harness.encode()).hexdigest()
+    dispatcher_pin = hashlib.sha256(dispatcher_tests.encode()).hexdigest()
     assert f"{harness_pin}  scripts/run_subject_identity_test_isolation.py" in workflow
+    assert (
+        f"{dispatcher_pin}  tests/test_subject_task_authorization_dispatch_v5.py"
+        in workflow
+    )
     for path in identity_files:
         assert path in harness
         assert f"--ignore={path}" in full
+    assert "--ignore=tests/test_subject_task_authorization_dispatch_v5.py" in workflow
+    assert sum(count for _path, count in identity_isolation.FILES) == 446
+    assert (
+        "tests/test_subject_task_authorization_dispatch_v5.py",
+        2,
+    ) in identity_isolation.FILES
+    assert "pytest.skip" not in dispatcher_tests
+    assert "pytest.mark.skip" not in dispatcher_tests
+    assert "pytest.mark.xfail" not in dispatcher_tests
     assert "len(nodes) != sum(count for _path, count in FILES)" in harness
     assert ".sddgov/ci-cost-guard.json" in mission.POST_SDG_COMPATIBILITY_MODIFIED_PATHS
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS
@@ -1780,6 +1801,10 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     )
     assert "scripts/run_subject_identity_test_isolation.py" in (
         mission.SDG008_COMPATIBILITY_MODIFIED_PATHS
+    )
+    assert ".sddgov/ci-cost-guard.json" in mission.SDG012_COMPATIBILITY_MODIFIED_PATHS
+    assert "tests/test_subject_task_authorization_dispatch_v5.py" in (
+        mission.SDG012_COMPATIBILITY_MODIFIED_PATHS
     )
 
 

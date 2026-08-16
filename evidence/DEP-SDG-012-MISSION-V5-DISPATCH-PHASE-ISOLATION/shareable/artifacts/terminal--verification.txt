@@ -1,0 +1,12 @@
+SDG-012 public-safe Builder verification placeholder
+
+Static design:
+- Candidate/active selection remains test-only.
+- Production dispatcher, validator, and updater are unchanged.
+- Dispatcher V5 is owned by the phase-isolated harness at exact count 2.
+- Identity total is pinned at 446.
+- Both generic remainders exclude dispatcher V5 exactly once.
+- CI pins and the closed SDG-012 compatibility path set are mandatory.
+
+Focused tests, full Local Green, strict DEP, independent review, hosted CI, and
+merge readback remain pending at initial Builder freeze.
