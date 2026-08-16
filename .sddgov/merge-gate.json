@@ -1,13 +1,13 @@
 {
   "schema_version": "1.0",
-  "base_sha": "efa43a4dfb305cd51d8a57a20838be6123ccb514",
-  "head_sha": "91c087e1f65514c4519969a1f25d09e794aa6b90",
+  "base_sha": "9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0",
+  "head_sha": "d86a8b5c31c3eaacae798b2c7ebfc35e5b755876",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "721ed7d42d706e1f561f38350b0bffca6af63c462119e0f0492839bf212f2544",
+  "change_digest": "5b967962e117b8fd51bed9e3bee0afe07821a4d8c5427874dcc0193f47414743",
   "deps": [
-    "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY"
+    "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION"
   ],
-  "rollback_path": "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/rollback.md",
-  "protected_file_review": ".sddgov/reviews/REV-SDG-011.json"
+  "rollback_path": "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/rollback.md",
+  "protected_file_review": ".sddgov/reviews/REV-SDG-012.json"
 }
