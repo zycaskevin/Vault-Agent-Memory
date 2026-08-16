@@ -86,6 +86,13 @@
   retained-runner no-proof baseline. Full Green proves all six commands,
   exact 446-node identity isolation, and the disjoint remainder. Independent
   review, hosted CI, and delivery readback remain separate mandatory gates.
+- Post-sign dev6 verification then failed before merge with exact error
+  `rollback record is missing or incomplete`. The signed receipt from that
+  attempt is not reusable and is absent from this Builder lineage. v2E keeps
+  every rollback safeguard and adds the exact dev6 top-level
+  `rollback_version: 1.0`, `target:`, `command:`, and `verify:` schema; fresh
+  focused, Local Green, independent review, and hosted CI are required for the
+  changed bytes.
 
 ## Claim
 

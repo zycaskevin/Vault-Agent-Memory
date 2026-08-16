@@ -135,3 +135,15 @@ Full Local Green v2D on the same exact source:
   2821ec3171aec734adc28bb6689f68f6078d14fe39f22de7c9361696c40a9dee.
 
 Independent receipt, hosted CI, and exact delivery readback remain pending.
+
+Post-sign dev6 rollback parser RED and v2E static repair:
+- Exact fail-fast: rollback record is missing or incomplete.
+- The attempted reviewer receipt is unusable and absent from the Builder topic.
+- Root cause: v2D declared rollback_version 1.1 and omitted the pinned parser's
+  top-level command and verify fields.
+- v2E declares exact version 1.0 plus one non-placeholder target, command, and
+  verify value while retaining the complete fail-closed rollback body.
+- Pinned experimental.6 direct _real_rollback evaluation returns True and the
+  retained fenced shell body passes bash syntax validation.
+- v2E has static proof only. Fresh focused, Full Local Green, independent
+  review, hosted CI, and exact delivery readback remain mandatory.

@@ -7,8 +7,10 @@ dispatcher node, count drift, CI pin drift, or required verification failure.
 
 ## Reversible steps
 
-rollback_version: 1.1
-target: the one exact merged Pull Request from agent/sdg012-mission-v5-dispatch-phase-isolation-v2 in zycaskevin/Vault-Agent-Memory
+rollback_version: 1.0
+target: exact merged SDG-012 v2 branch delivery on canonical main before Mission proof use
+command: python -c 'from pathlib import Path; import subprocess; p=Path("evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/rollback.md"); block=p.read_text(encoding="utf-8").split("```bash\n",1)[1].split("\n```",1)[0]; subprocess.run(["/bin/bash","-euo","pipefail","-c",block],check=True)'
+verify: /bin/bash -euo pipefail -c 'test "$(git symbolic-ref --quiet --short HEAD)" = main; test -z "$(git status --porcelain=v1 --untracked-files=all)"; test "$(git rev-parse HEAD^{tree})" = "$(git rev-parse 9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0^{tree})"; test ! -e specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json; test ! -e specs/subject-distillation/.task-authorization.pending; git diff --check'
 
 Run the following from the canonical repository. It fails closed unless the
 operator is on symbolic `main`, canonical `origin` has the exact HTTPS URL, the

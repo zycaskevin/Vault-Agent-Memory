@@ -54,6 +54,18 @@ weaken validation. It overlays only reviewed test/outcome-harness bytes during
 proof-bearing phase checks, retains and hashes the reviewed runner separately,
 and executes that runner only against the no-proof post-revert baseline.
 
+## Post-sign dev6 parser finding
+
+The v2D rollback body was executable and fail-closed, but its record used
+`rollback_version: 1.1` and omitted top-level `command:` and `verify:` fields.
+Pinned Agentic SDD Governance experimental.6 accepts only version `1.0` plus
+non-placeholder `target`, `command`, and `verify` values. It therefore failed
+before merge with `rollback record is missing or incomplete`. This is a record
+schema defect, not evidence against the rollback safeguards or product
+authority behavior. v2E exposes parser-safe one-line command/verification
+fields while retaining the full canonical-origin, exact-main, pre-revert phase,
+and post-revert baseline checks.
+
 ## Falsification
 
 The hypothesis is false if the same two failures remain after the dispatcher

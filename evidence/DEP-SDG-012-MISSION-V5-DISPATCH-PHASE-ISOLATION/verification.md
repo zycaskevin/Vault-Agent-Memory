@@ -77,3 +77,14 @@ verify, README smoke, release parity, exact 446-node candidate isolation, and
 the disjoint remainder (2868 passed, 12 skipped, one pre-existing warning).
 Independent receipt, hosted CI, and delivery readback remain pending and are
 not inferred.
+
+## v2E rollback parser remediation
+
+Pinned experimental.6 post-sign verification rejected v2D with exact
+`rollback record is missing or incomplete`. Its reviewer receipt is unusable
+and is not present in this Builder lineage. Static v2E verification directly
+calls the pinned `_real_rollback` parser and requires `True`, reproduces the
+same field algorithm in repository hygiene checks, syntax-checks the retained
+shell block, and refreshes its exact workflow byte pins. This source change has
+not run pytest or Local Green; all dynamic gates and a fresh independent receipt
+remain pending.

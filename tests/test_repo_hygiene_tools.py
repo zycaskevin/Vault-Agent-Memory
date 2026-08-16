@@ -57,6 +57,49 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
         root
         / "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/rollback.md"
     ).read_text(encoding="utf-8")
+    rollback_fields: dict[str, str] = {}
+    for raw_line in rollback.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        rollback_fields[key.strip().lower()] = value.strip().strip("`")
+    required_rollback_fields = {"rollback_version", "target", "command", "verify"}
+    forbidden_rollback_tokens = ("todo", "replace", "unavailable", "<", ">")
+
+    assert required_rollback_fields.issubset(rollback_fields)
+    assert rollback_fields["rollback_version"] == "1.0"
+    assert all(
+        rollback_fields[key]
+        and not any(
+            token in rollback_fields[key].lower()
+            for token in forbidden_rollback_tokens
+        )
+        for key in ("target", "command", "verify")
+    )
+    assert rollback.count("\ntarget:") == 1
+    assert rollback.count("\ncommand:") == 1
+    assert rollback.count("\nverify:") == 1
+    assert (
+        'Path("evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/'
+        'rollback.md")'
+        in rollback_fields["command"]
+    )
+    assert '.split("```bash\\n",1)[1].split("\\n```",1)[0]' in rollback_fields[
+        "command"
+    ]
+    assert '["/bin/bash","-euo","pipefail","-c",block]' in rollback_fields[
+        "command"
+    ]
+    for value in (
+        'git symbolic-ref --quiet --short HEAD)" = main',
+        "git status --porcelain=v1 --untracked-files=all",
+        "9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0^{tree}",
+        "specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json",
+        "specs/subject-distillation/.task-authorization.pending",
+        "git diff --check",
+    ):
+        assert value in rollback_fields["verify"]
 
     assert "continue-on-error" not in gate_job
     assert "--deselect" not in gate_job

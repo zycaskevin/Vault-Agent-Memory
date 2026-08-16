@@ -24,6 +24,10 @@ reviewed SDG-012 merge.
 - Preserve the activation proof's exact runner in every proof-bearing fixture;
   retain/hash the reviewed SDG-012 runner separately and execute it only on the
   post-revert no-proof baseline.
+- Encode the same rollback in the exact experimental.6 record schema:
+  `rollback_version: 1.0` and one non-placeholder top-level `target`, `command`,
+  and `verify` value, without removing any executable preflight or chronology
+  guard.
 
 ## Explicit non-scope
 

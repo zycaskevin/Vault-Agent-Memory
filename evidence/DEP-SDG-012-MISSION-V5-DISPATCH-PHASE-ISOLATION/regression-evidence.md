@@ -89,13 +89,22 @@
   2868 passed, 12 skipped, and one pre-existing SyntaxWarning. Every command
   and the wrapper returned 0. Full log SHA-256 is
   `2821ec3171aec734adc28bb6689f68f6078d14fe39f22de7c9361696c40a9dee`.
+- Post-sign experimental.6 merge verification then failed fast with exact
+  `rollback record is missing or incomplete`. The attempted reviewer receipt
+  is unusable and remains absent from this Builder lineage. Static inspection
+  confirmed the v2D record declared version `1.1` and did not expose top-level
+  `command` or `verify` fields required by the pinned parser. v2E changes only
+  existing closed paths, retains the complete fail-closed shell body, and adds
+  an exact hygiene reproduction of the parser contract. No v2D test or receipt
+  is promoted to the changed v2E bytes; fresh gates remain mandatory.
 
 ## Unverified boundary
 
 The original PR #489 head `bbc6e476ae3444cef77400f28710de73f9cf7f73`
 receipt and hosted Green are historical exact-head evidence only and are not in
 this rebuilt topic. Fresh focused and Local Green pass on the exact v2B source.
-Fresh v2D focused and Local Green pass. A fresh independent receipt and new
-hosted Green remain pending. Exact
+Fresh v2D focused and Local Green pass for their exact source. v2E currently
+has static parser proof only; fresh focused and Local Green, a fresh independent
+receipt, and new hosted Green remain pending. Exact
 merge readback, proposal, task start, and production outcome remain unclaimed
 until post-delivery.
