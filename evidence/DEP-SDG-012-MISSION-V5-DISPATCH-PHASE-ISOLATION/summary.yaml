@@ -1,0 +1,38 @@
+{
+  "$schema": "../../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION",
+  "issue": "488",
+  "sdd_references": ["SD-MISSION-V5-POST-START-CI-RECOVERY"],
+  "risk_level": "L1",
+  "created_at": "2026-08-16T11:11:20Z",
+  "updated_at": "2026-08-16T16:57:32Z",
+  "workflow": {
+    "phase": "fix",
+    "history": [
+      {"phase": "red", "at": "2026-08-16T16:57:32Z"},
+      {"phase": "evidence", "at": "2026-08-16T16:57:32Z"},
+      {"phase": "fix", "at": "2026-08-16T16:57:32Z"}
+    ]
+  },
+  "expected_behavior": "Candidate dispatcher tests replay an inactive authority anchor and active main retains ACTIVE assertions; both nodes execute exactly once in the phase harness.",
+  "actual_behavior": "PR 491 run 31959287396 passed at exact v3 head, then review found malformed rollback proof lacked dispatcher API and exact CLI denial evidence on the same malformed commit.",
+  "environment": {
+    "commit": "NOT_RUN_V4_SOURCE_PENDING",
+    "branch": "agent/sdg012-identity-junit-dispatcher-only-v4",
+    "runtime": "GitHub Actions Python 3.10, 3.11, 3.12; CPython 3; Git; Agentic SDD Governance 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--hosted-red.txt",
+      "sha256": "30b21129f5c8d4d25b0fab5e7e670e100c383f3451b0cb41264a84f388c10ba9",
+      "collector": "terminal"
+    },
+    {
+      "path": "shareable/artifacts/terminal--verification.txt",
+      "sha256": "a0497242d7e226d81fb2959b75bb21b78c7458265679b6c0a4350c0105874e37",
+      "collector": "terminal"
+    }
+  ]
+}

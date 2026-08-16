@@ -1,0 +1,137 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-source-red",
+      "sha256": "f3fa2e25e6b7e26924237d4b3d5a8b89428b6f5097d2b4fe46973635a363395e",
+      "collected_at": "2026-08-16T11:21:56Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v2",
+      "sha256": "7f26ef3ecd60cf3ac637a1e3dd391e604b2893c3f36be673611fdd26b1996fb3",
+      "collected_at": "2026-08-16T11:33:02Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-v2",
+      "sha256": "bb35a2e62845a88fd3ceeeceef7e647a6415733a58d058692d80391d0ffd0073",
+      "collected_at": "2026-08-16T11:33:02Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v2b",
+      "sha256": "f3afee7e3e2befff2bec1c3d25661b49147e1113bb37de9a0334955757408bd5",
+      "collected_at": "2026-08-16T12:47:32Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-v2b",
+      "sha256": "fd4f765c6c32575936fa7c811db2488932fb44a2fb17f803f03d9c01e6ff2e4f",
+      "collected_at": "2026-08-16T12:47:32Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v2c-trust-root-red",
+      "sha256": "b6fdc829d0082fc66fea989ff2e94905895161c15ed7c45db27f9dc31c20519a",
+      "collected_at": "2026-08-16T13:22:04Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v2d",
+      "sha256": "553ff380be518be95122fc560936344779cabd4c0a1f6241841935741da6d29a",
+      "collected_at": "2026-08-16T13:35:08Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-v2d",
+      "sha256": "2821ec3171aec734adc28bb6689f68f6078d14fe39f22de7c9361696c40a9dee",
+      "collected_at": "2026-08-16T13:35:08Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v2e2",
+      "sha256": "ebc6624607b6a7fe52824d24e2963891465ad31f277556b5ef3ceb1e76b37f83",
+      "collected_at": "2026-08-16T14:21:46Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-v2e2",
+      "sha256": "e98fe7fe12f477a84fcee51c1e55335718efb3e10faf90ae9c366d4d73a09049",
+      "collected_at": "2026-08-16T14:21:46Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--hosted-v3-python311-red.log",
+      "sha256": "ed225291882f42ad061cb8c43b12fb7485b57977ab2316229d33cf506ea9c5fc",
+      "collected_at": "2026-08-16T14:59:21Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--hosted-v3-merge-gate-red.log",
+      "sha256": "9b15e3b6c30db1a133a8a7af3a47d343ae1475942399f97c19e43ef6a15f5f27",
+      "collected_at": "2026-08-16T14:59:21Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v3-stale-self-assertion-red.log",
+      "sha256": "1808648384be1e46bf0b38fb4fa7eef6baba767f18a25343398edfe608033b14",
+      "collected_at": "2026-08-16T15:16:47Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v3b.log",
+      "sha256": "9eaaba32012c87d6a65eef329888ef986d8f34042574b57c94d096f617c319fc",
+      "collected_at": "2026-08-16T15:30:28Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-v3b.log",
+      "sha256": "fb790a7cf363c33004da21a05f68f9d64a10c29d9de6af8de0b8419eddb1ab4a",
+      "collected_at": "2026-08-16T15:30:28Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v3-signal.log",
+      "sha256": "2392204a86890c616bc1248d78ec406fa5ae1df17b0240d5dc350dc7cb138e9c",
+      "collected_at": "2026-08-16T15:56:56Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-v3-signal.log",
+      "sha256": "65bedd99fe6c267d48f534d77936e42d8d7cd74cd2458ec592cbc31be49b4694",
+      "collected_at": "2026-08-16T15:56:56Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--hosted-red.txt",
+      "sha256": "30b21129f5c8d4d25b0fab5e7e670e100c383f3451b0cb41264a84f388c10ba9",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--verification.txt",
+      "sha256": "a0497242d7e226d81fb2959b75bb21b78c7458265679b6c0a4350c0105874e37",
+      "shareable": true
+    }
+  ]
+}
