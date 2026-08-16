@@ -25,10 +25,16 @@ that exact head. This rebuilt `-v2` topic starts from exact base
 receipt commit, and keeps `.sddgov/reviews/REV-SDG-012.json` absent until fresh
 independent review.
 
-The remediation source remains explicitly pre-proof and not merge-ready until
-its focused checks, Local Green, strict DEP, new independent receipt, and hosted
-CI all pass on their exact recorded revisions. No result is inferred from the
-earlier receipt or hosted run.
+The remediation source is not merge-ready until its local proof, fresh
+independent receipt, and hosted CI all pass on their exact recorded revisions.
+No result is inferred from the earlier receipt or hosted run.
+
+Fresh remediation proof now passes on exact source
+`bcd2686eb9dff28365a8bd24ae600e808506885e`: focused static/current pin checks,
+proof-bearing preliminary dispatch, exact two-parent active dispatch, malformed
+active denial, exact 446-node identity isolation, and the 2868-test disjoint
+remainder. The fresh focused and Full Local Green wrappers both returned 0.
+The source worktree was clean before and after these runs.
 
 ## Required pre-merge proof
 
@@ -46,7 +52,8 @@ and production outcome can exist only after delivery to the new `main`. They
 remain mandatory at their protocol phases and are currently unclaimed. This
 pre-merge DEP neither fabricates nor predicts those outcomes.
 
-The earlier Builder proof freeze is retained as historical evidence. Review-
-remediation focused/Local Green, new strict proof, and a fresh receipt are
+The earlier Builder proof freeze is retained as historical evidence. Fresh
+review-remediation focused and Local Green now pass; strict DEP proof is
+refreshed on the final source. A fresh independent receipt and hosted CI remain
 pending. Merge readback, proposal, task start, and production outcome remain
 post-delivery and unclaimed.

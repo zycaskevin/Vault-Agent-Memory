@@ -6,7 +6,7 @@
   "sdd_references": ["SD-MISSION-V5-POST-START-CI-RECOVERY"],
   "risk_level": "L1",
   "created_at": "2026-08-16T11:11:20Z",
-  "updated_at": "2026-08-16T11:33:02Z",
+  "updated_at": "2026-08-16T12:47:32Z",
   "workflow": {
     "phase": "proof",
     "history": [
@@ -20,7 +20,7 @@
   "expected_behavior": "Candidate dispatcher tests replay an inactive authority anchor and active main retains ACTIVE assertions; both nodes execute exactly once in the phase harness.",
   "actual_behavior": "PR 487 Local Green remainder ran both active-only dispatcher nodes outside phase isolation and failed exactly twice.",
   "environment": {
-    "commit": "9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0",
+    "commit": "bcd2686eb9dff28365a8bd24ae600e808506885e",
     "branch": "agent/sdg012-mission-v5-dispatch-phase-isolation-v2",
     "runtime": "GitHub Actions Python 3.12; CPython 3; Git; Agentic SDD Governance 0.2.0-experimental.6"
   },
@@ -33,7 +33,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--verification.txt",
-      "sha256": "38dd5e36ad694aac6a03890f8a3b7d4e693cc2df93fe11bf71bf0970f0d06bdf",
+      "sha256": "e2f08665122cca04c7f5ab4b116dd0f0cf160c1dc7cf05265fcc620f05cd86df",
       "collector": "terminal"
     }
   ]

@@ -43,11 +43,24 @@
 - Full Local Green v2 passed all six commands. Candidate identity isolation
   passed exactly 446 nodes. The disjoint remainder passed 2868 tests with 12
   skipped and one pre-existing SyntaxWarning; every command returned 0.
+- Fresh v2B focused proof on exact source
+  `bcd2686eb9dff28365a8bd24ae600e808506885e` passed the repaired historical
+  and current pin checks (3 tests), proof-bearing preliminary dispatch (2), and
+  exact two-parent active dispatch (2). A same-parent malformed delivery with
+  a non-topic tree was denied for both nodes. The accepted focused log SHA-256
+  is `f3afee7e3e2befff2bec1c3d25661b49147e1113bb37de9a0334955757408bd5`;
+  wrapper exit was 0.
+- The one Full Local Green v2B on the same source passed all six commands.
+  Candidate identity isolation passed exactly 446 nodes. The disjoint
+  remainder passed 2868 tests with 12 skips and one pre-existing SyntaxWarning.
+  Every command returned 0. The full log SHA-256 is
+  `fd4f765c6c32575936fa7c811db2488932fb44a2fb17f803f03d9c01e6ff2e4f`.
 
 ## Unverified boundary
 
 The original PR #489 head `bbc6e476ae3444cef77400f28710de73f9cf7f73`
 receipt and hosted Green are historical exact-head evidence only and are not in
-this rebuilt topic. Review-remediation focused/Local Green, a fresh independent
-receipt, and a new hosted Green remain pending. Exact merge readback, proposal,
-task start, and production outcome remain unclaimed until post-delivery.
+this rebuilt topic. Fresh focused and Local Green now pass on the rebuilt exact
+source. A fresh independent receipt and new hosted Green remain pending. Exact
+merge readback, proposal, task start, and production outcome remain unclaimed
+until post-delivery.

@@ -42,3 +42,38 @@ Full Local Green v2:
 
 Independent protected review, hosted CI, and exact merge readback remain
 separate mandatory gates.
+
+CodeRabbit remediation v2B:
+- Exact rebuilt source:
+  bcd2686eb9dff28365a8bd24ae600e808506885e.
+- A prior remediation lease had concurrent writers and its overwritten log is
+  invalid. No result or digest from that lease is accepted.
+- Fresh focused static/current-pin selection: 3 passed in 0.30 seconds.
+- Proof-bearing preliminary dispatcher topology: 2 passed in 4.50 seconds.
+- Exact two-parent active topology: 2 passed in 6.24 seconds.
+- A malformed two-parent delivery with a non-topic tree raised Denied for both
+  dispatcher nodes; the negative wrapper accepted only that denial.
+- Fresh focused wrapper exit: 0.
+- Fresh focused log SHA-256:
+  f3afee7e3e2befff2bec1c3d25661b49147e1113bb37de9a0334955757408bd5.
+- Fresh focused exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Full Local Green v2B on the same exact source:
+- sddgov doctor: returncode 0, 0.122 seconds.
+- sddgov ci verify: returncode 0, 0.106 seconds.
+- README smoke: returncode 0, 6.108 seconds.
+- Release parity: returncode 0, 0.050 seconds.
+- Candidate identity isolation: exact 446 nodes, returncode 0,
+  284.934 seconds.
+- Disjoint remainder: 2868 passed, 12 skipped, one pre-existing
+  SyntaxWarning; returncode 0, 95.147 seconds.
+- Full wrapper exit: 0.
+- Full log SHA-256:
+  fd4f765c6c32575936fa7c811db2488932fb44a2fb17f803f03d9c01e6ff2e4f.
+- Full exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+The exact source worktree was clean before and after both fresh runs. A fresh
+independent receipt, hosted CI, and exact two-parent merge readback remain
+separate mandatory gates.

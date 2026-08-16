@@ -22,6 +22,20 @@
       "sha256": "bb35a2e62845a88fd3ceeeceef7e647a6415733a58d058692d80391d0ffd0073",
       "collected_at": "2026-08-16T11:33:02Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v2b",
+      "sha256": "f3afee7e3e2befff2bec1c3d25661b49147e1113bb37de9a0334955757408bd5",
+      "collected_at": "2026-08-16T12:47:32Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-v2b",
+      "sha256": "fd4f765c6c32575936fa7c811db2488932fb44a2fb17f803f03d9c01e6ff2e4f",
+      "collected_at": "2026-08-16T12:47:32Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -32,7 +46,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--verification.txt",
-      "sha256": "38dd5e36ad694aac6a03890f8a3b7d4e693cc2df93fe11bf71bf0970f0d06bdf",
+      "sha256": "e2f08665122cca04c7f5ab4b116dd0f0cf160c1dc7cf05265fcc620f05cd86df",
       "shareable": true
     }
   ]

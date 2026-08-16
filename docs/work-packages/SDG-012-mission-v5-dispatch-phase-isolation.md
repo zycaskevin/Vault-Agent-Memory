@@ -60,6 +60,9 @@
   receipt commit.
 - Pre-merge checks bind only their exact topic head. Merge/readback, proposal,
   task start, and production outcome remain post-delivery and unclaimed.
+- Fresh focused and Full Local Green pass on exact rebuilt source
+  `bcd2686eb9dff28365a8bd24ae600e808506885e`; a fresh independent receipt and
+  hosted CI remain separate pre-merge gates.
 
 ## Claim
 
