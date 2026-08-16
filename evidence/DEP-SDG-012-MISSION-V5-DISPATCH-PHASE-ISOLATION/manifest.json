@@ -1,6 +1,14 @@
 {
   "schema_version": "1.0",
   "dep_id": "DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION",
-  "raw": [],
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-source-red",
+      "sha256": "f3fa2e25e6b7e26924237d4b3d5a8b89428b6f5097d2b4fe46973635a363395e",
+      "collected_at": "2026-08-16T11:21:56Z",
+      "shareable": false
+    }
+  ],
   "shareable": []
 }

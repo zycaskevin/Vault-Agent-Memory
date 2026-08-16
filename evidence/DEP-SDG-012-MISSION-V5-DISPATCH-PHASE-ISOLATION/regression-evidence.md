@@ -16,7 +16,14 @@
 ## Executed results
 
 - Hosted RED and current source/config omission are mechanically confirmed.
-- Fix implementation and static verification are in progress.
+- First focused source revision: 7 passed, 1 failed. The failure was exact
+  historical SDG-004 replay denial caused by two accidentally contaminated
+  historical compatibility sets; dispatcher test bodies themselves passed.
+- The failure log SHA-256 is
+  `f3fa2e25e6b7e26924237d4b3d5a8b89428b6f5097d2b4fe46973635a363395e`;
+  exact exit is 1. It remains RED evidence and is not claimed as Green.
+- Bounded repair removes the two historical entries and refreshes exact CI
+  hashes; focused v2 remains pending a fresh lease authorization.
 
 ## Unverified boundary
 

@@ -153,7 +153,7 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
     assert 'branch="agent/sdg010-mission-v5-ci-phase-routing"' not in rollback
     for digest, path in (
         (
-            "aa93daa186eaed15322f594feb43a6fb024fe4776b563220b4d8927ccbf1e7a0",
+            "6117dfd468913e373fdeea1d738f9a4b689ed099dc340000c9e030a453dd581e",
             "scripts/run_subject_development_mission_v5.py",
         ),
         (
