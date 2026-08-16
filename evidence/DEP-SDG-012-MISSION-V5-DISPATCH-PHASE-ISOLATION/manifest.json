@@ -120,6 +120,13 @@
       "sha256": "65bedd99fe6c267d48f534d77936e42d8d7cd74cd2458ec592cbc31be49b4694",
       "collected_at": "2026-08-16T15:56:56Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v4-red.log",
+      "sha256": "99ec548bacd73b457505a3d0d4e72a04e1ea1cfd4de747e9805c2af75a48b5f4",
+      "collected_at": "2026-08-16T17:08:47Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -130,7 +137,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--verification.txt",
-      "sha256": "a0497242d7e226d81fb2959b75bb21b78c7458265679b6c0a4350c0105874e37",
+      "sha256": "c779f8acb078e000ef1f0f0205c0c9537ff6649039c4c9644def449e979dea02",
       "shareable": true
     }
   ]

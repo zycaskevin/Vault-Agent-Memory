@@ -192,6 +192,14 @@
 - v4 is rebuilt from exact clean base `9ddc508...`; all v3 gates and receipts
   are unreachable and the v4 receipt is absent. Fresh focused and Full Local
   Green evidence are required before Proof.
+- The first authorized v4 focused run on exact source `9746e434...` stopped
+  after 4 selected checks passed and 2 fixture checks failed. One ordering
+  assertion matched the malformed helper definition instead of its later call;
+  the executable preflight fixture still injected superseded variable names
+  after production rollback variables were clarified. Dynamic
+  candidate/active/malformed/baseline checks were not reached. The test-only
+  repair uses one unambiguous exact call token and the current delivery-prefixed
+  fixture variables; no failed run is promoted and a fresh lease is required.
 
 ## Claim
 

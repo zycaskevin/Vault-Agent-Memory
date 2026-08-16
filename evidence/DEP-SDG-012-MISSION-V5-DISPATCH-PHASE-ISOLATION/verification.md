@@ -236,3 +236,23 @@ Hosted timings provide measured CI headroom: candidate identity took at most
 Full-history missing-object diagnostics will be required when the fresh final
 bundle is verified; no unbuilt bundle is claimed here. v4 dynamic verification
 is `NOT_RUN_LEASE_REQUIRED` until a fresh external exclusive lease is granted.
+
+## First v4 focused RED
+
+The single authorized run on exact source
+`9746e434ef430125e097a7cd73df273827289c33` passed exact source/process/runtime
+preflight, dev6 rollback parsing, Bash syntax, and four of six selected checks.
+It then stopped with two test-fixture failures before candidate, active,
+malformed, or baseline dynamic execution. The static ordering assertion found
+the helper definition instead of its exact later call, and the executable
+preflight fixture supplied stale local variable names to the correctly renamed
+rollback preflight. This is not product or rollback-implementation evidence.
+
+Log SHA-256 is
+`99ec548bacd73b457505a3d0d4e72a04e1ea1cfd4de747e9805c2af75a48b5f4`;
+exit marker SHA-256 is
+`4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865`;
+wrapper SHA-256 is
+`14425a2326cb6e03c7dc9215a456e225249c984de3e65d19c6c41e4a173a9d11`.
+The bounded repair changes tests/evidence only. No rerun or Full Local Green is
+claimed; the original lease is consumed and a fresh lease is mandatory.

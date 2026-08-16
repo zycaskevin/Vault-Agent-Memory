@@ -294,10 +294,12 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert len(pre_revert_checks) == 2
     assert "agent/sdg012-identity-junit-dispatcher-only-v3" not in rollback
     assert "agent/sdg012-mission-v5-dispatch-phase-isolation-v2" not in rollback
+    malformed_dispatcher_call = "\nassert_malformed_dispatcher_nodes_denied\n"
+    assert rollback.count(malformed_dispatcher_call) == 1
     assert rollback.index("assert_node_pass active active-cli") < rollback.index(
-        "assert_malformed_dispatcher_nodes_denied"
+        malformed_dispatcher_call
     )
-    assert rollback.index("assert_malformed_dispatcher_nodes_denied") < rollback.index(
+    assert rollback.index(malformed_dispatcher_call) < rollback.index(
         'git revert --no-edit -m 1 "$delivery_merge_commit"'
     )
     assert rollback.index(
@@ -396,8 +398,8 @@ def test_sdg012_rollback_preflight_denies_unsafe_mutable_state(
             "set -euo pipefail",
             f"canonical_origin={str(remote)!r}",
             f"protocol_base={protocol_base!r}",
-            f"topic_commit={topic_commit!r}",
-            f"merge_commit={merge_commit!r}",
+            f"delivery_topic_commit={topic_commit!r}",
+            f"delivery_merge_commit={merge_commit!r}",
             preflight,
             "rollback_lease_acquired=1",
         )

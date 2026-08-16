@@ -256,3 +256,18 @@ PR #491 hosted v3 Green and later review RED:
   to the unique merged exact-branch PR; PR 487 independently binds exact
   CLOSED/base/branch/head/no-merge fixture metadata.
 - Fresh v4 focused and Full Local Green: NOT RUN; external lease required.
+
+First v4 focused RED on exact source
+9746e434ef430125e097a7cd73df273827289c33:
+- Source/process/runtime preflight, dev6 rollback parser, and Bash syntax PASS.
+- Selected checks: 4 passed, 2 failed in 42.98 seconds; dynamic phase fixtures
+  were not reached.
+- Failure 1: ordering assertion selected the helper definition instead of the
+  later exact malformed-dispatch call.
+- Failure 2: executable preflight fixture supplied stale topic/merge variable
+  names after the rollback preflight adopted explicit delivery-prefixed names.
+- Log SHA-256:
+  99ec548bacd73b457505a3d0d4e72a04e1ea1cfd4de747e9805c2af75a48b5f4.
+- Exit SHA-256:
+  4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865.
+- Bounded repair is test-only. No rerun or Full is claimed; fresh lease needed.

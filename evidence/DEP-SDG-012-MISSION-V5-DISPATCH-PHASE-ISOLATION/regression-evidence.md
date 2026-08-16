@@ -173,6 +173,22 @@
   tautological anchor-only live-main assertion with a transition-aware check.
   No v3 Green or receipt is promoted; v4 focused and Full Local Green remain
   NOT RUN pending a fresh exclusive lease.
+- First v4 focused on exact source
+  `9746e434ef430125e097a7cd73df273827289c33` stopped with 2 failed and 4
+  passed selected checks in 42.98 seconds. The ordering assertion used
+  `str.index` on a helper name and selected its definition before the intended
+  call. The preflight fixture still defined `topic_commit`/`merge_commit` after
+  the rollback function had moved to unambiguous
+  `delivery_topic_commit`/`delivery_merge_commit`, so `set -u` denied the
+  expected-good path. Candidate/active/malformed/baseline dynamic fixtures were
+  not reached. Log SHA-256 is
+  `99ec548bacd73b457505a3d0d4e72a04e1ea1cfd4de747e9805c2af75a48b5f4`;
+  exit marker SHA-256 is
+  `4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865`.
+  The bounded test-only repair targets exact call token
+  `\nassert_malformed_dispatcher_nodes_denied\n` and injects current fixture
+  variable names. The consumed lease cannot be reused; fresh focused remains
+  required.
 
 ## Unverified boundary
 
