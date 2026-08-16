@@ -114,6 +114,9 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
     }
     for name, value in exact_values.items():
         assert f'{name} = "{value}"' in runner
+    assert '("tests/test_subject_development_mission_v5.py", 90)' in (
+        root / "scripts/run_subject_identity_test_isolation.py"
+    ).read_text(encoding="utf-8")
 
     for value in (
         "gh pr view 484",
@@ -134,8 +137,12 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
     assert 'branch="agent/sdg010-mission-v5-ci-phase-routing"' not in rollback
     for digest, path in (
         (
-            "32ae8d821b991910b04ec29904fa3861389dd4807a2c000948264ec60bbb1b9b",
+            "05f60c7950ba3c5025fb26f43d18b680ccdbe0ab42c07d1886fa5153ff0dad05",
             "scripts/run_subject_development_mission_v5.py",
+        ),
+        (
+            "de169a26c04130d07219ca427e0fcf34b809868156f815181bac11ea6a0f32a5",
+            "scripts/run_subject_identity_test_isolation.py",
         ),
         (
             "fad00cb5058f80fd074553ec399e72a76f91c113d42569a4ce6d606fa301dbc7",

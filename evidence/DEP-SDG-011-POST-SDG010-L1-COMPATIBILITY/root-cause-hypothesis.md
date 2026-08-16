@@ -18,6 +18,9 @@ earlier branch name instead of the reviewed v4 PR head.
   `07ee1f58...`.
 - PR #484 metadata names the v4 source branch, while the rollback text omits
   `-v4`.
+- Source `db4f142ab` added 13 genuine Mission V5 regression nodes but retained
+  the pre-SDG-011 identity-harness count of 77; collection therefore denied
+  before node execution.
 
 ## Contradicting evidence
 
@@ -38,3 +41,7 @@ also invalidates the fix.
 Confirmed from source and exact Git topology. Add a fixed SDG-010 anchor
 validator followed by a closed SDG-011 delivery validator, and correct only the
 current rollback bytes without rewriting history.
+
+The collection failure has the same bounded cause: update the closed count to
+90, include the harness in SDG-011's allowed/modified paths, and refresh its CI
+byte pin. No identity predicate or test is skipped.

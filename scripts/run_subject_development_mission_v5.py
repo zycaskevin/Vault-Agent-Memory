@@ -513,6 +513,7 @@ SDG011_COMPATIBILITY_PATHS = sorted(
         "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/summary.yaml",
         "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/verification.md",
         "scripts/run_subject_development_mission_v5.py",
+        "scripts/run_subject_identity_test_isolation.py",
         "tests/test_repo_hygiene_tools.py",
         "tests/test_subject_development_mission_v5.py",
     ]
@@ -524,6 +525,7 @@ SDG011_COMPATIBILITY_MODIFIED_PATHS = {
     ".sddgov/work-claims.json",
     "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md",
     "scripts/run_subject_development_mission_v5.py",
+    "scripts/run_subject_identity_test_isolation.py",
     "tests/test_repo_hygiene_tools.py",
     "tests/test_subject_development_mission_v5.py",
 }

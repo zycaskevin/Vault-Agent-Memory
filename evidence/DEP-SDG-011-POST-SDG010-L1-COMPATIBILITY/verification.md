@@ -2,7 +2,10 @@
 
 ## Builder verification
 
-Pending the externally coordinated exclusive test lease.
+Focused compatibility and rollback regressions passed 14/14 with exact exit 0
+on source `db4f142ab`. The same revision's Local Green exposed an exact
+collection-count drift before identity node execution; the bounded 90-node pin
+repair is awaiting focused v2 and new-revision Local Green.
 
 ## Required final proof
 

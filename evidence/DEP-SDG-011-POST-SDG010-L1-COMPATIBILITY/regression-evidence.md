@@ -16,8 +16,18 @@
 
 ## Executed results
 
-Pending the external exclusive test lease. No pytest, identity harness, Local
-Green, or merge verification has been run by this Builder yet.
+- Final focused capture: 14 passed in 47.75 seconds with exact pytest exit 0.
+- Two earlier focused executions also reported 14 passed (46.17 and 46.00
+  seconds), but their wrapper exit telemetry was not retained; they are not
+  used as exit proof.
+- Source `db4f142ab` Local Green: doctor, CI verify, README smoke, and release
+  parity passed; identity collection then denied because the frozen count was
+  77 instead of the new exact 90. No node or disjoint remainder test ran.
+- A prior invocation stopped before all configured commands because PATH did
+  not expose the pinned `sddgov` child command. It ran zero repo tests and is
+  retained only as environment-bootstrap evidence.
+- Focused v2 and one new-revision Local Green remain pending after the bounded
+  90-node pin repair.
 
 ## Unverified boundary
 

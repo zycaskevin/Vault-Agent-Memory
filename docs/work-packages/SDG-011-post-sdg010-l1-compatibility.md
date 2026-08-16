@@ -46,9 +46,10 @@
   `7e155ca8907b31a14d5abadeeeb73e3edac71c14`; Issue #485.
 - Evidence requirement: deterministic RED for current proposal denial and
   rollback mismatch; genuine positive and negative merge fixtures; exact live
-  anchor verification; static pins; strict DEP; full Local Green under the
-  external exclusive test lease; independent protected review; one hosted run;
-  exact two-parent merge readback.
+  anchor verification; exact 90-node Mission V5 collection pin; static pins;
+  strict DEP; full Local Green under the external exclusive test lease;
+  independent protected review; one hosted run; exact two-parent merge
+  readback.
 
 ## Claim
 

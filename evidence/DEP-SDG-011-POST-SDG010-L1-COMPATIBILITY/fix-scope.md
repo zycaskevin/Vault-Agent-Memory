@@ -11,10 +11,13 @@ SDG-010 rollback, and independent-review receipt paths.
 
 Correct the merged SDG-010 rollback record to query exact PR #484, actual v4
 head branch, exact merge commit, exact parent order, and topic-tree equality.
+Pin the expanded Mission V5 identity collection at exactly 90 nodes and bind
+the modified harness into SDG-011's closed paths and hosted CI bytes.
 
 ## In scope
 
 - `scripts/run_subject_development_mission_v5.py` compatibility chain.
+- `scripts/run_subject_identity_test_isolation.py` count-only collection pin.
 - Genuine merge-topology/path/action/mode/gate/receipt regression tests.
 - Static CI pins and rollback-query proof.
 - Exact correction of the current SDG-010 rollback record.

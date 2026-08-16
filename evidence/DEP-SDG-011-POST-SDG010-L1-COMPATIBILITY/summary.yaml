@@ -6,7 +6,7 @@
   "sdd_references": ["SD-MISSION-V5-POST-START-CI-RECOVERY"],
   "risk_level": "L1",
   "created_at": "2026-08-16T08:18:38Z",
-  "updated_at": "2026-08-16T08:18:38Z",
+  "updated_at": "2026-08-16T08:34:41Z",
   "workflow": {
     "phase": "fix",
     "history": [
@@ -16,7 +16,7 @@
     ]
   },
   "expected_behavior": "Validate exact merged SDG-010, keep that anchor ineligible as the new proposal base, and accept only one future exact closed two-parent SDG-011 delivery from it.",
-  "actual_behavior": "The terminal release checker passes merged SDG-010 directly to the SDG-008 checker, causing deterministic parent mismatch denial; the merged SDG-010 rollback also queries a stale non-v4 branch.",
+  "actual_behavior": "The terminal release checker passes merged SDG-010 directly to the SDG-008 checker, causing deterministic parent mismatch denial; the merged SDG-010 rollback queries a stale non-v4 branch; and the first source revision retained a 77-node Mission V5 collection pin after adding 13 nodes.",
   "environment": {
     "commit": "efa43a4dfb305cd51d8a57a20838be6123ccb514",
     "branch": "agent/sdg011-post-sdg010-l1-compatibility",
