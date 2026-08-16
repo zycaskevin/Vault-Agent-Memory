@@ -1,11 +1,26 @@
 {
   "schema_version": "1.0",
   "dep_id": "DEP-SDG-005-MISSION-V5-ACTIVATION",
-  "raw": [],
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-activation-bootstrap",
+      "sha256": "27406f7c89f6e9a4d5dc265a22d2a6df85b6496fa3f20cf2cd6ae6d0c39f6f7e",
+      "collected_at": "2026-08-16T10:13:39Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-activation-v2",
+      "sha256": "4000809be90359e04ca34ee8c379c5e3b2b089b7a55cbdf72fa83f19fdda8cc9",
+      "collected_at": "2026-08-16T10:13:39Z",
+      "shareable": false
+    }
+  ],
   "shareable": [
     {
       "path": "shareable/artifacts/terminal--mission-v5-activation-green.txt",
-      "sha256": "88b15010b9faf865030bac93da3cc69b3c17031c1e0e708604167dda3572a8e6",
+      "sha256": "ce8a61ecc09ff61898e6c88cb22dfd09af908458132a2ccbe7e5eca947948a05",
       "shareable": true
     }
   ]

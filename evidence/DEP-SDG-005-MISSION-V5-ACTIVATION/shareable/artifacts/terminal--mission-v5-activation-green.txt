@@ -26,5 +26,22 @@ Static boundary:
 - No private transcript, ledger, progress, product, task, deployment, or
   production mutation was performed.
 
-Focused execution, full Local Green, independent review, hosted CI, merge, and
-post-merge active readback remain unclaimed at this Builder stage.
+Focused activation regression:
+- Exact isolated base: 9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0.
+- Four exact activation topology nodes passed in 11.37 seconds.
+- Focused exit: 0.
+- Log SHA-256:
+  4000809be90359e04ca34ee8c379c5e3b2b089b7a55cbdf72fa83f19fdda8cc9.
+- Exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Phase boundary and limitation:
+- Builder full Local Green is NOT_RUN_PHASE_GATED because the real Builder
+  topic correctly lacks its final gate update and independent review receipt.
+- The first wrapper omitted changing into the prepared base clone and produced
+  four expected setup denials on the incomplete real topic before any test
+  body. It is operator/bootstrap telemetry, not product RED or exit proof.
+- Root authorized one corrected focused capture at the exact clone workdir.
+
+Independent pre-sign Local Green, fresh receipt, real candidate replay, hosted
+CI, merge, and post-merge active readback remain unclaimed at Builder freeze.

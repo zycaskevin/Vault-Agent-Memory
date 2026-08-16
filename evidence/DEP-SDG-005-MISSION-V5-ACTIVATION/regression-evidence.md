@@ -17,8 +17,23 @@
 - Repository copy compares byte-for-byte equal to the external proof.
 - Static source inspection found no runner or test gap; the existing suite
   already exercises the required positive and negative activation topology.
+- The corrected isolated-base focused capture passed all four exact activation
+  topology nodes in 11.37 seconds with exit 0.
+- Builder full Local Green is `NOT_RUN_PHASE_GATED`: the real Builder topic
+  intentionally lacks both its final gate update and independent reviewer
+  receipt, so candidate replay must deny until the review phase.
+
+## Capture limitation
+
+The first focused wrapper created the correct isolated base clone but omitted
+changing its process working directory. Pytest therefore ran against the real
+14-path Builder topic and produced four expected setup denials before any test
+body. This is retained as operator/bootstrap telemetry, is not product RED, and
+is not used as exit proof. Root authorized one corrected capture with exact
+workdir; that capture is the focused evidence above.
 
 ## Unverified boundary
 
-Focused execution, Builder Local Green, independent receipt, hosted CI, merge,
-and active post-merge readback remain unclaimed until performed.
+Independent pre-sign Local Green, fresh receipt, real candidate verification,
+hosted CI, merge, and active post-merge readback remain unclaimed until the
+reviewer phase.

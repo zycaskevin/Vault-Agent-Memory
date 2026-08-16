@@ -4,8 +4,8 @@
     {
       "source": "terminal--mission-v5-activation-green.txt",
       "output": "terminal--mission-v5-activation-green.txt",
-      "source_sha256": "88b15010b9faf865030bac93da3cc69b3c17031c1e0e708604167dda3572a8e6",
-      "output_sha256": "88b15010b9faf865030bac93da3cc69b3c17031c1e0e708604167dda3572a8e6",
+      "source_sha256": "ce8a61ecc09ff61898e6c88cb22dfd09af908458132a2ccbe7e5eca947948a05",
+      "output_sha256": "ce8a61ecc09ff61898e6c88cb22dfd09af908458132a2ccbe7e5eca947948a05",
       "redactions": {}
     }
   ],
