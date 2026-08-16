@@ -67,4 +67,13 @@ proof-bearing candidate correctly denied a later reviewed runner whose bytes
 are outside that proof's immutable trust root. v2D keeps the proof-bound runner
 for candidate/active/malformed phase evidence, while retaining/hash-binding the
 reviewed runner and executing it only on the post-revert no-proof baseline.
-Fresh v2D focused and Local Green are required.
+Fresh v2D focused and Local Green were required; their accepted results follow.
+
+Both required Builder gates now pass on exact source
+`1e1c23eae226446bd79b8d9809bc7716658fa546`. Focused v2D proved the exact
+proof-bound candidate/active/malformed matrix and retained-runner no-proof
+baseline with true JUnit outcomes. The one Full Local Green passed doctor, CI
+verify, README smoke, release parity, exact 446-node candidate isolation, and
+the disjoint remainder (2868 passed, 12 skipped, one pre-existing warning).
+Independent receipt, hosted CI, and delivery readback remain pending and are
+not inferred.

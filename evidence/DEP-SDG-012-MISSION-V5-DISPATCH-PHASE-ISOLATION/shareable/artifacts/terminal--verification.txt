@@ -107,3 +107,31 @@ Focused v2C trust-root RED:
   post-revert baseline and requires INACTIVE, sequence 6, T-004 PENDING, and
   absent pending/proof files.
 - No Local Green ran. Fresh v2D focused and Full Local Green remain mandatory.
+
+Focused v2D accepted proof:
+- Exact source: 1e1c23eae226446bd79b8d9809bc7716658fa546.
+- Static/JUnit/bypass/rollback distinction: 3 passed.
+- Proof-bound candidate: exact 2 genuine JUnit passes.
+- Proof-bound exact two-parent active: exact 2 genuine JUnit passes.
+- Proof-bound malformed active: exact 2 expected Denied errors, accepted only
+  as the fail-closed negative outcome.
+- No-proof baseline with retained reviewed runner: exact 2 genuine JUnit passes;
+  INACTIVE, sequence 6, T-004 PENDING, pending absent, and proof absent.
+- Focused wrapper exit: 0.
+- Focused log SHA-256:
+  553ff380be518be95122fc560936344779cabd4c0a1f6241841935741da6d29a.
+
+Full Local Green v2D on the same exact source:
+- sddgov doctor: returncode 0, 0.122 seconds.
+- sddgov ci verify: returncode 0, 0.111 seconds.
+- README smoke: returncode 0, 2.778 seconds.
+- Release parity: returncode 0, 0.049 seconds.
+- Candidate identity isolation: exact 446 nodes, returncode 0,
+  287.455 seconds.
+- Disjoint remainder: 2868 passed, 12 skipped, one pre-existing SyntaxWarning;
+  returncode 0, 92.516 seconds.
+- Full wrapper exit: 0; final source worktree clean.
+- Full log SHA-256:
+  2821ec3171aec734adc28bb6689f68f6078d14fe39f22de7c9361696c40a9dee.
+
+Independent receipt, hosted CI, and exact delivery readback remain pending.

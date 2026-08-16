@@ -76,13 +76,26 @@
   in candidate/active/malformed fixtures, retains the reviewed runner without
   executing it there, and executes reviewed runner bytes only for post-revert
   no-proof INACTIVE/sequence-6/T-004-PENDING proof.
+- Focused v2D on exact source
+  `1e1c23eae226446bd79b8d9809bc7716658fa546` passed three static/JUnit/bypass/
+  rollback checks; both exact candidate nodes and both exact two-parent active
+  nodes reported genuine one-test JUnit PASS; malformed active produced the
+  required two Denied errors; and the retained-runner baseline passed both
+  nodes plus explicit INACTIVE, sequence 6, T-004 PENDING, absent pending, and
+  absent proof assertions. Wrapper exit was 0; log SHA-256 is
+  `553ff380be518be95122fc560936344779cabd4c0a1f6241841935741da6d29a`.
+- The one Full Local Green v2D on the same source passed all six commands.
+  Identity isolation passed exact 446 nodes. The disjoint remainder reported
+  2868 passed, 12 skipped, and one pre-existing SyntaxWarning. Every command
+  and the wrapper returned 0. Full log SHA-256 is
+  `2821ec3171aec734adc28bb6689f68f6078d14fe39f22de7c9361696c40a9dee`.
 
 ## Unverified boundary
 
 The original PR #489 head `bbc6e476ae3444cef77400f28710de73f9cf7f73`
 receipt and hosted Green are historical exact-head evidence only and are not in
 this rebuilt topic. Fresh focused and Local Green pass on the exact v2B source.
-Fresh v2D focused and Local Green, a fresh independent receipt, and new hosted
-Green remain pending. Exact
+Fresh v2D focused and Local Green pass. A fresh independent receipt and new
+hosted Green remain pending. Exact
 merge readback, proposal, task start, and production outcome remain unclaimed
 until post-delivery.

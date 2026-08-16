@@ -80,6 +80,12 @@
   test and outcome harness. The reviewed runner executes after revert only on
   the no-proof baseline, where exact INACTIVE/sequence 6/T-004 PENDING and
   absent pending/proof files are required. Proof validation is unchanged.
+- Fresh v2D focused and the one Builder Full Local Green now pass on exact
+  source `1e1c23eae226446bd79b8d9809bc7716658fa546`. The focused matrix proves
+  proof-bound candidate and active exact nodes, malformed denial, and the
+  retained-runner no-proof baseline. Full Green proves all six commands,
+  exact 446-node identity isolation, and the disjoint remainder. Independent
+  review, hosted CI, and delivery readback remain separate mandatory gates.
 
 ## Claim
 
