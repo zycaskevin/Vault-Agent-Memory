@@ -1,13 +1,13 @@
 {
   "schema_version": "1.0",
-  "base_sha": "efa43a4dfb305cd51d8a57a20838be6123ccb514",
-  "head_sha": "91c087e1f65514c4519969a1f25d09e794aa6b90",
+  "base_sha": "9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0",
+  "head_sha": "0dac9f4dd1bd4bf3ec8cbfa0ccc6ff6bd8d1ceb6",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "721ed7d42d706e1f561f38350b0bffca6af63c462119e0f0492839bf212f2544",
+  "change_digest": "a9f5ac3827296aee93e80ba7921d4cc77d734e6a90ec77ecb8ba9a7e4b2b410f",
   "deps": [
-    "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY"
+    "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION"
   ],
-  "rollback_path": "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/rollback.md",
-  "protected_file_review": ".sddgov/reviews/REV-SDG-011.json"
+  "rollback_path": "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/rollback.md",
+  "protected_file_review": ".sddgov/reviews/REV-SDG-005.json"
 }
