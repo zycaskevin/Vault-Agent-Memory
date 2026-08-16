@@ -23,9 +23,16 @@
   `f3fa2e25e6b7e26924237d4b3d5a8b89428b6f5097d2b4fe46973635a363395e`;
   exact exit is 1. It remains RED evidence and is not claimed as Green.
 - Bounded repair removes the two historical entries and refreshes exact CI
-  hashes; focused v2 remains pending a fresh lease authorization.
+  hashes.
+- Focused v2 passed 8 source checks in 28.15 seconds, then passed both exact
+  dispatcher nodes on PR #487's proof-present candidate topology in 5.40
+  seconds and on a synthetic exact two-parent active topology in 5.80 seconds.
+  Combined exit was 0.
+- Full Local Green v2 passed all six commands. Candidate identity isolation
+  passed exactly 446 nodes. The disjoint remainder passed 2868 tests with 12
+  skipped and one pre-existing SyntaxWarning; every command returned 0.
 
 ## Unverified boundary
 
-No local pytest, Local Green, independent receipt, hosted Green, or merge result
-is claimed before the external exclusive test lease and later review phases.
+Independent receipt, hosted Green, and exact merge readback remain unclaimed
+until their separate review/delivery phases.
