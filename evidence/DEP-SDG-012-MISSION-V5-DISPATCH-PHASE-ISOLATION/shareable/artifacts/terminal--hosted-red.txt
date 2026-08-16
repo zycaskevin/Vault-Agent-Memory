@@ -1,0 +1,52 @@
+SDG-012 public-safe hosted RED summary
+
+Issue: #488
+PR: #487
+Run: 31943149157
+Job: 95155106192
+Base: 9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0
+Risk: L1
+
+Observed sequence:
+- Candidate Mission V5 identity controls passed.
+- Governance Local Green remainder then ran dispatcher V5 outside the phase
+  harness.
+- test_dispatch_accepts_exact_current_mission_phase: Denied while locating an
+  active delivery on the preliminary topic.
+- test_dispatch_cli_is_exact_and_no_abbreviation: actual return 2, expected 0;
+  stderr was SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_DENY.
+- Summary: 2 failed, 2870 passed, 10 skipped, one pre-existing warning.
+
+Static cause:
+- Dispatcher V5 was absent from the identity harness.
+- Local and hosted remainders lacked its exact ignore.
+- Production dispatcher behaved fail closed and is not changed.
+
+No credential, private data, proof bytes, task authority, deployment, or
+production action is included.
+
+Hosted v2E platform RED:
+- PR: #490
+- Run: 31953893529
+- Exact head: 0ebb5ae33c5ed69a78356c35a2a6fa3b8248430f
+- Python jobs: 95181435476 (3.10), 95181435516 (3.11), 95181435533 (3.12)
+- Governance job: 95181435523
+- Each Linux candidate identity run reached the exact existing Darwin-only
+  node, reported `1 skipped`, and then failed the over-broad one-PASS parser.
+- Exact node: tests/test_subject_authorization_runner.py::test_verify_uses_canonicalized_default_temp_root_and_cleans
+- Exact reason: Darwin system alias integration
+- Production dispatcher, validator, updater, ledger, proof, and authority were
+  not implicated and remain unchanged.
+
+PR #491 post-Green review RED:
+- Run: 31959287396
+- Exact v3 head: 7ac2f2c6b6e27cea8f488fd261f5f3e05b242846
+- Python jobs: 95194687238 (3.10), 95194687365 (3.11), 95194687218 (3.12)
+- Governance job: 95194687188
+- All hosted checks passed, then CodeRabbit reported P0=0/P1=1: malformed
+  delivery proof retained direct Mission denial but omitted dispatcher API and
+  exact CLI denial mapping on the same malformed commit.
+- Suggested equality between the delivery topic and PR 487 fixture topic is an
+  architecture mismatch; v4 binds their independent exact PR metadata instead.
+- Fresh v4 focused and Full Local Green remain NOT RUN pending an external
+  exclusive lease.

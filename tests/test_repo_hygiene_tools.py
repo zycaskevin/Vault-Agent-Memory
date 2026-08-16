@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import ast
 import json
+import os
+import subprocess
 from pathlib import Path
 
 import pytest
 
 from scripts import artifact_audit, artifact_cleanup, public_pr_gate
+from scripts import run_subject_development_mission_v5 as mission
 from scripts import run_subject_identity_test_isolation as identity_isolation
 
 
@@ -51,10 +55,61 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     runner = (root / "scripts" / "run_subject_development_mission_v5.py").read_text(
         encoding="utf-8"
     )
+    rollback = (
+        root
+        / "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/rollback.md"
+    ).read_text(encoding="utf-8")
+    rollback_fields: dict[str, str] = {}
+    for raw_line in rollback.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        key, value = line.split(":", 1)
+        rollback_fields[key.strip().lower()] = value.strip().strip("`")
+    required_rollback_fields = {"rollback_version", "target", "command", "verify"}
+    forbidden_rollback_tokens = ("todo", "replace", "unavailable", "<", ">")
+
+    assert required_rollback_fields.issubset(rollback_fields)
+    assert rollback_fields["rollback_version"] == "1.0"
+    assert all(
+        rollback_fields[key]
+        and not any(
+            token in rollback_fields[key].lower()
+            for token in forbidden_rollback_tokens
+        )
+        for key in ("target", "command", "verify")
+    )
+    assert rollback.count("\ntarget:") == 1
+    assert rollback.count("\ncommand:") == 1
+    assert rollback.count("\nverify:") == 1
+    assert (
+        'Path("evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/'
+        'rollback.md")'
+        in rollback_fields["command"]
+    )
+    assert '.split("```bash\\n",1)[1].split("\\n```",1)[0]' in rollback_fields[
+        "command"
+    ]
+    assert '["/bin/bash","-euo","pipefail","-c",block]' in rollback_fields[
+        "command"
+    ]
+    for value in (
+        'git symbolic-ref --quiet --short HEAD)" = main',
+        "git status --porcelain=v1 --untracked-files=all",
+        "9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0^{tree}",
+        "specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json",
+        "specs/subject-distillation/.task-authorization.pending",
+        "git diff --check",
+    ):
+        assert value in rollback_fields["verify"]
 
     assert "continue-on-error" not in gate_job
     assert "--deselect" not in gate_job
     assert test_job.count("--ignore=tests/test_subject_development_mission_v5.py") == 1
+    assert (
+        test_job.count("--ignore=tests/test_subject_task_authorization_dispatch_v5.py")
+        == 1
+    )
     assert "Run candidate Mission V5 identity controls" in test_job
     assert "--phase candidate" in test_job
     assert "Run active Mission V5 identity controls" in test_job
@@ -63,6 +118,111 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert "validate_mission_activation_delivery(" in mission_test
     assert "replay_commit = protocol_base" in mission_test
     assert "replay_commit = mission.validate_mission_activation_delivery(" in mission_test
+    for value in (
+        "def test_sdg012_current_main_transition_accepts_only_exact_delivery()",
+        '["git", "rev-parse", "origin/main"]',
+        "is_immediate_delivery = (",
+        "parents[1] == mission.SDG011_RELEASE",
+        "mission._check_sdg012_compatibility_release(LIVE_ROOT, current_main)",
+        "checkout != current_main and len(checkout_parents) == 2",
+    ):
+        assert value in mission_test
+    dispatcher_source = (
+        root / "tests" / "test_subject_task_authorization_dispatch_v5.py"
+    ).read_text(encoding="utf-8")
+    dispatcher_tree = ast.parse(dispatcher_source)
+    dispatcher_functions = {
+        node.name: node
+        for node in dispatcher_tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    exact_dispatcher_nodes = tuple(
+        "tests/test_subject_task_authorization_dispatch_v5.py::" + name
+        for name in dispatcher_functions
+        if name.startswith("test_")
+    )
+    assert exact_dispatcher_nodes == identity_isolation.DISPATCHER_NODES
+    authorization_test = dispatcher_functions[
+        "test_dispatch_accepts_exact_current_mission_phase"
+    ]
+    authorization_assertions = {
+        ast.unparse(node.test)
+        for node in ast.walk(authorization_test)
+        if isinstance(node, ast.Assert)
+    }
+    authorization_calls = [
+        ast.unparse(node.func)
+        for node in ast.walk(authorization_test)
+        if isinstance(node, ast.Call)
+    ]
+    assert "dispatch.validate(ROOT) == expected" in authorization_assertions
+    assert authorization_calls.count("dispatch.validate") == 1
+    cli_test = dispatcher_functions[
+        "test_dispatch_cli_is_exact_and_no_abbreviation"
+    ]
+    cli_assertions = {
+        ast.unparse(node.test)
+        for node in ast.walk(cli_test)
+        if isinstance(node, ast.Assert)
+    }
+    cli_calls = [
+        ast.unparse(node.func)
+        for node in ast.walk(cli_test)
+        if isinstance(node, ast.Call)
+    ]
+    assert "dispatch.main(['--ledger', '--json']) == 0" in cli_assertions
+    assert "dispatch.main(['--led', '--json']) == 2" in cli_assertions
+    assert cli_calls.count("dispatch.main") == 2
+    fixture = dispatcher_functions["_phase_neutral_dispatch_root"]
+    phase_branch = next(
+        node
+        for node in fixture.body
+        if isinstance(node, ast.If)
+        and ast.unparse(node.test) == "_mission_phase() == CANDIDATE_PHASE"
+    )
+    candidate_tree = ast.Module(body=phase_branch.body, type_ignores=[])
+    active_tree = ast.Module(body=phase_branch.orelse, type_ignores=[])
+    candidate_calls = [
+        ast.unparse(node.func)
+        for node in ast.walk(candidate_tree)
+        if isinstance(node, ast.Call)
+    ]
+    active_calls = [
+        ast.unparse(node.func)
+        for node in ast.walk(active_tree)
+        if isinstance(node, ast.Call)
+    ]
+    assert candidate_calls.count(
+        "mission.validate_mission_activation_candidate"
+    ) == 1
+    assert "mission.validate_mission_activation_delivery" not in candidate_calls
+    assert active_calls.count("mission.validate_mission_activation_delivery") == 1
+    candidate_assignments = {
+        (ast.unparse(target), ast.unparse(node.value))
+        for node in ast.walk(candidate_tree)
+        if isinstance(node, ast.Assign)
+        for target in node.targets
+    }
+    assert ("replay_commit", "protocol_base") in candidate_assignments
+    assert ("replay_commit", "candidate_commit") in candidate_assignments
+    semantic_names = {
+        ast.unparse(node)
+        for node in ast.walk(dispatcher_tree)
+        if isinstance(node, ast.Attribute)
+    } | {
+        ast.unparse(node.func)
+        for node in ast.walk(dispatcher_tree)
+        if isinstance(node, ast.Call)
+    }
+    assert {
+        "pytest.mark.skip",
+        "pytest.mark.skipif",
+        "pytest.mark.xfail",
+        "pytest.skip",
+        "pytest.xfail",
+        "pytest.importorskip",
+    }.isdisjoint(semantic_names)
+    identity_isolation._validate_dispatcher_source(dispatcher_source)
     assert "def validate_mission_activation_topic(" in runner
     assert "len(deliveries) != 1" in runner
     isolation = (root / "scripts" / "run_subject_identity_test_isolation.py").read_text(
@@ -71,13 +231,334 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert "ArgumentParser(allow_abbrev=False)" in isolation
     assert 'choices=("candidate", "active")' in isolation
     assert "SUBJECT_MISSION_V5_PHASE" in isolation
+    assert (
+        '("tests/test_subject_task_authorization_dispatch_v5.py", 2)' in isolation
+    )
+    assert sum(count for _path, count in identity_isolation.FILES) == 446
+    assert identity_isolation.DISPATCHER_NODES == exact_dispatcher_nodes
+    for value in (
+        'canonical_origin="https://github.com/zycaskevin/Vault-Agent-Memory.git"',
+        'delivery_branch="agent/sdg012-identity-junit-dispatcher-only-v4"',
+        'mission_fixture_pr="487"',
+        'mission_fixture_branch="agent/mission-v5-activation-post-sdg011"',
+        'mission_fixture_topic="6e596574f48354cdf6ccdc72bce35d3b6df1c184"',
+        'mission_fixture_ref="refs/pull/487/head"',
+        'mission_proof_path="specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json"',
+        'assert row.get("state")=="CLOSED"',
+        'assert row.get("mergeCommit") is None',
+        'rollback_lease="${SDG012_ROLLBACK_LEASE:-}"',
+        'test "${SDG012_ROLLBACK_NO_PROPOSAL:-}" = "confirmed-no-issued-proposal"',
+        'mkdir -m 700 -- "$rollback_lease"',
+        'rmdir -- "$rollback_lease"',
+        'trap cleanup EXIT',
+        "trap 'on_signal 129' HUP",
+        "trap 'on_signal 130' INT",
+        "trap 'on_signal 143' TERM",
+        'trap - HUP INT TERM',
+        'test "$(git symbolic-ref --quiet --short HEAD)" = "main"',
+        'git fetch --no-tags origin main',
+        'test "$(git rev-parse HEAD)" = "$delivery_merge_commit"',
+        'test "$(git rev-parse refs/remotes/origin/main)" = "$delivery_merge_commit"',
+        'test "$(git rev-list --parents -n 1 "$delivery_merge_commit")" = "$delivery_merge_commit $protocol_base $delivery_topic_commit"',
+        'test "$(git rev-parse "$delivery_merge_commit^{tree}")" = "$(git rev-parse "$delivery_topic_commit^{tree}")"',
+        'reviewed_source="$(git -C "$rollback_tmp/retained" show "$delivery_merge_commit:.sddgov/merge-gate.json"',
+        'assert_node_pass candidate candidate-authority "$node_authority"',
+        'assert_node_pass active active-authority "$node_authority"',
+        'git commit-tree "$protocol_base^{tree}" -p "$protocol_base" -p "$mission_fixture_topic"',
+        'no-proof delivery-shaped fixture accepted external proof',
+        "assert_no_proof_dispatcher_inactive() {",
+        '"authorized_tasks": 0',
+        'assert dispatch.validate(root) == expected',
+        'assert completed.returncode == 0',
+        'assert completed.stdout == dispatch.mission.canonical(expected)',
+        'assert completed.stderr == b""',
+        'git commit-tree "$mission_fixture_topic^{tree}" -p "$mission_fixture_topic" -p "$protocol_base"',
+        'test "$(git rev-list --parents -n 1 "$malformed_commit")" = "$malformed_commit $mission_fixture_topic $protocol_base"',
+        'test "$(git rev-parse "$malformed_commit^{tree}")" = "$(git rev-parse "$mission_fixture_topic^{tree}")"',
+        'test "$(git ls-tree "$malformed_commit" -- "$mission_proof_path" | cut -d \' \' -f 1)" = 100644',
+        'test "$(git cat-file -t "$malformed_commit:$mission_proof_path")" = blob',
+        'git show "$malformed_commit:$mission_proof_path" | cmp - "$rollback_tmp/mission-proof.json"',
+        'proof-bearing reversed-parent fixture was not denied',
+        "assert_malformed_dispatcher_api_denied() {",
+        "malformed dispatcher authority node was not denied",
+        "assert_malformed_dispatcher_cli_denied() {",
+        'dispatcher_cli_path="scripts/validate_subject_task_authorization_dispatch_v5.py"',
+        'test "$(git ls-tree "$malformed_commit" -- "$dispatcher_cli_path" | cut -d \' \' -f 1)" = 100755',
+        'test "$(git cat-file -t "$malformed_commit:$dispatcher_cli_path")" = blob',
+        'test "$(git hash-object "$dispatcher_cli_path")" = "$(git rev-parse "$malformed_commit:$dispatcher_cli_path")"',
+        'environment.pop("SUBJECT_MISSION_V5_PHASE", None)',
+        'environment["PYTHONDONTWRITEBYTECODE"] = "1"',
+        '[sys.executable, os.fspath(cli), "--ledger", "--json"]',
+        'assert completed.returncode == 2',
+        'assert completed.stdout == b""',
+        'assert completed.stderr == b"SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_DENY\\n"',
+        'assert b"Traceback" not in completed.stderr',
+        'assert b"SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_ERROR" not in completed.stderr',
+        'git revert --no-edit -m 1 "$delivery_merge_commit"',
+        'test "$(git rev-parse HEAD^{tree})" = "$(git rev-parse "$delivery_merge_commit^1^{tree}")"',
+        'assert_node_pass candidate reverted-inactive-authority "$node_authority"',
+        '"mission_state": "INACTIVE"',
+        '"sequence": 6',
+        'progress["tasks"]["T-004"] == "PENDING"',
+        'not (root / mission.PENDING_PATH).exists()',
+        'not (root / mission.MISSION_PROOF_PATH).exists()',
+        '-o xfail_strict=true --junitxml="$junit"',
+        '"tests": "1", "skipped": "0", "failures": "0", "errors": "0"',
+    ):
+        assert value in rollback
+    assert rollback.count("assert_canonical_delivery") == 3
+    assert 'test "$delivery_topic_commit" = "$mission_fixture_topic"' not in rollback
+    assert rollback.index("acquire_rollback_lease") < rollback.index(
+        "gh repo view"
+    )
+    pre_revert_checks = rollback.rsplit(
+        "assert_canonical_delivery\ngit revert --no-edit", 1
+    )
+    assert len(pre_revert_checks) == 2
+    assert "agent/sdg012-identity-junit-dispatcher-only-v3" not in rollback
+    assert "agent/sdg012-mission-v5-dispatch-phase-isolation-v2" not in rollback
+    malformed_api_call = "\nassert_malformed_dispatcher_api_denied\n"
+    malformed_cli_call = "\nassert_malformed_dispatcher_cli_denied\n"
+    no_proof_dispatcher_call = "\nassert_no_proof_dispatcher_inactive\n"
+    assert rollback.count(malformed_api_call) == 1
+    assert rollback.count(malformed_cli_call) == 1
+    assert rollback.count(no_proof_dispatcher_call) == 1
+    assert rollback.index("assert_node_pass active active-cli") < rollback.index(
+        no_proof_dispatcher_call
+    )
+    assert rollback.index(no_proof_dispatcher_call) < rollback.index(
+        malformed_api_call
+    )
+    assert rollback.index(malformed_api_call) < rollback.index(malformed_cli_call)
+    assert rollback.index(malformed_cli_call) < rollback.index(
+        'git revert --no-edit -m 1 "$delivery_merge_commit"'
+    )
+    assert rollback.index(
+        'git revert --no-edit -m 1 "$delivery_merge_commit"'
+    ) < rollback.index("reverted-inactive-authority")
+    proof_installer = rollback.split(
+        "install_reviewed_proof_fixture_bytes() {", 1
+    )[1].split("\n}", 1)[0]
+    baseline_installer = rollback.split("install_reviewed_baseline_bytes() {", 1)[
+        1
+    ].split("\n}", 1)[0]
+    pre_revert = rollback.split("# Phase proof happens before the revert", 1)[1].split(
+        "# Only now mutate canonical main", 1
+    )[0]
+    post_revert = rollback.split("# Only now mutate canonical main", 1)[1]
+    assert "run_subject_development_mission_v5.py" not in proof_installer
+    assert "run_subject_development_mission_v5.py" in baseline_installer
+    assert pre_revert.count("install_reviewed_proof_fixture_bytes") == 4
+    assert "install_reviewed_baseline_bytes" not in pre_revert
+    assert "install_reviewed_baseline_bytes" in post_revert
+    malformed_api_helper = rollback.split(
+        "assert_malformed_dispatcher_api_denied() {", 1
+    )[1].split("\n}", 1)[0]
+    malformed_cli_helper = rollback.split(
+        "assert_malformed_dispatcher_cli_denied() {", 1
+    )[1].split("\n}", 1)[0]
+    assert malformed_api_helper.count("dispatch.validate(Path.cwd())") == 1
+    assert "dispatch.main" not in malformed_api_helper
+    assert "redirect_stdout" not in malformed_api_helper
+    assert "redirect_stderr" not in malformed_api_helper
+    assert "dispatch.validate" not in malformed_cli_helper
+    assert "dispatch.main" not in malformed_cli_helper
+    assert "contextlib" not in malformed_cli_helper
+    assert "io.StringIO" not in malformed_cli_helper
     for path in (
         "scripts/update_subject_task_progress_v5.py",
+        "scripts/validate_subject_development_mission_v5.py",
         "scripts/validate_subject_task_authorization_dispatch_v5.py",
     ):
-        assert "SUBJECT_MISSION_V5_PHASE" not in (root / path).read_text(
-            encoding="utf-8"
+        production_tree = ast.parse((root / path).read_text(encoding="utf-8"))
+        assert "SUBJECT_MISSION_V5_PHASE" not in {
+            node.value
+            for node in ast.walk(production_tree)
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+
+
+def test_sdg012_rollback_preflight_denies_unsafe_mutable_state(
+    tmp_path: Path,
+) -> None:
+    root = Path(__file__).resolve().parents[1]
+    rollback = (
+        root
+        / "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/rollback.md"
+    ).read_text(encoding="utf-8")
+    acquire = "acquire_rollback_lease() {" + rollback.split(
+        "acquire_rollback_lease() {", 1
+    )[1].split("\n}", 1)[0] + "\n}"
+    cleanup = "cleanup() {" + rollback.split("cleanup() {", 1)[1].split(
+        "\n}", 1
+    )[0] + "\n}"
+    on_signal = "on_signal() {" + rollback.split("on_signal() {", 1)[1].split(
+        "\n}", 1
+    )[0] + "\n}"
+    preflight = "assert_canonical_delivery() {" + rollback.split(
+        "assert_canonical_delivery() {", 1
+    )[1].split("\n}", 1)[0] + "\n}"
+
+    repo = tmp_path / "repo"
+    remote = tmp_path / "remote.git"
+    leases = tmp_path / "leases"
+    temp_root = tmp_path / "temp-root"
+    leases.mkdir()
+    temp_root.mkdir()
+    subprocess.run(["git", "init", "--bare", "-q", remote], check=True)
+    subprocess.run(["git", "init", "-q", "-b", "main", repo], check=True)
+    subprocess.run(["git", "config", "user.name", "SDG012 test"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "sdg012@example.invalid"],
+        cwd=repo,
+        check=True,
+    )
+    (repo / "base.txt").write_text("base\n", encoding="utf-8")
+    subprocess.run(["git", "add", "base.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "base"], cwd=repo, check=True)
+    protocol_base = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "checkout", "-qb", "topic"], cwd=repo, check=True)
+    (repo / "topic.txt").write_text("topic\n", encoding="utf-8")
+    subprocess.run(["git", "add", "topic.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "topic"], cwd=repo, check=True)
+    topic_commit = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "checkout", "-q", "main"], cwd=repo, check=True)
+    subprocess.run(
+        ["git", "merge", "--no-ff", "-qm", "delivery", "topic"],
+        cwd=repo,
+        check=True,
+    )
+    merge_commit = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "remote", "add", "origin", str(remote)], cwd=repo, check=True)
+    subprocess.run(["git", "push", "-q", "-u", "origin", "main"], cwd=repo, check=True)
+
+    common = "\n".join(
+        (
+            "set -euo pipefail",
+            f"canonical_origin={str(remote)!r}",
+            f"protocol_base={protocol_base!r}",
+            f"delivery_topic_commit={topic_commit!r}",
+            f"delivery_merge_commit={merge_commit!r}",
+            preflight,
+            "rollback_lease_acquired=1",
         )
+    )
+
+    def run_preflight(lease: Path, *, owner_confirmed: bool = True) -> int:
+        environment = dict(os.environ)
+        environment["TMPDIR"] = str(temp_root)
+        if owner_confirmed:
+            environment["SDG012_ROLLBACK_NO_PROPOSAL"] = (
+                "confirmed-no-issued-proposal"
+            )
+        else:
+            environment.pop("SDG012_ROLLBACK_NO_PROPOSAL", None)
+        command = common + f"\nrollback_lease={str(lease)!r}\nassert_canonical_delivery"
+        return subprocess.run(
+            ["/bin/bash", "-c", command],
+            cwd=repo,
+            env=environment,
+            check=False,
+            capture_output=True,
+            text=True,
+        ).returncode
+
+    fresh_lease = leases / "fresh"
+    acquire_command = "\n".join(
+        (
+            "set -euo pipefail",
+            f"rollback_lease={str(fresh_lease)!r}",
+            "rollback_lease_acquired=0",
+            acquire,
+            "acquire_rollback_lease",
+            'test "$rollback_lease_acquired" = 1',
+        )
+    )
+    acquire_result = subprocess.run(
+        ["/bin/bash", "-c", acquire_command],
+        cwd=repo,
+        env={**os.environ, "TMPDIR": str(temp_root)},
+        check=False,
+    )
+    assert acquire_result.returncode == 0
+    fresh_lease.rmdir()
+    collision = leases / "collision"
+    collision.mkdir()
+    collision_result = subprocess.run(
+        ["/bin/bash", "-c", acquire_command.replace(str(fresh_lease), str(collision))],
+        cwd=repo,
+        env={**os.environ, "TMPDIR": str(temp_root)},
+        check=False,
+    )
+    assert collision_result.returncode != 0
+
+    signal_lease = leases / "signal-held"
+    revert_marker = tmp_path / "revert-mutation-reached"
+    signal_command = "\n".join(
+        (
+            "set -euo pipefail",
+            f"rollback_lease={str(signal_lease)!r}",
+            'rollback_tmp=""',
+            "rollback_lease_acquired=0",
+            cleanup,
+            on_signal,
+            "trap cleanup EXIT",
+            "trap 'on_signal 129' HUP",
+            "trap 'on_signal 130' INT",
+            "trap 'on_signal 143' TERM",
+            acquire,
+            "acquire_rollback_lease",
+            'kill -TERM "$$"',
+            f"printf reached > {str(revert_marker)!r}",
+        )
+    )
+    signal_result = subprocess.run(
+        ["/bin/bash", "-c", signal_command],
+        cwd=repo,
+        env={**os.environ, "TMPDIR": str(temp_root)},
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert signal_result.returncode == 143
+    assert not revert_marker.exists()
+    assert not signal_lease.exists()
+
+    held = leases / "held"
+    held.mkdir()
+    assert run_preflight(held) == 0
+    assert run_preflight(held, owner_confirmed=False) != 0
+    dirty = repo / "dirty-untracked.txt"
+    dirty.write_text("deny\n", encoding="utf-8")
+    assert run_preflight(held) != 0
+    dirty.unlink()
+    proof = repo / "specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json"
+    proof.parent.mkdir(parents=True)
+    proof.write_text("{}\n", encoding="utf-8")
+    assert run_preflight(held) != 0
+    proof.unlink()
+
+    mover = tmp_path / "mover"
+    subprocess.run(
+        ["git", "clone", "-q", "--branch", "main", remote, mover], check=True
+    )
+    subprocess.run(["git", "config", "user.name", "SDG012 test"], cwd=mover, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "sdg012@example.invalid"],
+        cwd=mover,
+        check=True,
+    )
+    (mover / "later.txt").write_text("changed ref\n", encoding="utf-8")
+    subprocess.run(["git", "add", "later.txt"], cwd=mover, check=True)
+    subprocess.run(["git", "commit", "-qm", "changed main"], cwd=mover, check=True)
+    subprocess.run(["git", "push", "-q", "origin", "main"], cwd=mover, check=True)
+    assert run_preflight(held) != 0
 
 
 def test_identity_phase_cli_is_closed_and_exact():
@@ -98,7 +579,13 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
         root
         / "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md"
     ).read_text(encoding="utf-8")
-    workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    assert mission.SDG011_RELEASE == "9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0"
+    sdg011_release = mission.SDG011_RELEASE
+    historical_workflow = subprocess.check_output(
+        ["git", "show", f"{sdg011_release}:.github/workflows/ci.yml"],
+        cwd=root,
+        text=True,
+    )
 
     exact_values = {
         "SDG010_BASE": "46690372e532c50761f9232ff5b2e20e18779d28",
@@ -149,7 +636,7 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
             "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md",
         ),
     ):
-        assert f"{digest}  {path}" in workflow
+        assert f"{digest}  {path}" in historical_workflow
 
 
 def test_subject_progress_ci_separates_historical_and_current_phases():
@@ -167,6 +654,7 @@ def test_subject_progress_ci_separates_historical_and_current_phases():
         "tests/test_subject_development_mission_v4.py",
         "tests/test_subject_task_authorization_dispatch_v4.py",
         "tests/test_subject_development_mission_v5.py",
+        "tests/test_subject_task_authorization_dispatch_v5.py",
     }
     for path in ignored:
         assert test_job.count(f"--ignore={path}") == 1

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import json
@@ -13,6 +14,7 @@ from pathlib import Path
 import pytest
 
 from scripts import run_subject_development_mission_v5 as mission
+from scripts import run_subject_identity_test_isolation as identity_isolation
 from scripts import update_subject_task_progress_v5 as updater
 from scripts import validate_subject_development_mission_v5 as validator
 from scripts import verify_subject_implementation_authorization as authorization_verifier
@@ -1648,10 +1650,38 @@ def test_sdg008_release_accepts_only_exact_linear_reviewed_merge(
         mission._check_sdg008_compatibility_release(repo, hostile_release)
 
 
-def test_sdg010_anchor_is_exact_and_current_main_still_requires_sdg011() -> None:
-    mission._check_sdg010_compatibility_release(LIVE_ROOT)
-    with pytest.raises(mission.Denied):
-        mission._check_sdg011_compatibility_release(LIVE_ROOT, mission.SDG010_RELEASE)
+def test_sdg012_current_main_transition_accepts_only_exact_delivery() -> None:
+    mission._check_sdg011_compatibility_release(LIVE_ROOT, mission.SDG011_RELEASE)
+    current_main = subprocess.check_output(
+        ["git", "rev-parse", "origin/main"], cwd=LIVE_ROOT, text=True
+    ).strip()
+    parents = subprocess.check_output(
+        ["git", "rev-list", "--parents", "-n", "1", current_main],
+        cwd=LIVE_ROOT,
+        text=True,
+    ).split()
+    is_immediate_delivery = (
+        len(parents) == 3
+        and parents[0] == current_main
+        and parents[1] == mission.SDG011_RELEASE
+    )
+    if is_immediate_delivery:
+        mission._check_sdg012_compatibility_release(LIVE_ROOT, current_main)
+    else:
+        with pytest.raises(mission.Denied):
+            mission._check_sdg012_compatibility_release(LIVE_ROOT, current_main)
+
+    checkout = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=LIVE_ROOT, text=True
+    ).strip()
+    checkout_parents = subprocess.check_output(
+        ["git", "rev-list", "--parents", "-n", "1", checkout],
+        cwd=LIVE_ROOT,
+        text=True,
+    ).split()
+    if checkout != current_main and len(checkout_parents) == 2:
+        with pytest.raises(mission.Denied):
+            mission._check_sdg012_compatibility_release(LIVE_ROOT, checkout)
 
 
 @pytest.mark.parametrize("field", ["gate", "receipt"])
@@ -1682,25 +1712,49 @@ def test_closed_sdg011_release_accepts_exact_two_parent_topic(tmp_path: Path) ->
     )
 
 
-def test_protocol_release_requires_sdg011_merge_after_sdg010_anchor(
+def test_protocol_release_requires_sdg012_merge_after_sdg011_anchor(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repo, anchor, release = _closed_release_fixture(tmp_path, "protocol-release")
     subprocess.run(
         ["git", "update-ref", "refs/remotes/origin/main", release], cwd=repo, check=True
     )
-    monkeypatch.setattr(mission, "SDG010_RELEASE", anchor)
-    monkeypatch.setattr(mission, "SDG011_COMPATIBILITY_PATHS", ["existing.txt", "new.txt"])
-    monkeypatch.setattr(mission, "SDG011_COMPATIBILITY_MODIFIED_PATHS", {"existing.txt"})
+    monkeypatch.setattr(mission, "SDG011_RELEASE", anchor)
+    monkeypatch.setattr(mission, "SDG012_COMPATIBILITY_PATHS", ["existing.txt", "new.txt"])
+    monkeypatch.setattr(mission, "SDG012_COMPATIBILITY_MODIFIED_PATHS", {"existing.txt"})
     monkeypatch.setattr(mission, "check_repository_identity", lambda _repo_root: None)
     monkeypatch.setattr(mission, "_check_predecessor_activation_commit", lambda _repo: None)
     monkeypatch.setattr(mission, "_check_post_sdg_base", lambda _repo: None)
     monkeypatch.setattr(
         mission, "_check_post_sdg_compatibility_release", lambda _repo, _base: None
     )
-    monkeypatch.setattr(mission, "_check_sdg010_compatibility_release", lambda _repo: None)
+    monkeypatch.setattr(
+        mission, "_check_sdg011_compatibility_release", lambda _repo, _base: None
+    )
+    checked_sdg012: list[str] = []
+    check_sdg012 = mission._check_sdg012_compatibility_release
+
+    def tracked_sdg012(repo_root: Path, base: str) -> None:
+        checked_sdg012.append(base)
+        check_sdg012(repo_root, base)
+
+    monkeypatch.setattr(mission, "_check_sdg012_compatibility_release", tracked_sdg012)
 
     mission._check_protocol_release_commit(repo, release)
+    assert checked_sdg012 == [release]
+
+    (repo / "outside-sdg012.txt").write_text("not a closed delivery\n")
+    subprocess.run(["git", "add", "outside-sdg012.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "invalid later descendant"], cwd=repo, check=True)
+    later = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(
+        ["git", "update-ref", "refs/remotes/origin/main", later], cwd=repo, check=True
+    )
+    with pytest.raises(mission.Denied):
+        mission._check_protocol_release_commit(repo, later)
+    assert checked_sdg012[-1] == later
 
     subprocess.run(["git", "reset", "--hard", "-q", anchor], cwd=repo, check=True)
     subprocess.run(
@@ -1723,7 +1777,7 @@ def test_protocol_release_requires_sdg011_merge_after_sdg010_anchor(
         "mode",
     ],
 )
-def test_closed_sdg011_release_denies_topology_scope_action_or_mode_drift(
+def test_closed_sdg012_release_denies_topology_scope_action_or_mode_drift(
     tmp_path: Path, mutation: str
 ) -> None:
     repo, anchor, release = _closed_release_fixture(tmp_path, mutation)
@@ -1739,7 +1793,9 @@ def test_closed_sdg011_release_denies_topology_scope_action_or_mode_drift(
         )
 
 
-def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
+def test_post_sdg_local_green_isolates_frozen_v3_identity_suite(
+    tmp_path: Path,
+) -> None:
     config = json.loads((LIVE_ROOT / ".sddgov/ci-cost-guard.json").read_text())
     commands = config["local_green"]["commands"]
     full = next(command for command in commands if "--ignore=tests/test_subject_progress.py" in command)
@@ -1751,6 +1807,7 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
         "tests/test_subject_task_authorization_v2.py",
         "tests/test_subject_task_authorization_v3.py",
         "tests/test_subject_development_mission_v5.py",
+        "tests/test_subject_task_authorization_dispatch_v5.py",
         "tests/test_subject_baseline_control.py",
     ]
     assert [
@@ -1761,11 +1818,214 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     ] in commands
     harness = (LIVE_ROOT / "scripts/run_subject_identity_test_isolation.py").read_text()
     workflow = (LIVE_ROOT / ".github/workflows/ci.yml").read_text()
+    dispatcher_tests = (
+        LIVE_ROOT / "tests/test_subject_task_authorization_dispatch_v5.py"
+    ).read_text()
+    dispatcher_tree = ast.parse(dispatcher_tests)
+    identity_isolation._validate_dispatcher_source(dispatcher_tests)
+    semantic_names = {
+        ast.unparse(node)
+        for node in ast.walk(dispatcher_tree)
+        if isinstance(node, ast.Attribute)
+    } | {
+        ast.unparse(node.func)
+        for node in ast.walk(dispatcher_tree)
+        if isinstance(node, ast.Call)
+    }
     harness_pin = hashlib.sha256(harness.encode()).hexdigest()
+    dispatcher_pin = hashlib.sha256(dispatcher_tests.encode()).hexdigest()
     assert f"{harness_pin}  scripts/run_subject_identity_test_isolation.py" in workflow
+    assert (
+        f"{dispatcher_pin}  tests/test_subject_task_authorization_dispatch_v5.py"
+        in workflow
+    )
     for path in identity_files:
         assert path in harness
         assert f"--ignore={path}" in full
+    outcome_marks = [
+        (f"{path}::{node.name}", ast.unparse(decorator))
+        for path in identity_files
+        for node in ast.parse((LIVE_ROOT / path).read_text()).body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        for decorator in node.decorator_list
+        if ast.unparse(decorator).startswith(
+            ("pytest.mark.skip(", "pytest.mark.skipif(", "pytest.mark.xfail(")
+        )
+    ]
+    assert outcome_marks == [
+        (
+            identity_isolation.DARWIN_DEFAULT_TEMP_NODE,
+            (
+                "pytest.mark.skipif(sys.platform != 'darwin', "
+                "reason='Darwin system alias integration')"
+            ),
+        )
+    ]
+    assert "--ignore=tests/test_subject_task_authorization_dispatch_v5.py" in workflow
+    assert sum(count for _path, count in identity_isolation.FILES) == 446
+    assert (
+        "tests/test_subject_task_authorization_dispatch_v5.py",
+        2,
+    ) in identity_isolation.FILES
+    assert {
+        "pytest.mark.skip",
+        "pytest.mark.skipif",
+        "pytest.mark.xfail",
+        "pytest.skip",
+        "pytest.xfail",
+        "pytest.importorskip",
+    }.isdisjoint(semantic_names)
+    bypass_sources = (
+        "import pytest\np = pytest\np.mark.skip\n",
+        "import pytest\ngetattr(pytest.mark, 'skip')\n",
+        "import pytest\npytest.mark['xfail']\n",
+        "import pytest\ng = getattr\ng(pytest.mark, 'skipif')\n",
+        "from pytest import importorskip as load_optional\n",
+    )
+    for source in bypass_sources:
+        with pytest.raises(RuntimeError):
+            identity_isolation._validate_dispatcher_source(source)
+    passing_junit = tmp_path / "pass.xml"
+    passing_junit.write_text(
+        '<testsuites><testsuite tests="1" failures="0" errors="0" '
+        'skipped="0"><testcase name="node"/></testsuite></testsuites>',
+        encoding="utf-8",
+    )
+    identity_isolation._verify_single_pass_junit(passing_junit)
+    for outcome in ("skipped", "failure", "error"):
+        rejected_junit = tmp_path / f"{outcome}.xml"
+        rejected_junit.write_text(
+            '<testsuites><testsuite tests="1" failures="'
+            + ("1" if outcome == "failure" else "0")
+            + '" errors="'
+            + ("1" if outcome == "error" else "0")
+            + '" skipped="'
+            + ("1" if outcome == "skipped" else "0")
+            + f'"><testcase name="node"><{outcome}/></testcase>'
+            + "</testsuite></testsuites>",
+            encoding="utf-8",
+        )
+        with pytest.raises(RuntimeError):
+            identity_isolation._verify_single_pass_junit(rejected_junit)
+    platform_skip_junit = tmp_path / "platform-skip.xml"
+    platform_skip_junit.write_text(
+        '<testsuites><testsuite tests="1" failures="0" errors="0" '
+        'skipped="1"><testcase name="node"><skipped type="pytest.skip" '
+        'message="Darwin system alias integration"/></testcase>'
+        "</testsuite></testsuites>",
+        encoding="utf-8",
+    )
+    assert identity_isolation.PLATFORM_SKIP_ALLOWLIST == (
+        (
+            identity_isolation.DARWIN_DEFAULT_TEMP_NODE,
+            "darwin",
+            "Darwin system alias integration",
+        ),
+    )
+    assert (
+        identity_isolation._platform_skip_reason(
+            identity_isolation.DARWIN_DEFAULT_TEMP_NODE,
+            "linux",
+        )
+        == "Darwin system alias integration"
+    )
+    assert (
+        identity_isolation._platform_skip_reason(
+            identity_isolation.DARWIN_DEFAULT_TEMP_NODE,
+            "darwin",
+        )
+        is None
+    )
+    assert (
+        identity_isolation._platform_skip_reason(
+            "tests/other.py::test_other",
+            "linux",
+        )
+        is None
+    )
+    identity_isolation._verify_identity_junit(
+        platform_skip_junit,
+        node=identity_isolation.DARWIN_DEFAULT_TEMP_NODE,
+        platform="linux",
+    )
+    for node, platform in (
+        (identity_isolation.DARWIN_DEFAULT_TEMP_NODE, "darwin"),
+        ("tests/other.py::test_other", "linux"),
+    ):
+        with pytest.raises(RuntimeError):
+            identity_isolation._verify_identity_junit(
+                platform_skip_junit,
+                node=node,
+                platform=platform,
+            )
+    for invalid_child in (
+        '<skipped type="pytest.xfail" message="Darwin system alias integration"/>',
+        '<skipped type="pytest.skip" message="wrong reason"/>',
+        '<failure type="pytest.fail" message="Darwin system alias integration"/>',
+        '<error type="pytest.error" message="Darwin system alias integration"/>',
+    ):
+        invalid_platform_skip = tmp_path / (
+            "invalid-platform-skip-" + hashlib.sha256(invalid_child.encode()).hexdigest()
+        )
+        invalid_platform_skip.write_text(
+            '<testsuites><testsuite tests="1" failures="0" errors="0" '
+            'skipped="1"><testcase name="node">'
+            + invalid_child
+            + "</testcase></testsuite></testsuites>",
+            encoding="utf-8",
+        )
+        with pytest.raises(RuntimeError):
+            identity_isolation._verify_single_platform_skip_junit(
+                invalid_platform_skip,
+                expected_reason="Darwin system alias integration",
+            )
+    multi_case_skip = tmp_path / "multi-case-skip.xml"
+    multi_case_skip.write_text(
+        '<testsuites><testsuite tests="2" failures="0" errors="0" '
+        'skipped="1"><testcase name="one"><skipped type="pytest.skip" '
+        'message="Darwin system alias integration"/></testcase>'
+        '<testcase name="two"/></testsuite></testsuites>',
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError):
+        identity_isolation._verify_single_platform_skip_junit(
+            multi_case_skip,
+            expected_reason="Darwin system alias integration",
+        )
+    malformed_skip = tmp_path / "malformed-platform-skip.xml"
+    malformed_skip.write_text("<testsuite>", encoding="utf-8")
+    with pytest.raises(RuntimeError):
+        identity_isolation._verify_identity_junit(
+            malformed_skip,
+            node=identity_isolation.DARWIN_DEFAULT_TEMP_NODE,
+            platform="linux",
+        )
+    assert '"xfail_strict=true"' in harness
+    assert 'f"--junitxml={junit}"' in harness
+    harness_functions = {
+        node.name: node
+        for node in ast.parse(harness).body
+        if isinstance(node, ast.FunctionDef)
+    }
+    identity_junit_calls = {
+        ast.unparse(node)
+        for node in ast.walk(harness_functions["_verify_identity_junit"])
+        if isinstance(node, ast.Call)
+    }
+    assert "_verify_single_pass_junit(path)" in identity_junit_calls
+    assert (
+        "_verify_single_platform_skip_junit(path, "
+        "expected_reason=platform_skip_reason)"
+    ) in identity_junit_calls
+    main_calls = {
+        ast.unparse(node)
+        for node in ast.walk(harness_functions["main"])
+        if isinstance(node, ast.Call)
+    }
+    assert (
+        "_verify_identity_junit(junit, node=node, platform=sys.platform)"
+        in main_calls
+    )
     assert "len(nodes) != sum(count for _path, count in FILES)" in harness
     assert ".sddgov/ci-cost-guard.json" in mission.POST_SDG_COMPATIBILITY_MODIFIED_PATHS
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS
@@ -1780,6 +2040,10 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     )
     assert "scripts/run_subject_identity_test_isolation.py" in (
         mission.SDG008_COMPATIBILITY_MODIFIED_PATHS
+    )
+    assert ".sddgov/ci-cost-guard.json" in mission.SDG012_COMPATIBILITY_MODIFIED_PATHS
+    assert "tests/test_subject_task_authorization_dispatch_v5.py" in (
+        mission.SDG012_COMPATIBILITY_MODIFIED_PATHS
     )
 
 
