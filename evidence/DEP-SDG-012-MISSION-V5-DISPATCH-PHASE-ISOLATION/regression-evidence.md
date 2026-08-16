@@ -19,6 +19,15 @@
 ## Executed results
 
 - Hosted RED and current source/config omission are mechanically confirmed.
+- The first v2 remediation focused lease was invalidated by concurrent writers;
+  its log was overwritten and no digest or result from that lease is accepted.
+  The collision nevertheless exposed a genuine deterministic RED: the SDG-011
+  historical pin assertion read the current workflow and therefore expected an
+  obsolete SDG-012 harness pin in changing bytes. Exact object readback showed
+  the immutable SDG-011 workflow at `9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0`
+  pins `de169a26c04130d07219ca427e0fcf34b809868156f815181bac11ea6a0f32a5`.
+  The bounded repair reads that historical workflow blob directly; the SDG-012
+  assertion continues to verify the exact current harness digest separately.
 - First focused source revision: 7 passed, 1 failed. The failure was exact
   historical SDG-004 replay denial caused by two accidentally contaminated
   historical compatibility sets; dispatcher test bodies themselves passed.

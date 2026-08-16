@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -207,7 +208,12 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
         root
         / "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md"
     ).read_text(encoding="utf-8")
-    workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    sdg011_release = "9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0"
+    historical_workflow = subprocess.check_output(
+        ["git", "show", f"{sdg011_release}:.github/workflows/ci.yml"],
+        cwd=root,
+        text=True,
+    )
 
     exact_values = {
         "SDG010_BASE": "46690372e532c50761f9232ff5b2e20e18779d28",
@@ -246,11 +252,11 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
     assert 'branch="agent/sdg010-mission-v5-ci-phase-routing"' not in rollback
     for digest, path in (
         (
-            "6117dfd468913e373fdeea1d738f9a4b689ed099dc340000c9e030a453dd581e",
+            "05f60c7950ba3c5025fb26f43d18b680ccdbe0ab42c07d1886fa5153ff0dad05",
             "scripts/run_subject_development_mission_v5.py",
         ),
         (
-            "d962eb71678ba43106dd12d030a1e8012e8c774356bc547aebbc354b9969cbb9",
+            "de169a26c04130d07219ca427e0fcf34b809868156f815181bac11ea6a0f32a5",
             "scripts/run_subject_identity_test_isolation.py",
         ),
         (
@@ -258,7 +264,7 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
             "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md",
         ),
     ):
-        assert f"{digest}  {path}" in workflow
+        assert f"{digest}  {path}" in historical_workflow
 
 
 def test_subject_progress_ci_separates_historical_and_current_phases():

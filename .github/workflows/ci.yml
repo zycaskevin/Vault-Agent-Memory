@@ -263,7 +263,7 @@ jobs:
           48ab486c3326f1903c625bb9b1fa162c3a44ea3fdd120c63777f636b13a657e4  specs/subject-distillation/development-missions/README.md
           289db80d0f615a514216238497dbe149838a22ac8644daa66b569b1fa71207f4  tests/test_subject_development_mission_v5.py
           6fec4bcfe3f89cdfad8390311f0748978e0ccb9dc367e1c51f9dfc9687e32aa0  tests/test_subject_task_authorization_dispatch_v5.py
-          5d7d4a75d584a843a531fe9c316a53c77aafba455c84ef1d3ccf3dde18712603  tests/test_repo_hygiene_tools.py
+          ca7aa8abb8f8cb0f52eeee8d0fed90cf51a1f7fa96069b5f8a0a50b3122d5316  tests/test_repo_hygiene_tools.py
           fad00cb5058f80fd074553ec399e72a76f91c113d42569a4ce6d606fa301dbc7  evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md
           EOF
           python scripts/validate_subject_task_authorization_dispatch_v5.py \
