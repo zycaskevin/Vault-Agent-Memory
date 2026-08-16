@@ -197,6 +197,11 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
         'git revert --no-edit -m 1 "$merge_commit"',
         'test "$(git rev-parse HEAD^{tree})" = "$(git rev-parse "$merge_commit^1^{tree}")"',
         'assert_node_pass candidate reverted-inactive-authority "$node_authority"',
+        '"mission_state": "INACTIVE"',
+        '"sequence": 6',
+        'progress["tasks"]["T-004"] == "PENDING"',
+        'not (root / mission.PENDING_PATH).exists()',
+        'not (root / mission.MISSION_PROOF_PATH).exists()',
         '-o xfail_strict=true --junitxml="$junit"',
         '"tests": "1", "skipped": "0", "failures": "0", "errors": "0"',
     ):
@@ -207,6 +212,21 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert rollback.index('git revert --no-edit -m 1 "$merge_commit"') < rollback.index(
         "reverted-inactive-authority"
     )
+    proof_installer = rollback.split(
+        "install_reviewed_proof_fixture_bytes() {", 1
+    )[1].split("\n}", 1)[0]
+    baseline_installer = rollback.split("install_reviewed_baseline_bytes() {", 1)[
+        1
+    ].split("\n}", 1)[0]
+    pre_revert = rollback.split("# Phase proof happens before the revert", 1)[1].split(
+        "# Only now mutate canonical main", 1
+    )[0]
+    post_revert = rollback.split("# Only now mutate canonical main", 1)[1]
+    assert "run_subject_development_mission_v5.py" not in proof_installer
+    assert "run_subject_development_mission_v5.py" in baseline_installer
+    assert pre_revert.count("install_reviewed_proof_fixture_bytes") == 3
+    assert "install_reviewed_baseline_bytes" not in pre_revert
+    assert "install_reviewed_baseline_bytes" in post_revert
     for path in (
         "scripts/update_subject_task_progress_v5.py",
         "scripts/validate_subject_development_mission_v5.py",

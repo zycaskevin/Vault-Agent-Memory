@@ -21,6 +21,9 @@ reviewed SDG-012 merge.
 - Canonical, clean, freshly fetched rollback preflight; immutable reviewed-byte
   phase fixtures before revert; exact first-parent tree and base-compatible
   retained-byte INACTIVE proof after revert.
+- Preserve the activation proof's exact runner in every proof-bearing fixture;
+  retain/hash the reviewed SDG-012 runner separately and execute it only on the
+  post-revert no-proof baseline.
 
 ## Explicit non-scope
 

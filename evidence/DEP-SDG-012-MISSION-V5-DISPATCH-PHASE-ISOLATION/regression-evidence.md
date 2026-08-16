@@ -65,14 +65,24 @@
 - Security re-review P0=0/P1=3 identified outcome interpretation and rollback
   chronology/preflight gaps. The bounded v2C source repair is static-only at
   this stage. No earlier focused or Local Green result is relabeled as proof of
-  the changed harness and rollback bytes; fresh v2C execution remains pending.
+  the changed harness and rollback bytes; its later exact RED follows below.
+- Focused v2C static/historical-current/JUnit-bypass/rollback selection passed
+  3 checks, then both proof-bearing candidate nodes errored with exact `Denied`.
+  The fixture had overlaid the reviewed SDG-012 runner, while PR #487's proof
+  correctly binds its earlier runner bytes. Exact wrapper exit was 1; log
+  SHA-256 is
+  `b6fdc829d0082fc66fea989ff2e94905895161c15ed7c45db27f9dc31c20519a`.
+  This is retained RED and is not Green. v2D preserves the proof-bound runner
+  in candidate/active/malformed fixtures, retains the reviewed runner without
+  executing it there, and executes reviewed runner bytes only for post-revert
+  no-proof INACTIVE/sequence-6/T-004-PENDING proof.
 
 ## Unverified boundary
 
 The original PR #489 head `bbc6e476ae3444cef77400f28710de73f9cf7f73`
 receipt and hosted Green are historical exact-head evidence only and are not in
 this rebuilt topic. Fresh focused and Local Green pass on the exact v2B source.
-Fresh v2C focused and Local Green, a fresh independent receipt, and new hosted
+Fresh v2D focused and Local Green, a fresh independent receipt, and new hosted
 Green remain pending. Exact
 merge readback, proposal, task start, and production outcome remain unclaimed
 until post-delivery.

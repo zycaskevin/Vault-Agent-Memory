@@ -72,6 +72,14 @@
   before the revert, then claim only base-compatible INACTIVE proof after the
   revert. The earlier Green remains evidence for its exact source only; this
   remediation requires fresh focused and Local Green before review.
+- Focused v2C falsified one rollback assumption: overlaying the later reviewed
+  SDG-012 runner into PR #487's proof topology correctly fails its immutable
+  trust-root hash. v2D therefore retains and hashes that reviewed runner without
+  executing it in proof-bearing candidate/active/malformed fixtures. Those
+  fixtures keep the proof-bound runner and overlay only the reviewed dispatcher
+  test and outcome harness. The reviewed runner executes after revert only on
+  the no-proof baseline, where exact INACTIVE/sequence 6/T-004 PENDING and
+  absent pending/proof files are required. Proof validation is unchanged.
 
 ## Claim
 

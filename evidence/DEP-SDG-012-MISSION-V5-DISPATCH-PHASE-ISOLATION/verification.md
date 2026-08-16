@@ -56,8 +56,15 @@ The earlier Builder proof freeze is retained as historical evidence. Fresh
 review-remediation focused and Local Green pass only for exact v2B source
 `bcd2686eb9dff28365a8bd24ae600e808506885e`. Security re-review then required
 strict per-node JUnit outcomes, dynamic-bypass guards, and corrected rollback
-preflight/chronology. Those v2C source bytes have static verification only;
-fresh focused and Local Green are pending and no old result is promoted. A
+preflight/chronology. Those v2C source bytes first had static verification only;
+their subsequent exact RED is recorded below and no old result is promoted. A
 fresh independent receipt and hosted CI remain pending. Merge readback,
 proposal, task start, and production outcome remain post-delivery and
 unclaimed.
+
+Focused v2C is exact RED: three static/historical checks passed, then the
+proof-bearing candidate correctly denied a later reviewed runner whose bytes
+are outside that proof's immutable trust root. v2D keeps the proof-bound runner
+for candidate/active/malformed phase evidence, while retaining/hash-binding the
+reviewed runner and executing it only on the post-revert no-proof baseline.
+Fresh v2D focused and Local Green are required.

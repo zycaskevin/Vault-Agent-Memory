@@ -80,11 +80,15 @@ assert not any(child.tag.rsplit("}", 1)[-1] in {"skipped", "failure", "error"} f
 PY
 }
 
-install_reviewed_phase_bytes() {
-  install -m 0755 "$rollback_tmp/bytes/scripts/run_subject_development_mission_v5.py" scripts/run_subject_development_mission_v5.py
+install_reviewed_proof_fixture_bytes() {
   install -m 0755 "$rollback_tmp/bytes/scripts/run_subject_identity_test_isolation.py" scripts/run_subject_identity_test_isolation.py
   install -m 0644 "$rollback_tmp/bytes/tests/test_subject_task_authorization_dispatch_v5.py" tests/test_subject_task_authorization_dispatch_v5.py
   python -c 'from pathlib import Path; from scripts import run_subject_identity_test_isolation as h; expected=("tests/test_subject_task_authorization_dispatch_v5.py::test_dispatch_accepts_exact_current_mission_phase", "tests/test_subject_task_authorization_dispatch_v5.py::test_dispatch_cli_is_exact_and_no_abbreviation"); assert h.DISPATCHER_NODES == expected; h._validate_dispatcher_source(Path("tests/test_subject_task_authorization_dispatch_v5.py").read_text(encoding="utf-8"))'
+}
+
+install_reviewed_baseline_bytes() {
+  install_reviewed_proof_fixture_bytes
+  install -m 0755 "$rollback_tmp/bytes/scripts/run_subject_development_mission_v5.py" scripts/run_subject_development_mission_v5.py
 }
 
 restore_fixture_tree() {
@@ -96,21 +100,23 @@ git -C "$rollback_tmp/retained" fetch --no-tags origin "$activation_ref"
 test "$(git -C "$rollback_tmp/retained" rev-parse FETCH_HEAD)" = "$activation_topic"
 cd "$rollback_tmp/retained"
 git checkout --quiet --detach "$activation_topic"
-install_reviewed_phase_bytes
+# The Mission proof binds this topic's runner bytes. Retain and hash the reviewed
+# SDG-012 runner above, but do not overlay it into proof-bearing topologies.
+install_reviewed_proof_fixture_bytes
 assert_node_pass candidate candidate-authority "$node_authority"
 assert_node_pass candidate candidate-cli "$node_cli"
 restore_fixture_tree
 
 active_commit="$(printf '%s\n' 'SDG-012 rollback exact active fixture' | GIT_AUTHOR_NAME=sdg012-rollback GIT_AUTHOR_EMAIL=sdg012-rollback@example.invalid GIT_COMMITTER_NAME=sdg012-rollback GIT_COMMITTER_EMAIL=sdg012-rollback@example.invalid git commit-tree "$activation_topic^{tree}" -p "$protocol_base" -p "$activation_topic")"
 git checkout --quiet --detach "$active_commit"
-install_reviewed_phase_bytes
+install_reviewed_proof_fixture_bytes
 assert_node_pass active active-authority "$node_authority"
 assert_node_pass active active-cli "$node_cli"
 restore_fixture_tree
 
 malformed_commit="$(printf '%s\n' 'SDG-012 rollback malformed active fixture' | GIT_AUTHOR_NAME=sdg012-rollback GIT_AUTHOR_EMAIL=sdg012-rollback@example.invalid GIT_COMMITTER_NAME=sdg012-rollback GIT_COMMITTER_EMAIL=sdg012-rollback@example.invalid git commit-tree "$protocol_base^{tree}" -p "$protocol_base" -p "$activation_topic")"
 git checkout --quiet --detach "$malformed_commit"
-install_reviewed_phase_bytes
+install_reviewed_proof_fixture_bytes
 git show "$activation_topic:specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json" > "$rollback_tmp/mission-proof.json"
 PROTOCOL_BASE="$protocol_base" MISSION_RAW="$rollback_tmp/mission-proof.json" python - <<'PY'
 import os
@@ -133,21 +139,36 @@ test -z "$(git status --porcelain=v1 --untracked-files=all)"
 git clone --quiet --no-hardlinks . "$rollback_tmp/reverted"
 cd "$rollback_tmp/reverted"
 git remote set-url origin "$canonical_origin"
-install_reviewed_phase_bytes
+install_reviewed_baseline_bytes
 assert_node_pass candidate reverted-inactive-authority "$node_authority"
 assert_node_pass candidate reverted-inactive-cli "$node_cli"
+python - <<'PY'
+from pathlib import Path
+from scripts import run_subject_development_mission_v5 as mission
+from scripts import validate_subject_task_authorization_dispatch_v5 as dispatch
+root = Path.cwd()
+result = dispatch.validate(root)
+assert result == {"active": False, "mission_id": None, "mission_state": "INACTIVE", "protocol_version": 5, "sequence": 6, "status": "PASS"}
+progress = mission._parse((root / mission.PROGRESS_PATH).read_bytes())
+assert len(progress["events"]) == 6
+assert progress["tasks"]["T-004"] == "PENDING"
+assert not (root / mission.PENDING_PATH).exists()
+assert not (root / mission.MISSION_PROOF_PATH).exists()
+PY
 cd - >/dev/null
 git diff --check
 test -z "$(git status --porcelain=v1 --untracked-files=all)"
 ```
 
 The candidate/active/malformed phase proof is deliberately completed before
-the revert against exact reviewed SDG-012 bytes and canonical synthetic Mission
-V5 topologies. It is not mislabeled as post-revert proof. After the first-parent
-revert, the new tree must equal the delivery merge's first-parent tree; retained
-reviewed bytes then establish only the base-compatible `INACTIVE` dispatcher
-contract. Every dispatcher node invocation writes a unique JUnit file and
-requires exactly one real pass with zero skips, xfails, failures, or errors.
+the revert with the exact reviewed SDG-012 test and outcome harness, while the
+Mission proof's own trust-root runner bytes remain untouched. The reviewed
+runner is still retained and hash-bound, but it is executed only after revert
+on the no-proof baseline. The new tree must equal the delivery merge's
+first-parent tree; retained reviewed bytes then establish exact `INACTIVE`,
+sequence 6, T-004 `PENDING`, and absent pending/proof files. Every dispatcher
+node invocation writes a unique JUnit file and requires exactly one real pass
+with zero skips, xfails, failures, or errors.
 
 Never rewrite history. Use only before any proposal/proof is bound to the
 SDG-012 release. After that, regenerate authority through the governed protocol

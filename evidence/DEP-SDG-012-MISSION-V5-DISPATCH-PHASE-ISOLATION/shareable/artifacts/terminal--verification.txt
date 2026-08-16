@@ -90,5 +90,20 @@ Security re-review v2C static finding:
 - Rollback now retains exact reviewed bytes externally, proves canonical
   candidate/active/malformed semantics before revert, and limits post-revert
   proof to first-parent-compatible INACTIVE behavior.
-- This section is static evidence only. Fresh v2C focused and Full Local Green
-  have not run and are mandatory before independent review.
+- This section records the pre-run static state. The subsequent exact v2C RED
+  is retained below; no v2C Full Local Green ran.
+
+Focused v2C trust-root RED:
+- Exact source: be70e16fa1dca30aa6fd99a97cd02b38dda2a5ac.
+- Static/historical-current/JUnit-bypass/rollback selection: 3 passed.
+- Proof-bearing candidate: both exact nodes errored with Denied because the
+  fixture overlaid later reviewed SDG-012 runner bytes into PR #487's proof,
+  whose immutable trust root binds the activation runner.
+- Wrapper exit: 1.
+- Log SHA-256:
+  b6fdc829d0082fc66fea989ff2e94905895161c15ed7c45db27f9dc31c20519a.
+- v2D preserves the proof-bound runner in proof-bearing fixtures. It still
+  retains and hashes the reviewed runner, but executes it only on the no-proof
+  post-revert baseline and requires INACTIVE, sequence 6, T-004 PENDING, and
+  absent pending/proof files.
+- No Local Green ran. Fresh v2D focused and Full Local Green remain mandatory.

@@ -47,6 +47,13 @@ parsing and broader AST bypass rejection, retains exact reviewed bytes in an
 external temporary clone, completes canonical phase proof before mutation, and
 limits post-revert evidence to the first-parent-compatible INACTIVE state.
 
+Focused v2C then falsified overlaying the reviewed SDG-012 runner into the
+older activation proof topology: the validator correctly rejected that runner
+because the proof binds its own trust-root bytes. The v2D correction does not
+weaken validation. It overlays only reviewed test/outcome-harness bytes during
+proof-bearing phase checks, retains and hashes the reviewed runner separately,
+and executes that runner only against the no-proof post-revert baseline.
+
 ## Falsification
 
 The hypothesis is false if the same two failures remain after the dispatcher
