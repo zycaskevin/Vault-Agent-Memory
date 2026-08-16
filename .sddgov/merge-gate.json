@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "base_sha": "46690372e532c50761f9232ff5b2e20e18779d28",
-  "head_sha": "0dc8d55e142a77a5509a14a8fc4f4c16ae052351",
+  "head_sha": "f101f4e3a662fc49f6cc62560f95bbc0d9391412",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "c341af6cff10959b334cb9346c678c9946c06b051708d6c7868468616132b0ce",
+  "change_digest": "52b5bbe15bb05b3f87ad0ef8e49315ec6e85e52d469ef4a30026881c32ff3702",
   "deps": [
     "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION"
   ],
