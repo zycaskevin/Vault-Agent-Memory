@@ -201,6 +201,18 @@
   supplied proof. v4c retains that exact no-proof/zero-task outcome and adds a
   separate proof-bearing reversed-parent topology requiring direct/API/CLI
   DENY. No Full Local Green ran and the consumed lease is not reusable.
+- Focused v4c on exact source
+  `3584e7b9e715a0a680311a36767bcac64a59520b` passed static 6, candidate 2,
+  valid active 2, and exact no-proof INACTIVE/zero-task API/CLI. Proof-bearing
+  reversed-parent direct Mission and dispatcher API denied, then same-process
+  `dispatch.main` failed its status assertion before baseline. The actual
+  status/redirected bytes were not logged, so no production finding is
+  inferred. Log SHA-256 is
+  `e32f472f64065ec7483fa624ca8151bf97ee549f3ca71860cf6a26769091801b`;
+  exit-marker SHA-256 is
+  `cf205dbb8cea84897b488abcc281bf96698d5e94b1096b16657b4caba9082a22`.
+  v4d uses one fresh API child and one exact reviewed-script subprocess CLI.
+  No rerun or Full occurred and inode 61871711 is not reusable.
 
 ## Unverified boundary
 

@@ -279,13 +279,21 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
         'test "$(git cat-file -t "$malformed_commit:$mission_proof_path")" = blob',
         'git show "$malformed_commit:$mission_proof_path" | cmp - "$rollback_tmp/mission-proof.json"',
         'proof-bearing reversed-parent fixture was not denied',
-        "assert_malformed_dispatcher_nodes_denied() {",
+        "assert_malformed_dispatcher_api_denied() {",
         "malformed dispatcher authority node was not denied",
-        'assert status == 2',
-        'assert stdout.getvalue() == ""',
-        'assert stderr.getvalue() == "SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_DENY\\n"',
-        'assert "Traceback" not in stderr.getvalue()',
-        'assert "SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_ERROR" not in stderr.getvalue()',
+        "assert_malformed_dispatcher_cli_denied() {",
+        'dispatcher_cli_path="scripts/validate_subject_task_authorization_dispatch_v5.py"',
+        'test "$(git ls-tree "$malformed_commit" -- "$dispatcher_cli_path" | cut -d \' \' -f 1)" = 100755',
+        'test "$(git cat-file -t "$malformed_commit:$dispatcher_cli_path")" = blob',
+        'test "$(git hash-object "$dispatcher_cli_path")" = "$(git rev-parse "$malformed_commit:$dispatcher_cli_path")"',
+        'environment.pop("SUBJECT_MISSION_V5_PHASE", None)',
+        'environment["PYTHONDONTWRITEBYTECODE"] = "1"',
+        '[sys.executable, os.fspath(cli), "--ledger", "--json"]',
+        'assert completed.returncode == 2',
+        'assert completed.stdout == b""',
+        'assert completed.stderr == b"SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_DENY\\n"',
+        'assert b"Traceback" not in completed.stderr',
+        'assert b"SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_ERROR" not in completed.stderr',
         'git revert --no-edit -m 1 "$delivery_merge_commit"',
         'test "$(git rev-parse HEAD^{tree})" = "$(git rev-parse "$delivery_merge_commit^1^{tree}")"',
         'assert_node_pass candidate reverted-inactive-authority "$node_authority"',
@@ -309,17 +317,20 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert len(pre_revert_checks) == 2
     assert "agent/sdg012-identity-junit-dispatcher-only-v3" not in rollback
     assert "agent/sdg012-mission-v5-dispatch-phase-isolation-v2" not in rollback
-    malformed_dispatcher_call = "\nassert_malformed_dispatcher_nodes_denied\n"
+    malformed_api_call = "\nassert_malformed_dispatcher_api_denied\n"
+    malformed_cli_call = "\nassert_malformed_dispatcher_cli_denied\n"
     no_proof_dispatcher_call = "\nassert_no_proof_dispatcher_inactive\n"
-    assert rollback.count(malformed_dispatcher_call) == 1
+    assert rollback.count(malformed_api_call) == 1
+    assert rollback.count(malformed_cli_call) == 1
     assert rollback.count(no_proof_dispatcher_call) == 1
     assert rollback.index("assert_node_pass active active-cli") < rollback.index(
         no_proof_dispatcher_call
     )
     assert rollback.index(no_proof_dispatcher_call) < rollback.index(
-        malformed_dispatcher_call
+        malformed_api_call
     )
-    assert rollback.index(malformed_dispatcher_call) < rollback.index(
+    assert rollback.index(malformed_api_call) < rollback.index(malformed_cli_call)
+    assert rollback.index(malformed_cli_call) < rollback.index(
         'git revert --no-edit -m 1 "$delivery_merge_commit"'
     )
     assert rollback.index(
@@ -340,6 +351,20 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert pre_revert.count("install_reviewed_proof_fixture_bytes") == 4
     assert "install_reviewed_baseline_bytes" not in pre_revert
     assert "install_reviewed_baseline_bytes" in post_revert
+    malformed_api_helper = rollback.split(
+        "assert_malformed_dispatcher_api_denied() {", 1
+    )[1].split("\n}", 1)[0]
+    malformed_cli_helper = rollback.split(
+        "assert_malformed_dispatcher_cli_denied() {", 1
+    )[1].split("\n}", 1)[0]
+    assert malformed_api_helper.count("dispatch.validate(Path.cwd())") == 1
+    assert "dispatch.main" not in malformed_api_helper
+    assert "redirect_stdout" not in malformed_api_helper
+    assert "redirect_stderr" not in malformed_api_helper
+    assert "dispatch.validate" not in malformed_cli_helper
+    assert "dispatch.main" not in malformed_cli_helper
+    assert "contextlib" not in malformed_cli_helper
+    assert "io.StringIO" not in malformed_cli_helper
     for path in (
         "scripts/update_subject_task_progress_v5.py",
         "scripts/validate_subject_development_mission_v5.py",

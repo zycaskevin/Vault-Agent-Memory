@@ -149,10 +149,8 @@ assert not any(child.tag.rsplit("}", 1)[-1] in {"skipped", "failure", "error"} f
 PY
 }
 
-assert_malformed_dispatcher_nodes_denied() {
+assert_malformed_dispatcher_api_denied() {
   NODE_AUTHORITY="$node_authority" NODE_CLI="$node_cli" python - <<'PY'
-import contextlib
-import io
 import os
 from pathlib import Path
 from scripts import validate_subject_task_authorization_dispatch_v5 as dispatch
@@ -165,16 +163,39 @@ except dispatch.Denied:
     pass
 else:
     raise AssertionError("malformed dispatcher authority node was not denied")
+PY
+}
 
-stdout = io.StringIO()
-stderr = io.StringIO()
-with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-    status = dispatch.main(["--ledger", "--json"])
-assert status == 2
-assert stdout.getvalue() == ""
-assert stderr.getvalue() == "SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_DENY\n"
-assert "Traceback" not in stderr.getvalue()
-assert "SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_ERROR" not in stderr.getvalue()
+assert_malformed_dispatcher_cli_denied() {
+  CLI_PATH="scripts/validate_subject_task_authorization_dispatch_v5.py" python - <<'PY'
+import os
+import stat
+import subprocess
+import sys
+from pathlib import Path
+
+root = Path.cwd()
+cli = root / os.environ["CLI_PATH"]
+info = cli.stat(follow_symlinks=False)
+assert stat.S_ISREG(info.st_mode)
+assert stat.S_IMODE(info.st_mode) == 0o755
+assert info.st_nlink == 1
+environment = dict(os.environ)
+environment.pop("SUBJECT_MISSION_V5_PHASE", None)
+environment["PYTHONDONTWRITEBYTECODE"] = "1"
+completed = subprocess.run(
+    [sys.executable, os.fspath(cli), "--ledger", "--json"],
+    cwd=root,
+    env=environment,
+    capture_output=True,
+    check=False,
+    timeout=30,
+)
+assert completed.returncode == 2
+assert completed.stdout == b""
+assert completed.stderr == b"SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_DENY\n"
+assert b"Traceback" not in completed.stderr
+assert b"SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_ERROR" not in completed.stderr
 PY
 }
 
@@ -293,6 +314,10 @@ test "$(git rev-parse "$malformed_commit^{tree}")" = "$(git rev-parse "$mission_
 test "$(git ls-tree "$malformed_commit" -- "$mission_proof_path" | cut -d ' ' -f 1)" = 100644
 test "$(git cat-file -t "$malformed_commit:$mission_proof_path")" = blob
 git show "$malformed_commit:$mission_proof_path" | cmp - "$rollback_tmp/mission-proof.json"
+dispatcher_cli_path="scripts/validate_subject_task_authorization_dispatch_v5.py"
+test "$(git ls-tree "$malformed_commit" -- "$dispatcher_cli_path" | cut -d ' ' -f 1)" = 100755
+test "$(git cat-file -t "$malformed_commit:$dispatcher_cli_path")" = blob
+test "$(git hash-object "$dispatcher_cli_path")" = "$(git rev-parse "$malformed_commit:$dispatcher_cli_path")"
 install_reviewed_proof_fixture_bytes
 PROTOCOL_BASE="$protocol_base" MISSION_RAW="$rollback_tmp/mission-proof.json" python - <<'PY'
 import os
@@ -305,7 +330,8 @@ except mission.Denied:
 else:
     raise AssertionError("proof-bearing reversed-parent fixture was not denied")
 PY
-assert_malformed_dispatcher_nodes_denied
+assert_malformed_dispatcher_api_denied
+assert_malformed_dispatcher_cli_denied
 
 # Only now mutate canonical main. The post-revert proof is explicitly limited
 # to base-compatible INACTIVE behavior with the retained reviewed test bytes.

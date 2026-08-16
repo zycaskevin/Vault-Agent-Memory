@@ -285,3 +285,18 @@ First v4 focused RED on exact source
 - Exit SHA-256:
   4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865.
 - Bounded repair is test-only. No rerun or Full is claimed; fresh lease needed.
+
+Focused v4c fail-closed finding:
+- Exact source 3584e7b9e715a0a680311a36767bcac64a59520b.
+- Static 6, candidate exact 2, active exact 2, and no-proof canonical INACTIVE
+  plus zero authorized tasks passed.
+- Proof-bearing reversed-parent direct Mission and dispatcher API denied; a
+  same-process second dispatch.main status assertion failed without recording
+  the actual status or bytes. No production defect is inferred.
+- Log SHA-256:
+  e32f472f64065ec7483fa624ca8151bf97ee549f3ca71860cf6a26769091801b.
+- Exit-marker SHA-256:
+  cf205dbb8cea84897b488abcc281bf96698d5e94b1096b16657b4caba9082a22.
+- v4d uses separate fresh API and reviewed-script CLI processes and retains
+  exact malformed Git/proof/blob and no-proof INACTIVE bindings.
+- No rerun, baseline, or Full Local Green occurred.

@@ -99,7 +99,6 @@
   exact no-proof INACTIVE baseline. Full Green retains exact 446-node identity
   isolation and the disjoint remainder. Fresh review and hosted CI remain
   mandatory.
-
 ## Hosted platform-skip remediation v3
 
 - PR #490 run `31953893529` at exact head
@@ -210,6 +209,14 @@
   Mission, dispatcher API, and CLI all deny. No production authority code,
   proof, or ledger bytes change; fresh focused and Full Local Green remain
   mandatory.
+- Focused v4c on exact source `3584e7b...` proved static, candidate, active,
+  and no-proof contracts plus proof-bearing direct/API denial, then stopped at
+  a same-process second `dispatch.main` status assertion whose actual value was
+  not captured. v4d does not infer a product defect: it invokes API once in a
+  fresh child and invokes the exact reviewed 100755 CLI in a separate fresh
+  subprocess with sanitized phase environment, timeout, and exact rc/stdout/
+  stderr bytes. Production authority code stays unchanged; fresh focused and
+  Full Local Green remain mandatory.
 
 ## Claim
 

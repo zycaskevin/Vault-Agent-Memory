@@ -129,3 +129,11 @@ contracts: the base-tree delivery shape must remain INACTIVE with zero
 authorized tasks, while an exact proof-bearing topic tree with reversed parent
 order must deny direct Mission, dispatcher API, and CLI. This is a test-fixture
 defect, not a production authority defect.
+
+Focused v4c then proved the separated no-proof contract and reached direct/API
+DENY on the proof-bearing reversed-parent tree. Its remaining failure came from
+calling the validator a second time through same-process `dispatch.main` while
+stdout was a `StringIO`; the wrapper did not capture the returned status or
+bytes. Source inspection found no validator cache or mutable audit global, so
+v4d treats this as an instrumentation limitation and tests the public CLI as a
+fresh subprocess instead of assuming a production defect.

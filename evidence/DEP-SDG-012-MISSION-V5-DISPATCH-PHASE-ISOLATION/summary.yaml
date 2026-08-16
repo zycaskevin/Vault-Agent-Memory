@@ -6,7 +6,7 @@
   "sdd_references": ["SD-MISSION-V5-POST-START-CI-RECOVERY"],
   "risk_level": "L1",
   "created_at": "2026-08-16T11:11:20Z",
-  "updated_at": "2026-08-16T17:22:15Z",
+  "updated_at": "2026-08-16T17:35:51Z",
   "workflow": {
     "phase": "fix",
     "history": [
@@ -16,7 +16,7 @@
     ]
   },
   "expected_behavior": "Candidate dispatcher tests replay an inactive authority anchor and active main retains ACTIVE assertions; both nodes execute exactly once in the phase harness.",
-  "actual_behavior": "Focused v4b passed the six selected checks plus both candidate and both exact-active dispatcher nodes, then exposed that the malformed fixture used the no-proof base tree: direct validation denied externally supplied proof while dispatcher correctly returned canonical INACTIVE. v4c separates that no-proof nonauthority outcome from a proof-bearing reversed-parent topology that must deny API and CLI.",
+  "actual_behavior": "Focused v4c passed static, candidate, exact active, and no-proof canonical INACTIVE controls. Proof-bearing reversed-parent direct Mission and dispatcher API denied, but same-process dispatch.main under redirected StringIO returned an unrecorded non-2 status. v4d uses one fresh API child and a separate production-form subprocess CLI with exact byte outcomes.",
   "environment": {
     "commit": "NOT_RUN_V4_SOURCE_PENDING",
     "branch": "agent/sdg012-identity-junit-dispatcher-only-v4",
@@ -31,7 +31,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--verification.txt",
-      "sha256": "00b7b9c8cd5892be3f158bdffccaf9e396ef277d299b5b1fc227d7284445a3c5",
+      "sha256": "bd045d3540fc246b5b7185e02ea71e131516bad89be7f45db520ca6893c7009c",
       "collector": "terminal"
     }
   ]

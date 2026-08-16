@@ -47,6 +47,11 @@ reviewed SDG-012 merge.
   INACTIVE/sequence 6/zero authorized tasks, then use the exact Mission topic
   tree with deliberately reversed parents and mechanically pin proof
   path/mode/bytes/tree before direct/API/CLI DENY.
+- Run the malformed dispatcher API exactly once in one fresh child and execute
+  the exact reviewed 100755 CLI in a different fresh subprocess with exact cwd,
+  phase variable removed, bytecode writes disabled, timeout 30, and exact
+  rc/stdout/stderr denial mapping. Same-process `main` and redirected stdio are
+  outside this proof.
 - Make the live `origin/main` transition assertion phase-aware: anchor/topic or
   later descendant DENY, exact immediate closed SDG-012 delivery PASS.
 

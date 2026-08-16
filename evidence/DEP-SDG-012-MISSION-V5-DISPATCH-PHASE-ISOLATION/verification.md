@@ -281,3 +281,27 @@ reverses the two parents. Exact proof path, mode, bytes, tree, and reversed
 parent order are pinned before direct Mission, dispatcher API, and CLI must all
 deny. Production authority bytes remain unchanged. Fresh focused and Full
 Local Green are required for v4c.
+
+## Focused v4c same-process CLI RED and v4d harness repair
+
+Focused v4c on exact source
+`3584e7b9e715a0a680311a36767bcac64a59520b` passed the six selected checks,
+candidate exact 2, valid active exact 2, and the complete no-proof direct-DENY
+plus canonical API/CLI INACTIVE/zero-task contract. On the proof-bearing
+reversed-parent fixture, direct Mission and the first dispatcher API call both
+denied. The wrapper then stopped because a second validation through
+same-process `dispatch.main` under redirected `StringIO` did not return 2.
+The log did not record the actual status or redirected bytes, so this is a
+fixture limitation and is not classified as a production defect. Log SHA-256
+is `e32f472f64065ec7483fa624ca8151bf97ee549f3ca71860cf6a26769091801b`;
+exit-marker SHA-256 is
+`cf205dbb8cea84897b488abcc281bf96698d5e94b1096b16657b4caba9082a22`.
+No baseline or Full Local Green ran.
+
+v4d gives API and CLI separate fresh processes. The API child invokes
+`dispatch.validate` exactly once. The CLI child executes the exact reviewed
+regular 100755 script from the malformed commit with exact cwd, removes the CI
+phase variable, sets `PYTHONDONTWRITEBYTECODE=1`, applies a 30-second timeout,
+and requires rc 2, empty stdout, exact DENY stderr, and no traceback/ERROR.
+The malformed head/parents/tree/proof/CLI blobs are bound before either child.
+Production bytes remain unchanged and fresh leased verification is mandatory.

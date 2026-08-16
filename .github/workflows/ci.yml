@@ -263,9 +263,9 @@ jobs:
           48ab486c3326f1903c625bb9b1fa162c3a44ea3fdd120c63777f636b13a657e4  specs/subject-distillation/development-missions/README.md
           224f59362c0cc72189fcef46c6eb00b316fe338cc201b17fa8db3ac1889a21cc  tests/test_subject_development_mission_v5.py
           6fec4bcfe3f89cdfad8390311f0748978e0ccb9dc367e1c51f9dfc9687e32aa0  tests/test_subject_task_authorization_dispatch_v5.py
-          2c859ae5a4d96f57799267f58202308acf641668adaa2ce26ac638a1fb904747  tests/test_repo_hygiene_tools.py
+          e2278dd4bcf791a7e245c858e53cd1d44123b8c40f33f862df533ac87e558264  tests/test_repo_hygiene_tools.py
           fad00cb5058f80fd074553ec399e72a76f91c113d42569a4ce6d606fa301dbc7  evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md
-          dfe8ba034ef20073ff341c05c0b50b1cd92330b77591bd35937a09cf4e071153  evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/rollback.md
+          549daedbf7a3d5e9bf74728eef5ed141de1077fd851af2eb6c5af17a4f615322  evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/rollback.md
           EOF
           python scripts/validate_subject_task_authorization_dispatch_v5.py \
             --ledger \
