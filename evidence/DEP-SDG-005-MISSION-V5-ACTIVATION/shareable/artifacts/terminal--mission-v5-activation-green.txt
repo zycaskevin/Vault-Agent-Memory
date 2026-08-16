@@ -1,0 +1,30 @@
+Mission V5 activation public-safe Builder evidence
+
+Issue: #457
+Base: 9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0
+Branch: agent/mission-v5-activation-post-sdg011
+Risk: L1
+
+Owner-channel binding:
+- proposal_id: 8f8fc9390445cbe00b6cd4f3b31013ce0002d4b03263ca986fd2ea34a8f5cfcc
+- receipt_sha256: a35081985198c863c3f42af9b07cc9eed3d4eb5c847e8217e8cad894357addad
+- confirmation_ref: chat:mission-v5:8f8fc9390445cbe0
+
+Exact proof:
+- mission_id: b7da8da5ce8075dad67404727f86ca867c4f323027b5f0ce782886566399a506
+- sha256: 70113552d582f5f579a0c9d01a5206ff74df678801accca59173ff76bae6d528
+- size: 3409 bytes
+- mode: 0644
+- canonical JSON: PASS
+- external byte equality: PASS
+
+Static boundary:
+- Candidate activation is preliminary and must remain INACTIVE.
+- Only one exact reviewed two-parent merge from the base may become ACTIVE.
+- Existing validators/tests cover the necessary positive and negative cases;
+  no runner or test bytes changed.
+- No private transcript, ledger, progress, product, task, deployment, or
+  production mutation was performed.
+
+Focused execution, full Local Green, independent review, hosted CI, merge, and
+post-merge active readback remain unclaimed at this Builder stage.

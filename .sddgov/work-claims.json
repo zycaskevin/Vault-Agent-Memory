@@ -28,6 +28,13 @@
       "status": "active",
       "claimed_at": "2026-08-16T08:18:38Z",
       "expires_at": "2026-08-16T16:18:38Z"
+    },
+    {
+      "work_package": "SDG-005",
+      "agent": "codex",
+      "status": "active",
+      "claimed_at": "2026-08-16T10:05:28Z",
+      "expires_at": "2026-08-16T18:05:28Z"
     }
   ]
 }

@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-005-MISSION-V5-ACTIVATION",
+  "raw": [],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--mission-v5-activation-green.txt",
+      "sha256": "88b15010b9faf865030bac93da3cc69b3c17031c1e0e708604167dda3572a8e6",
+      "shareable": true
+    }
+  ]
+}
