@@ -143,3 +143,21 @@ positives. Audit-only gate chronology intentionally binds a reviewed source
 ancestor and leaves the receipt absent until independent signing. The signature
 trust root intentionally remains external and runtime-pinned. No gate, signing,
 or trust architecture is changed by this source repair.
+
+## First v3 focused RED
+
+The one authorized focused run on exact clean source
+`1b4d06820e4639c4b76dee8c56d019a77a30261c` passed process/lease preflight,
+direct dev6 rollback parsing, rollback Bash syntax, and four of five selected
+static/topology tests. It then stopped with one failure before any
+candidate/active/malformed/baseline fixture: the source test still demanded the
+removed direct string `_verify_single_pass_junit(junit)` even though main now
+correctly delegates to `_verify_identity_junit(junit, node=node,
+platform=sys.platform)`. Log SHA-256 is
+`1808648384be1e46bf0b38fb4fa7eef6baba767f18a25343398edfe608033b14`;
+wrapper exit was 1. No rerun or Full Local Green occurred.
+
+The bounded repair preserves implementation semantics and changes that stale
+self-assertion to inspect the exact main delegation plus the helper's exact
+`_verify_single_pass_junit(path)` fallback and exact platform-skip branch. A
+fresh external lease and fresh focused run are mandatory for the new revision.

@@ -85,6 +85,13 @@
       "sha256": "9b15e3b6c30db1a133a8a7af3a47d343ae1475942399f97c19e43ef6a15f5f27",
       "collected_at": "2026-08-16T14:59:21Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v3-stale-self-assertion-red.log",
+      "sha256": "1808648384be1e46bf0b38fb4fa7eef6baba767f18a25343398edfe608033b14",
+      "collected_at": "2026-08-16T15:16:47Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -95,7 +102,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--verification.txt",
-      "sha256": "1e08336cd839db84bb106ca959a60e02379f00316ed152518b903594c45e5fec",
+      "sha256": "546655244a425052bf5b7feb60a3919fb1397cae99fd87f2c1e9e760e379c1b6",
       "shareable": true
     }
   ]

@@ -191,3 +191,15 @@ CodeRabbit v3 dispositions:
 - Rejected architecture mismatches: audit-only gate ancestry and absent receipt
   are intentional pre-sign chronology, and signature trust remains in the
   governed external trust root rather than a repository key.
+
+First v3 focused RED:
+- Exact source: 1b4d06820e4639c4b76dee8c56d019a77a30261c.
+- Lease/process preflight, direct dev6 rollback parsing, rollback Bash syntax,
+  and four selected static/topology checks passed.
+- One stale self-test string expected a removed direct PASS-parser call; main
+  correctly delegates through the exact identity-outcome helper.
+- Wrapper stopped before candidate/active/malformed/baseline fixtures; exit 1.
+- Log SHA-256:
+  1808648384be1e46bf0b38fb4fa7eef6baba767f18a25343398edfe608033b14.
+- No rerun or Full Local Green occurred. The bounded source repair inspects the
+  exact main delegation and helper fallback; fresh focused proof is required.

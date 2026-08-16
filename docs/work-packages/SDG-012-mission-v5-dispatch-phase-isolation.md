@@ -137,6 +137,12 @@
   the later independent signing commit; dev6 verifies that chronology. The
   repository intentionally contains no trust key because the verifier uses the
   governed external trust root; v3 does not add or weaken either mechanism.
+- The first v3 focused run on source `1b4d06820e4639c4b76dee8c56d019a77a30261c`
+  stopped after four static checks passed because its self-test still searched
+  for the superseded direct `_verify_single_pass_junit(junit)` call. The
+  implementation correctly delegates through `_verify_identity_junit`; this
+  bounded repair makes the test inspect that exact main call and the helper's
+  exact PASS/platform-skip branches. The RED is retained and never promoted.
 
 ## Claim
 

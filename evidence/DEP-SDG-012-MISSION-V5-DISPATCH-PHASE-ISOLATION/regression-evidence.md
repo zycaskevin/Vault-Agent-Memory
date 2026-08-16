@@ -124,6 +124,15 @@
   PASS. Negatives cover wrong node/platform/reason/type, xfail, malformed and
   multi-case XML, failure, and error. Fresh dynamic proof is pending an external
   exclusive lease; no prior Green is promoted.
+- The first authorized v3 focused run on exact source
+  `1b4d06820e4639c4b76dee8c56d019a77a30261c` passed four selected checks and
+  then stopped before dynamic topology fixtures. One stale source-test string
+  still required `_verify_single_pass_junit(junit)`, while v3 intentionally
+  routes main through `_verify_identity_junit`. Exact exit was 1; log SHA-256
+  is `1808648384be1e46bf0b38fb4fa7eef6baba767f18a25343398edfe608033b14`.
+  This is retained RED, not product failure and not Green. The bounded repair
+  mechanically inspects the helper's PASS fallback and main's exact delegation;
+  it requires a fresh focused lease.
 
 ## Unverified boundary
 

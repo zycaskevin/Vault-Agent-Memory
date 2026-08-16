@@ -1974,8 +1974,30 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite(
         )
     assert '"xfail_strict=true"' in harness
     assert 'f"--junitxml={junit}"' in harness
-    assert "_verify_single_pass_junit(junit)" in harness
-    assert "_verify_identity_junit(junit, node=node, platform=sys.platform)" in harness
+    harness_functions = {
+        node.name: node
+        for node in ast.parse(harness).body
+        if isinstance(node, ast.FunctionDef)
+    }
+    identity_junit_calls = {
+        ast.unparse(node)
+        for node in ast.walk(harness_functions["_verify_identity_junit"])
+        if isinstance(node, ast.Call)
+    }
+    assert "_verify_single_pass_junit(path)" in identity_junit_calls
+    assert (
+        "_verify_single_platform_skip_junit(path, "
+        "expected_reason=platform_skip_reason)"
+    ) in identity_junit_calls
+    main_calls = {
+        ast.unparse(node)
+        for node in ast.walk(harness_functions["main"])
+        if isinstance(node, ast.Call)
+    }
+    assert (
+        "_verify_identity_junit(junit, node=node, platform=sys.platform)"
+        in main_calls
+    )
     assert "len(nodes) != sum(count for _path, count in FILES)" in harness
     assert ".sddgov/ci-cost-guard.json" in mission.POST_SDG_COMPATIBILITY_MODIFIED_PATHS
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS
