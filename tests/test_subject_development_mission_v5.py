@@ -1384,6 +1384,81 @@ def test_sdg006_release_accepts_only_exact_linear_reviewed_merge(
         mission._check_sdg006_compatibility_release(repo, hostile_release)
 
 
+def test_sdg007_release_accepts_only_exact_linear_reviewed_merge(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo = tmp_path / "sdg007-release"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test"], cwd=repo, check=True)
+    for relative in mission.SDG007_COMPATIBILITY_MODIFIED_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("base\n")
+        if relative.startswith("scripts/"):
+            path.chmod(0o755)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "sdg006 anchor"], cwd=repo, check=True)
+    anchor = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    monkeypatch.setattr(mission, "SDG007_BASE", anchor)
+    monkeypatch.setattr(
+        mission,
+        "_check_sdg006_compatibility_release",
+        lambda _repo_root, candidate: None
+        if candidate == anchor
+        else (_ for _ in ()).throw(mission.Denied()),
+    )
+
+    subprocess.run(["git", "switch", "-q", "-c", "reviewed"], cwd=repo, check=True)
+    for relative in mission.SDG007_COMPATIBILITY_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("reviewed\n")
+        if relative.startswith("scripts/"):
+            path.chmod(0o755)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "reviewed source"], cwd=repo, check=True)
+    topic = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "merge", "-q", "--no-ff", "--no-edit", topic], cwd=repo, check=True)
+    release = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    mission._check_sdg007_compatibility_release(repo, release)
+
+    subprocess.run(["git", "reset", "--hard", "-q", anchor], cwd=repo, check=True)
+    subprocess.run(["git", "switch", "-q", "-C", "hostile"], cwd=repo, check=True)
+    for relative in mission.SDG007_COMPATIBILITY_PATHS:
+        path = repo / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text("reviewed\n")
+        if relative.startswith("scripts/"):
+            path.chmod(0o755)
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "closed source"], cwd=repo, check=True)
+    (repo / "hidden.txt").write_text("unauthorized intermediate path\n")
+    subprocess.run(["git", "add", "hidden.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "hidden add"], cwd=repo, check=True)
+    (repo / "hidden.txt").unlink()
+    subprocess.run(["git", "add", "-u"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "hidden delete"], cwd=repo, check=True)
+    hostile = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    subprocess.run(["git", "switch", "-q", "main"], cwd=repo, check=True)
+    subprocess.run(["git", "merge", "-q", "--no-ff", "--no-edit", hostile], cwd=repo, check=True)
+    hostile_release = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"], cwd=repo, text=True
+    ).strip()
+    with pytest.raises(mission.Denied):
+        mission._check_sdg007_compatibility_release(repo, hostile_release)
+
+
 def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     config = json.loads((LIVE_ROOT / ".sddgov/ci-cost-guard.json").read_text())
     commands = config["local_green"]["commands"]
@@ -1395,6 +1470,7 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
         "tests/test_subject_progress_v3.py",
         "tests/test_subject_task_authorization_v2.py",
         "tests/test_subject_task_authorization_v3.py",
+        "tests/test_subject_development_mission_v5.py",
     ]
     assert ["python", "scripts/run_subject_identity_test_isolation.py"] in commands
     harness = (LIVE_ROOT / "scripts/run_subject_identity_test_isolation.py").read_text()
@@ -1409,6 +1485,9 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS
     assert "scripts/run_subject_development_mission_v5.py" in (
         mission.SDG006_COMPATIBILITY_MODIFIED_PATHS
+    )
+    assert "scripts/run_subject_identity_test_isolation.py" in (
+        mission.SDG007_COMPATIBILITY_MODIFIED_PATHS
     )
 
 

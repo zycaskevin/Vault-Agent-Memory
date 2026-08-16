@@ -1,0 +1,9 @@
+artifact=mission-v5-local-green-green
+mission_v5_collection=75_UNIQUE_NODES
+targeted_release_routing_original_failure=3_PASS
+identity_isolated_nodes=376_PASS
+remainder_excludes_mission_v5_file=YES
+collection_reduction=NO
+skip_or_xfail_added=NO
+gate_result=GREEN
+private_inputs_read=NO
