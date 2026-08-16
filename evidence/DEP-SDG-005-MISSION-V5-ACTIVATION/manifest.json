@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-005-MISSION-V5-ACTIVATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--mission-v5-activation-green",
+      "sha256": "3c720601bacf79f477bec15dc46463c2df3e9beb97b976cd93cdb2e44b4651d2",
+      "collected_at": "2026-08-16T02:57:57Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--mission-v5-activation-green.txt",
+      "sha256": "3c720601bacf79f477bec15dc46463c2df3e9beb97b976cd93cdb2e44b4651d2",
+      "shareable": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+artifact=mission-v5-activation-candidate
+repository=zycaskevin/Vault-Agent-Memory
+protocol_base=6d499e41ac41b8cd0f560146b0f18939b55a5f3f
+mission_proof_sha256=81762961548312e69823a097911000ac4b15756a7e403f022dd3fec789f8ff97
+mission_id=d83f39e553a1821c95799ff80ec9c4b6e25aa50bef625653d4b27de3c18f00d4
+recorded_at_utc=2026-08-16T02:53:59Z
+mission_not_after_utc=2026-11-14T02:53:59Z
+private_verifier=PASS
+private_cleanup=PASS
+pending_absent=PASS
+premerge_state=INACTIVE_EXPECTED
+exact_two_parent_activation_tests=PASS_4_OF_4
+mission_v5_process_isolation=PASS_75_NODES
+t004_started=NO
+private_inputs_persisted=NO
