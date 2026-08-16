@@ -45,7 +45,7 @@ The refreshed pre-sign Local Green ran once with all six configured commands
 returning `0`; identity isolation took `428.184s` and the disjoint remainder
 took `101.921s`. The live-worktree control invocation was denied by the expected pre-merge
 activation fixture. The phase-correct exact two-parent invocation above is the
-authoritative focused result. SDG-007 isolates all 75 Mission V5 test nodes and
+authoritative focused result. SDG-007 isolates all 76 Mission V5 test nodes and
 SDG-008 expands the identity-isolated boundary for the later protected Local
 Green gate.
 
