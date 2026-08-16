@@ -1434,10 +1434,7 @@ def validate_mission_activation_topic(
                 "M" if path in known else "A"
             ):
                 raise Denied
-            try:
-                mode, _raw = _git_object(repo_root, commit, path)
-            except Denied:
-                raise
+            mode, _raw = _git_object(repo_root, commit, path)
             if mode != "100644":
                 raise Denied
             known.add(path)
@@ -1450,10 +1447,7 @@ def validate_mission_activation_topic(
         f"{protocol_base}..{head}",
     ).decode().splitlines() != expected_status:
         raise Denied
-    try:
-        mode, raw = _git_object(repo_root, head, MISSION_PROOF_PATH)
-    except Denied:
-        raise
+    mode, raw = _git_object(repo_root, head, MISSION_PROOF_PATH)
     if mode != "100644" or raw != mission_raw:
         raise Denied
     return head

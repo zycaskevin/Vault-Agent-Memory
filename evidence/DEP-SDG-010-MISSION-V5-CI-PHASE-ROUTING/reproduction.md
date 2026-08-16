@@ -17,7 +17,7 @@ correctly found zero two-parent delivery commits and denied during Local Green.
 
 1. Check out an exact linear activation topic from its protocol base.
 2. Run the full active delivery predicate: it must deny before merge.
-3. Run the preliminary predicate: it must require exact base, exact proof,
+3. Run the candidate predicate: it must require exact base, exact proof,
    every closed activation path, and linear parent chain, then return INACTIVE.
 4. Merge with `--no-ff` using the protocol base as first parent and the topic
    as second parent; run active validation and require ACTIVE.

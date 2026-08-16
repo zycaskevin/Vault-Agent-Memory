@@ -250,7 +250,7 @@ jobs:
       - name: Validate current Subject Development Mission v5 overlay
         run: |
           cat <<'EOF' | sha256sum -c -
-          3ea551ef17ea051c52c7ea5c406498dad1609cf9f0d14bd013da99d8ce5c7532  scripts/run_subject_development_mission_v5.py
+          c25bc6fffffcca1b04b676195d7f9b4568875d843ade7ac139fbb80bd2c4ea77  scripts/run_subject_development_mission_v5.py
           7a3c0d95d3ff81231ba79aeb2e8b29d67e00486caf43537bb26d89cfea590ed7  scripts/run_subject_identity_test_isolation.py
           64d10f43f4a92ae1ca047e1516e93d4c5b0c0b78098601889e9152e240df365c  scripts/update_subject_task_progress_v5.py
           d79bf1ee1268e2fc8a0cbaafb6f9abec9e5057643dc4c1dcb34b4db68446737e  scripts/validate_subject_development_mission_v5.py

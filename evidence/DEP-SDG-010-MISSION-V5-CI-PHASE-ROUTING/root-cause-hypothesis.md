@@ -17,12 +17,12 @@ the wrong lifecycle predicate for the checked topology.
 
 ## Falsification
 
-If a proof-present linear topic can pass preliminary validation with an extra,
+If a proof-present linear topic can pass candidate validation with an extra,
 missing, replaced, pending, or non-linear path, the hypothesis is false. If a
 two-parent delivery is no longer required for active validation, the fix is
 invalid.
 
 ## Conclusion
 
-Confirmed. The smallest safe repair is explicit preliminary/active routing,
-not relaxing the active delivery predicate.
+Confirmed. The smallest safe repair is explicit candidate/active routing, not
+relaxing the active delivery predicate.

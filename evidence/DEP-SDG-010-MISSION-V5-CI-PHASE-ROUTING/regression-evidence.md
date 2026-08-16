@@ -21,3 +21,6 @@
 - No unrelated same-repository test process was present during either run;
   raw logs and exit markers remain under the externally coordinated lease.
 - Strict DEP verification is recorded separately before the frozen handoff.
+- Rollback resolves exactly one merged SDG-010 source branch PR, requires two
+  parents, and verifies canonical inactive dispatcher/progress invariants
+  without invoking a reverted phase harness.

@@ -14,6 +14,8 @@ main. A purported but invalid two-parent delivery is DENY, never fallback.
 - Mission V5 runner and fixture; identity harness phase parser and count.
 - CI and Local Green phase routing; CI byte pins and static routing tests.
 - SDG-010 Work Package, DEP, claim/event, and later merge/review records.
+- Rollback resolution from the exact merged PR, pre-activation-only revert,
+  and invariant-only post-revert verification.
 
 ## Explicit non-scope
 
