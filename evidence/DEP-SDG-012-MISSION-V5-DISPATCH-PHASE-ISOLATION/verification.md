@@ -161,3 +161,23 @@ The bounded repair preserves implementation semantics and changes that stale
 self-assertion to inspect the exact main delegation plus the helper's exact
 `_verify_single_pass_junit(path)` fallback and exact platform-skip branch. A
 fresh external lease and fresh focused run are mandatory for the new revision.
+
+## Accepted v3b Builder proof
+
+Fresh focused on exact clean source
+`8ae13eabbd4652746052aa8f67b7946b80267be7` passed direct dev6 rollback
+parsing, rollback Bash syntax, five static/JUnit/rollback/topology checks, both
+proof-bound candidate nodes, both exact two-parent active nodes, malformed
+active denial, and both no-proof baseline nodes. The baseline remained exact
+INACTIVE, sequence 6, T-004 PENDING, with pending/proof absent. Log SHA-256 is
+`9eaaba32012c87d6a65eef329888ef986d8f34042574b57c94d096f617c319fc`;
+wrapper exit was 0.
+
+The one Full Local Green on the same exact source passed all six commands.
+Doctor, CI verify, README smoke, and release parity returned 0. Candidate
+identity isolation passed exact 446 nodes. The disjoint remainder reported
+2869 passed, 12 skipped, and one pre-existing SyntaxWarning; all commands and
+the wrapper returned 0. Log SHA-256 is
+`fb790a7cf363c33004da21a05f68f9d64a10c29d9de6af8de0b8419eddb1ab4a`.
+The worktree was clean before and after both runs. Fresh independent receipt,
+hosted Green, and exact delivery readback remain pending.

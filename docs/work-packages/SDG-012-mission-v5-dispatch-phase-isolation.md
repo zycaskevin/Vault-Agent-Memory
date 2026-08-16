@@ -143,6 +143,12 @@
   implementation correctly delegates through `_verify_identity_junit`; this
   bounded repair makes the test inspect that exact main call and the helper's
   exact PASS/platform-skip branches. The RED is retained and never promoted.
+- Fresh focused and Full Local Green now pass on exact repaired source
+  `8ae13eabbd4652746052aa8f67b7946b80267be7`. Focused proves the exact
+  allowlist/negative, rollback, non-anchor topology, candidate, active,
+  malformed, and no-proof baseline matrix. Full Green proves all six commands,
+  exact 446-node isolation, and the disjoint remainder. Independent review,
+  hosted Green, and delivery readback remain mandatory and unclaimed.
 
 ## Claim
 

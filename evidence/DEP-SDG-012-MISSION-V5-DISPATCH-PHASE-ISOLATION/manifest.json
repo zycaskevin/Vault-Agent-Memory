@@ -92,6 +92,20 @@
       "sha256": "1808648384be1e46bf0b38fb4fa7eef6baba767f18a25343398edfe608033b14",
       "collected_at": "2026-08-16T15:16:47Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-v3b.log",
+      "sha256": "9eaaba32012c87d6a65eef329888ef986d8f34042574b57c94d096f617c319fc",
+      "collected_at": "2026-08-16T15:30:28Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-v3b.log",
+      "sha256": "fb790a7cf363c33004da21a05f68f9d64a10c29d9de6af8de0b8419eddb1ab4a",
+      "collected_at": "2026-08-16T15:30:28Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -102,7 +116,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--verification.txt",
-      "sha256": "546655244a425052bf5b7feb60a3919fb1397cae99fd87f2c1e9e760e379c1b6",
+      "sha256": "75cb44ce8e8d67a32c29881c8104ee517348605c25387fb863cbab9cc9dc15c6",
       "shareable": true
     }
   ]

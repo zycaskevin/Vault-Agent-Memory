@@ -203,3 +203,18 @@ First v3 focused RED:
   1808648384be1e46bf0b38fb4fa7eef6baba767f18a25343398edfe608033b14.
 - No rerun or Full Local Green occurred. The bounded source repair inspects the
   exact main delegation and helper fallback; fresh focused proof is required.
+
+Accepted v3b Builder proof on exact source
+8ae13eabbd4652746052aa8f67b7946b80267be7:
+- Focused: dev6 rollback parser and Bash syntax PASS; five source checks PASS;
+  candidate exact 2 PASS; exact two-parent active exact 2 PASS; malformed
+  active DENIED; no-proof baseline exact 2 PASS with INACTIVE, sequence 6,
+  T-004 PENDING, pending absent, and proof absent.
+- Focused wrapper exit 0; log SHA-256:
+  9eaaba32012c87d6a65eef329888ef986d8f34042574b57c94d096f617c319fc.
+- One Full Local Green: all six commands return 0; candidate identity exact 446
+  nodes; remainder 2869 passed, 12 skipped, one pre-existing SyntaxWarning.
+- Full wrapper exit 0; log SHA-256:
+  fb790a7cf363c33004da21a05f68f9d64a10c29d9de6af8de0b8419eddb1ab4a.
+- Source status was clean before and after. Independent receipt, hosted Green,
+  and exact delivery readback remain mandatory.

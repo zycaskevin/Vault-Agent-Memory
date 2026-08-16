@@ -122,8 +122,8 @@
   `Darwin system alias integration`, exact `pytest.skip` JUnit type, one case,
   one skip, and zero failures/errors. Every other node still requires one real
   PASS. Negatives cover wrong node/platform/reason/type, xfail, malformed and
-  multi-case XML, failure, and error. Fresh dynamic proof is pending an external
-  exclusive lease; no prior Green is promoted.
+  multi-case XML, failure, and error. The subsequently accepted fresh dynamic
+  proof is recorded below; no prior Green is promoted.
 - The first authorized v3 focused run on exact source
   `1b4d06820e4639c4b76dee8c56d019a77a30261c` passed four selected checks and
   then stopped before dynamic topology fixtures. One stale source-test string
@@ -132,7 +132,19 @@
   is `1808648384be1e46bf0b38fb4fa7eef6baba767f18a25343398edfe608033b14`.
   This is retained RED, not product failure and not Green. The bounded repair
   mechanically inspects the helper's PASS fallback and main's exact delegation;
-  it requires a fresh focused lease.
+  its fresh focused and Full Local Green results follow below.
+- Fresh focused v3b on exact repaired source
+  `8ae13eabbd4652746052aa8f67b7946b80267be7` passed all five selected source
+  checks, proof-bound candidate exact 2, exact two-parent active exact 2,
+  malformed active denial, and no-proof baseline exact 2 plus INACTIVE,
+  sequence 6, T-004 PENDING, and absent pending/proof assertions. Wrapper exit
+  was 0; log SHA-256 is
+  `9eaaba32012c87d6a65eef329888ef986d8f34042574b57c94d096f617c319fc`.
+- The one Full Local Green on that same source passed all six commands. Exact
+  identity isolation completed 446 nodes; the remainder reported 2869 passed,
+  12 skipped, and one pre-existing SyntaxWarning. Wrapper exit was 0; log
+  SHA-256 is
+  `fb790a7cf363c33004da21a05f68f9d64a10c29d9de6af8de0b8419eddb1ab4a`.
 
 ## Unverified boundary
 
@@ -140,7 +152,7 @@ The original PR #489 head `bbc6e476ae3444cef77400f28710de73f9cf7f73`
 receipt and hosted Green are historical exact-head evidence only and are not in
 this rebuilt topic. Fresh focused and Local Green pass on the exact v2B source.
 Fresh v2E2 focused and Local Green pass only for exact historical source
-`97728ce5...`; hosted v3 RED supersedes it for current acceptance. Fresh v3
-focused, Local Green, independent receipt, and hosted Green remain pending. Exact
-merge readback, proposal, task start, and production outcome remain unclaimed
-until post-delivery.
+`97728ce5...`; hosted v3 RED supersedes it for current acceptance. Fresh v3b
+focused and Local Green pass only for exact source `8ae13eab...`; independent
+receipt and hosted Green remain pending. Exact merge readback, proposal, task
+start, and production outcome remain unclaimed until post-delivery.
