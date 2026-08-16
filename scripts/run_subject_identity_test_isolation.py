@@ -18,7 +18,8 @@ FILES = (
     ("tests/test_subject_progress_v3.py", 29),
     ("tests/test_subject_task_authorization_v2.py", 37),
     ("tests/test_subject_task_authorization_v3.py", 39),
-    ("tests/test_subject_development_mission_v5.py", 75),
+    ("tests/test_subject_development_mission_v5.py", 76),
+    ("tests/test_subject_baseline_control.py", 53),
 )
 DARWIN_DEFAULT_TEMP_NODE = (
     "tests/test_subject_authorization_runner.py::"

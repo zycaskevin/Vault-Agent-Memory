@@ -29,7 +29,8 @@
         "--ignore=tests/test_subject_task_authorization_dispatch.py",
         "--ignore=tests/test_subject_development_mission_v4.py",
         "--ignore=tests/test_subject_task_authorization_dispatch_v4.py",
-        "--ignore=tests/test_subject_development_mission_v5.py"
+        "--ignore=tests/test_subject_development_mission_v5.py",
+        "--ignore=tests/test_subject_baseline_control.py"
       ]
     ]
   },
