@@ -1,13 +1,13 @@
 {
   "schema_version": "1.0",
-  "base_sha": "d2b62eea0f130df7e02aa230f3592e28fd118617",
-  "head_sha": "6fcf30cea8e4c5c212cd7df1a65613c39ed6ed4f",
+  "base_sha": "b1b0be02087f42b222d1de1731ff9dffa4676bf3",
+  "head_sha": "784a7255196ef8a27c1c9a2915ff8346301d5206",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "35cd11375231d4ba82cdc2e38a29baeca1002ad48b10ae7e6cd65f56c2776d87",
+  "change_digest": "97b8c1eba5c9b81b806929ea0719d524b83e74389d3adca51ea741fee1692400",
   "deps": [
-    "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY"
+    "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION"
   ],
-  "rollback_path": "evidence/DEP-SDG-006-MISSION-V5-VERIFIER-COMPATIBILITY/rollback.md",
-  "protected_file_review": ".sddgov/reviews/REV-SDG-006.json"
+  "rollback_path": "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/rollback.md",
+  "protected_file_review": ".sddgov/reviews/REV-SDG-007.json"
 }
