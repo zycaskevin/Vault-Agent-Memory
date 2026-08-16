@@ -1,0 +1,9 @@
+artifact=mission-v5-local-green-red
+review=SDG-005-v2-pre-sign
+identity_isolated_nodes=301_PASS
+remainder=2993_PASS_12_SKIP_1_FAIL
+failing_test=tests/test_subject_development_mission_v5.py::test_task_derivation_loads_the_pinned_sibling_validator
+failure_boundary=global_pinned_validator_state_in_shared_remainder_process
+gate_result=FAIL_CLOSED
+receipt_issued=NO
+private_inputs_read=NO

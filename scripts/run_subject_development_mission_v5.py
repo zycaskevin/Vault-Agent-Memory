@@ -114,6 +114,7 @@ POST_SDG_GATE_SHA256 = "c209b63bab683165dcca49289bf09f536c966bbb1b50dd054c3e30b8
 POST_SDG_RECEIPT_SHA256 = "5e16e217ab75052065e12bf7abde476aea801d6d37a8f3dbec7740923890479f"
 SDG004_BASE = "3374ac372930ee6200d38c1f02289a0c8fa1eb84"
 SDG006_BASE = "d2b62eea0f130df7e02aa230f3592e28fd118617"
+SDG007_BASE = "b1b0be02087f42b222d1de1731ff9dffa4676bf3"
 TASKS_SHA256 = "0150935a1a16e51dc30dff9dff8d01104d7127ee3cf57333caec7586d93f5007"
 ACTIVATION_PROGRESS_SHA256 = "28478445e3eeb5b838b010fa81518d4fcbbb5c6a37422cb3aa58dabdcbf87626"
 AUTHORITY = "github:zycaskevin"
@@ -375,6 +376,41 @@ SDG006_COMPATIBILITY_MODIFIED_PATHS = {
     ".sddgov/merge-gate.json",
     ".sddgov/work-claims.json",
     "scripts/run_subject_development_mission_v5.py",
+    "tests/test_subject_development_mission_v5.py",
+}
+SDG007_COMPATIBILITY_PATHS = sorted(
+    [
+        ".github/workflows/ci.yml",
+        ".sddgov/ci-cost-guard.json",
+        ".sddgov/events.jsonl",
+        ".sddgov/merge-gate.json",
+        ".sddgov/reviews/REV-SDG-007.json",
+        ".sddgov/work-claims.json",
+        "docs/work-packages/SDG-007-mission-v5-local-green-isolation.md",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/fix-scope.md",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/manifest.json",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/redaction-report.json",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/regression-evidence.md",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/reproduction.md",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/rollback.md",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/root-cause-hypothesis.md",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/shareable/artifacts/terminal--mission-v5-local-green-green.txt",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/shareable/artifacts/terminal--mission-v5-local-green-red.txt",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/summary.yaml",
+        "evidence/DEP-SDG-007-MISSION-V5-LOCAL-GREEN-ISOLATION/verification.md",
+        "scripts/run_subject_development_mission_v5.py",
+        "scripts/run_subject_identity_test_isolation.py",
+        "tests/test_subject_development_mission_v5.py",
+    ]
+)
+SDG007_COMPATIBILITY_MODIFIED_PATHS = {
+    ".github/workflows/ci.yml",
+    ".sddgov/ci-cost-guard.json",
+    ".sddgov/events.jsonl",
+    ".sddgov/merge-gate.json",
+    ".sddgov/work-claims.json",
+    "scripts/run_subject_development_mission_v5.py",
+    "scripts/run_subject_identity_test_isolation.py",
     "tests/test_subject_development_mission_v5.py",
 }
 
@@ -1946,18 +1982,99 @@ def _check_sdg006_compatibility_release(repo_root: Path, base: str) -> None:
             raise Denied
 
 
+def _check_sdg007_compatibility_release(repo_root: Path, base: str) -> None:
+    _check_sdg006_compatibility_release(repo_root, SDG007_BASE)
+    parents = _git(repo_root, "rev-list", "--parents", "-n", "1", base).decode().split()
+    if len(parents) != 3 or parents[0] != base or parents[1] != SDG007_BASE:
+        raise Denied
+    topic = parents[2]
+    if _git(repo_root, "rev-parse", f"{base}^{{tree}}").strip() != _git(
+        repo_root, "rev-parse", f"{topic}^{{tree}}"
+    ).strip():
+        raise Denied
+
+    commits = _git(
+        repo_root,
+        "rev-list",
+        "--reverse",
+        "--topo-order",
+        f"{SDG007_BASE}..{topic}",
+    ).decode().splitlines()
+    if not commits or len(commits) > 64:
+        raise Denied
+    previous = SDG007_BASE
+    known_paths = set(SDG007_COMPATIBILITY_MODIFIED_PATHS)
+    allowed_paths = set(SDG007_COMPATIBILITY_PATHS)
+    for commit in commits:
+        commit_parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).decode().split()
+        if commit_parents != [commit, previous]:
+            raise Denied
+        changes = _git(
+            repo_root,
+            "diff",
+            "--name-status",
+            "--no-renames",
+            f"{previous}..{commit}",
+        ).decode().splitlines()
+        if not changes:
+            raise Denied
+        for line in changes:
+            fields = line.split("\t")
+            if len(fields) != 2:
+                raise Denied
+            action, path = fields
+            if path not in allowed_paths or action != ("M" if path in known_paths else "A"):
+                raise Denied
+            expected_mode = (
+                "100755"
+                if path.startswith("scripts/") and path.endswith(".py")
+                else "100644"
+            )
+            mode, _raw = _git_object(repo_root, commit, path)
+            if mode != expected_mode:
+                raise Denied
+            known_paths.add(path)
+        previous = commit
+    if previous != topic:
+        raise Denied
+
+    expected_status = [
+        ("M" if path in SDG007_COMPATIBILITY_MODIFIED_PATHS else "A")
+        + "\t"
+        + path
+        for path in SDG007_COMPATIBILITY_PATHS
+    ]
+    if _git(
+        repo_root,
+        "diff",
+        "--name-status",
+        "--no-renames",
+        f"{SDG007_BASE}..{base}",
+    ).decode().splitlines() != expected_status:
+        raise Denied
+    for path in SDG007_COMPATIBILITY_PATHS:
+        expected_mode = (
+            "100755" if path.startswith("scripts/") and path.endswith(".py") else "100644"
+        )
+        mode, _raw = _git_object(repo_root, base, path)
+        if mode != expected_mode:
+            raise Denied
+
+
 def _check_protocol_release_commit(repo_root: Path, base: str) -> None:
     check_repository_identity(repo_root)
     _check_predecessor_activation_commit(repo_root)
     _check_post_sdg_base(repo_root)
     _check_post_sdg_compatibility_release(repo_root, SDG004_BASE)
-    if COMMIT.fullmatch(base) is None or base == SDG006_BASE:
+    if COMMIT.fullmatch(base) is None or base == SDG007_BASE:
         raise Denied
     if _git(repo_root, "rev-parse", "HEAD").strip() != base.encode():
         raise Denied
     if _git(repo_root, "rev-parse", "origin/main").strip() != base.encode():
         raise Denied
-    _check_sdg006_compatibility_release(repo_root, base)
+    _check_sdg007_compatibility_release(repo_root, base)
 
 
 def _check_predecessor_activation_commit(repo_root: Path) -> None:
