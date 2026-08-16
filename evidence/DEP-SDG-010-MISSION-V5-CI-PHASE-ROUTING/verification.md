@@ -2,22 +2,25 @@
 
 ## Builder Green
 
-Under the externally coordinated exclusive test lease, a repeated process
-audit found no unrelated same-repository pytest, identity harness, Local Green,
-or merge-verify process. The focused suite passed 92 tests.
+The candidate-routing revision ran under the externally coordinated exclusive
+test lease; repeated process audits found no unrelated same-repository pytest,
+identity harness, Local Green, or merge-verify process. The focused suite
+passed 92 tests in 46.37 seconds.
 
 The one Builder Local Green completed successfully:
 
 ```text
 identity-isolated subject tests passed: 431 nodes
-2869 passed, 12 skipped, 1 warning
+2869 passed, 12 skipped, 1 warning in 94.73s
 ```
 
 Doctor, CI contract verification, README smoke, and release parity also
 returned zero. The warning is the existing invalid-escape SyntaxWarning in
 `tests/test_semantic_chunk_coverage.py`; it is outside this Work Package.
 
-## Remaining verification
+## Candidate-routing result
 
-Strict DEP verification, independent protected-file review, one hosted CI run,
-and exact merge readback remain required before merge.
+The candidate route accepts either an exact active delivery anchor with a
+lawful descendant or a closed linear topic replayed inactive. A purported
+invalid delivery remains DENY and does not fall back to the topic route. The
+strict DEP verification records this result for independent review.

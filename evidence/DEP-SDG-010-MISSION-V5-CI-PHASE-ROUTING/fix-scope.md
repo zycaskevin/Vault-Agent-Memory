@@ -3,10 +3,11 @@
 ## Smallest sufficient change
 
 Add a strict linear-topic predicate alongside the unchanged active delivery
-predicate. Route the isolated Mission V5 test file with an explicit required
-CLI phase: preliminary for pull requests and active for main. The preliminary
-fixture validates the proof at its recorded activation time, protocol ancestry,
-and closed topic, then replays the protocol-base inactive state.
+predicate. Candidate PR routing first accepts a valid active delivery anchor;
+only with no delivery shape may it validate the exact closed topic and replay
+the protocol-base inactive state. Route the isolated Mission V5 test file with
+an explicit required CLI phase: candidate for pull requests and active for
+main. A purported but invalid two-parent delivery is DENY, never fallback.
 
 ## In scope
 

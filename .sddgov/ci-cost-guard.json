@@ -13,7 +13,7 @@
       ["sddgov", "ci", "verify", "."],
       ["python", "scripts/readme_command_smoke.py"],
       ["python", "scripts/check_release_parity.py"],
-      ["python", "scripts/run_subject_identity_test_isolation.py", "--phase", "preliminary"],
+      ["python", "scripts/run_subject_identity_test_isolation.py", "--phase", "candidate"],
       [
         "python",
         "-m",

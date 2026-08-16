@@ -1,0 +1,15 @@
+SDG-010 candidate-routing verification summary
+
+Focused candidate-routing suite: 92 passed in 46.37s.
+
+One Builder Local Green ran under the externally coordinated exclusive test
+lease. Candidate identity isolation passed 431 nodes. The disjoint remainder
+passed 2869 tests with 12 skipped and 1 pre-existing SyntaxWarning.
+
+The Local Green command returned zero. Its checked commands included doctor,
+CI contract verification, README smoke, release parity, candidate identity
+isolation, and the disjoint remainder.
+
+Full raw logs and exit markers remain outside the repository in the
+coordinated lease location; this shareable summary contains no local paths,
+credentials, or private data.

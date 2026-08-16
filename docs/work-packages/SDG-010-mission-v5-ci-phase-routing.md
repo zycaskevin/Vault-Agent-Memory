@@ -10,28 +10,30 @@
 
 ## Objective Contract
 
-- Outcome: make hosted CI evaluate an unmerged Mission V5 activation topic as
-  a closed preliminary state, while main evaluates the unchanged exact
-  two-parent delivery predicate as active.
-- Success metric: a proof-present linear topic passes the preliminary control
-  only with the exact protocol base, proof, closed activation paths, and
-  protected SDG review; it remains inactive with zero authorized tasks. The
-  same topology fails active validation until one exact two-parent merge.
+- Outcome: make hosted pull-request CI first classify an exact active delivery
+  or, only when no delivery shape exists, a closed preliminary Mission V5
+  topic. Main evaluates the unchanged exact two-parent delivery predicate as
+  active.
+- Success metric: a proof-present linear topic passes candidate control only
+  with the exact protocol base, proof, closed activation paths, and protected
+  SDG review; it remains inactive with zero authorized tasks. An exact active
+  merge plus lawful descendant replays the delivery anchor. A purported or
+  invalid delivery never falls back to preliminary validation.
 - Guardrails: preserve `validate_mission_activation_delivery`, its exact
   two-parent invariant, identity isolation, merge verification for ordinary
   pull requests, canonical five, v1-v4, T-001 through T-003, and all L2/L3
-  boundaries. Preliminary phase never reaches updater or task-action gates.
-- Keep condition: phase is an explicit `--phase preliminary|active` CLI value
+  boundaries. Candidate phase never reaches updater or task-action gates.
+- Keep condition: phase is an explicit `--phase candidate|active` CLI value
   with abbreviation disabled; GitHub event routing supplies literal arguments;
   no skip, xfail, `continue-on-error`, or uncontrolled environment selector is
   introduced.
 - Rollback condition: a topic can become active without the exact merge, a
-  preliminary topic accepts extra/replaced/pending paths, a protected review
+  candidate topic accepts extra/replaced/pending paths, a protected review
   is bypassed, identity collection changes, or Local Green/hosted CI fails.
 
 ## Scope
 
-- In scope: Mission V5 preliminary topic validator; phase-aware identity
+- In scope: Mission V5 candidate topic/delivery validator; phase-aware identity
   harness CLI; CI and Local Green routing; protected workflow/test pins; this
   Work Package, strict DEP, SDG records, review receipt, hosted CI, and merge
   readback.

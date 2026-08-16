@@ -36,7 +36,7 @@ def test_release_readiness_workflow_trigger_and_concurrency_contract():
     assert "  cancel-in-progress: true\n" in concurrency_block
 
 
-def test_mission_v5_ci_routes_premerge_and_postmerge_controls_without_skips():
+def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github" / "workflows" / "ci.yml").read_text(
         encoding="utf-8"
@@ -55,11 +55,11 @@ def test_mission_v5_ci_routes_premerge_and_postmerge_controls_without_skips():
     assert "continue-on-error" not in gate_job
     assert "--deselect" not in gate_job
     assert test_job.count("--ignore=tests/test_subject_development_mission_v5.py") == 1
-    assert "Run preliminary Mission V5 identity controls" in test_job
-    assert "--phase preliminary" in test_job
+    assert "Run candidate Mission V5 identity controls" in test_job
+    assert "--phase candidate" in test_job
     assert "Run active Mission V5 identity controls" in test_job
     assert "--phase active" in test_job
-    assert "validate_mission_activation_topic(" in mission_test
+    assert "validate_mission_activation_candidate(" in mission_test
     assert "validate_mission_activation_delivery(" in mission_test
     assert "replay_commit = protocol_base" in mission_test
     assert "replay_commit = mission.validate_mission_activation_delivery(" in mission_test
@@ -69,7 +69,7 @@ def test_mission_v5_ci_routes_premerge_and_postmerge_controls_without_skips():
         encoding="utf-8"
     )
     assert "ArgumentParser(allow_abbrev=False)" in isolation
-    assert 'choices=("preliminary", "active")' in isolation
+    assert 'choices=("candidate", "active")' in isolation
     assert "SUBJECT_MISSION_V5_PHASE" in isolation
     for path in (
         "scripts/update_subject_task_progress_v5.py",
@@ -81,10 +81,10 @@ def test_mission_v5_ci_routes_premerge_and_postmerge_controls_without_skips():
 
 
 def test_identity_phase_cli_is_closed_and_exact():
-    assert identity_isolation._arguments(["--phase", "preliminary"]).phase == "preliminary"
+    assert identity_isolation._arguments(["--phase", "candidate"]).phase == "candidate"
     assert identity_isolation._arguments(["--phase", "active"]).phase == "active"
     with pytest.raises(SystemExit):
-        identity_isolation._arguments(["--phase", "prelim"])
+        identity_isolation._arguments(["--phase", "candid"])
     with pytest.raises(SystemExit):
         identity_isolation._arguments([])
 

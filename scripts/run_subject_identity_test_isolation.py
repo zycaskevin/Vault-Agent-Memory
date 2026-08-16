@@ -69,7 +69,7 @@ def _collect(environment: dict[str, str]) -> list[str]:
 
 def _arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(allow_abbrev=False)
-    parser.add_argument("--phase", choices=("preliminary", "active"), required=True)
+    parser.add_argument("--phase", choices=("candidate", "active"), required=True)
     return parser.parse_args(argv)
 
 

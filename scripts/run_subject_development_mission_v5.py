@@ -1459,6 +1459,55 @@ def validate_mission_activation_topic(
     return head
 
 
+def _has_mission_activation_delivery_shape(repo_root: Path, protocol_base: str) -> bool:
+    """Return whether history contains a purported delivery that must not fallback."""
+    head = _git(repo_root, "rev-parse", "HEAD").strip().decode()
+    commits = _git(
+        repo_root,
+        "rev-list",
+        "--ancestry-path",
+        "--reverse",
+        f"{protocol_base}..{head}",
+    ).decode().splitlines()
+    for commit in commits:
+        parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).decode().split()
+        if len(parents) == 3 and parents[0] == commit and parents[1] == protocol_base:
+            return True
+    return False
+
+
+def validate_mission_activation_candidate(
+    repo_root: Path,
+    *,
+    protocol_base: str,
+    mission_raw: bytes,
+) -> tuple[str, str]:
+    """Validate a PR head as either exact active delivery or closed topic.
+
+    A real or purported delivery topology is never eligible for a fallback to
+    preliminary topic validation: an invalid two-parent delivery is DENY.
+    """
+    if COMMIT.fullmatch(protocol_base) is None or type(mission_raw) is not bytes:
+        raise Denied
+    check_repository_identity(repo_root)
+    try:
+        return "active", validate_mission_activation_delivery(
+            repo_root,
+            protocol_base=protocol_base,
+            mission_raw=mission_raw,
+        )
+    except Denied:
+        if _has_mission_activation_delivery_shape(repo_root, protocol_base):
+            raise
+    return "preliminary", validate_mission_activation_topic(
+        repo_root,
+        protocol_base=protocol_base,
+        mission_raw=mission_raw,
+    )
+
+
 def validate_progress_only_delivery(
     repo_root: Path,
     *,

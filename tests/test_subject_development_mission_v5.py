@@ -19,13 +19,13 @@ from scripts import verify_subject_implementation_authorization as authorization
 
 ROOT = Path(__file__).resolve().parents[1]
 LIVE_ROOT = ROOT
-PRELIMINARY_PHASE = "preliminary"
+CANDIDATE_PHASE = "candidate"
 ACTIVE_PHASE = "active"
 
 
 def _mission_phase() -> str:
     phase = os.environ.get("SUBJECT_MISSION_V5_PHASE")
-    if phase not in {PRELIMINARY_PHASE, ACTIVE_PHASE}:
+    if phase not in {CANDIDATE_PHASE, ACTIVE_PHASE}:
         raise AssertionError("invalid Mission V5 CI phase")
     return phase
 
@@ -43,7 +43,7 @@ def _phase_neutral_mission_root(tmp_path_factory: pytest.TempPathFactory):
     if proof_raw != mission.canonical(proof):
         raise AssertionError("non-canonical V5 mission proof")
     protocol_base = proof["protocol_base_commit"][4:]
-    if _mission_phase() == PRELIMINARY_PHASE:
+    if _mission_phase() == CANDIDATE_PHASE:
         validator.validate_mission_proof_value(
             proof,
             proof_raw,
@@ -51,12 +51,17 @@ def _phase_neutral_mission_root(tmp_path_factory: pytest.TempPathFactory):
             now_utc=proof["active_from_utc"],
         )
         mission.check_active_protocol_ancestry(LIVE_ROOT, protocol_base)
-        mission.validate_mission_activation_topic(
+        candidate_phase, candidate_commit = mission.validate_mission_activation_candidate(
             LIVE_ROOT,
             protocol_base=protocol_base,
             mission_raw=proof_raw,
         )
-        replay_commit = protocol_base
+        if candidate_phase == "preliminary":
+            replay_commit = protocol_base
+        elif candidate_phase == "active":
+            replay_commit = candidate_commit
+        else:
+            raise AssertionError("invalid Mission V5 candidate phase")
     else:
         replay_commit = mission.validate_mission_activation_delivery(
             LIVE_ROOT,
@@ -1588,7 +1593,7 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
         "python",
         "scripts/run_subject_identity_test_isolation.py",
         "--phase",
-        "preliminary",
+        "candidate",
     ] in commands
     harness = (LIVE_ROOT / "scripts/run_subject_identity_test_isolation.py").read_text()
     workflow = (LIVE_ROOT / ".github/workflows/ci.yml").read_text()
@@ -1692,6 +1697,11 @@ def test_mission_activation_requires_exact_two_parent_merge_before_active(
         protocol_base=protocol,
         mission_raw=proof_raw,
     ) == activation
+    assert mission.validate_mission_activation_candidate(
+        repo,
+        protocol_base=protocol,
+        mission_raw=proof_raw,
+    ) == ("preliminary", activation)
     with pytest.raises(mission.Denied):
         mission.validate_mission_activation_delivery(
             repo,
@@ -1715,6 +1725,11 @@ def test_mission_activation_requires_exact_two_parent_merge_before_active(
         protocol_base=protocol,
         mission_raw=proof_raw,
     ) == delivery
+    assert mission.validate_mission_activation_candidate(
+        repo,
+        protocol_base=protocol,
+        mission_raw=proof_raw,
+    ) == ("active", delivery)
     with pytest.raises(mission.Denied):
         mission.validate_mission_activation_topic(
             repo,
@@ -1745,6 +1760,12 @@ def test_mission_activation_requires_exact_two_parent_merge_before_active(
     subprocess.run(["git", "commit", "-q", "-m", "late activation"], cwd=repo, check=True)
     with pytest.raises(mission.Denied):
         mission.validate_mission_activation_topic(
+            repo,
+            protocol_base=protocol,
+            mission_raw=proof_raw,
+        )
+    with pytest.raises(mission.Denied):
+        mission.validate_mission_activation_candidate(
             repo,
             protocol_base=protocol,
             mission_raw=proof_raw,
@@ -1811,6 +1832,11 @@ def test_mission_activation_accepts_only_exact_two_parent_merge_delivery(
         protocol_base=protocol,
         mission_raw=proof_raw,
     ) == delivery
+    assert mission.validate_mission_activation_candidate(
+        repo,
+        protocol_base=protocol,
+        mission_raw=proof_raw,
+    ) == ("active", delivery)
 
     subprocess.run(["git", "reset", "--hard", "-q", protocol], cwd=repo, check=True)
     (repo / "extra.txt").write_text("outside activation scope\n")
@@ -1823,6 +1849,12 @@ def test_mission_activation_accepts_only_exact_two_parent_merge_delivery(
     )
     with pytest.raises(mission.Denied):
         mission.validate_mission_activation_delivery(
+            repo,
+            protocol_base=protocol,
+            mission_raw=proof_raw,
+        )
+    with pytest.raises(mission.Denied):
+        mission.validate_mission_activation_candidate(
             repo,
             protocol_base=protocol,
             mission_raw=proof_raw,
