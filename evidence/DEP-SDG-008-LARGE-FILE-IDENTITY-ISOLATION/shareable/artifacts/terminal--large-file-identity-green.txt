@@ -1,0 +1,11 @@
+artifact=large-file-identity-green
+baseline_control_collection=53_UNIQUE_NODES
+baseline_control_file=53_PASS
+sdg008_release_and_routing=2_PASS
+identity_isolated_nodes=430_PASS
+frozen_validator_sha256=86707e63e5ab6aebb91440eec5b22a13dd98618237a799c1b82409067d1efcd7
+frozen_test_sha256=77e11389e9ffdc205a26d7d835577476e9c2b6ba609b0af8bbc10508ae1e94b4
+collection_reduction=NO
+skip_or_xfail_added=NO
+gate_result=GREEN
+private_inputs_read=NO

@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--large-file-identity-green",
+      "output": "terminal--large-file-identity-green.txt",
+      "source_sha256": "26b25601addb7c73f1edccd05022c47deccaccac519f107a40485cdf04dfcb8a",
+      "output_sha256": "26b25601addb7c73f1edccd05022c47deccaccac519f107a40485cdf04dfcb8a",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--large-file-identity-red",
+      "output": "terminal--large-file-identity-red.txt",
+      "source_sha256": "b5295bad5c06f1cc4a18d44333a95ab3db18dd44c379e5e915a77bd1140afbdc",
+      "output_sha256": "b5295bad5c06f1cc4a18d44333a95ab3db18dd44c379e5e915a77bd1140afbdc",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-SDG-008-LARGE-FILE-IDENTITY-ISOLATION",
+  "generated_at": "2026-08-16T03:51:42Z"
+}

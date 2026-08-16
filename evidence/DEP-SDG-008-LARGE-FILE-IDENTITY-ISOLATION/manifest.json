@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-008-LARGE-FILE-IDENTITY-ISOLATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--large-file-identity-red",
+      "sha256": "b5295bad5c06f1cc4a18d44333a95ab3db18dd44c379e5e915a77bd1140afbdc",
+      "collected_at": "2026-08-16T03:45:00Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--large-file-identity-green",
+      "sha256": "26b25601addb7c73f1edccd05022c47deccaccac519f107a40485cdf04dfcb8a",
+      "collected_at": "2026-08-16T03:51:42Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--large-file-identity-green.txt",
+      "sha256": "26b25601addb7c73f1edccd05022c47deccaccac519f107a40485cdf04dfcb8a",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--large-file-identity-red.txt",
+      "sha256": "b5295bad5c06f1cc4a18d44333a95ab3db18dd44c379e5e915a77bd1140afbdc",
+      "shareable": true
+    }
+  ]
+}

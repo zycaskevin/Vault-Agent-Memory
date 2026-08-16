@@ -1,0 +1,9 @@
+artifact=large-file-identity-red
+review=SDG-005-post-SDG007-v2-pre-sign
+identity_isolated_nodes=376_PASS
+remainder=2919_PASS_12_SKIP_1_FAIL
+failing_test=tests/test_subject_baseline_control.py::test_stage_header_and_file_resource_boundaries
+failure_boundary=retained_path_identity_drift_during_16777216_byte_stage_read
+gate_result=FAIL_CLOSED
+receipt_issued=NO
+private_inputs_read=NO
