@@ -21,8 +21,15 @@ The T-001 validator hash remains `86707e63e5ab6aebb91440eec5b22a13dd98618237a799
 and its baseline test hash remains
 `77e11389e9ffdc205a26d7d835577476e9c2b6ba609b0af8bbc10508ae1e94b4`.
 
+Builder Local Green PASS: the isolation harness completed 430 nodes; the
+disjoint remainder completed 2867 passed and 12 skipped with one pre-existing
+warning. Doctor, CI Cost Guard, README smoke, and release parity passed in the
+same governed run. An initial invocation without the external SDG runtime on
+`PATH` stopped before any gate command; after injecting the configured runtime,
+the complete governed run above passed.
+
 ## Remaining limitations
 
-Full Local Green, independent review, hosted CI, and merge readback remain
-required. After merge, the old Mission proposal/proof is invalid and a fresh
-owner-confirmed proposal is required.
+Independent review, hosted CI, and merge readback remain required. After merge,
+the old Mission proposal/proof is invalid and a fresh owner-confirmed proposal
+is required.

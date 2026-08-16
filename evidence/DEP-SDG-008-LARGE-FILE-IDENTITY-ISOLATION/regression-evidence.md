@@ -14,6 +14,7 @@ modified-path set.
 - Complete immutable baseline-control file: 53 passed.
 - SDG-008 release checker and routing contract: 2 passed.
 - Identity-isolated harness: 430 nodes passed.
+- Disjoint remainder: 2867 passed, 12 skipped, one pre-existing warning.
 - No test, acceptance condition, skip, or xfail was removed or weakened.
 
 ## Unaffected paths sampled

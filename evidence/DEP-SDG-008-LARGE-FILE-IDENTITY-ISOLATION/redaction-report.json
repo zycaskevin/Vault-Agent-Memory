@@ -4,8 +4,8 @@
     {
       "source": "terminal--large-file-identity-green",
       "output": "terminal--large-file-identity-green.txt",
-      "source_sha256": "26b25601addb7c73f1edccd05022c47deccaccac519f107a40485cdf04dfcb8a",
-      "output_sha256": "26b25601addb7c73f1edccd05022c47deccaccac519f107a40485cdf04dfcb8a",
+      "source_sha256": "dd6b5dc1e990e10314d2393bdda5020db929ca3cd0ee240338bd5b6cca542c9b",
+      "output_sha256": "dd6b5dc1e990e10314d2393bdda5020db929ca3cd0ee240338bd5b6cca542c9b",
       "redactions": {}
     },
     {
