@@ -93,6 +93,12 @@
   `rollback_version: 1.0`, `target:`, `command:`, and `verify:` schema; fresh
   focused, Local Green, independent review, and hosted CI are required for the
   changed bytes.
+- The corrected v2E2 focused matrix and the one Full Local Green pass on exact
+  source `97728ce5f524cc6029a798abe7f34c2828231697`. Focused proof includes direct
+  dev6 parser acceptance, candidate/active dispatch, malformed denial, and the
+  exact no-proof INACTIVE baseline. Full Green retains exact 446-node identity
+  isolation and the disjoint remainder. Fresh review and hosted CI remain
+  mandatory.
 
 ## Claim
 

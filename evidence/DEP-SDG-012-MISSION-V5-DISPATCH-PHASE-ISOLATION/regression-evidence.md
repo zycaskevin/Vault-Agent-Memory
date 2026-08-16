@@ -97,14 +97,26 @@
   existing closed paths, retains the complete fail-closed shell body, and adds
   an exact hygiene reproduction of the parser contract. No v2D test or receipt
   is promoted to the changed v2E bytes; fresh gates remain mandatory.
+- Corrected focused v2E2 on exact source
+  `97728ce5f524cc6029a798abe7f34c2828231697` passed direct experimental.6
+  `_real_rollback=True`, rollback shell syntax, three parser/JUnit/bypass/static
+  checks, both proof-bound candidate nodes, both exact two-parent active nodes,
+  malformed active denial, and both retained-runner no-proof baseline nodes
+  with exact INACTIVE/sequence 6/T-004 PENDING and absent pending/proof state.
+  Wrapper exit was 0; log SHA-256 is
+  `ebc6624607b6a7fe52824d24e2963891465ad31f277556b5ef3ceb1e76b37f83`.
+- The one Full Local Green v2E2 on the same exact source passed all six
+  commands. Identity isolation passed exact 446 nodes. The disjoint remainder
+  reported 2868 passed, 12 skipped, and one pre-existing SyntaxWarning. Every
+  command and wrapper returned 0. Full log SHA-256 is
+  `e98fe7fe12f477a84fcee51c1e55335718efb3e10faf90ae9c366d4d73a09049`.
 
 ## Unverified boundary
 
 The original PR #489 head `bbc6e476ae3444cef77400f28710de73f9cf7f73`
 receipt and hosted Green are historical exact-head evidence only and are not in
 this rebuilt topic. Fresh focused and Local Green pass on the exact v2B source.
-Fresh v2D focused and Local Green pass for their exact source. v2E currently
-has static parser proof only; fresh focused and Local Green, a fresh independent
-receipt, and new hosted Green remain pending. Exact
+Fresh v2E2 focused and Local Green pass for exact source `97728ce5...`. A fresh
+independent receipt and new hosted Green remain pending. Exact
 merge readback, proposal, task start, and production outcome remain unclaimed
 until post-delivery.

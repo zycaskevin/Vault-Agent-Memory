@@ -147,3 +147,18 @@ Post-sign dev6 rollback parser RED and v2E static repair:
   retained fenced shell body passes bash syntax validation.
 - v2E has static proof only. Fresh focused, Full Local Green, independent
   review, hosted CI, and exact delivery readback remain mandatory.
+
+Accepted v2E2 Builder proof on exact source
+97728ce5f524cc6029a798abe7f34c2828231697:
+- Corrected focused matrix: direct dev6 parser and rollback syntax PASS; three
+  static/JUnit/bypass checks PASS; candidate exact 2 PASS; exact two-parent
+  active 2 PASS; malformed active DENIED; no-proof baseline exact 2 PASS with
+  INACTIVE, sequence 6, T-004 PENDING, pending absent, and proof absent.
+- Focused wrapper exit 0; log SHA-256:
+  ebc6624607b6a7fe52824d24e2963891465ad31f277556b5ef3ceb1e76b37f83.
+- One Full Local Green: all six commands return 0; identity exact 446 nodes;
+  remainder 2868 passed, 12 skipped, one pre-existing SyntaxWarning.
+- Full wrapper exit 0; log SHA-256:
+  e98fe7fe12f477a84fcee51c1e55335718efb3e10faf90ae9c366d4d73a09049.
+- Source worktree clean. Fresh independent review, hosted CI, and exact
+  delivery readback remain mandatory.

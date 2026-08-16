@@ -85,6 +85,22 @@ Pinned experimental.6 post-sign verification rejected v2D with exact
 and is not present in this Builder lineage. Static v2E verification directly
 calls the pinned `_real_rollback` parser and requires `True`, reproduces the
 same field algorithm in repository hygiene checks, syntax-checks the retained
-shell block, and refreshes its exact workflow byte pins. This source change has
-not run pytest or Local Green; all dynamic gates and a fresh independent receipt
-remain pending.
+shell block, and refreshes its exact workflow byte pins. At that source-freeze
+boundary no pytest or Local Green had run; the subsequently accepted exact
+v2E2 results are recorded below. Fresh independent review remains pending.
+
+## Accepted v2E2 Builder proof
+
+On exact source `97728ce5f524cc6029a798abe7f34c2828231697`, corrected
+focused v2E2 passed direct pinned dev6 parser evaluation, rollback shell syntax,
+all three static/JUnit/bypass checks, two proof-bound candidate nodes, two exact
+active nodes, malformed delivery denial, and two no-proof baseline nodes with
+exact INACTIVE state. Its log SHA-256 is
+`ebc6624607b6a7fe52824d24e2963891465ad31f277556b5ef3ceb1e76b37f83`.
+
+The one Full Local Green v2E2 then passed all six commands. Candidate identity
+isolation executed exactly 446 nodes; the disjoint remainder reported 2868
+passed, 12 skipped, and one pre-existing SyntaxWarning. Its log SHA-256 is
+`e98fe7fe12f477a84fcee51c1e55335718efb3e10faf90ae9c366d4d73a09049`.
+Both wrappers returned 0 and the source worktree remained clean. Fresh
+independent review, hosted CI, and delivery readback remain unclaimed.
