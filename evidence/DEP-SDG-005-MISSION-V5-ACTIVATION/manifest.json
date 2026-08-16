@@ -5,7 +5,7 @@
     {
       "collector": "terminal",
       "path": "private/raw/terminal--mission-v5-activation-green",
-      "sha256": "3c720601bacf79f477bec15dc46463c2df3e9beb97b976cd93cdb2e44b4651d2",
+      "sha256": "cf43beb163e0b1c99a70792b5813e15300d0645d6991c7242c625f5bb5465717",
       "collected_at": "2026-08-16T02:57:57Z",
       "shareable": false
     }
@@ -13,7 +13,7 @@
   "shareable": [
     {
       "path": "shareable/artifacts/terminal--mission-v5-activation-green.txt",
-      "sha256": "3c720601bacf79f477bec15dc46463c2df3e9beb97b976cd93cdb2e44b4651d2",
+      "sha256": "cf43beb163e0b1c99a70792b5813e15300d0645d6991c7242c625f5bb5465717",
       "shareable": true
     }
   ]

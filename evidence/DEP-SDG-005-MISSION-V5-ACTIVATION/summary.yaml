@@ -8,7 +8,7 @@
   ],
   "risk_level": "L1",
   "created_at": "2026-08-16T02:55:38Z",
-  "updated_at": "2026-08-16T02:57:58Z",
+  "updated_at": "2026-08-16T03:07:30Z",
   "workflow": {
     "phase": "proof",
     "history": [
@@ -35,7 +35,7 @@
     ]
   },
   "expected_behavior": "An exact owner-confirmed Mission V5 proof activates only after the closed SDG-005 protected-review tree is delivered by one exact two-parent merge on current main.",
-  "actual_behavior": "The proof is published and private cleanup passed; the unmerged topic remains correctly inactive while synthetic exact-merge controls pass.",
+  "actual_behavior": "The proof is published and private cleanup passed; the unmerged topic remains correctly inactive while synthetic exact-merge controls and phase-correct Local Green pass.",
   "environment": {
     "commit": "6d499e41ac41b8cd0f560146b0f18939b55a5f3f",
     "branch": "agent/mission-v5-activation-post-sdg007",

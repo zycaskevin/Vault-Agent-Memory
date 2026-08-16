@@ -14,6 +14,18 @@ python -m pytest -q \
 
 Result: `4 passed in 5.82s`.
 
+Phase-correct full Local Green on an exact synthetic two-parent delivery:
+
+```text
+identity-isolated subject tests passed: 376 nodes
+2920 passed, 12 skipped, 1 warning in 99.67s
+local-gate return code: 0
+```
+
+The synthetic delivery reported `ACTIVE`, sequence `6`, and the exact Mission
+ID. Its tree differed from the reviewed topic only by the test-only placeholder
+`REV-SDG-005`; that placeholder is never copied into the candidate branch.
+
 ## Before/after evidence
 
 Before activation delivery: proof exists, pending is absent, T-004 has not
@@ -24,8 +36,8 @@ and current-main ACTIVE readback must all pass before T-004 starts.
 ## Remaining limitations
 
 This DEP does not claim activation or hosted verification yet. The final
-protected receipt, Local Green, hosted checks, merge commit, and post-merge
-ACTIVE result are appended only when each gate actually completes. The Mission
+protected receipt, hosted checks, merge commit, and post-merge ACTIVE result
+are appended only when each gate actually completes. The Mission
 expires at `2026-11-14T02:53:59Z` and remains subject to irreversible owner
 revocation and the frozen L2/L3 prohibitions.
 
