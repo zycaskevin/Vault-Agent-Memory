@@ -25,3 +25,13 @@ hosted required CI, and post-merge Mission validation remain delivery gates.
 Canonical five, v1-v4, T-001 through T-003 trust roots and completion records,
 sequence-6 progress, V5 implementation/contract/registry/schema, task outputs,
 private/live data, and product runtime remain byte-unchanged.
+
+## Test lease isolation
+
+An independent review attempt overlapped a separate RC identity harness under
+the same user home. The other harness created or removed sibling private roots
+while `linked-linked` retained the ancestor identity, so the expected full
+metadata audit denied. No code or policy change is justified by that result.
+Future protected runs serialize the complete same-repository Local Green under
+one external lease, record the absence of competing pytest/identity processes,
+and retain every no-follow, hard-link, replacement, cleanup, and no-echo gate.

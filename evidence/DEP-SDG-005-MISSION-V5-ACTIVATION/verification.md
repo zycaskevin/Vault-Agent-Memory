@@ -55,3 +55,15 @@ the literal shell redirection token `>`, which experimental.6 reserves for
 unresolved placeholders. Revision 2 removes that token while preserving the
 same detached-base INACTIVE verification. The revision-1 receipt is invalid
 and is not present in this candidate history.
+
+The first refreshed protected-review attempt after SDG-008 correctly rejected
+three stale `75`-node claims; those claims now use the independently collected
+`76` Mission V5 nodes. Its next revision was run concurrently with a separate
+same-repository RC Local Green. Both identity harnesses create and remove
+private test roots under the same user home, so the concurrent sibling mutation
+changed retained ancestor metadata and one `linked-linked` lifecycle case
+failed closed in `_audit_lifecycle`. The receipt was not signed. This is an
+execution-scheduling artifact, not permission to weaken full identity checks.
+The next protected review must hold an external exclusive same-repository test
+lease for the entire identity harness and Local Green; no other pytest,
+identity harness, or Local Green may run until the lease is released.
