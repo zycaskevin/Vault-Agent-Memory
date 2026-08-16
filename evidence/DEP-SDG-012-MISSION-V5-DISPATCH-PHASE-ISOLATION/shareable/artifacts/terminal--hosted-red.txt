@@ -1,0 +1,26 @@
+SDG-012 public-safe hosted RED summary
+
+Issue: #488
+PR: #487
+Run: 31943149157
+Job: 95155106192
+Base: 9ddc50883957875aeb29a1a2ac6501bfe5c7b8a0
+Risk: L1
+
+Observed sequence:
+- Candidate Mission V5 identity controls passed.
+- Governance Local Green remainder then ran dispatcher V5 outside the phase
+  harness.
+- test_dispatch_accepts_exact_current_mission_phase: Denied while locating an
+  active delivery on the preliminary topic.
+- test_dispatch_cli_is_exact_and_no_abbreviation: actual return 2, expected 0;
+  stderr was SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_DENY.
+- Summary: 2 failed, 2870 passed, 10 skipped, one pre-existing warning.
+
+Static cause:
+- Dispatcher V5 was absent from the identity harness.
+- Local and hosted remainders lacked its exact ignore.
+- Production dispatcher behaved fail closed and is not changed.
+
+No credential, private data, proof bytes, task authority, deployment, or
+production action is included.

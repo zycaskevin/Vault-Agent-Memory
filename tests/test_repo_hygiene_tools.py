@@ -55,6 +55,10 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert "continue-on-error" not in gate_job
     assert "--deselect" not in gate_job
     assert test_job.count("--ignore=tests/test_subject_development_mission_v5.py") == 1
+    assert (
+        test_job.count("--ignore=tests/test_subject_task_authorization_dispatch_v5.py")
+        == 1
+    )
     assert "Run candidate Mission V5 identity controls" in test_job
     assert "--phase candidate" in test_job
     assert "Run active Mission V5 identity controls" in test_job
@@ -63,6 +67,14 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert "validate_mission_activation_delivery(" in mission_test
     assert "replay_commit = protocol_base" in mission_test
     assert "replay_commit = mission.validate_mission_activation_delivery(" in mission_test
+    dispatcher_test = (
+        root / "tests" / "test_subject_task_authorization_dispatch_v5.py"
+    ).read_text(encoding="utf-8")
+    assert "def _phase_neutral_dispatch_root(" in dispatcher_test
+    assert "replay_commit = protocol_base" in dispatcher_test
+    assert "replay_commit = mission.validate_mission_activation_delivery(" in dispatcher_test
+    assert "pytest.skip" not in dispatcher_test
+    assert "pytest.mark.xfail" not in dispatcher_test
     assert "def validate_mission_activation_topic(" in runner
     assert "len(deliveries) != 1" in runner
     isolation = (root / "scripts" / "run_subject_identity_test_isolation.py").read_text(
@@ -71,6 +83,10 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert "ArgumentParser(allow_abbrev=False)" in isolation
     assert 'choices=("candidate", "active")' in isolation
     assert "SUBJECT_MISSION_V5_PHASE" in isolation
+    assert (
+        '("tests/test_subject_task_authorization_dispatch_v5.py", 2)' in isolation
+    )
+    assert sum(count for _path, count in identity_isolation.FILES) == 446
     for path in (
         "scripts/update_subject_task_progress_v5.py",
         "scripts/validate_subject_task_authorization_dispatch_v5.py",
@@ -137,11 +153,11 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
     assert 'branch="agent/sdg010-mission-v5-ci-phase-routing"' not in rollback
     for digest, path in (
         (
-            "05f60c7950ba3c5025fb26f43d18b680ccdbe0ab42c07d1886fa5153ff0dad05",
+            "aa93daa186eaed15322f594feb43a6fb024fe4776b563220b4d8927ccbf1e7a0",
             "scripts/run_subject_development_mission_v5.py",
         ),
         (
-            "de169a26c04130d07219ca427e0fcf34b809868156f815181bac11ea6a0f32a5",
+            "d962eb71678ba43106dd12d030a1e8012e8c774356bc547aebbc354b9969cbb9",
             "scripts/run_subject_identity_test_isolation.py",
         ),
         (
@@ -167,6 +183,7 @@ def test_subject_progress_ci_separates_historical_and_current_phases():
         "tests/test_subject_development_mission_v4.py",
         "tests/test_subject_task_authorization_dispatch_v4.py",
         "tests/test_subject_development_mission_v5.py",
+        "tests/test_subject_task_authorization_dispatch_v5.py",
     }
     for path in ignored:
         assert test_job.count(f"--ignore={path}") == 1
