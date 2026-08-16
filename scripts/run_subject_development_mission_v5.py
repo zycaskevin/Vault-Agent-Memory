@@ -116,6 +116,12 @@ SDG004_BASE = "3374ac372930ee6200d38c1f02289a0c8fa1eb84"
 SDG006_BASE = "d2b62eea0f130df7e02aa230f3592e28fd118617"
 SDG007_BASE = "b1b0be02087f42b222d1de1731ff9dffa4676bf3"
 SDG008_BASE = "6d499e41ac41b8cd0f560146b0f18939b55a5f3f"
+SDG010_BASE = "46690372e532c50761f9232ff5b2e20e18779d28"
+SDG010_TOPIC = "7e155ca8907b31a14d5abadeeeb73e3edac71c14"
+SDG010_RELEASE = "efa43a4dfb305cd51d8a57a20838be6123ccb514"
+SDG010_TREE = "781beb6d3f8ef626d058394d14103c9512550637"
+SDG010_GATE_SHA256 = "bd7b1935271533653a1cbae1a35032d444009b4387ffe327e6ed5d5757ed6658"
+SDG010_RECEIPT_SHA256 = "07ee1f5845be27aa81e7c8b4257d98ec22b7047e3d0e1020583f9acac484ead4"
 TASKS_SHA256 = "0150935a1a16e51dc30dff9dff8d01104d7127ee3cf57333caec7586d93f5007"
 ACTIVATION_PROGRESS_SHA256 = "28478445e3eeb5b838b010fa81518d4fcbbb5c6a37422cb3aa58dabdcbf87626"
 AUTHORITY = "github:zycaskevin"
@@ -447,6 +453,78 @@ SDG008_COMPATIBILITY_MODIFIED_PATHS = {
     ".sddgov/work-claims.json",
     "scripts/run_subject_development_mission_v5.py",
     "scripts/run_subject_identity_test_isolation.py",
+    "tests/test_subject_development_mission_v5.py",
+}
+SDG010_COMPATIBILITY_PATHS = sorted(
+    [
+        ".github/workflows/ci.yml",
+        ".sddgov/ci-cost-guard.json",
+        ".sddgov/events.jsonl",
+        ".sddgov/merge-gate.json",
+        ".sddgov/reviews/REV-SDG-010.json",
+        ".sddgov/work-claims.json",
+        "docs/work-packages/SDG-010-mission-v5-ci-phase-routing.md",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/fix-scope.md",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/manifest.json",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/redaction-report.json",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/regression-evidence.md",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/reproduction.md",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/root-cause-hypothesis.md",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/shareable/artifacts/terminal--artifact-1.txt",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/shareable/artifacts/terminal--artifact-2.txt",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/summary.yaml",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/verification.md",
+        "scripts/run_subject_development_mission_v5.py",
+        "scripts/run_subject_identity_test_isolation.py",
+        "tests/test_repo_hygiene_tools.py",
+        "tests/test_subject_development_mission_v5.py",
+    ]
+)
+SDG010_COMPATIBILITY_MODIFIED_PATHS = {
+    ".github/workflows/ci.yml",
+    ".sddgov/ci-cost-guard.json",
+    ".sddgov/events.jsonl",
+    ".sddgov/merge-gate.json",
+    ".sddgov/work-claims.json",
+    "scripts/run_subject_development_mission_v5.py",
+    "scripts/run_subject_identity_test_isolation.py",
+    "tests/test_repo_hygiene_tools.py",
+    "tests/test_subject_development_mission_v5.py",
+}
+SDG011_COMPATIBILITY_PATHS = sorted(
+    [
+        ".github/workflows/ci.yml",
+        ".sddgov/events.jsonl",
+        ".sddgov/merge-gate.json",
+        ".sddgov/reviews/REV-SDG-011.json",
+        ".sddgov/work-claims.json",
+        "docs/work-packages/SDG-011-post-sdg010-l1-compatibility.md",
+        "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/fix-scope.md",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/manifest.json",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/redaction-report.json",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/regression-evidence.md",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/reproduction.md",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/rollback.md",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/root-cause-hypothesis.md",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/shareable/artifacts/terminal--anchor-red.txt",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/shareable/artifacts/terminal--verification.txt",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/summary.yaml",
+        "evidence/DEP-SDG-011-POST-SDG010-L1-COMPATIBILITY/verification.md",
+        "scripts/run_subject_development_mission_v5.py",
+        "tests/test_repo_hygiene_tools.py",
+        "tests/test_subject_development_mission_v5.py",
+    ]
+)
+SDG011_COMPATIBILITY_MODIFIED_PATHS = {
+    ".github/workflows/ci.yml",
+    ".sddgov/events.jsonl",
+    ".sddgov/merge-gate.json",
+    ".sddgov/work-claims.json",
+    "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md",
+    "scripts/run_subject_development_mission_v5.py",
+    "tests/test_repo_hygiene_tools.py",
     "tests/test_subject_development_mission_v5.py",
 }
 
@@ -2323,18 +2401,146 @@ def _check_sdg008_compatibility_release(repo_root: Path, base: str) -> None:
             raise Denied
 
 
+def _check_closed_compatibility_release(
+    repo_root: Path,
+    release: str,
+    *,
+    expected_parent: str,
+    expected_topic: str | None,
+    expected_tree: str | None,
+    allowed_paths: Sequence[str],
+    modified_paths: set[str],
+) -> str:
+    parents = _git(
+        repo_root, "rev-list", "--parents", "-n", "1", release
+    ).decode().split()
+    if len(parents) != 3 or parents[0] != release or parents[1] != expected_parent:
+        raise Denied
+    topic = parents[2]
+    if expected_topic is not None and topic != expected_topic:
+        raise Denied
+    release_tree = _git(repo_root, "rev-parse", f"{release}^{{tree}}").decode().strip()
+    topic_tree = _git(repo_root, "rev-parse", f"{topic}^{{tree}}").decode().strip()
+    if release_tree != topic_tree or (
+        expected_tree is not None and release_tree != expected_tree
+    ):
+        raise Denied
+
+    commits = _git(
+        repo_root,
+        "rev-list",
+        "--reverse",
+        "--topo-order",
+        f"{expected_parent}..{topic}",
+    ).decode().splitlines()
+    if not commits or len(commits) > 64:
+        raise Denied
+    previous = expected_parent
+    known_paths = set(modified_paths)
+    closed_paths = set(allowed_paths)
+    for commit in commits:
+        commit_parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).decode().split()
+        if commit_parents != [commit, previous]:
+            raise Denied
+        changes = _git(
+            repo_root,
+            "diff",
+            "--name-status",
+            "--no-renames",
+            f"{previous}..{commit}",
+        ).decode().splitlines()
+        if not changes:
+            raise Denied
+        for line in changes:
+            fields = line.split("\t")
+            if len(fields) != 2:
+                raise Denied
+            action, path = fields
+            expected_action = "M" if path in known_paths else "A"
+            if path not in closed_paths or action != expected_action:
+                raise Denied
+            expected_mode = (
+                "100755"
+                if path.startswith("scripts/") and path.endswith(".py")
+                else "100644"
+            )
+            mode, _raw = _git_object(repo_root, commit, path)
+            if mode != expected_mode:
+                raise Denied
+            known_paths.add(path)
+        previous = commit
+    if previous != topic:
+        raise Denied
+
+    expected_status = [
+        ("M" if path in modified_paths else "A") + "\t" + path
+        for path in allowed_paths
+    ]
+    if _git(
+        repo_root,
+        "diff",
+        "--name-status",
+        "--no-renames",
+        f"{expected_parent}..{release}",
+    ).decode().splitlines() != expected_status:
+        raise Denied
+    for path in allowed_paths:
+        expected_mode = (
+            "100755" if path.startswith("scripts/") and path.endswith(".py") else "100644"
+        )
+        mode, _raw = _git_object(repo_root, release, path)
+        if mode != expected_mode:
+            raise Denied
+    return topic
+
+
+def _check_sdg010_compatibility_release(repo_root: Path) -> None:
+    _check_sdg008_compatibility_release(repo_root, SDG010_BASE)
+    _check_closed_compatibility_release(
+        repo_root,
+        SDG010_RELEASE,
+        expected_parent=SDG010_BASE,
+        expected_topic=SDG010_TOPIC,
+        expected_tree=SDG010_TREE,
+        allowed_paths=SDG010_COMPATIBILITY_PATHS,
+        modified_paths=SDG010_COMPATIBILITY_MODIFIED_PATHS,
+    )
+    for path, expected_sha256 in (
+        (".sddgov/merge-gate.json", SDG010_GATE_SHA256),
+        (".sddgov/reviews/REV-SDG-010.json", SDG010_RECEIPT_SHA256),
+    ):
+        mode, raw = _git_object(repo_root, SDG010_RELEASE, path)
+        if mode != "100644" or hashlib.sha256(raw).hexdigest() != expected_sha256:
+            raise Denied
+
+
+def _check_sdg011_compatibility_release(repo_root: Path, base: str) -> None:
+    _check_sdg010_compatibility_release(repo_root)
+    _check_closed_compatibility_release(
+        repo_root,
+        base,
+        expected_parent=SDG010_RELEASE,
+        expected_topic=None,
+        expected_tree=None,
+        allowed_paths=SDG011_COMPATIBILITY_PATHS,
+        modified_paths=SDG011_COMPATIBILITY_MODIFIED_PATHS,
+    )
+
+
 def _check_protocol_release_commit(repo_root: Path, base: str) -> None:
     check_repository_identity(repo_root)
     _check_predecessor_activation_commit(repo_root)
     _check_post_sdg_base(repo_root)
     _check_post_sdg_compatibility_release(repo_root, SDG004_BASE)
-    if COMMIT.fullmatch(base) is None or base == SDG008_BASE:
+    if COMMIT.fullmatch(base) is None or base == SDG010_RELEASE:
         raise Denied
     if _git(repo_root, "rev-parse", "HEAD").strip() != base.encode():
         raise Denied
     if _git(repo_root, "rev-parse", "origin/main").strip() != base.encode():
         raise Denied
-    _check_sdg008_compatibility_release(repo_root, base)
+    _check_sdg011_compatibility_release(repo_root, base)
 
 
 def _check_predecessor_activation_commit(repo_root: Path) -> None:

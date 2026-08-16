@@ -89,6 +89,62 @@ def test_identity_phase_cli_is_closed_and_exact():
         identity_isolation._arguments([])
 
 
+def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
+    root = Path(__file__).resolve().parents[1]
+    runner = (root / "scripts/run_subject_development_mission_v5.py").read_text(
+        encoding="utf-8"
+    )
+    rollback = (
+        root
+        / "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md"
+    ).read_text(encoding="utf-8")
+    workflow = (root / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    exact_values = {
+        "SDG010_BASE": "46690372e532c50761f9232ff5b2e20e18779d28",
+        "SDG010_TOPIC": "7e155ca8907b31a14d5abadeeeb73e3edac71c14",
+        "SDG010_RELEASE": "efa43a4dfb305cd51d8a57a20838be6123ccb514",
+        "SDG010_TREE": "781beb6d3f8ef626d058394d14103c9512550637",
+        "SDG010_GATE_SHA256": (
+            "bd7b1935271533653a1cbae1a35032d444009b4387ffe327e6ed5d5757ed6658"
+        ),
+        "SDG010_RECEIPT_SHA256": (
+            "07ee1f5845be27aa81e7c8b4257d98ec22b7047e3d0e1020583f9acac484ead4"
+        ),
+    }
+    for name, value in exact_values.items():
+        assert f'{name} = "{value}"' in runner
+
+    for value in (
+        "gh pr view 484",
+        'row.get("state")=="MERGED"',
+        'row.get("baseRefName")=="main"',
+        'row.get("baseRefOid")=="46690372e532c50761f9232ff5b2e20e18779d28"',
+        'row.get("headRefName")=="agent/sdg010-mission-v5-ci-phase-routing-v4"',
+        'row.get("headRefOid")=="7e155ca8907b31a14d5abadeeeb73e3edac71c14"',
+        'merge=="efa43a4dfb305cd51d8a57a20838be6123ccb514"',
+        (
+            "efa43a4dfb305cd51d8a57a20838be6123ccb514 "
+            "46690372e532c50761f9232ff5b2e20e18779d28 "
+            "7e155ca8907b31a14d5abadeeeb73e3edac71c14"
+        ),
+        "7e155ca8907b31a14d5abadeeeb73e3edac71c14^{tree}",
+    ):
+        assert value in rollback
+    assert 'branch="agent/sdg010-mission-v5-ci-phase-routing"' not in rollback
+    for digest, path in (
+        (
+            "32ae8d821b991910b04ec29904fa3861389dd4807a2c000948264ec60bbb1b9b",
+            "scripts/run_subject_development_mission_v5.py",
+        ),
+        (
+            "fad00cb5058f80fd074553ec399e72a76f91c113d42569a4ce6d606fa301dbc7",
+            "evidence/DEP-SDG-010-MISSION-V5-CI-PHASE-ROUTING/rollback.md",
+        ),
+    ):
+        assert f"{digest}  {path}" in workflow
+
+
 def test_subject_progress_ci_separates_historical_and_current_phases():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
