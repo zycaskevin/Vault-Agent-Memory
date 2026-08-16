@@ -192,3 +192,23 @@ those reviewed shell functions, sends TERM to the child shell, and requires
 exit 143, no mutation marker, and final lease removal. This changed source has
 static verification only until a fresh external test lease is granted; no prior
 focused or Local Green is promoted.
+
+## Accepted signal-safe Builder proof
+
+Fresh focused on exact clean source
+`9f0e25715b0d4cc5673748a668f7908902a2eaa4` passed five selected checks,
+including the executable TERM negative requiring rc 143, absent mutation
+marker, and removed lease. It also passed direct dev6 rollback parsing, Bash
+syntax, both proof-bound candidate nodes, both exact two-parent active nodes,
+malformed active denial, and both no-proof baseline nodes with exact INACTIVE,
+sequence 6, T-004 PENDING, and absent pending/proof state. Log SHA-256 is
+`2392204a86890c616bc1248d78ec406fa5ae1df17b0240d5dc350dc7cb138e9c`;
+wrapper exit was 0.
+
+The one Full Local Green on the same exact source passed all six commands.
+Candidate identity isolation completed exact 446 nodes; the disjoint remainder
+reported 2869 passed, 12 skipped, and one pre-existing SyntaxWarning. Every
+command and wrapper returned 0. Log SHA-256 is
+`65bedd99fe6c267d48f534d77936e42d8d7cd74cd2458ec592cbc31be49b4694`.
+The source remained clean before and after both runs. Independent receipt,
+hosted Green, and delivery readback remain mandatory.

@@ -6,19 +6,21 @@
   "sdd_references": ["SD-MISSION-V5-POST-START-CI-RECOVERY"],
   "risk_level": "L1",
   "created_at": "2026-08-16T11:11:20Z",
-  "updated_at": "2026-08-16T15:44:06Z",
+  "updated_at": "2026-08-16T15:56:56Z",
   "workflow": {
-    "phase": "fix",
+    "phase": "proof",
     "history": [
       {"phase": "red", "at": "2026-08-16T15:44:06Z"},
       {"phase": "evidence", "at": "2026-08-16T15:44:06Z"},
-      {"phase": "fix", "at": "2026-08-16T15:44:06Z"}
+      {"phase": "fix", "at": "2026-08-16T15:44:06Z"},
+      {"phase": "green", "at": "2026-08-16T15:56:56Z"},
+      {"phase": "proof", "at": "2026-08-16T15:56:56Z"}
     ]
   },
   "expected_behavior": "Candidate dispatcher tests replay an inactive authority anchor and active main retains ACTIVE assertions; both nodes execute exactly once in the phase harness.",
   "actual_behavior": "PR 490 run 31953893529 rejected the one historical off-Darwin skip because v2E applied one-PASS JUnit proof to all 446 identity nodes.",
   "environment": {
-    "commit": "8ae13eabbd4652746052aa8f67b7946b80267be7",
+    "commit": "9f0e25715b0d4cc5673748a668f7908902a2eaa4",
     "branch": "agent/sdg012-identity-junit-dispatcher-only-v3",
     "runtime": "GitHub Actions Python 3.10, 3.11, 3.12; CPython 3; Git; Agentic SDD Governance 0.2.0-experimental.6"
   },
@@ -31,7 +33,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--verification.txt",
-      "sha256": "bb620f85bf420dc4ef6a1235754422e62dab0fdb64ccf62776a4938c3354dcca",
+      "sha256": "ce3de878b3233f9547314c632638fae5c4d60ea97d542c63300ebba6e4066e3e",
       "collector": "terminal"
     }
   ]

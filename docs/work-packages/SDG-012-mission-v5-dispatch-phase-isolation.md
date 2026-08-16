@@ -155,6 +155,11 @@
   exits 129/130/143 and leaves cleanup exclusively on EXIT. An executable
   negative must prove TERM returns 143, never reaches the mutation marker, and
   removes the lease. Prior Green remains bound only to its exact source.
+- Fresh signal-focused and Full Local Green now pass on exact source
+  `9f0e25715b0d4cc5673748a668f7908902a2eaa4`. Focused includes the executable
+  TERM negative plus the complete prior matrix; Full Green proves all six
+  commands, exact 446-node isolation, and the disjoint remainder. Independent
+  review, hosted Green, and delivery readback remain pending.
 
 ## Claim
 

@@ -227,3 +227,16 @@ Static reviewer v3 signal remediation:
 - The executable negative sends TERM and requires exit 143, no mutation marker,
   and final lease removal.
 - Changed bytes are static-only until fresh focused and Full Local Green proof.
+
+Accepted signal-safe Builder proof on exact source
+9f0e25715b0d4cc5673748a668f7908902a2eaa4:
+- Focused passed the executable TERM rc143/no-mutation/lease-removed negative,
+  five selected checks, candidate exact 2, active exact 2, malformed denial,
+  and baseline exact 2 plus exact INACTIVE state.
+- Focused exit 0; log SHA-256:
+  2392204a86890c616bc1248d78ec406fa5ae1df17b0240d5dc350dc7cb138e9c.
+- Full Local Green passed all six commands, exact 446 identity nodes, and a
+  remainder of 2869 passed, 12 skipped, one pre-existing SyntaxWarning.
+- Full exit 0; log SHA-256:
+  65bedd99fe6c267d48f534d77936e42d8d7cd74cd2458ec592cbc31be49b4694.
+- Source remained clean; review, hosted Green, and delivery remain pending.

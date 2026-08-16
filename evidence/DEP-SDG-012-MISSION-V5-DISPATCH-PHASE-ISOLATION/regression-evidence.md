@@ -151,6 +151,16 @@
   requires return code 143, absent mutation marker, and removed lease. Prior
   Green remains evidence only for exact source `8ae13eab...`; fresh focused and
   Local Green are required for the changed rollback/test bytes.
+- Fresh signal-focused on exact source
+  `9f0e25715b0d4cc5673748a668f7908902a2eaa4` passed the executable TERM
+  rc143/no-marker/lease-removed negative, all five selected checks, candidate
+  exact 2, active exact 2, malformed denial, and baseline exact 2 plus exact
+  INACTIVE state. Exit was 0; log SHA-256 is
+  `2392204a86890c616bc1248d78ec406fa5ae1df17b0240d5dc350dc7cb138e9c`.
+- The one Full Local Green on that source passed all six commands, exact 446
+  identity nodes, and a remainder of 2869 passed, 12 skipped, and one existing
+  warning. Exit was 0; log SHA-256 is
+  `65bedd99fe6c267d48f534d77936e42d8d7cd74cd2458ec592cbc31be49b4694`.
 
 ## Unverified boundary
 
@@ -158,7 +168,8 @@ The original PR #489 head `bbc6e476ae3444cef77400f28710de73f9cf7f73`
 receipt and hosted Green are historical exact-head evidence only and are not in
 this rebuilt topic. Fresh focused and Local Green pass on the exact v2B source.
 Fresh v2E2 focused and Local Green pass only for exact historical source
-`97728ce5...`; hosted v3 RED supersedes it for current acceptance. Fresh v3b
-focused and Local Green pass only for exact source `8ae13eab...`; independent
-receipt and hosted Green remain pending. Exact merge readback, proposal, task
-start, and production outcome remain unclaimed until post-delivery.
+`97728ce5...`; hosted v3 RED supersedes it for current acceptance. Fresh
+signal-safe focused and Local Green pass only for exact source `9f0e257...`;
+independent receipt and hosted Green remain pending. Exact merge readback,
+proposal, task start, and production outcome remain unclaimed until
+post-delivery.
