@@ -104,6 +104,19 @@ jobs:
           --ignore=tests/test_subject_task_authorization_dispatch.py
           --ignore=tests/test_subject_development_mission_v4.py
           --ignore=tests/test_subject_task_authorization_dispatch_v4.py
+          --ignore=tests/test_subject_development_mission_v5.py
+
+      - name: Run candidate Mission V5 identity controls
+        if: ${{ github.event_name == 'pull_request' }}
+        run: >-
+          python scripts/run_subject_identity_test_isolation.py
+          --phase candidate
+
+      - name: Run active Mission V5 identity controls
+        if: ${{ github.event_name != 'pull_request' }}
+        run: >-
+          python scripts/run_subject_identity_test_isolation.py
+          --phase active
 
       - name: Replay immutable T-001 progress controls at completion phase
         shell: bash
@@ -237,8 +250,8 @@ jobs:
       - name: Validate current Subject Development Mission v5 overlay
         run: |
           cat <<'EOF' | sha256sum -c -
-          d96e628fc13cb5df6a07e449454bf9aae300e202680cd996ea110ea13684bce3  scripts/run_subject_development_mission_v5.py
-          f8220825f4a4e19962fb91333512fc27a8fe99b7a3bd4426a59ee6946490623b  scripts/run_subject_identity_test_isolation.py
+          c25bc6fffffcca1b04b676195d7f9b4568875d843ade7ac139fbb80bd2c4ea77  scripts/run_subject_development_mission_v5.py
+          7a3c0d95d3ff81231ba79aeb2e8b29d67e00486caf43537bb26d89cfea590ed7  scripts/run_subject_identity_test_isolation.py
           64d10f43f4a92ae1ca047e1516e93d4c5b0c0b78098601889e9152e240df365c  scripts/update_subject_task_progress_v5.py
           d79bf1ee1268e2fc8a0cbaafb6f9abec9e5057643dc4c1dcb34b4db68446737e  scripts/validate_subject_development_mission_v5.py
           a70e365e5691981b4d19a80929667c50014800e77f04bdf825296e6ead953c58  scripts/validate_subject_task_authorization_dispatch_v5.py
@@ -247,9 +260,9 @@ jobs:
           c2d55591e677f923981fa6dc242c47d98cd0e13fb43a844f8cf9b5a9060dd1db  specs/subject-distillation/task-scope-manifest-v5.json
           78bbc6fde5c60d96c6bd642636b4516536717489d34ad47dbdd2cc812b491a91  docs/decision_records/2026-08-14-subject-development-mission-v5-recovery.md
           48ab486c3326f1903c625bb9b1fa162c3a44ea3fdd120c63777f636b13a657e4  specs/subject-distillation/development-missions/README.md
-          7c3da9241158086dda7d37a408350ee1f70d0ef6efe1731f47d670995bbd7f54  tests/test_subject_development_mission_v5.py
+          b8504c98891d056feee7ef91c86d08e433aeca1331d69310669f2f535341c1f7  tests/test_subject_development_mission_v5.py
           50a6385edcbb3ae4ca92fbef227a41029b9708584d711eeb40383b81699fd64d  tests/test_subject_task_authorization_dispatch_v5.py
-          87588cfd884ecbe47aa0275c3fc7317a2b309d6ac9b9bfb786c8cd75ca3da4ec  tests/test_repo_hygiene_tools.py
+          08fb07ded8e7fcf221d414b91908bdf65973dc59e392748f38c71ea71a7ae412  tests/test_repo_hygiene_tools.py
           EOF
           python scripts/validate_subject_task_authorization_dispatch_v5.py \
             --ledger \

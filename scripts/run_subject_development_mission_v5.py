@@ -1359,6 +1359,149 @@ def validate_mission_activation_delivery(
     return deliveries[0]
 
 
+def validate_mission_activation_topic(
+    repo_root: Path,
+    *,
+    protocol_base: str,
+    mission_raw: bytes,
+) -> str:
+    """Validate an unmerged, closed Mission V5 activation topic.
+
+    This is deliberately a different predicate from
+    :func:`validate_mission_activation_delivery`: it proves that the exact PR
+    head is the sole linear, path-closed topic rooted at ``protocol_base``.  It
+    does not create authority and it must not be used to classify the Mission
+    as ACTIVE.  The post-merge validator still requires the exact two-parent
+    delivery commit.
+    """
+    if COMMIT.fullmatch(protocol_base) is None or type(mission_raw) is not bytes:
+        raise Denied
+    check_repository_identity(repo_root)
+    head = _git(repo_root, "rev-parse", "HEAD").strip().decode()
+    if COMMIT.fullmatch(head) is None:
+        raise Denied
+    ancestor = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", protocol_base, head],
+        cwd=repo_root,
+        capture_output=True,
+        check=False,
+        timeout=30,
+    )
+    if ancestor.returncode or ancestor.stdout or ancestor.stderr:
+        raise Denied
+    topic_commits = _git(
+        repo_root,
+        "rev-list",
+        "--reverse",
+        "--topo-order",
+        f"{protocol_base}..{head}",
+    ).decode().splitlines()
+    if (
+        not topic_commits
+        or len(topic_commits) > 32
+        or topic_commits[-1] != head
+        or any(COMMIT.fullmatch(item) is None for item in topic_commits)
+    ):
+        raise Denied
+    expected_status = [
+        ("M" if path in ACTIVATION_SDG_MODIFIED_PATHS else "A") + "\t" + path
+        for path in ACTIVATION_SDG_PATHS
+    ]
+    previous = protocol_base
+    known = set(ACTIVATION_SDG_MODIFIED_PATHS)
+    allowed = set(ACTIVATION_SDG_PATHS)
+    for commit in topic_commits:
+        parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).decode().split()
+        if parents != [commit, previous]:
+            raise Denied
+        changes = _git(
+            repo_root,
+            "diff",
+            "--name-status",
+            "--no-renames",
+            f"{previous}..{commit}",
+        ).decode().splitlines()
+        if not changes:
+            raise Denied
+        for line in changes:
+            fields = line.split("\t")
+            if len(fields) != 2:
+                raise Denied
+            action, path = fields
+            if path not in allowed or action != (
+                "M" if path in known else "A"
+            ):
+                raise Denied
+            mode, _raw = _git_object(repo_root, commit, path)
+            if mode != "100644":
+                raise Denied
+            known.add(path)
+        previous = commit
+    if _git(
+        repo_root,
+        "diff",
+        "--name-status",
+        "--no-renames",
+        f"{protocol_base}..{head}",
+    ).decode().splitlines() != expected_status:
+        raise Denied
+    mode, raw = _git_object(repo_root, head, MISSION_PROOF_PATH)
+    if mode != "100644" or raw != mission_raw:
+        raise Denied
+    return head
+
+
+def _has_mission_activation_delivery_shape(repo_root: Path, protocol_base: str) -> bool:
+    """Return whether history contains a purported delivery that must not fallback."""
+    head = _git(repo_root, "rev-parse", "HEAD").strip().decode()
+    commits = _git(
+        repo_root,
+        "rev-list",
+        "--ancestry-path",
+        "--reverse",
+        f"{protocol_base}..{head}",
+    ).decode().splitlines()
+    for commit in commits:
+        parents = _git(
+            repo_root, "rev-list", "--parents", "-n", "1", commit
+        ).decode().split()
+        if len(parents) == 3 and parents[0] == commit and parents[1] == protocol_base:
+            return True
+    return False
+
+
+def validate_mission_activation_candidate(
+    repo_root: Path,
+    *,
+    protocol_base: str,
+    mission_raw: bytes,
+) -> tuple[str, str]:
+    """Validate a PR head as either exact active delivery or closed topic.
+
+    A real or purported delivery topology is never eligible for a fallback to
+    preliminary topic validation: an invalid two-parent delivery is DENY.
+    """
+    if COMMIT.fullmatch(protocol_base) is None or type(mission_raw) is not bytes:
+        raise Denied
+    check_repository_identity(repo_root)
+    try:
+        return "active", validate_mission_activation_delivery(
+            repo_root,
+            protocol_base=protocol_base,
+            mission_raw=mission_raw,
+        )
+    except Denied:
+        if _has_mission_activation_delivery_shape(repo_root, protocol_base):
+            raise
+    return "preliminary", validate_mission_activation_topic(
+        repo_root,
+        protocol_base=protocol_base,
+        mission_raw=mission_raw,
+    )
+
+
 def validate_progress_only_delivery(
     repo_root: Path,
     *,

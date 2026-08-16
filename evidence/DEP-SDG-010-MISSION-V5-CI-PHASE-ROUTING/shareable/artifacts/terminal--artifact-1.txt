@@ -1,0 +1,15 @@
+SDG-010 builder verification summary
+
+Focused phase-routing suite: 92 passed in 44.23s.
+
+Builder Local Green result: PASS.
+Doctor: PASS.
+CI contract verification: PASS.
+README smoke: PASS.
+Release parity: PASS.
+Preliminary identity harness: 431 nodes passed.
+Disjoint remainder: 2869 passed, 12 skipped, 1 existing SyntaxWarning.
+
+Full terminal logs and exit markers are retained outside the repository in the
+externally coordinated builder lease. No private data, credentials, or local
+paths are included in this shareable summary.
