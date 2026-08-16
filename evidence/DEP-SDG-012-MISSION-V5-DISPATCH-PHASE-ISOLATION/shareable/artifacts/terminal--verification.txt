@@ -8,5 +8,13 @@ Static design:
 - Both generic remainders exclude dispatcher V5 exactly once.
 - CI pins and the closed SDG-012 compatibility path set are mandatory.
 
+First focused source finding:
+- 7 selected checks passed; exact SDG-011 anchor replay failed once.
+- Cause was Builder contamination of historical SDG-004 and SDG-007 path
+  sets, not production or dispatcher behavior.
+- The repair removes exactly those two entries, retains the hygiene path only
+  in SDG-012, and refreshes exact CI hashes.
+- The run remains RED evidence; focused v2 is not yet claimed.
+
 Focused tests, full Local Green, strict DEP, independent review, hosted CI, and
 merge readback remain pending at initial Builder freeze.

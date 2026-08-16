@@ -5,8 +5,11 @@
 - Exact base/worktree/branch and hosted RED identifiers confirmed.
 - Root cause localized to test partitioning and snapshot ownership.
 - Production dispatcher/validator/updater bytes are outside the patch.
-- Focused candidate/active, collection, Local Green, strict DEP, and review
-  remain mandatory.
+- First focused source run retained exact exit 1 after 7/8 selected checks;
+  static inspection confirmed two accidental historical path-set additions.
+- The bounded repair restores both historical sets byte-for-byte and keeps the
+  hygiene test only in SDG-012. Focused v2, collection, Local Green, strict DEP,
+  and review remain mandatory.
 
 ## Required final proof
 

@@ -18,6 +18,17 @@ head.
 - Production dispatcher correctly denied the preliminary topic; its fail-closed
   behavior is evidence against changing production code.
 
+## Builder focused repair finding
+
+The first focused source revision passed seven of eight selected checks but the
+new SDG-011 anchor assertion denied during historical SDG-004 replay. Static
+diff inspection found the Builder had accidentally added
+`tests/test_repo_hygiene_tools.py` to historical `SDG004_COMPATIBILITY_PATHS`
+and `SDG007_COMPATIBILITY_MODIFIED_PATHS`. Those records describe immutable
+merged deliveries, so expanding either set correctly caused fail-closed replay.
+The bounded repair removes only those two contaminating entries while retaining
+the hygiene path in the new SDG-012 closed set.
+
 ## Contradicting evidence
 
 No evidence shows a production dispatcher, validator, updater, activation, or
@@ -33,5 +44,5 @@ longer returns ACTIVE.
 ## Conclusion
 
 Move test ownership, not authority semantics: add the two nodes to the explicit
-phase harness, exclude them from both remainders, and keep production bytes
-unchanged.
+phase harness, exclude them from both remainders, keep production bytes
+unchanged, and never mutate historical delivery path sets.
