@@ -6,15 +6,13 @@
   "sdd_references": ["SD-MISSION-V5-POST-START-CI-RECOVERY"],
   "risk_level": "L1",
   "created_at": "2026-08-16T11:11:20Z",
-  "updated_at": "2026-08-16T15:30:28Z",
+  "updated_at": "2026-08-16T15:44:06Z",
   "workflow": {
-    "phase": "proof",
+    "phase": "fix",
     "history": [
-      {"phase": "red", "at": "2026-08-16T15:16:47Z"},
-      {"phase": "evidence", "at": "2026-08-16T15:16:47Z"},
-      {"phase": "fix", "at": "2026-08-16T15:16:47Z"},
-      {"phase": "green", "at": "2026-08-16T15:30:28Z"},
-      {"phase": "proof", "at": "2026-08-16T15:30:28Z"}
+      {"phase": "red", "at": "2026-08-16T15:44:06Z"},
+      {"phase": "evidence", "at": "2026-08-16T15:44:06Z"},
+      {"phase": "fix", "at": "2026-08-16T15:44:06Z"}
     ]
   },
   "expected_behavior": "Candidate dispatcher tests replay an inactive authority anchor and active main retains ACTIVE assertions; both nodes execute exactly once in the phase harness.",
@@ -33,7 +31,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--verification.txt",
-      "sha256": "75cb44ce8e8d67a32c29881c8104ee517348605c25387fb863cbab9cc9dc15c6",
+      "sha256": "bb620f85bf420dc4ef6a1235754422e62dab0fdb64ccf62776a4938c3354dcca",
       "collector": "terminal"
     }
   ]

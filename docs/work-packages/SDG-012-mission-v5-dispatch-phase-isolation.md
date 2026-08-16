@@ -149,6 +149,12 @@
   malformed, and no-proof baseline matrix. Full Green proves all six commands,
   exact 446-node isolation, and the disjoint remainder. Independent review,
   hosted Green, and delivery readback remain mandatory and unclaimed.
+- Static reviewer v3 then found one P1 in rollback signal handling: trapping
+  cleanup directly for HUP/INT/TERM could release the external lease without
+  forcing shell termination. The bounded repair gives signals exact nonzero
+  exits 129/130/143 and leaves cleanup exclusively on EXIT. An executable
+  negative must prove TERM returns 143, never reaches the mutation marker, and
+  removes the lease. Prior Green remains bound only to its exact source.
 
 ## Claim
 

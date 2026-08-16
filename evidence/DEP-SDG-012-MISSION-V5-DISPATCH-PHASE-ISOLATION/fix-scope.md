@@ -33,6 +33,9 @@ reviewed SDG-012 merge.
   match exact node, platform predicate, reason, `pytest.skip` type, one case,
   one skip, and zero failures/errors; no generic skip/xfail allowance is in
   scope.
+- Route HUP, INT, and TERM through explicit nonzero exits while retaining one
+  EXIT-only cleanup trap. Prove TERM returns 143, no mutation marker executes,
+  and the external lease is removed.
 
 ## Explicit non-scope
 

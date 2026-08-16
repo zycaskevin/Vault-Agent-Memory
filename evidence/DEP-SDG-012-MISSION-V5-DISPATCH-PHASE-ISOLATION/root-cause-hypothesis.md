@@ -91,3 +91,13 @@ one-PASS evidence everywhere else; broad skip acceptance would falsify the fix.
 Move test ownership, not authority semantics: add the two nodes to the explicit
 phase harness, exclude them from both remainders, keep production bytes
 unchanged, and never mutate historical delivery path sets.
+
+## Static reviewer v3 signal finding
+
+The rollback used one cleanup function as the handler for EXIT, HUP, INT, and
+TERM. A trapped signal runs that function but does not mechanically require the
+shell to terminate; the script could therefore remove its exclusive lease and
+continue toward mutation. The bounded correction leaves cleanup only on EXIT
+and makes each signal handler exit nonzero (129/130/143), which invokes EXIT
+cleanup exactly once. This is rollback control-flow evidence, not a production
+authority defect.

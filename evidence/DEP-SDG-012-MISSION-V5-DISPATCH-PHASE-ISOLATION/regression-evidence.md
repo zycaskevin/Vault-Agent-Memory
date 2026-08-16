@@ -145,6 +145,12 @@
   12 skipped, and one pre-existing SyntaxWarning. Wrapper exit was 0; log
   SHA-256 is
   `fb790a7cf363c33004da21a05f68f9d64a10c29d9de6af8de0b8419eddb1ab4a`.
+- Static reviewer v3 found one later rollback P1: a direct cleanup trap for
+  TERM could release the lease without forcing shell termination. The bounded
+  repair makes signal exits explicit and adds an executable TERM negative that
+  requires return code 143, absent mutation marker, and removed lease. Prior
+  Green remains evidence only for exact source `8ae13eab...`; fresh focused and
+  Local Green are required for the changed rollback/test bytes.
 
 ## Unverified boundary
 

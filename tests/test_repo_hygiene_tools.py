@@ -234,7 +234,11 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
         'test "${SDG012_ROLLBACK_NO_PROPOSAL:-}" = "confirmed-no-issued-proposal"',
         'mkdir -m 700 -- "$rollback_lease"',
         'rmdir -- "$rollback_lease"',
-        'trap cleanup EXIT HUP INT TERM',
+        'trap cleanup EXIT',
+        "trap 'on_signal 129' HUP",
+        "trap 'on_signal 130' INT",
+        "trap 'on_signal 143' TERM",
+        'trap - HUP INT TERM',
         'test "$(git symbolic-ref --quiet --short HEAD)" = "main"',
         'git fetch --no-tags origin main',
         'test "$(git rev-parse HEAD)" = "$merge_commit"',
@@ -311,6 +315,12 @@ def test_sdg012_rollback_preflight_denies_unsafe_mutable_state(
     acquire = "acquire_rollback_lease() {" + rollback.split(
         "acquire_rollback_lease() {", 1
     )[1].split("\n}", 1)[0] + "\n}"
+    cleanup = "cleanup() {" + rollback.split("cleanup() {", 1)[1].split(
+        "\n}", 1
+    )[0] + "\n}"
+    on_signal = "on_signal() {" + rollback.split("on_signal() {", 1)[1].split(
+        "\n}", 1
+    )[0] + "\n}"
     preflight = "assert_canonical_delivery() {" + rollback.split(
         "assert_canonical_delivery() {", 1
     )[1].split("\n}", 1)[0] + "\n}"
@@ -413,6 +423,38 @@ def test_sdg012_rollback_preflight_denies_unsafe_mutable_state(
         check=False,
     )
     assert collision_result.returncode != 0
+
+    signal_lease = leases / "signal-held"
+    revert_marker = tmp_path / "revert-mutation-reached"
+    signal_command = "\n".join(
+        (
+            "set -euo pipefail",
+            f"rollback_lease={str(signal_lease)!r}",
+            'rollback_tmp=""',
+            "rollback_lease_acquired=0",
+            cleanup,
+            on_signal,
+            "trap cleanup EXIT",
+            "trap 'on_signal 129' HUP",
+            "trap 'on_signal 130' INT",
+            "trap 'on_signal 143' TERM",
+            acquire,
+            "acquire_rollback_lease",
+            'kill -TERM "$$"',
+            f"printf reached > {str(revert_marker)!r}",
+        )
+    )
+    signal_result = subprocess.run(
+        ["/bin/bash", "-c", signal_command],
+        cwd=repo,
+        env={**os.environ, "TMPDIR": str(temp_root)},
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert signal_result.returncode == 143
+    assert not revert_marker.exists()
+    assert not signal_lease.exists()
 
     held = leases / "held"
     held.mkdir()

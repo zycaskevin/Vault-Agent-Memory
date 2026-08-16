@@ -218,3 +218,12 @@ Accepted v3b Builder proof on exact source
   fb790a7cf363c33004da21a05f68f9d64a10c29d9de6af8de0b8419eddb1ab4a.
 - Source status was clean before and after. Independent receipt, hosted Green,
   and exact delivery readback remain mandatory.
+
+Static reviewer v3 signal remediation:
+- P0=0/P1=1: direct cleanup traps for signals did not mechanically require the
+  shell to stop before mutation.
+- Cleanup is now EXIT-only. HUP, INT, and TERM exit nonzero with exact statuses
+  129, 130, and 143.
+- The executable negative sends TERM and requires exit 143, no mutation marker,
+  and final lease removal.
+- Changed bytes are static-only until fresh focused and Full Local Green proof.

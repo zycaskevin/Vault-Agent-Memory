@@ -181,3 +181,14 @@ the wrapper returned 0. Log SHA-256 is
 `fb790a7cf363c33004da21a05f68f9d64a10c29d9de6af8de0b8419eddb1ab4a`.
 The worktree was clean before and after both runs. Fresh independent receipt,
 hosted Green, and exact delivery readback remain pending.
+
+## Static reviewer v3 signal remediation
+
+Static reviewer v3 reported P0=0/P1=1: `trap cleanup EXIT HUP INT TERM` could
+clean the lease on a signal without guaranteeing the shell stopped before
+revert. The bounded repair uses cleanup only for EXIT and exact HUP/INT/TERM
+handlers that exit 129/130/143. The hygiene regression extracts and executes
+those reviewed shell functions, sends TERM to the child shell, and requires
+exit 143, no mutation marker, and final lease removal. This changed source has
+static verification only until a fresh external test lease is granted; no prior
+focused or Local Green is promoted.

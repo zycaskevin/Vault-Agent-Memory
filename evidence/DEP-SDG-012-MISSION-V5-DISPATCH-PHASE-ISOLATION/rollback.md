@@ -19,6 +19,9 @@ the first preflight through revert and postproof. The command also requires
 symbolic `main`, canonical `origin`, a fully clean tracked/untracked tree, exact
 delivery refs/parents/tree, and absent proof/pending authority. It freshly
 fetches and repeats every mutable check immediately before `git revert`.
+HUP, INT, and TERM exit with conventional nonzero statuses; only the EXIT trap
+performs cleanup, so a signal cannot release the lease and then continue into
+the revert.
 
 ```bash
 set -euo pipefail
@@ -43,7 +46,17 @@ cleanup() {
     rollback_lease_acquired=0
   fi
 }
-trap cleanup EXIT HUP INT TERM
+
+on_signal() {
+  signal_status="$1"
+  trap - HUP INT TERM
+  exit "$signal_status"
+}
+
+trap cleanup EXIT
+trap 'on_signal 129' HUP
+trap 'on_signal 130' INT
+trap 'on_signal 143' TERM
 
 acquire_rollback_lease() {
   test -n "$rollback_lease"
