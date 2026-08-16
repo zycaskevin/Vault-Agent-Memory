@@ -200,6 +200,16 @@
   candidate/active/malformed/baseline checks were not reached. The test-only
   repair uses one unambiguous exact call token and the current delivery-prefixed
   fixture variables; no failed run is promoted and a fresh lease is required.
+- Focused v4b on exact source `065f0aca...` passed static, candidate, and exact
+  active controls, then falsified the malformed-fixture model. Its base tree
+  contained no proof, so dispatcher canonical INACTIVE was correct even though
+  direct validation denied an externally supplied proof. v4c keeps that exact
+  no-proof delivery-shaped case and requires API/CLI rc 0, sequence 6, and zero
+  authorized tasks. A separate proof-bearing topic tree with deliberately
+  reversed parents must preserve exact proof bytes/mode/tree while direct
+  Mission, dispatcher API, and CLI all deny. No production authority code,
+  proof, or ledger bytes change; fresh focused and Full Local Green remain
+  mandatory.
 
 ## Claim
 

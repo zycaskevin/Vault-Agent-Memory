@@ -117,3 +117,15 @@ cause is ambiguous naming and insufficient independent metadata binding, not a
 missing equality. v4 gives the objects distinct names and validates each PR's
 exact role. Production dispatcher, validator, updater, authority, and ledger
 bytes remain outside the fix.
+
+## Focused v4b fixture classification finding
+
+Focused v4b falsified the assumption that the malformed checkout was
+proof-bearing. Its commit used `protocol_base^{tree}`, so the proof path was
+absent. Direct validation denied only because the wrapper separately supplied
+the Mission proof bytes; dispatcher validation correctly classified the actual
+checkout as the exact no-proof `INACTIVE` baseline. v4c separates those
+contracts: the base-tree delivery shape must remain INACTIVE with zero
+authorized tasks, while an exact proof-bearing topic tree with reversed parent
+order must deny direct Mission, dispatcher API, and CLI. This is a test-fixture
+defect, not a production authority defect.

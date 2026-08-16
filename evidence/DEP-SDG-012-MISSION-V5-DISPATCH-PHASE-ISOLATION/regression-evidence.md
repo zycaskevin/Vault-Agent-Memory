@@ -189,6 +189,18 @@
   `\nassert_malformed_dispatcher_nodes_denied\n` and injects current fixture
   variable names. The consumed lease cannot be reused; fresh focused remains
   required.
+- Focused v4b on exact repaired source
+  `065f0aca9dedb9973164a55887f32a543a272acc` passed six selected checks,
+  candidate exact 2, and exact two-parent active exact 2. It then stopped at
+  malformed dispatcher API with exit 1. Log SHA-256 is
+  `456792dc8b2451aa5f5cc56085b60ec9cfa12f76bf541381bbea389f4797dd80`;
+  exit-marker SHA-256 is
+  `cf205dbb8cea84897b488abcc281bf96698d5e94b1096b16657b4caba9082a22`.
+  The checkout tree was the proof-absent protocol base, so dispatcher
+  canonical INACTIVE was correct while direct validation denied the externally
+  supplied proof. v4c retains that exact no-proof/zero-task outcome and adds a
+  separate proof-bearing reversed-parent topology requiring direct/API/CLI
+  DENY. No Full Local Green ran and the consumed lease is not reusable.
 
 ## Unverified boundary
 

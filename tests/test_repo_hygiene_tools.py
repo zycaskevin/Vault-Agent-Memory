@@ -243,6 +243,7 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
         'mission_fixture_branch="agent/mission-v5-activation-post-sdg011"',
         'mission_fixture_topic="6e596574f48354cdf6ccdc72bce35d3b6df1c184"',
         'mission_fixture_ref="refs/pull/487/head"',
+        'mission_proof_path="specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json"',
         'assert row.get("state")=="CLOSED"',
         'assert row.get("mergeCommit") is None',
         'rollback_lease="${SDG012_ROLLBACK_LEASE:-}"',
@@ -263,7 +264,21 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
         'reviewed_source="$(git -C "$rollback_tmp/retained" show "$delivery_merge_commit:.sddgov/merge-gate.json"',
         'assert_node_pass candidate candidate-authority "$node_authority"',
         'assert_node_pass active active-authority "$node_authority"',
-        'malformed active fixture was not denied',
+        'git commit-tree "$protocol_base^{tree}" -p "$protocol_base" -p "$mission_fixture_topic"',
+        'no-proof delivery-shaped fixture accepted external proof',
+        "assert_no_proof_dispatcher_inactive() {",
+        '"authorized_tasks": 0',
+        'assert dispatch.validate(root) == expected',
+        'assert completed.returncode == 0',
+        'assert completed.stdout == dispatch.mission.canonical(expected)',
+        'assert completed.stderr == b""',
+        'git commit-tree "$mission_fixture_topic^{tree}" -p "$mission_fixture_topic" -p "$protocol_base"',
+        'test "$(git rev-list --parents -n 1 "$malformed_commit")" = "$malformed_commit $mission_fixture_topic $protocol_base"',
+        'test "$(git rev-parse "$malformed_commit^{tree}")" = "$(git rev-parse "$mission_fixture_topic^{tree}")"',
+        'test "$(git ls-tree "$malformed_commit" -- "$mission_proof_path" | cut -d \' \' -f 1)" = 100644',
+        'test "$(git cat-file -t "$malformed_commit:$mission_proof_path")" = blob',
+        'git show "$malformed_commit:$mission_proof_path" | cmp - "$rollback_tmp/mission-proof.json"',
+        'proof-bearing reversed-parent fixture was not denied',
         "assert_malformed_dispatcher_nodes_denied() {",
         "malformed dispatcher authority node was not denied",
         'assert status == 2',
@@ -295,8 +310,13 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     assert "agent/sdg012-identity-junit-dispatcher-only-v3" not in rollback
     assert "agent/sdg012-mission-v5-dispatch-phase-isolation-v2" not in rollback
     malformed_dispatcher_call = "\nassert_malformed_dispatcher_nodes_denied\n"
+    no_proof_dispatcher_call = "\nassert_no_proof_dispatcher_inactive\n"
     assert rollback.count(malformed_dispatcher_call) == 1
+    assert rollback.count(no_proof_dispatcher_call) == 1
     assert rollback.index("assert_node_pass active active-cli") < rollback.index(
+        no_proof_dispatcher_call
+    )
+    assert rollback.index(no_proof_dispatcher_call) < rollback.index(
         malformed_dispatcher_call
     )
     assert rollback.index(malformed_dispatcher_call) < rollback.index(
@@ -317,7 +337,7 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     post_revert = rollback.split("# Only now mutate canonical main", 1)[1]
     assert "run_subject_development_mission_v5.py" not in proof_installer
     assert "run_subject_development_mission_v5.py" in baseline_installer
-    assert pre_revert.count("install_reviewed_proof_fixture_bytes") == 3
+    assert pre_revert.count("install_reviewed_proof_fixture_bytes") == 4
     assert "install_reviewed_baseline_bytes" not in pre_revert
     assert "install_reviewed_baseline_bytes" in post_revert
     for path in (

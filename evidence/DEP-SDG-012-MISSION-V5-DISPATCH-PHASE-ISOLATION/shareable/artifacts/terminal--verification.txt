@@ -43,6 +43,20 @@ Full Local Green v2:
 Independent protected review, hosted CI, and exact merge readback remain
 separate mandatory gates.
 
+Focused v4b fail-closed finding:
+- Exact source 065f0aca9dedb9973164a55887f32a543a272acc.
+- Six selected checks, candidate exact 2, and exact active exact 2 passed.
+- The malformed fixture used the proof-absent protocol-base tree. Direct
+  validation denied the externally supplied proof; dispatcher correctly
+  classified the checkout as INACTIVE, so the run stopped before baseline.
+- Log SHA-256:
+  456792dc8b2451aa5f5cc56085b60ec9cfa12f76bf541381bbea389f4797dd80.
+- Exit-marker SHA-256:
+  cf205dbb8cea84897b488abcc281bf96698d5e94b1096b16657b4caba9082a22.
+- v4c separates exact no-proof INACTIVE/zero-task behavior from an exact
+  proof-bearing reversed-parent topology that must deny direct/API/CLI.
+- No rerun or Full Local Green occurred; fresh leased verification is pending.
+
 CodeRabbit remediation v2B:
 - Exact rebuilt source:
   bcd2686eb9dff28365a8bd24ae600e808506885e.

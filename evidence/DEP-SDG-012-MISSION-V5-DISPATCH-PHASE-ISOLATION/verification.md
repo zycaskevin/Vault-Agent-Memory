@@ -256,3 +256,28 @@ wrapper SHA-256 is
 `14425a2326cb6e03c7dc9215a456e225249c984de3e65d19c6c41e4a173a9d11`.
 The bounded repair changes tests/evidence only. No rerun or Full Local Green is
 claimed; the original lease is consumed and a fresh lease is mandatory.
+
+## Focused v4b malformed-fixture RED and v4c repair
+
+The one fresh focused v4b run on exact clean source
+`065f0aca9dedb9973164a55887f32a543a272acc` passed all six selected checks,
+both proof-bound candidate nodes, and both exact two-parent active nodes. It
+then stopped before the baseline when the malformed direct Mission validator
+denied but dispatcher API did not. Log SHA-256 is
+`456792dc8b2451aa5f5cc56085b60ec9cfa12f76bf541381bbea389f4797dd80`;
+exit-marker SHA-256 is
+`cf205dbb8cea84897b488abcc281bf96698d5e94b1096b16657b4caba9082a22`.
+No rerun or Full Local Green occurred.
+
+Read-only diagnosis proved this was a fixture classification error, not an
+authorization gap. The malformed commit used the exact protocol-base tree, so
+the Mission proof was absent. Direct validation received the proof bytes from
+an external retained file and correctly denied the claimed delivery;
+dispatcher validation inspected the checkout, saw no proof, and correctly
+returned canonical `INACTIVE`. v4c retains this delivery-shaped no-proof case
+and mechanically requires API/CLI rc 0, sequence 6, and zero authorized tasks.
+A separate malformed commit uses the exact proof-bearing Mission topic tree but
+reverses the two parents. Exact proof path, mode, bytes, tree, and reversed
+parent order are pinned before direct Mission, dispatcher API, and CLI must all
+deny. Production authority bytes remain unchanged. Fresh focused and Full
+Local Green are required for v4c.

@@ -35,6 +35,7 @@ mission_fixture_topic="6e596574f48354cdf6ccdc72bce35d3b6df1c184"
 mission_fixture_ref="refs/pull/487/head"
 node_authority="tests/test_subject_task_authorization_dispatch_v5.py::test_dispatch_accepts_exact_current_mission_phase"
 node_cli="tests/test_subject_task_authorization_dispatch_v5.py::test_dispatch_cli_is_exact_and_no_abbreviation"
+mission_proof_path="specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json"
 rollback_lease="${SDG012_ROLLBACK_LEASE:-}"
 rollback_tmp=""
 rollback_lease_acquired=0
@@ -177,6 +178,50 @@ assert "SUBJECT_TASK_AUTHORIZATION_DISPATCH_V5_ERROR" not in stderr.getvalue()
 PY
 }
 
+assert_no_proof_dispatcher_inactive() {
+  python - <<'PY'
+import subprocess
+import sys
+from pathlib import Path
+from scripts import validate_subject_task_authorization_dispatch_v5 as dispatch
+
+root = Path.cwd()
+validator_result = dispatch.validator.validate(root)
+assert validator_result == {
+    "active": False,
+    "authorized_tasks": 0,
+    "mission_id": None,
+    "mission_state": "INACTIVE",
+    "sequence": 6,
+    "status": "PASS",
+}
+expected = {
+    "active": False,
+    "mission_id": None,
+    "mission_state": "INACTIVE",
+    "protocol_version": 5,
+    "sequence": 6,
+    "status": "PASS",
+}
+assert dispatch.validate(root) == expected
+completed = subprocess.run(
+    [
+        sys.executable,
+        "scripts/validate_subject_task_authorization_dispatch_v5.py",
+        "--ledger",
+        "--json",
+    ],
+    cwd=root,
+    capture_output=True,
+    check=False,
+    timeout=30,
+)
+assert completed.returncode == 0
+assert completed.stdout == dispatch.mission.canonical(expected)
+assert completed.stderr == b""
+PY
+}
+
 install_reviewed_proof_fixture_bytes() {
   install -m 0755 "$rollback_tmp/bytes/scripts/run_subject_identity_test_isolation.py" scripts/run_subject_identity_test_isolation.py
   install -m 0644 "$rollback_tmp/bytes/tests/test_subject_task_authorization_dispatch_v5.py" tests/test_subject_task_authorization_dispatch_v5.py
@@ -211,10 +256,19 @@ assert_node_pass active active-authority "$node_authority"
 assert_node_pass active active-cli "$node_cli"
 restore_fixture_tree
 
-malformed_commit="$(printf '%s\n' 'SDG-012 rollback malformed active fixture' | GIT_AUTHOR_NAME=sdg012-rollback GIT_AUTHOR_EMAIL=sdg012-rollback@example.invalid GIT_COMMITTER_NAME=sdg012-rollback GIT_COMMITTER_EMAIL=sdg012-rollback@example.invalid git commit-tree "$protocol_base^{tree}" -p "$protocol_base" -p "$mission_fixture_topic")"
-git checkout --quiet --detach "$malformed_commit"
+git show "$mission_fixture_topic:$mission_proof_path" > "$rollback_tmp/mission-proof.json"
+
+# A delivery-shaped commit whose tree contains no proof is not authority.  The
+# direct validator rejects the externally claimed proof while dispatcher API
+# and CLI remain exact canonical INACTIVE with zero authorized tasks.
+no_proof_commit="$(printf '%s\n' 'SDG-012 rollback no-proof delivery-shaped fixture' | GIT_AUTHOR_NAME=sdg012-rollback GIT_AUTHOR_EMAIL=sdg012-rollback@example.invalid GIT_COMMITTER_NAME=sdg012-rollback GIT_COMMITTER_EMAIL=sdg012-rollback@example.invalid git commit-tree "$protocol_base^{tree}" -p "$protocol_base" -p "$mission_fixture_topic")"
+git checkout --quiet --detach "$no_proof_commit"
+test "$(git rev-list --parents -n 1 "$no_proof_commit")" = "$no_proof_commit $protocol_base $mission_fixture_topic"
+test "$(git rev-parse "$no_proof_commit^{tree}")" = "$(git rev-parse "$protocol_base^{tree}")"
+if git cat-file -e "$no_proof_commit:$mission_proof_path" >/dev/null 2>&1; then
+  exit 1
+fi
 install_reviewed_proof_fixture_bytes
-git show "$mission_fixture_topic:specs/subject-distillation/task-authorizations/MISSION-V5-T004-T033.json" > "$rollback_tmp/mission-proof.json"
 PROTOCOL_BASE="$protocol_base" MISSION_RAW="$rollback_tmp/mission-proof.json" python - <<'PY'
 import os
 from pathlib import Path
@@ -224,7 +278,32 @@ try:
 except mission.Denied:
     pass
 else:
-    raise AssertionError("malformed active fixture was not denied")
+    raise AssertionError("no-proof delivery-shaped fixture accepted external proof")
+PY
+assert_no_proof_dispatcher_inactive
+restore_fixture_tree
+
+# The proof-bearing malformed fixture reverses the required parent order.  Its
+# tree, proof mode, and proof bytes are exact, so every DENY below is topology
+# enforcement rather than fallback to the no-proof INACTIVE state.
+malformed_commit="$(printf '%s\n' 'SDG-012 rollback proof-bearing reversed-parent fixture' | GIT_AUTHOR_NAME=sdg012-rollback GIT_AUTHOR_EMAIL=sdg012-rollback@example.invalid GIT_COMMITTER_NAME=sdg012-rollback GIT_COMMITTER_EMAIL=sdg012-rollback@example.invalid git commit-tree "$mission_fixture_topic^{tree}" -p "$mission_fixture_topic" -p "$protocol_base")"
+git checkout --quiet --detach "$malformed_commit"
+test "$(git rev-list --parents -n 1 "$malformed_commit")" = "$malformed_commit $mission_fixture_topic $protocol_base"
+test "$(git rev-parse "$malformed_commit^{tree}")" = "$(git rev-parse "$mission_fixture_topic^{tree}")"
+test "$(git ls-tree "$malformed_commit" -- "$mission_proof_path" | cut -d ' ' -f 1)" = 100644
+test "$(git cat-file -t "$malformed_commit:$mission_proof_path")" = blob
+git show "$malformed_commit:$mission_proof_path" | cmp - "$rollback_tmp/mission-proof.json"
+install_reviewed_proof_fixture_bytes
+PROTOCOL_BASE="$protocol_base" MISSION_RAW="$rollback_tmp/mission-proof.json" python - <<'PY'
+import os
+from pathlib import Path
+from scripts import run_subject_development_mission_v5 as mission
+try:
+    mission.validate_mission_activation_delivery(Path.cwd(), protocol_base=os.environ["PROTOCOL_BASE"], mission_raw=Path(os.environ["MISSION_RAW"]).read_bytes())
+except mission.Denied:
+    pass
+else:
+    raise AssertionError("proof-bearing reversed-parent fixture was not denied")
 PY
 assert_malformed_dispatcher_nodes_denied
 
@@ -263,8 +342,10 @@ The candidate/active/malformed phase proof is deliberately completed before
 the revert with the exact reviewed SDG-012 test and outcome harness, while the
 Mission proof's own trust-root runner bytes remain untouched. The reviewed
 runner is still retained and hash-bound, but it is executed only after revert
-on the no-proof baseline. The malformed topology retains direct Mission denial
-and separately requires exact dispatcher API and CLI denial mapping. The new
+on the no-proof baseline. A delivery-shaped base tree is explicitly proven to
+remain canonical `INACTIVE` with zero authorized tasks; a separate exact
+proof-bearing reversed-parent topology retains direct Mission denial and
+requires exact dispatcher API and CLI denial mapping. The new
 tree must equal the delivery merge's first-parent tree; retained reviewed bytes
 then establish exact `INACTIVE`, sequence 6, T-004 `PENDING`, and absent
 pending/proof files. Every positive dispatcher node invocation writes a unique

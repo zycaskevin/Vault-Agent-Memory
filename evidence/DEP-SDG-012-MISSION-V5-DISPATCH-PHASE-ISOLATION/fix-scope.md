@@ -42,6 +42,11 @@ reviewed SDG-012 merge.
 - On the malformed proof topology, retain direct Mission denial and require
   dispatcher API `Denied` plus CLI rc 2, empty stdout, exact DENY stderr, and no
   traceback or ERROR mapping before any revert.
+- Split malformed coverage by repository state: retain one delivery-shaped
+  protocol-base tree with proof absent and require canonical dispatcher
+  INACTIVE/sequence 6/zero authorized tasks, then use the exact Mission topic
+  tree with deliberately reversed parents and mechanically pin proof
+  path/mode/bytes/tree before direct/API/CLI DENY.
 - Make the live `origin/main` transition assertion phase-aware: anchor/topic or
   later descendant DENY, exact immediate closed SDG-012 delivery PASS.
 
