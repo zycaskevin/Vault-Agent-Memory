@@ -53,6 +53,10 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     runner = (root / "scripts" / "run_subject_development_mission_v5.py").read_text(
         encoding="utf-8"
     )
+    rollback = (
+        root
+        / "evidence/DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION/rollback.md"
+    ).read_text(encoding="utf-8")
 
     assert "continue-on-error" not in gate_job
     assert "--deselect" not in gate_job
@@ -164,6 +168,7 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
         "pytest.xfail",
         "pytest.importorskip",
     }.isdisjoint(semantic_names)
+    identity_isolation._validate_dispatcher_source(dispatcher_source)
     assert "def validate_mission_activation_topic(" in runner
     assert "len(deliveries) != 1" in runner
     isolation = (root / "scripts" / "run_subject_identity_test_isolation.py").read_text(
@@ -177,6 +182,31 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     )
     assert sum(count for _path, count in identity_isolation.FILES) == 446
     assert identity_isolation.DISPATCHER_NODES == exact_dispatcher_nodes
+    for value in (
+        'canonical_origin="https://github.com/zycaskevin/Vault-Agent-Memory.git"',
+        'test "$(git symbolic-ref --quiet --short HEAD)" = "main"',
+        'git fetch --no-tags origin main',
+        'test "$(git rev-parse HEAD)" = "$merge_commit"',
+        'test "$(git rev-parse refs/remotes/origin/main)" = "$merge_commit"',
+        'test "$(git rev-list --parents -n 1 "$merge_commit")" = "$merge_commit $protocol_base $topic_commit"',
+        'test "$(git rev-parse "$merge_commit^{tree}")" = "$(git rev-parse "$topic_commit^{tree}")"',
+        'reviewed_source="$(git -C "$rollback_tmp/retained" show "$merge_commit:.sddgov/merge-gate.json"',
+        'assert_node_pass candidate candidate-authority "$node_authority"',
+        'assert_node_pass active active-authority "$node_authority"',
+        'malformed active fixture was not denied',
+        'git revert --no-edit -m 1 "$merge_commit"',
+        'test "$(git rev-parse HEAD^{tree})" = "$(git rev-parse "$merge_commit^1^{tree}")"',
+        'assert_node_pass candidate reverted-inactive-authority "$node_authority"',
+        '-o xfail_strict=true --junitxml="$junit"',
+        '"tests": "1", "skipped": "0", "failures": "0", "errors": "0"',
+    ):
+        assert value in rollback
+    assert rollback.index("assert_node_pass active active-cli") < rollback.index(
+        'git revert --no-edit -m 1 "$merge_commit"'
+    )
+    assert rollback.index('git revert --no-edit -m 1 "$merge_commit"') < rollback.index(
+        "reverted-inactive-authority"
+    )
     for path in (
         "scripts/update_subject_task_progress_v5.py",
         "scripts/validate_subject_development_mission_v5.py",

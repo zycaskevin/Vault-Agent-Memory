@@ -28,6 +28,12 @@ one CLI return-code mismatch (`2` versus expected `0`): 2 failed, 2870 passed,
    also omits an ignore for it.
 5. After the fix, require exact count 2, total 446, candidate/active focused
    passes, and one exact ignore in each remainder.
+6. Falsify `rc=0` by feeding skip/xfail JUnit outcomes to the outcome parser;
+   require rejection, and require alias/getattr/subscript/string pytest bypass
+   forms to fail the AST guard.
+7. Inspect rollback chronology: exact reviewed candidate, two-parent active,
+   and malformed-denial proof occur before revert; after revert, require exact
+   first-parent tree and only retained-byte, base-compatible INACTIVE proof.
 
 ## Environment and preconditions
 

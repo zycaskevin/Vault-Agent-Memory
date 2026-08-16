@@ -63,6 +63,15 @@
 - Fresh focused and Full Local Green pass on exact rebuilt source
   `bcd2686eb9dff28365a8bd24ae600e808506885e`; a fresh independent receipt and
   hosted CI remain separate pre-merge gates.
+- Security re-review found three additional fail-closed requirements. The
+  per-node harness must prove one real JUnit PASS rather than accept `rc=0`
+  after skip or non-strict xfail; its AST guard must reject alias, dynamic
+  access, and string-spelled outcome bypasses. Rollback must bind canonical
+  origin and freshly fetched exact delivery state, preserve reviewed phase
+  bytes outside the repository, complete candidate/active/malformed phase proof
+  before the revert, then claim only base-compatible INACTIVE proof after the
+  revert. The earlier Green remains evidence for its exact source only; this
+  remediation requires fresh focused and Local Green before review.
 
 ## Claim
 

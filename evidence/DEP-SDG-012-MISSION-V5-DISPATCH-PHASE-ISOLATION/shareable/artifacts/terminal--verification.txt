@@ -77,3 +77,18 @@ Full Local Green v2B on the same exact source:
 The exact source worktree was clean before and after both fresh runs. A fresh
 independent receipt, hosted CI, and exact two-parent merge readback remain
 separate mandatory gates.
+
+Security re-review v2C static finding:
+- Independent security review reported P0=0/P1=3.
+- Return code zero did not mechanically distinguish one true pass from skip or
+  non-strict xfail in the identity harness.
+- The prior rollback attempted phase verification only after reverting the
+  phase-aware test bytes and lacked a canonical freshly fetched delivery bind.
+- The bounded source repair adds unique per-node JUnit XML,
+  `xfail_strict=true`, exact tests=1/skipped=failures=errors=0 parsing, and AST
+  rejection of alias/getattr/subscript/string-spelled bypasses.
+- Rollback now retains exact reviewed bytes externally, proves canonical
+  candidate/active/malformed semantics before revert, and limits post-revert
+  proof to first-parent-compatible INACTIVE behavior.
+- This section is static evidence only. Fresh v2C focused and Full Local Green
+  have not run and are mandatory before independent review.

@@ -35,6 +35,18 @@ No evidence shows a production dispatcher, validator, updater, activation, or
 authority defect. The ordinary test job's synthetic merge topology already
 passes the unconditional production dispatch replay.
 
+## Security re-review finding
+
+Return code zero alone is insufficient per-node evidence because pytest can
+encode skip or non-strict xfail as success. The first rollback also ran the
+dispatcher file only after reverting it to historical bytes, so it could not
+prove the reviewed SDG-012 phase fixture, and it did not freshly bind canonical
+`origin/main` to the exact delivery merge. These are verification defects, not
+production authority defects. The bounded repair adds strict JUnit outcome
+parsing and broader AST bypass rejection, retains exact reviewed bytes in an
+external temporary clone, completes canonical phase proof before mutation, and
+limits post-revert evidence to the first-parent-compatible INACTIVE state.
+
 ## Falsification
 
 The hypothesis is false if the same two failures remain after the dispatcher
@@ -42,6 +54,8 @@ nodes run from phase-neutral snapshots exactly once, if candidate dispatch
 authorizes, if active replay is not the exact two-parent delivery or no longer
 returns ACTIVE, or if the exact 2-node, 446-total, and one-ignore-per-remainder
 collection invariants drift.
+It is also false if any isolated node reports skip/xfail under return code zero,
+or if rollback phase proof depends on bytes already replaced by the revert.
 
 ## Conclusion
 

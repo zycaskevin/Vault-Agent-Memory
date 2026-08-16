@@ -1743,7 +1743,9 @@ def test_closed_sdg012_release_denies_topology_scope_action_or_mode_drift(
         )
 
 
-def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
+def test_post_sdg_local_green_isolates_frozen_v3_identity_suite(
+    tmp_path: Path,
+) -> None:
     config = json.loads((LIVE_ROOT / ".sddgov/ci-cost-guard.json").read_text())
     commands = config["local_green"]["commands"]
     full = next(command for command in commands if "--ignore=tests/test_subject_progress.py" in command)
@@ -1770,6 +1772,7 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
         LIVE_ROOT / "tests/test_subject_task_authorization_dispatch_v5.py"
     ).read_text()
     dispatcher_tree = ast.parse(dispatcher_tests)
+    identity_isolation._validate_dispatcher_source(dispatcher_tests)
     semantic_names = {
         ast.unparse(node)
         for node in ast.walk(dispatcher_tree)
@@ -1803,6 +1806,41 @@ def test_post_sdg_local_green_isolates_frozen_v3_identity_suite() -> None:
         "pytest.xfail",
         "pytest.importorskip",
     }.isdisjoint(semantic_names)
+    bypass_sources = (
+        "import pytest\np = pytest\np.mark.skip\n",
+        "import pytest\ngetattr(pytest.mark, 'skip')\n",
+        "import pytest\npytest.mark['xfail']\n",
+        "import pytest\ng = getattr\ng(pytest.mark, 'skipif')\n",
+        "from pytest import importorskip as load_optional\n",
+    )
+    for source in bypass_sources:
+        with pytest.raises(RuntimeError):
+            identity_isolation._validate_dispatcher_source(source)
+    passing_junit = tmp_path / "pass.xml"
+    passing_junit.write_text(
+        '<testsuites><testsuite tests="1" failures="0" errors="0" '
+        'skipped="0"><testcase name="node"/></testsuite></testsuites>',
+        encoding="utf-8",
+    )
+    identity_isolation._verify_single_pass_junit(passing_junit)
+    for outcome in ("skipped", "failure", "error"):
+        rejected_junit = tmp_path / f"{outcome}.xml"
+        rejected_junit.write_text(
+            '<testsuites><testsuite tests="1" failures="'
+            + ("1" if outcome == "failure" else "0")
+            + '" errors="'
+            + ("1" if outcome == "error" else "0")
+            + '" skipped="'
+            + ("1" if outcome == "skipped" else "0")
+            + f'"><testcase name="node"><{outcome}/></testcase>'
+            + "</testsuite></testsuites>",
+            encoding="utf-8",
+        )
+        with pytest.raises(RuntimeError):
+            identity_isolation._verify_single_pass_junit(rejected_junit)
+    assert '"xfail_strict=true"' in harness
+    assert 'f"--junitxml={junit}"' in harness
+    assert "_verify_single_pass_junit(junit)" in harness
     assert "len(nodes) != sum(count for _path, count in FILES)" in harness
     assert ".sddgov/ci-cost-guard.json" in mission.POST_SDG_COMPATIBILITY_MODIFIED_PATHS
     assert ".sddgov/ci-cost-guard.json" in mission.SDG004_COMPATIBILITY_MODIFIED_PATHS

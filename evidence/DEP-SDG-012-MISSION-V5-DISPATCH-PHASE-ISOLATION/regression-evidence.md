@@ -12,6 +12,13 @@
   `pytest.xfail`, and `pytest.importorskip`.
 - Both generic remainders ignore the file exactly once; no skip/xfail/deselect,
   `-k`, abbreviation, or `continue-on-error` is introduced.
+- Each isolated node writes a unique JUnit XML under `xfail_strict=true`; exact
+  tests=1, skipped=0, failures=0, and errors=0 is mandatory in addition to rc 0.
+- Static guards reject direct and aliased pytest outcomes, dynamic `getattr`,
+  pytest subscripting, imported outcome helpers, and string-spelled marks.
+- Rollback binds canonical origin plus freshly fetched exact delivery, proves
+  retained candidate/active/malformed semantics before revert, then requires
+  first-parent tree equality and only base-compatible INACTIVE proof afterward.
 - Production dispatcher, validator, and updater bytes remain unchanged.
 - Focused regression, static pins, strict DEP, full Local Green, independent
   review, hosted CI, and exact merge readback pass.
@@ -55,12 +62,17 @@
   remainder passed 2868 tests with 12 skips and one pre-existing SyntaxWarning.
   Every command returned 0. The full log SHA-256 is
   `fd4f765c6c32575936fa7c811db2488932fb44a2fb17f803f03d9c01e6ff2e4f`.
+- Security re-review P0=0/P1=3 identified outcome interpretation and rollback
+  chronology/preflight gaps. The bounded v2C source repair is static-only at
+  this stage. No earlier focused or Local Green result is relabeled as proof of
+  the changed harness and rollback bytes; fresh v2C execution remains pending.
 
 ## Unverified boundary
 
 The original PR #489 head `bbc6e476ae3444cef77400f28710de73f9cf7f73`
 receipt and hosted Green are historical exact-head evidence only and are not in
-this rebuilt topic. Fresh focused and Local Green now pass on the rebuilt exact
-source. A fresh independent receipt and new hosted Green remain pending. Exact
+this rebuilt topic. Fresh focused and Local Green pass on the exact v2B source.
+Fresh v2C focused and Local Green, a fresh independent receipt, and new hosted
+Green remain pending. Exact
 merge readback, proposal, task start, and production outcome remain unclaimed
 until post-delivery.

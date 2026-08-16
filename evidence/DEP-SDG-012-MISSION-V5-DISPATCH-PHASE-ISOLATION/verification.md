@@ -53,7 +53,11 @@ remain mandatory at their protocol phases and are currently unclaimed. This
 pre-merge DEP neither fabricates nor predicts those outcomes.
 
 The earlier Builder proof freeze is retained as historical evidence. Fresh
-review-remediation focused and Local Green now pass; strict DEP proof is
-refreshed on the final source. A fresh independent receipt and hosted CI remain
-pending. Merge readback, proposal, task start, and production outcome remain
-post-delivery and unclaimed.
+review-remediation focused and Local Green pass only for exact v2B source
+`bcd2686eb9dff28365a8bd24ae600e808506885e`. Security re-review then required
+strict per-node JUnit outcomes, dynamic-bypass guards, and corrected rollback
+preflight/chronology. Those v2C source bytes have static verification only;
+fresh focused and Local Green are pending and no old result is promoted. A
+fresh independent receipt and hosted CI remain pending. Merge readback,
+proposal, task start, and production outcome remain post-delivery and
+unclaimed.

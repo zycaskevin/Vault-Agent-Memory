@@ -14,6 +14,13 @@ reviewed SDG-012 merge.
 - Identity FILES count 2 and total 446.
 - Local/hosted disjoint remainder exclusions and exact CI pins.
 - Closed SDG-012 compatibility paths and governance proof.
+- Per-node `xfail_strict=true` plus unique JUnit outcome proof requiring exactly
+  one pass and zero skipped, failed, or errored cases.
+- Fail-closed dispatcher AST checks for direct, aliased, dynamic, subscripted,
+  and string-spelled pytest outcome bypasses.
+- Canonical, clean, freshly fetched rollback preflight; immutable reviewed-byte
+  phase fixtures before revert; exact first-parent tree and base-compatible
+  retained-byte INACTIVE proof after revert.
 
 ## Explicit non-scope
 
@@ -23,4 +30,6 @@ progress, ledger, product, private/live, deployment, release, L2, or L3 change.
 ## Blast radius
 
 Limited to which Git snapshot the two dispatcher assertions inspect and which
-test partition owns them. Test coverage is preserved and made phase-exact.
+test partition owns them, plus mechanical interpretation of every isolated
+node outcome and executable rollback proof. Test coverage is preserved and
+made phase-exact.
