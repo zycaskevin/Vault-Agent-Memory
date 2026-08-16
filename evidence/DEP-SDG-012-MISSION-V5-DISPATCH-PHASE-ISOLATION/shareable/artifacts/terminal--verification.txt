@@ -300,3 +300,19 @@ Focused v4c fail-closed finding:
 - v4d uses separate fresh API and reviewed-script CLI processes and retains
   exact malformed Git/proof/blob and no-proof INACTIVE bindings.
 - No rerun, baseline, or Full Local Green occurred.
+
+Accepted v4d Builder proof:
+- Exact clean source:
+  305872be2c876e19a66fb7977d0013ae3e2b614d.
+- Focused passed static 6, candidate exact 2, active exact 2, no-proof
+  INACTIVE/zero-task CLI rc 0, proof-bearing fresh API DENY and separate
+  reviewed CLI rc 2 exact bytes, and baseline exact 2.
+- Focused log SHA-256:
+  01d4da0002c12cb7856b94e6a131e23798849ec69b1794d11a08f5d0e6025115.
+- Full Local Green passed six commands; identity exact 446 nodes; remainder
+  2869 passed, 12 skipped, one pre-existing warning.
+- Full log SHA-256:
+  ae00a7c95bb3f6ba9da64596220ae1f214fadffecc7f10aadb19a3ffdc024977.
+- Both wrapper exits were 0; source status was clean and focused evidence was
+  preserved. Independent review, hosted CI, merge readback, and production
+  outcome remain unclaimed.

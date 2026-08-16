@@ -3,22 +3,41 @@
   "schema_version": "1.0",
   "dep_id": "DEP-SDG-012-MISSION-V5-DISPATCH-PHASE-ISOLATION",
   "issue": "488",
-  "sdd_references": ["SD-MISSION-V5-POST-START-CI-RECOVERY"],
+  "sdd_references": [
+    "SD-MISSION-V5-POST-START-CI-RECOVERY"
+  ],
   "risk_level": "L1",
   "created_at": "2026-08-16T11:11:20Z",
-  "updated_at": "2026-08-16T17:35:51Z",
+  "updated_at": "2026-08-16T17:54:11Z",
   "workflow": {
-    "phase": "fix",
+    "phase": "proof",
     "history": [
-      {"phase": "red", "at": "2026-08-16T16:57:32Z"},
-      {"phase": "evidence", "at": "2026-08-16T16:57:32Z"},
-      {"phase": "fix", "at": "2026-08-16T16:57:32Z"}
+      {
+        "phase": "red",
+        "at": "2026-08-16T16:57:32Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-16T16:57:32Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-16T16:57:32Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-16T17:54:11Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-16T17:54:11Z"
+      }
     ]
   },
   "expected_behavior": "Candidate dispatcher tests replay an inactive authority anchor and active main retains ACTIVE assertions; both nodes execute exactly once in the phase harness.",
-  "actual_behavior": "Focused v4c passed static, candidate, exact active, and no-proof canonical INACTIVE controls. Proof-bearing reversed-parent direct Mission and dispatcher API denied, but same-process dispatch.main under redirected StringIO returned an unrecorded non-2 status. v4d uses one fresh API child and a separate production-form subprocess CLI with exact byte outcomes.",
+  "actual_behavior": "Focused v4d passed static, candidate, exact active, no-proof canonical INACTIVE, proof-bearing fresh-child API DENY, separate reviewed CLI rc2 exact bytes, and baseline controls. The one Full Local Green passed all six commands with exact 446-node isolation and a disjoint remainder of 2869 passed, 12 skipped, and one pre-existing warning.",
   "environment": {
-    "commit": "NOT_RUN_V4_SOURCE_PENDING",
+    "commit": "305872be2c876e19a66fb7977d0013ae3e2b614d",
     "branch": "agent/sdg012-identity-junit-dispatcher-only-v4",
     "runtime": "GitHub Actions Python 3.10, 3.11, 3.12; CPython 3; Git; Agentic SDD Governance 0.2.0-experimental.6"
   },
@@ -31,7 +50,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--verification.txt",
-      "sha256": "bd045d3540fc246b5b7185e02ea71e131516bad89be7f45db520ca6893c7009c",
+      "sha256": "00d80ad6c595fbef0c35901da9a3d1ba3c99d7139fb50dd4d59cdd36285637ce",
       "collector": "terminal"
     }
   ]

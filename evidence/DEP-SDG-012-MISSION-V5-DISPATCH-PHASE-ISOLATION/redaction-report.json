@@ -11,8 +11,8 @@
     {
       "source": "terminal--verification.txt",
       "output": "terminal--verification.txt",
-      "source_sha256": "bd045d3540fc246b5b7185e02ea71e131516bad89be7f45db520ca6893c7009c",
-      "output_sha256": "bd045d3540fc246b5b7185e02ea71e131516bad89be7f45db520ca6893c7009c",
+      "source_sha256": "00d80ad6c595fbef0c35901da9a3d1ba3c99d7139fb50dd4d59cdd36285637ce",
+      "output_sha256": "00d80ad6c595fbef0c35901da9a3d1ba3c99d7139fb50dd4d59cdd36285637ce",
       "redactions": {}
     }
   ],

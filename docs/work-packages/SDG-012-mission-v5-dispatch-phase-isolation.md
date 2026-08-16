@@ -217,6 +217,13 @@
   subprocess with sanitized phase environment, timeout, and exact rc/stdout/
   stderr bytes. Production authority code stays unchanged; fresh focused and
   Full Local Green remain mandatory.
+- Fresh focused v4d and the one Full Local Green now pass on exact source
+  `305872be2c876e19a66fb7977d0013ae3e2b614d`. Focused proves both exact
+  no-proof nonauthority and proof-bearing malformed denial through separate
+  fresh API/CLI processes. Full Green proves all six commands, exact 446-node
+  identity isolation, and the disjoint remainder (2869 passed, 12 skipped, one
+  existing warning). Independent review, hosted CI, merge readback, proposal,
+  task start, and production outcome remain mandatory and unclaimed.
 
 ## Claim
 

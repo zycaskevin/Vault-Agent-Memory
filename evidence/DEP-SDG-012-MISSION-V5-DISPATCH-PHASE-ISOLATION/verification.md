@@ -305,3 +305,28 @@ phase variable, sets `PYTHONDONTWRITEBYTECODE=1`, applies a 30-second timeout,
 and requires rc 2, empty stdout, exact DENY stderr, and no traceback/ERROR.
 The malformed head/parents/tree/proof/CLI blobs are bound before either child.
 Production bytes remain unchanged and fresh leased verification is mandatory.
+
+## Accepted v4d Builder proof
+
+Fresh focused v4d on exact clean source
+`305872be2c876e19a66fb7977d0013ae3e2b614d` passed the six selected static and
+rollback controls, candidate exact 2, valid active exact 2, no-proof direct
+DENY plus canonical API/CLI INACTIVE with zero authorized tasks, proof-bearing
+reversed-parent direct/API DENY plus separate reviewed CLI rc 2 exact bytes,
+and baseline exact 2 with sequence 6, T-004 PENDING, and pending/proof absent.
+Wrapper, log, and exit-marker SHA-256 values are respectively
+`6ebb707fd8a9fc60664304d86d17a1ef35898913e425bae7f8eb5f339c0052f6`,
+`01d4da0002c12cb7856b94e6a131e23798849ec69b1794d11a08f5d0e6025115`,
+and `19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061`.
+
+The one Full Local Green on the same exact source passed all six commands:
+doctor, CI verify, README smoke, release parity, candidate identity isolation,
+and the disjoint remainder all returned 0. Identity isolation executed exact
+446 nodes. The remainder reported 2869 passed, 12 skipped, and one pre-existing
+SyntaxWarning. Wrapper, log, and exit-marker SHA-256 values are respectively
+`0e7089fa61ab0e31aa9e25414c1ab8815609d676de32e3c797bf95f6f9638406`,
+`ae00a7c95bb3f6ba9da64596220ae1f214fadffecc7f10aadb19a3ffdc024977`,
+and `19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061`.
+The source was clean before and after both runs. Independent receipt, hosted
+CI, merge readback, proposal, task start, and production outcome remain
+mandatory and unclaimed.

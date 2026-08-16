@@ -213,6 +213,19 @@
   `cf205dbb8cea84897b488abcc281bf96698d5e94b1096b16657b4caba9082a22`.
   v4d uses one fresh API child and one exact reviewed-script subprocess CLI.
   No rerun or Full occurred and inode 61871711 is not reusable.
+- Fresh focused v4d on exact clean source
+  `305872be2c876e19a66fb7977d0013ae3e2b614d` passed static 6, candidate exact
+  2, valid active exact 2, no-proof exact INACTIVE/zero-task CLI rc 0,
+  proof-bearing reversed-parent fresh API DENY and separate reviewed CLI rc 2
+  exact bytes, and baseline exact 2 plus exact INACTIVE invariants. Log
+  SHA-256 is
+  `01d4da0002c12cb7856b94e6a131e23798849ec69b1794d11a08f5d0e6025115`.
+- The one Full Local Green on that same source passed all six commands, exact
+  446 identity nodes, and a remainder of 2869 passed, 12 skipped, and one
+  pre-existing warning. Log SHA-256 is
+  `ae00a7c95bb3f6ba9da64596220ae1f214fadffecc7f10aadb19a3ffdc024977`.
+  Both wrapper exits were 0 and the source remained clean. Review, hosted CI,
+  merge readback, and production outcome remain separate unclaimed gates.
 
 ## Unverified boundary
 
