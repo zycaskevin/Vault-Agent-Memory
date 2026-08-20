@@ -1,0 +1,35 @@
+{
+  "$schema": "../../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-SDG-005-MISSION-V5-ACTIVATION",
+  "issue": "457",
+  "sdd_references": ["SD-MISSION-V5-POST-START-CI-RECOVERY"],
+  "risk_level": "L1",
+  "created_at": "2026-08-20T05:38:43Z",
+  "updated_at": "2026-08-20T05:43:13Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {"phase": "red", "at": "2026-08-20T05:38:43Z"},
+      {"phase": "evidence", "at": "2026-08-20T05:38:43Z"},
+      {"phase": "fix", "at": "2026-08-20T05:38:43Z"},
+      {"phase": "green", "at": "2026-08-20T05:43:13Z"},
+      {"phase": "proof", "at": "2026-08-20T05:43:13Z"}
+    ]
+  },
+  "expected_behavior": "The exact closed Mission V5 activation topic is preliminary and inactive; only its exact reviewed normal two-parent merge from 327ebe1 becomes active.",
+  "actual_behavior": "Exact main is intentionally inactive; the canonical owner-confirmed proof has been generated and awaits closed reviewed delivery.",
+  "environment": {
+    "commit": "327ebe1b557fc30cbc5482a1de87e1757b8873da",
+    "branch": "agent/mission-v5-activation-post-sdg012",
+    "runtime": "CPython 3; Git; Agentic SDD Governance 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--mission-v5-activation-green.txt",
+      "sha256": "a0f9490bb412ad18c1a09e8c5c630e6129d00318a043a6329b7c96f4434766da",
+      "collector": "terminal"
+    }
+  ]
+}
