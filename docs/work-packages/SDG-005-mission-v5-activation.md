@@ -57,8 +57,8 @@
   `main`, clean-worktree, fresh-fetch, and exact delivery-head guards.
 - The corrected rollback fails before mutation unless
   `HEAD == origin/main == exact delivery`, all T004-T033 tasks remain `PENDING`,
-  and the proof is still present. The previous receipt is stale and cannot be
-  reused for the corrected source.
+  the event sequence is exactly `1..6`, and the proof is still present. Prior
+  receipts are stale and cannot be reused for the corrected source.
 
 ## Claim
 

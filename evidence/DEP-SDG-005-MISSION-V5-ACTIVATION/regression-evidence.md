@@ -42,3 +42,9 @@ active post-merge readback were therefore unclaimed at that time.
 - Delivery stopped before merge. The receipt and its hosted result are stale
   for the corrected source and are retained only as RED evidence; the corrected
   lineage requires a fresh gate digest, independent receipt, and hosted run.
+- The v2 lineage then passed independent review and hosted run `32344829627`,
+  but delivery again stopped before merge when review showed that event count
+  plus maximum sequence did not prove the exact ledger sequence `1..6`.
+- The final rollback assertion now requires the sorted event sequence to equal
+  `list(range(1,7))` both before and after revert. The v2 receipt and hosted
+  result are stale for this exact-sequence correction.
