@@ -1,0 +1,38 @@
+Mission V5 activation public-safe Builder evidence
+
+Issue: #457
+Base: 327ebe1b557fc30cbc5482a1de87e1757b8873da
+Branch: agent/mission-v5-activation-post-sdg012
+Risk: L1
+
+Owner-channel binding:
+- proposal_id: 79dfda8a4abd26fa1314bea0e8d46bcb0cfbc2d91d8e1c7631f9eb1a85029ab6
+- receipt_sha256: d7aca64a17ff670c95e1f90ddf7ebb2864ece9756ea9eda0fdf5a16ad7a163fa
+- confirmation_ref: chat:mission-v5:79dfda8a4abd26fa
+
+Exact proof:
+- mission_id: b946036b97ca7a51eb85af0876085e88a6aeab48eb71e3c26c8b053cc477f115
+- sha256: f1c38461dd4639c50f82bd9ddc39029d8a8a02f63fbbedc6cce2df9461ec2465
+- size: 3409 bytes
+- mode: 0644
+- canonical JSON: PASS
+- verifier stdout byte equality: PASS
+
+Focused activation regression:
+- Four exact activation topology nodes passed in 11.70 seconds.
+- Focused exit: 0.
+- Log SHA-256:
+  007d3cd7f7e0c8780e203b16677103f283fc5f0781b8e245db66a14e28262406.
+- Exit marker SHA-256:
+  9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa.
+
+Bootstrap limitation:
+- The initial wrapper selected the system Python 3.14 installation without
+  pytest and exited before collection or any test body. Its log SHA-256 is
+  c99d342a1664b93a03868ad56a22451965948da811503ce3b0d29ae5123b9dbb.
+- The corrected single capture used pinned experimental.6 runtime bytes.
+
+Phase boundary:
+- Builder full Local Green is NOT_RUN_PHASE_GATED until governed review
+  topology supplies the required gate and independent receipt.
+- No task, ledger, product, deployment, or production mutation occurred.
