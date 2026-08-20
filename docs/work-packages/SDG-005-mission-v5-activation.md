@@ -50,6 +50,16 @@
   full Local Green under an exclusive lease; independent review; one hosted
   run; exact merge readback; and post-merge active dispatcher replay.
 
+## Hosted review correction
+
+- Hosted run `32341186509` was Green, but delivery stopped before merge after a
+  valid review finding showed the rollback command lacked immediate canonical
+  `main`, clean-worktree, fresh-fetch, and exact delivery-head guards.
+- The corrected rollback fails before mutation unless
+  `HEAD == origin/main == exact delivery`, all T004-T033 tasks remain `PENDING`,
+  and the proof is still present. The previous receipt is stale and cannot be
+  reused for the corrected source.
+
 ## Claim
 
 - Agent: codex

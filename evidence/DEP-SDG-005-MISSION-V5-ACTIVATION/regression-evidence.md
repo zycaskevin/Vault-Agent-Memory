@@ -27,5 +27,18 @@ The corrected capture used the pinned experimental.6 runtime and passed once.
 
 ## Unverified boundary
 
-Candidate topology, Local Green, independent review, hosted CI, merge, and
-active post-merge readback remain unclaimed until their exact phases complete.
+As of `2026-08-20T05:43:13Z`, this is the pre-review Builder evidence snapshot.
+The final independent receipt is deliberately out of scope for this snapshot;
+candidate topology, Local Green, independent review, hosted CI, merge, and
+active post-merge readback were therefore unclaimed at that time.
+
+## Hosted review follow-up
+
+- Exact hosted run `32341186509` completed all 16 jobs successfully on receipt
+  head `4e8fb09d9e6391e9e25c79e1bd0e86ce4967b581`.
+- CodeRabbit then identified a valid rollback P1: the executable record did not
+  require a clean canonical `main`, a fresh `origin/main` fetch, or exact
+  `HEAD == origin/main == delivery` immediately before `git revert`.
+- Delivery stopped before merge. The receipt and its hosted result are stale
+  for the corrected source and are retained only as RED evidence; the corrected
+  lineage requires a fresh gate digest, independent receipt, and hosted run.

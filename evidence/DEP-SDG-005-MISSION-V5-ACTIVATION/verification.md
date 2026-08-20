@@ -25,5 +25,7 @@
 - Independent reviewer receipt with zero P0/P1 findings.
 - Hosted CI, normal two-parent merge, tree equality, and active readback.
 
-No independent review, hosted result, merge, task start, or production outcome
-is claimed by this fix-phase Builder evidence.
+As of the Builder evidence freeze at `2026-08-20T05:43:13Z`, no independent
+review, hosted result, merge, task start, or production outcome was claimed.
+Later review and hosted evidence are phase-specific external records and do not
+retroactively change this snapshot.
