@@ -8,13 +8,14 @@ Primary command:
 umask 022 && PATH=$SDDGOV_SHIM:$PATH sddgov ci local-gate .
 ```
 
-Result: PASS at stacked integration commit `fa7136d`. Governance doctor and CI
+Result: PASS at stacked integration commit `119cf38`. Governance doctor and CI
 contract verification passed; README command smoke and release parity passed;
 446 identity-isolated frozen Subject nodes passed; the remaining suite reported
-2935 passed, 10 skipped, and 1 pre-existing warning.
+2936 passed, 10 skipped, and 1 pre-existing warning.
 
-Focused MemoryObject/provider/Gateway/VAM-002 suite: 47 passed after integrating
-VAM-002 commit `5dd09ef`. Changed-Python Ruff and the module-size gate passed.
+Focused MemoryObject/provider/Gateway/VAM-002 suite: 48 passed after integrating
+VAM-002 follow-up commit `68ddbe6`. Changed-Python Ruff and the module-size gate
+passed.
 
 ## Before/after evidence
 
