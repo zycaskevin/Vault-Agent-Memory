@@ -12,7 +12,7 @@
     {
       "collector": "terminal",
       "path": "private/raw/terminal--stable-root-green.txt",
-      "sha256": "cd80a31658239d7f2a27584265c5c8002351f56e5c9c24cb44011a3bd643aba1",
+      "sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
       "collected_at": "2026-08-21T10:58:36Z",
       "shareable": false
     }
@@ -35,7 +35,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--stable-root-green.txt",
-      "sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "sha256": "cd80a31658239d7f2a27584265c5c8002351f56e5c9c24cb44011a3bd643aba1",
       "shareable": true
     }
   ]
