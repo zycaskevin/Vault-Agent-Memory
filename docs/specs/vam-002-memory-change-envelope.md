@@ -72,6 +72,12 @@ ordering and read-policy columns. It fetches `content_raw` and latest audit ids
 only for the readable rows selected for the response page; it does not load the
 entire knowledge or audit table before filtering.
 
+The policy scan, selected-row hydration, and latest-audit lookup run inside one
+explicit SQLite read transaction. They therefore observe one WAL snapshot.
+Writes committed after the scan begins are visible on a later request, not
+partially reflected in the current page's `changes`, `count`, `has_more`, or
+`next_cursor`.
+
 ## Bounded evidence
 
 `MemoryProvider.read_bounded_evidence(...)` accepts `memory_id`,

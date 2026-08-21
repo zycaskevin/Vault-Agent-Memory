@@ -8,8 +8,11 @@ rows, or the 80-line ceiling is weakened.
 
 ## Reversible steps
 
-Revert only the VAM-002 review-fix commit. Keep the earlier Draft PR isolated;
-do not alter tables, data rows, reviewer metadata, releases, or deployments.
+An explicitly approved operator may revert only VAM-002 follow-up commit
+`a3be45e272f126a96d519cffc6ea59027055a3e5`, then review-fix commit
+`5dd09ef8e2c15800fc8ff750afb51a5e542feb2e` if the original review remediation
+must also be removed. Keep the earlier Draft PR isolated; do not alter tables,
+data rows, reviewer metadata, releases, or deployments.
 
 ## Data compatibility
 

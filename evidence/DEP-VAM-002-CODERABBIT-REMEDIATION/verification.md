@@ -2,11 +2,19 @@
 
 ## Green command and result
 
+At remediation commit `5dd09ef8e2c15800fc8ff750afb51a5e542feb2e`,
 `python -m pytest -q tests/test_memory_change_envelope.py
-tests/test_memory_provider.py tests/test_gateway.py` passed 42 tests. Ruff and
-the repository module-size gate also passed. `sddgov ci local-gate .` passed:
-446 identity-isolated nodes, then 2,930 repository tests with 10 skips and one
-pre-existing deprecation warning.
+tests/test_memory_provider.py tests/test_gateway.py` passed 42 focused tests.
+The two remediation tests account for the increase from the original 40-test
+focused run. Ruff and `python scripts/module_size_gate.py` also passed.
+
+`umask 022 && PATH=$PYTHON_SHIM:$USER_BIN:/usr/local/bin:/usr/bin:/bin sddgov
+ci local-gate .` passed at the same commit: 446 identity-isolated nodes, then
+2,930 repository tests with 10 skips and one pre-existing deprecation warning.
+The focused tests and the separately reported 12-test
+`tests/test_deployment_positioning_docs.py` run are subsets of this full suite;
+they are not added to 2,930. The full-suite count increased from 2,928 to 2,930
+because the remediation added two test nodes.
 
 ## Before/after evidence
 
@@ -20,3 +28,21 @@ OpenAPI contract, and Gateway coercion. After: the same assertions pass; the
 - The envelope represents current state, not historical content snapshots.
 - Hosted CI and independent re-review remain required for the corrected exact
   head before merge.
+
+## Follow-up review proof
+
+At follow-up implementation commit
+`a3be45e272f126a96d519cffc6ea59027055a3e5`:
+
+- the same focused command passed 43 tests; the increase from 42 is the new
+  concurrent-writer snapshot test, while the PATCH check strengthens an
+  existing OpenAPI test node;
+- `python -m pytest -q tests/test_deployment_positioning_docs.py` passed 12;
+- changed-Python Ruff and `python scripts/module_size_gate.py` passed;
+- the complete Local Green command above passed 446 identity-isolated nodes,
+  then 2,931 repository tests with 10 skips and one pre-existing warning.
+
+The new snapshot test commits a concurrent update after the policy scan begins
+and proves hydration still returns the earlier snapshot. A fresh provider call
+observes the committed update. The OpenAPI assertion proves PATCH declares its
+required `{id}` as an integer with `minimum: 1`.
