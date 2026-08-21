@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "base_sha": "291d5595c9cb2208a6b74206acbba35a883eb918",
-  "head_sha": "4b4bef132eca531165ca6a5dad88d104e37e40d2",
+  "head_sha": "ee0c894845884fad81420c3fcbeb5e2cd9463608",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "120dbb4c0d2963266785459d44eac8ebbb9f0b19357799b30b68278d4866dd82",
+  "change_digest": "cbd1dbbc9b9b357980f69c74e3bf75ec7e45908c5938e73c2908f3b0b5b6cae1",
   "deps": [
     "DEP-VAM-001-SUBJECT-EXTRACTION-ADR",
     "DEP-VAM-001-DELIVERY-GATE",
