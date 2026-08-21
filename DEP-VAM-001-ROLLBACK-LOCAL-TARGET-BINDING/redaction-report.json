@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--local-green.txt",
+      "output": "terminal--local-green.txt",
+      "source_sha256": "bdb82ce5718cc3003641668dc0c9d8650558351179927fc4d3a8c0cb89065722",
+      "output_sha256": "bdb82ce5718cc3003641668dc0c9d8650558351179927fc4d3a8c0cb89065722",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--reviewer-red.txt",
+      "output": "terminal--reviewer-red.txt",
+      "source_sha256": "8fe083a1e151bf785ab51e548589802a331092fe79d7f27ffeadd3fd6a3c3f27",
+      "output_sha256": "8fe083a1e151bf785ab51e548589802a331092fe79d7f27ffeadd3fd6a3c3f27",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-001-ROLLBACK-LOCAL-TARGET-BINDING",
+  "generated_at": "2026-08-21T15:00:31Z"
+}

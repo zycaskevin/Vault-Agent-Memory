@@ -9,6 +9,7 @@ ADR = ROOT / "docs/decision_records/2026-08-21-extract-subject-distillation.md"
 STATUS = ROOT / "docs/subject-distillation.md"
 DRAFTS = ROOT / "docs/issue_comment_drafts/VAM-001-subject-distillation-extraction.md"
 PROGRESS = ROOT / "specs/subject-distillation/implementation-progress.json"
+DELIVERY_ROLLBACK = ROOT / "DEP-VAM-001-DELIVERY-GATE/rollback.md"
 
 
 def _h2_section(text: str, heading: str) -> str:
@@ -97,3 +98,24 @@ def test_issue_disposition_record_is_bounded_and_exact() -> None:
     assert "#495, #496, and #497 were posted and those issues were closed" in introduction
     assert "Issue #410 remains open and its text below remains an unposted future draft" in introduction
     assert "No additional Issue mutation is authorized" in introduction
+
+
+def test_delivery_rollback_binds_local_main_head_before_revert() -> None:
+    text = DELIVERY_ROLLBACK.read_text(encoding="utf-8")
+    command = next(
+        line.removeprefix("command: ")
+        for line in text.splitlines()
+        if line.startswith("command: ")
+    )
+    ordered_guards = (
+        'merge_oid="$(gh pr view 498',
+        'git merge-base --is-ancestor ec107d134fc491cc48d44f5a01b919da30c2f913 "$merge_oid"',
+        'test "$(git branch --show-current)" = main',
+        'test "$(git rev-parse HEAD)" = "$merge_oid"',
+        'sddgov autonomy evaluate "$VAM001_ROLLBACK_REQUEST"',
+        "git revert --no-commit ec107d134fc491cc48d44f5a01b919da30c2f913",
+    )
+    assert all(command.count(fragment) == 1 for fragment in ordered_guards)
+    assert [command.index(fragment) for fragment in ordered_guards] == sorted(
+        command.index(fragment) for fragment in ordered_guards
+    )
