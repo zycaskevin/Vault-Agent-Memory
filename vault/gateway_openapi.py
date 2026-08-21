@@ -181,6 +181,15 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                 },
                 "patch": {
                     "summary": "Submit an update request as a review candidate; does not edit active memory.",
+                    "parameters": [
+                        {
+                            "name": "id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "integer", "minimum": 1},
+                            "description": "Positive SQLite memory row id for a candidate update request.",
+                        }
+                    ],
                     "requestBody": {
                         "content": {
                             "application/json": {

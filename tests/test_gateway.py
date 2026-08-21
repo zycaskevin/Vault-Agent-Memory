@@ -573,6 +573,18 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     )
     assert memory_id_parameter["schema"]["type"] == "string"
     assert memory_id_parameter["x-vault-opaque-memory-id"] is True
+    patch_memory_id_parameter = next(
+        parameter
+        for parameter in contract["paths"]["/memory/{id}"]["patch"]["parameters"]
+        if parameter["name"] == "id"
+    )
+    assert patch_memory_id_parameter == {
+        "name": "id",
+        "in": "path",
+        "required": True,
+        "schema": {"type": "integer", "minimum": 1},
+        "description": "Positive SQLite memory row id for a candidate update request.",
+    }
 
 
 def test_gateway_memory_changes_are_policy_filtered_and_revision_bound(tmp_path):

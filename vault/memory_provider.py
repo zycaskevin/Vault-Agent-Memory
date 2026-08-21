@@ -297,6 +297,10 @@ class SQLiteMemoryProvider:
         visible: list[dict[str, Any]] = []
         scan_key = cursor_key
         with VaultDB(self.resolved_db_path) as db:
+            # Keep policy scanning, selected-row hydration, and audit lookup on
+            # one WAL snapshot so a concurrent writer cannot change the page
+            # after its visible rows and cursor have already been chosen.
+            db.conn.execute("BEGIN")
             while len(visible) <= limit_i:
                 where_sql = ""
                 parameters: list[Any] = []

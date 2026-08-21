@@ -9,11 +9,20 @@ the OpenAPI string contract and HTTP-path preservation of an opaque reference.
 
 ## Related tests executed
 
-- Provider, Gateway, and Change Envelope suite: 42 passed.
+- At commit `5dd09ef8e2c15800fc8ff750afb51a5e542feb2e`, `python -m
+  pytest -q tests/test_memory_change_envelope.py tests/test_memory_provider.py
+  tests/test_gateway.py`: 42 passed, up from 40 because remediation added two
+  test nodes.
+- `python -m pytest -q tests/test_deployment_positioning_docs.py`: 12 passed;
+  these documentation tests are also part of the complete repository suite.
 - Ruff on all changed Python files: passed.
 - Module size gate: passed without raising a baseline.
-- Complete local governance gate: 446 identity-isolated nodes passed, followed
-  by 2,930 repository tests passed with 10 skips and one pre-existing warning.
+- At the same commit, the complete gate command was `umask 022 &&
+  PATH=$PYTHON_SHIM:$USER_BIN:/usr/local/bin:/usr/bin:/bin sddgov ci local-gate
+  .`; 446 identity-isolated nodes passed, followed by 2,930 repository tests
+  passed with 10 skips and one pre-existing warning. Focused and
+  deployment-positioning counts are subsets, not additive; the full count
+  increased from 2,928 when the two remediation tests were added.
 
 ## Unaffected paths sampled
 

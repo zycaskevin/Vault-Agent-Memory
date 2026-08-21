@@ -141,6 +141,64 @@ def test_change_page_uses_bounded_policy_scans_and_selected_row_hydration(tmp_pa
     assert all("target_id in" in statement for statement in audit_queries)
 
 
+def test_change_page_scan_and_hydration_share_one_read_snapshot(tmp_path, monkeypatch):
+    project, first_id, _second_id, _private_id = _change_project(tmp_path)
+    original_content = "line one\nline two\nline three\nline four"
+
+    class MutatingConnection:
+        def __init__(self, connection):
+            self._connection = connection
+            self.mutated = False
+
+        def __getattr__(self, name):
+            return getattr(self._connection, name)
+
+        def execute(self, sql, parameters=()):
+            cursor = self._connection.execute(sql, parameters)
+            normalized = " ".join(str(sql).lower().split())
+            if (
+                not self.mutated
+                and normalized.startswith("select")
+                and "from knowledge" in normalized
+                and "order by coalesce" in normalized
+            ):
+                self.mutated = True
+                with VaultDB(project / "vault.db") as writer:
+                    writer.conn.execute(
+                        """UPDATE knowledge
+                           SET title=?, content_raw=?, updated_at=?
+                           WHERE id=?""",
+                        (
+                            "Concurrent title",
+                            "concurrent content",
+                            "2099-01-01T00:00:00+00:00",
+                            first_id,
+                        ),
+                    )
+                    writer.conn.commit()
+            return cursor
+
+    class SnapshotProbeVaultDB(VaultDB):
+        def connect(self):
+            connected = super().connect()
+            connected.conn = MutatingConnection(connected.conn)
+            return connected
+
+    monkeypatch.setattr(memory_provider_module, "VaultDB", SnapshotProbeVaultDB)
+    page = sqlite_memory_provider(project).list_changes(
+        agent_id="work-agent",
+        max_sensitivity="low",
+        limit=10,
+    )
+
+    assert page["status"] == "ok"
+    first = next(change for change in page["changes"] if change["memory_id"] == str(first_id))
+    assert first["title"] == "Readable change one"
+    assert first["content_sha256"] == hashlib.sha256(original_content.encode()).hexdigest()
+    with VaultDB(project / "vault.db") as db:
+        assert db.get_knowledge(first_id)["title"] == "Concurrent title"
+
+
 def test_change_cursor_is_opaque_validated_and_bound_to_read_policy(tmp_path):
     project, _first_id, _second_id, _private_id = _change_project(tmp_path)
     provider = sqlite_memory_provider(project)
