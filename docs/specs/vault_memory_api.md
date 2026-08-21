@@ -15,6 +15,27 @@ The API is additive. It must not remove or break the existing CLI, MCP tools,
 Gateway `/search`, `/read-range`, `/submit-candidate`, Central Memory Station,
 or local SQLite workflows.
 
+## V1 Memory Object
+
+The stable base envelope is `MemoryObject`. Its canonical `kind` is one of:
+
+```text
+event
+experience
+decision
+knowledge
+interaction
+```
+
+The envelope separates content from provenance, confidence, lifecycle,
+governance, and opaque application metadata. Existing `memory_type` and `trust`
+storage remains compatible; `memory_kind` and `confidence` are additive Memory
+API create aliases. Unknown legacy types map to generic `knowledge` and remain
+preserved as opaque application metadata.
+
+Vault stores and governs the object. It does not infer or own application
+personality, identity, relationship, life-phase, or human-model semantics.
+
 ## Architecture
 
 ```text
@@ -127,6 +148,9 @@ provider boundary matures.
 The first internal provider contract should be minimal:
 
 ```text
+create_memory_object_candidate(...)
+search_memory_objects(...)
+get_memory_object(...)
 list_changes(...)
 get_metadata(...)
 get_revision(...)
