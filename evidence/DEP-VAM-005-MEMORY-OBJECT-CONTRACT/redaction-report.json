@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--red-test.txt",
+      "output": "terminal--red-test.txt",
+      "source_sha256": "26d46498f0884b3f9fa35f4d5b624730fb6010a83d461c6219459743dafae73a",
+      "output_sha256": "f6920186b5a350809aef217015a75caab3f11d991987baab6f7fbbbbbd802822",
+      "redactions": {
+        "phone": 1
+      }
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "phone": 1
+  },
+  "dep_id": "DEP-VAM-005-MEMORY-OBJECT-CONTRACT",
+  "generated_at": "2026-08-21T10:26:31Z"
+}

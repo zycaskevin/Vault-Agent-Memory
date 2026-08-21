@@ -7,6 +7,7 @@ from typing import Any
 from . import gateway_remote_semantic as remote_semantic
 from .gateway_server import DEFAULT_GATEWAY_MAX_WORKERS
 from .governance_contract import governance_contract_payload
+from .memory_object import MEMORY_OBJECT_KINDS, memory_layer_contract_payload
 from .memory_provider import memory_provider_contract_payload
 from .search_utils import MAX_SEARCH_QUERY_CHARS
 
@@ -279,7 +280,12 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         "revision_id": {"type": "string", "pattern": "^rev_[a-f0-9]{64}$"},
                         "change_type": {"type": "string", "enum": ["upsert", "delete"]},
                         "title": {"type": "string"},
-                        "kind": {"type": "string"},
+                        "kind": {"type": "string", "enum": list(MEMORY_OBJECT_KINDS)},
+                        "application_metadata": {
+                            "type": "object",
+                            "additionalProperties": True,
+                            "description": "Opaque compatibility metadata; never Vault domain semantics.",
+                        },
                         "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
                         "occurred_at": {"type": "string"},
                         "recorded_at": {"type": "string"},
@@ -392,6 +398,19 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         {
                             "type": "object",
                             "properties": {
+                                "memory_kind": {
+                                    "type": "string",
+                                    "enum": list(MEMORY_OBJECT_KINDS),
+                                    "default": "knowledge",
+                                    "description": "Domain-neutral v1 Memory Object kind.",
+                                },
+                                "confidence": {
+                                    "type": "number",
+                                    "minimum": 0,
+                                    "maximum": 1,
+                                    "default": 0.5,
+                                    "description": "V1 alias for the legacy trust field.",
+                                },
                                 "created_by_agent": {"type": "string"},
                                 "owner_user": {"type": "string"},
                                 "workspace_id": {"type": "string"},
@@ -469,6 +488,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
             "remote_direct_active_memory_writes": False,
         },
         "x-vault-governance-contract": governance_contract_payload(adapter=title),
+        "x-vault-memory-layer": memory_layer_contract_payload(),
         "x-vault-memory-provider-interface": memory_provider_contract_payload(provider_id="sqlite"),
         "x-vault-memory-api": {
             "status": "facade",

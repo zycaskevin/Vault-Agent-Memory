@@ -16,6 +16,11 @@ from .db import VaultDB
 from .gateway_errors import gateway_error_suggestions
 from .memory_provider import sqlite_memory_provider
 from .memory_provider_result_adapter import provider_memory_get, provider_memory_search
+from .memory_object import (
+    MEMORY_LAYER_CONTRACT_VERSION,
+    memory_kind_from_record,
+    validate_memory_kind,
+)
 from .multi_host import list_audit_log, record_audit_event
 
 
@@ -91,6 +96,20 @@ def gateway_memory_create(
         from .gateway import gateway_submit_candidate as submit_candidate_func
 
     agent = _agent_id(agent_id)
+    if not (Path(project_dir) / "vault.db").exists():
+        return _error("db_not_found", "vault.db missing", status="blocked")
+    if not agent:
+        return _error("agent_id_required", "Gateway candidate submit requires agent_id")
+    requested_kind = body.get("memory_kind")
+    try:
+        storage_memory_type = (
+            validate_memory_kind(requested_kind)
+            if requested_kind not in (None, "")
+            else str(body.get("memory_type", "knowledge") or "knowledge")
+        )
+    except ValueError as exc:
+        return _error("unsupported_memory_kind", str(exc))
+    canonical_kind = memory_kind_from_record(storage_memory_type)
     payload = submit_candidate_func(
         project_dir,
         title=str(body.get("title", "")),
@@ -100,19 +119,24 @@ def gateway_memory_create(
         layer=str(body.get("layer", "L3") or "L3"),
         category=str(body.get("category", "general") or "general"),
         tags=str(body.get("tags", "") or ""),
-        trust=_float_value(body.get("trust"), 0.5),
+        trust=_float_value(body.get("confidence", body.get("trust")), 0.5),
         scope=_memory_scope(body),
         sensitivity=str(body.get("sensitivity", "low") or "low"),
         owner_agent=_memory_owner_agent(body, agent),
         allowed_agents=str(body.get("allowed_agents", "") or ""),
-        memory_type=str(body.get("memory_type", "knowledge") or "knowledge"),
+        memory_type=storage_memory_type,
         source_ref=_memory_source_ref(body, agent, action="create"),
         allow_shared_candidates=allow_shared_candidates,
         allow_private_candidates=allow_private_candidates,
         allow_high_sensitivity_candidates=allow_high_sensitivity_candidates,
         allow_restricted_candidates=allow_restricted_candidates,
     )
-    _mark_memory_api_candidate_payload(payload, endpoint="/memory/create", legacy_equivalent="/submit-candidate")
+    _mark_memory_api_candidate_payload(
+        payload,
+        endpoint="/memory/create",
+        legacy_equivalent="/submit-candidate",
+        memory_kind=canonical_kind,
+    )
     _record_memory_api_event(
         project_dir,
         actor_agent=agent,
@@ -122,6 +146,7 @@ def gateway_memory_create(
             "endpoint": "/memory/create",
             "status": payload.get("status", ""),
             "writes_active_knowledge": False,
+            "memory_kind": canonical_kind,
         },
     )
     return payload
@@ -904,6 +929,7 @@ def _mark_memory_api_candidate_payload(
     target_memory_id: int | None = None,
     update_request: bool = False,
     soft_delete_request: bool = False,
+    memory_kind: str = "",
 ) -> None:
     payload["memory_api"] = {
         "endpoint": endpoint,
@@ -911,6 +937,14 @@ def _mark_memory_api_candidate_payload(
         "legacy_equivalent": legacy_equivalent,
         "target_memory_id": target_memory_id,
     }
+    if memory_kind:
+        payload["memory_api"].update(
+            {
+                "memory_kind": memory_kind,
+                "memory_object_schema_version": MEMORY_LAYER_CONTRACT_VERSION,
+                "application_semantics_are_opaque": True,
+            }
+        )
     safety = payload.setdefault("safety", {})
     safety.update(
         {

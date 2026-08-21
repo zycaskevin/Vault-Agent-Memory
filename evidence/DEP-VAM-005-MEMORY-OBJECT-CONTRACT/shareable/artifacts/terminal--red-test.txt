@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="5" time="0.149" timestamp="2026-08-21T18:26:[REDACTED_PHONE_OR_NUMBER]+08:00" hostname="arthur-gb10"><testcase classname="tests.test_memory_object_contract" name="test_memory_layer_contract_freezes_exact_generic_boundary" time="0.000" /><testcase classname="tests.test_memory_object_contract" name="test_memory_object_maps_legacy_rows_without_reinterpreting_them" time="0.000" /><testcase classname="tests.test_memory_object_contract" name="test_provider_exposes_candidate_first_memory_object_adapter" time="0.012"><failure message="AttributeError: 'SQLiteMemoryProvider' object has no attribute 'create_memory_object_candidate'">tmp_path = PosixPath('/tmp/pytest-of-zycas/pytest-74/test_provider_exposes_candidat0')
+
+    def test_provider_exposes_candidate_first_memory_object_adapter(tmp_path):
+        project = tmp_path / "project"
+        project.mkdir()
+        with VaultDB(project / "vault.db") as db:
+            memory_id = db.add_knowledge(
+                title="Provider event",
+                content_raw="A source-backed event in the compatibility schema.",
+                memory_type="event",
+                trust=0.91,
+                source="external-runtime",
+            )
+
+        provider = sqlite_memory_provider(project)
+&gt;       candidate = provider.create_memory_object_candidate(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            {
+                "kind": "decision",
+                "title": "Provider decision",
+                "content": "Use Vault only as the governed memory provider.",
+                "confidence": 0.88,
+                "provenance": {"source": "external-runtime", "source_ref": "decision:1"},
+                "governance": {"scope": "project", "sensitivity": "low"},
+            },
+            reason="Preserve the integration boundary.",
+            actor_agent="external-runtime",
+        )
+E       AttributeError: 'SQLiteMemoryProvider' object has no attribute 'create_memory_object_candidate'
+
+tests/test_memory_object_contract.py:85: AttributeError</failure></testcase><testcase classname="tests.test_memory_object_contract" name="test_gateway_create_accepts_additive_kind_and_confidence_aliases" time="0.029"><failure message="KeyError: 'memory_kind'">tmp_path = PosixPath('/tmp/pytest-of-zycas/pytest-74/test_gateway_create_accepts_ad0')
+
+    def test_gateway_create_accepts_additive_kind_and_confidence_aliases(tmp_path):
+        project = tmp_path / "project"
+        project.mkdir()
+        with VaultDB(project / "vault.db"):
+            pass
+
+        created = gateway_memory_create(
+            project,
+            body={
+                "title": "Runtime interaction",
+                "content": "An interaction submitted as governed memory.",
+                "reason": "Preserve source-backed history.",
+                "memory_kind": "interaction",
+                "confidence": 0.82,
+            },
+            agent_id="external-runtime",
+        )
+        assert created["status"] == "ok"
+&gt;       assert created["memory_api"]["memory_kind"] == "interaction"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'memory_kind'
+
+tests/test_memory_object_contract.py:128: KeyError</failure></testcase><testcase classname="tests.test_memory_object_contract" name="test_provider_openapi_and_change_envelope_publish_one_kind_contract" time="0.000"><failure message="KeyError: 'memory_layer'">def test_provider_openapi_and_change_envelope_publish_one_kind_contract():
+        provider_contract = memory_provider_contract_payload()
+        openapi = gateway_openapi()
+
+&gt;       assert provider_contract["memory_layer"]["version"] == "1.0"
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'memory_layer'
+
+tests/test_memory_object_contract.py:151: KeyError</failure></testcase></testsuite></testsuites>

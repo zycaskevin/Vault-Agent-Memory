@@ -1,0 +1,38 @@
+{
+  "$schema": "../../schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-005-MEMORY-OBJECT-CONTRACT",
+  "issue": "docs/issues/VAM-005-memory-object-contract.md",
+  "sdd_references": [
+    "docs/specs/vam-005-memory-object-contract.md"
+  ],
+  "risk_level": "L2",
+  "created_at": "2026-08-21T10:26:15Z",
+  "updated_at": "2026-08-21T10:27:09Z",
+  "workflow": {
+    "phase": "fix",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-21T10:26:15Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-21T10:27:09Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-21T10:27:09Z"
+      }
+    ]
+  },
+  "expected_behavior": "Provider, Gateway, OpenAPI, and change envelopes share one canonical generic Memory Object contract.",
+  "actual_behavior": "The VAM-002 dependency lacks Memory Object provider operations, create aliases, and the published Memory Layer contract.",
+  "environment": {
+    "commit": "48cea2cb60c1d90dc6e4eeef92e2d1f604623cb7",
+    "branch": "codex/vam-005-memory-object-contract",
+    "runtime": "Python 3.11 repository development virtual environment"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}
