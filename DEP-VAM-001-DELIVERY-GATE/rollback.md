@@ -1,5 +1,10 @@
 # Rollback
 
+rollback_version: 1.0
+target: immutable mergeCommit.oid of Pull Request 498 from codex/vam-001-subject-extraction-adr into main in zycaskevin/Vault-Agent-Memory
+command: git revert --no-edit -m 1 "$(gh pr view 498 --repo zycaskevin/Vault-Agent-Memory --json state,baseRefName,headRefName,mergeCommit --jq 'select(.state == "MERGED" and .baseRefName == "main" and .headRefName == "codex/vam-001-subject-extraction-adr" and .mergeCommit.oid != null) | .mergeCommit.oid')"
+verify: python -m pytest -q tests/test_subject_contracts.py tests/test_subject_progress.py
+
 ## Trigger
 
 Rollback only if the compatibility sentence is shown to misstate the approved
