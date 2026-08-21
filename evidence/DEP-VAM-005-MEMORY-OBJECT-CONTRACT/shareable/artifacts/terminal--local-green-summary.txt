@@ -1,0 +1,15 @@
+VAM-005 stacked Local Green
+Dependency: VAM-002 commit 48cea2cb60c1d90dc6e4eeef92e2d1f604623cb7
+Implementation: e026599
+Command: umask 022 && PATH=/tmp/vam-python-path-vam005:/home/zycas/.local/bin:/usr/local/bin:/usr/bin:/bin sddgov ci local-gate .
+Result: PASS
+Governance doctor: ok
+CI contract verify: ok
+README documented command smoke: passed
+Release parity: passed (0.10.2)
+Identity-isolated frozen Subject suite: 446 nodes passed
+Remaining pytest suite: 2933 passed, 10 skipped, 1 pre-existing warning
+Focused MemoryObject/provider/Gateway/VAM-002 suite: 45 passed
+Database migrations: none
+Default Gateway authority switch: none
+Original dirty VLT-001 worktree: untouched

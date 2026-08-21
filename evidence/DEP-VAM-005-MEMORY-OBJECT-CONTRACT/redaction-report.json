@@ -2,6 +2,22 @@
   "schema_version": "1.0",
   "files": [
     {
+      "source": "terminal--focused-green-test.txt",
+      "output": "terminal--focused-green-test.txt",
+      "source_sha256": "4f6908af37892715d813188dacb4f9b15b00ab6024b527d4c2189a98a6bb5411",
+      "output_sha256": "e22ef02e42423e82cdc71f865fbd11b51e8f2314b66d675ebdd01f5aca8fa686",
+      "redactions": {
+        "phone": 1
+      }
+    },
+    {
+      "source": "terminal--local-green-summary.txt",
+      "output": "terminal--local-green-summary.txt",
+      "source_sha256": "eab4ceca2132673f0173460925fe965811210cea7753871acfb6e041dd629d0e",
+      "output_sha256": "eab4ceca2132673f0173460925fe965811210cea7753871acfb6e041dd629d0e",
+      "redactions": {}
+    },
+    {
       "source": "terminal--red-test.txt",
       "output": "terminal--red-test.txt",
       "source_sha256": "26d46498f0884b3f9fa35f4d5b624730fb6010a83d461c6219459743dafae73a",
@@ -13,8 +29,8 @@
   ],
   "blocked": [],
   "totals": {
-    "phone": 1
+    "phone": 2
   },
   "dep_id": "DEP-VAM-005-MEMORY-OBJECT-CONTRACT",
-  "generated_at": "2026-08-21T10:26:31Z"
+  "generated_at": "2026-08-21T10:36:41Z"
 }
