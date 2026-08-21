@@ -553,7 +553,7 @@ def write_agent_adapter_startup_templates(
         "hermes": {
             "file": "hermes-startup.md",
             "where_to_put": "Hermes profile AGENTS.md, MEMORY.md, or runtime bootstrap",
-            "note": "Point each profile at the same shared project vault but keep profile identity private.",
+            "note": "Point each runtime profile at the same shared project vault but keep application-owned model data outside shared memory.",
         },
     }
     contract = {
@@ -712,7 +712,7 @@ def write_agent_adapter_startup_templates(
             "hermes": {
                 "target": "Hermes profile AGENTS.md, MEMORY.md, or runtime bootstrap",
                 "server_config": {"mcpServers": {"vault": {"command": "vault-mcp", "args": mcp_command[1:]}}},
-                "startup_note": "Point the profile at the shared project vault; keep identity/personality memory private.",
+                "startup_note": "Point the runtime at the shared project vault; keep application-owned model data outside shared Vault memory.",
             },
             "openclaw": {
                 "target": "OpenClaw workspace bootstrap or skill instructions",
@@ -1135,7 +1135,7 @@ def write_agent_adapter_startup_templates(
                 "- no raw transcript reads by default",
                 "- no automatic memory promotion",
                 "- no assumption that Supabase is live bidirectional sync",
-                "- one shared project vault can coexist with private per-Agent identity/profile memory",
+                "- one shared project vault can coexist with application-owned private per-Agent memory",
                 "- tool profiles reduce token/schema size but are not an authorization boundary",
                 "",
                 f"MCP server command: `{shell_join(mcp_command)}`",

@@ -115,6 +115,7 @@ from vault.agent_setup_paths import default_agent_private_dir, safe_default_agen
 from vault.agent_setup_policy import normalize_memory_mode, write_automation_policy_template
 from vault.db import VaultDB
 from vault.import_obsidian import sync_obsidian_vault
+from vault.memory_layers import CANONICAL_MEMORY_DIRECTORIES
 
 
 DEFAULT_FEATURES = ["core", "mcp"]
@@ -203,7 +204,7 @@ def normalize_features(raw: str | list[str] | None) -> list[str]:
 def ensure_project(project_dir: str | Path) -> Path:
     project_path = Path(project_dir).expanduser().resolve()
     project_path.mkdir(parents=True, exist_ok=True)
-    for dirname in ["raw", "compiled", "L0-identity", "L1-core-facts", "L2-context", "L3-knowledge"]:
+    for dirname in ["raw", "compiled", *CANONICAL_MEMORY_DIRECTORIES]:
         (project_path / dirname).mkdir(parents=True, exist_ok=True)
 
     with VaultDB(str(project_path / "vault.db")) as db:
@@ -885,8 +886,8 @@ def optional_feature_next_steps(
     if "memory_agents" in features:
         steps.extend(
             [
-                "Keep Profile/Dream/Forgetting agents report-only or candidate-only by default.",
-                "Use reviewed summaries for shared profile memory; keep raw private interactions local.",
+                "Keep memory-maintenance agents report-only or candidate-only by default.",
+                "Keep application-owned private context outside shared Vault memory unless a reviewed summary is explicitly approved.",
                 "Use Progressive Memory Disclosure: boot summary -> active context -> topic map -> bounded read -> raw/archive only when justified.",
             ]
         )
@@ -1205,7 +1206,7 @@ def _ask_interactive_features() -> list[str]:
         False,
     ):
         features.append("headroom")
-    if _ask_yes_no("Enable Profile/Dream/Forgetting memory-agent guidance?", False):
+    if _ask_yes_no("Enable generic memory-maintenance agent guidance?", False):
         features.append("memory_agents")
     if _ask_yes_no("Install developer/benchmark dependencies?", False):
         features.append("dev")

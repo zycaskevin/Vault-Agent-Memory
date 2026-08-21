@@ -174,7 +174,7 @@ changed notes without duplicating unchanged ones.
 | `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,obsidian_import` | Agent-friendly scripted install |
 | `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --memory-layout hybrid --features core,mcp --json` | Create a shared project vault plus private Agent vault and write `hybrid-vault-layout.json` |
 | `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,semantic,supabase,headroom --language en --install-optional-deps --install-embedding-model mix --supabase-setup simple --json` | Install selected optional dependencies and configure a local semantic model |
-| `vault setup-agent --non-interactive --agent profile-agent --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,memory_agents --language zh-Hant --json` | Generate Profile / Dream / Forgetting agent guidance with report-only and candidate-only defaults |
+| `vault setup-agent --non-interactive --agent maintenance-agent --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,memory_agents --language zh-Hant --json` | Generate generic memory-maintenance guidance with report-only and candidate-only defaults |
 | `vault setup-agent --non-interactive --agent profile-agent --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,supabase --language zh-Hant --install-optional-deps --supabase-setup simple --supabase-sync cron --remote-reader all --json` | Generate guided Supabase setup, daily sync templates, and shell/n8n/Coze remote reader templates |
 | `vault setup-agent --non-interactive --agent profile-agent --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,supabase,memory_agents --agent-roster profile-agent:profile,work-agent:work,remote-agent:remote,n8n:automation --validation-pack all --json` | Generate a multi-agent access matrix plus live Supabase/n8n/Coze validation checklists |
 | `vault setup-agent --non-interactive --agent codex --scope shared --agent-project-dir ~/Vaults/my-project --features core,mcp,supabase --write-stable-venv-script --json` | Generate `agent-install/setup-stable-venv.sh` for reboot-safe scheduled jobs and MCP commands |
@@ -230,8 +230,10 @@ plus a private Agent vault under `~/Vaults/agents/<agent>/private-memory`, then
 writes `agent-install/hybrid-vault-layout.json`.
 Use `--write-stable-venv-script` for the default long-lived venv path, or
 `--stable-venv PATH` when the user chooses a custom stable virtualenv.
-Memory-agent guidance is opt-in with `--features memory_agents`; it writes
-`README-memory-agents.md` and does not install a model or auto-promote memory.
+Memory-maintenance guidance is opt-in with the compatibility feature ID
+`--features memory_agents`; it writes `README-memory-agents.md` and does not
+install a model, auto-promote memory, or construct identity/personality/
+relationship/life-phase/human models.
 Memory automation templates can opt into transcript ingestion with
 `--automation-capture-transcripts`; use it together with `--automation-apply`
 only when scheduled jobs are allowed to read discovered transcript files and
@@ -299,8 +301,9 @@ multi-master active-knowledge sync.
 Multi-agent roster templates are opt-in with `--agent-roster`; each entry uses
 `agent_id:role[:scope[:max_sensitivity]]`, for example
 `profile-agent:profile,work-agent:work,remote-agent:remote,n8n:automation`.
-Allowed roles are `work`, `profile`, `care`, `dream`, `remote`,
-`automation`, and `observer`. Live external validation
+Allowed roles remain `work`, `profile`, `care`, `dream`, `remote`,
+`automation`, and `observer` for compatibility. The profile/care/dream names
+are access labels, not Vault-owned modeling domains. Live external validation
 files are opt-in with `--validation-pack remote|n8n|coze|all`.
 Memory automation schedule files are opt-in with
 `--automation-schedule cron|launchagent|n8n|all`; generated jobs default to

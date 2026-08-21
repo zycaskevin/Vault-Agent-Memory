@@ -489,7 +489,8 @@ class TestCmdInit:
         
         assert (tmp_path / "raw").exists()
         assert (tmp_path / "compiled").exists()
-        assert (tmp_path / "L0-identity").exists()
+        assert (tmp_path / "L0-bootstrap").exists()
+        assert not (tmp_path / "L0-identity").exists()
         assert (tmp_path / "L1-core-facts").exists()
         assert (tmp_path / "L2-context").exists()
         assert (tmp_path / "L3-knowledge").exists()

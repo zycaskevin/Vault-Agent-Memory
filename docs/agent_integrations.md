@@ -285,7 +285,9 @@ examples. `--validation-pack all` writes live verification files for remote CLI,
 n8n, and Coze so the operator can prove the hosted paths work after real
 credentials are configured.
 Roster roles are intentionally fixed, not free-form labels: `work`, `profile`,
-`care`, `dream`, `remote`, `automation`, and `observer`.
+`care`, `dream`, `remote`, `automation`, and `observer`. The profile/care/dream
+values are retained as compatibility access labels; identity and human modeling
+remain application responsibilities above Vault.
 
 Supabase is a sync/read target, not the source of truth. Ask again before using
 `--include-content`.

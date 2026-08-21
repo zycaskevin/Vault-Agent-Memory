@@ -1,0 +1,9 @@
+command=sddgov ci local-gate .
+result=PASS
+identity_isolation=PASS 446 nodes
+repository_suite=PASS 2935 tests, 10 skipped
+focused_boundary=PASS 14 tests
+expanded_regression=PASS 350 tests
+supporting_checks=PASS doctor, ci verify, README smoke, release parity
+frozen_subject_diff=none
+independent_review=pending; external CLI installer rejected by safety policy

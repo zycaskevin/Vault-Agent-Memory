@@ -21,7 +21,7 @@ AGENT_ACCESS_PRESETS: dict[str, dict[str, Any]] = {
         "remote_reader": False,
         "memory_layout": "hybrid",
         "setup_scope": "private",
-        "summary": "Keeps user profile, preferences, and private notes local unless reviewed summaries are shared.",
+        "summary": "Legacy preset for application-owned private memory and local notes; Vault does not construct a person model.",
     },
     "work-agent": {
         "label": "Work Agent",
@@ -252,7 +252,7 @@ def render_agent_access_presets_markdown() -> str:
             "",
             "- Start normal coding and project agents with `work-agent`.",
             "- Use `remote-readonly-agent` for Coze, n8n, browser, or hosted readers.",
-            "- Use `personal-agent` for profile/care memory; share only reviewed summaries.",
+            "- `personal-agent` is a legacy compatibility preset for application-owned private memory; it does not make Vault a profile or care model.",
             "- Use `admin-agent` only for trusted local maintenance, never for hosted tools.",
             "",
         ]
