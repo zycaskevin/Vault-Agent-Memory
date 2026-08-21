@@ -30,3 +30,10 @@ Existing numeric SQLite ids, legacy non-revision reads, policy-denied private
 rows, cursor policy binding, stale revision denial, candidate-first writes,
 HTTP routing, and the unchanged 80-line provider ceiling remain covered by the
 focused suite.
+
+Follow-up commit `a3be45e272f126a96d519cffc6ea59027055a3e5` added one
+concurrent-writer snapshot test and strengthened the existing OpenAPI test. The
+focused suite passed 43 tests, and full Local Green passed 446 isolated identity
+nodes plus 2,931 repository tests / 10 skips / 1 pre-existing warning. The one
+node increase from 2,930 is the new snapshot test; the OpenAPI assertion does
+not add a node.

@@ -38,3 +38,13 @@ integer-coercion sites through the HTTP-path test, while the 81-line test
 confirmed the provider ceiling already worked. The bounded keyset scan and
 provider-owned identifier validation made the same focused checks Green without
 a schema or write-path change.
+
+## Follow-up review findings
+
+The next review found two independent contract gaps. `list_changes` performed
+its bounded scan and selected-row hydration as separate autocommit reads, so a
+concurrent commit could change a row between those phases. The PATCH operation
+for `/memory/{id}` also omitted the path parameter required by its route
+template. Commit `a3be45e272f126a96d519cffc6ea59027055a3e5` fixes both with
+one explicit read transaction and a required positive-integer PATCH parameter;
+the concurrent-writer and generated-OpenAPI tests make both claims falsifiable.

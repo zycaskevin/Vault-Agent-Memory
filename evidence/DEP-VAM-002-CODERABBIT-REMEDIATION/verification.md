@@ -28,3 +28,21 @@ OpenAPI contract, and Gateway coercion. After: the same assertions pass; the
 - The envelope represents current state, not historical content snapshots.
 - Hosted CI and independent re-review remain required for the corrected exact
   head before merge.
+
+## Follow-up review proof
+
+At follow-up implementation commit
+`a3be45e272f126a96d519cffc6ea59027055a3e5`:
+
+- the same focused command passed 43 tests; the increase from 42 is the new
+  concurrent-writer snapshot test, while the PATCH check strengthens an
+  existing OpenAPI test node;
+- `python -m pytest -q tests/test_deployment_positioning_docs.py` passed 12;
+- changed-Python Ruff and `python scripts/module_size_gate.py` passed;
+- the complete Local Green command above passed 446 identity-isolated nodes,
+  then 2,931 repository tests with 10 skips and one pre-existing warning.
+
+The new snapshot test commits a concurrent update after the policy scan begins
+and proves hydration still returns the earlier snapshot. A fresh provider call
+observes the committed update. The OpenAPI assertion proves PATCH declares its
+required `{id}` as an integer with `minimum: 1`.
