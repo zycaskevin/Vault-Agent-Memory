@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "base_sha": "291d5595c9cb2208a6b74206acbba35a883eb918",
-  "head_sha": "ebee1e76f290c5ca4357f51f747f7bdb996792ad",
+  "head_sha": "fc3dfa82880e73b0d4e81e403e15cd26a477d828",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "f6c4b6b877f1a375607397331f35fdd3840a342923a5a030d33bfef0aa7a9d5e",
+  "change_digest": "bc5dd8e98671071bf6c17bf6136140b3aafcef7e972234639ed7d6f3b2c78f05",
   "deps": [
     "DEP-VAM-001-SUBJECT-EXTRACTION-ADR",
     "DEP-VAM-001-DELIVERY-GATE",
@@ -13,7 +13,8 @@
     "DEP-VAM-001-FINAL-REVIEW-HARDENING",
     "DEP-VAM-001-CURRENT-HEAD-REVIEW-REMEDIATION",
     "DEP-VAM-001-CI-DIGEST-ENV-BINDING",
-    "DEP-VAM-001-REVIEWER-TMP-ANCESTOR-RACE"
+    "DEP-VAM-001-REVIEWER-TMP-ANCESTOR-RACE",
+    "DEP-VAM-001-PRIVATE-CHECKOUT-REMOTE-REF"
   ],
   "rollback_path": "DEP-VAM-001-DELIVERY-GATE/rollback.md",
   "protected_file_review": ".sddgov/reviews/REV-VAM-001.json"
