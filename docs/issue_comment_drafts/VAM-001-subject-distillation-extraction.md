@@ -1,10 +1,12 @@
 # VAM-001 Issue Comment Drafts
 
-**DRAFT ONLY — no GitHub mutation performed**
+**DISPOSITION RECORD — bounded GitHub mutation completed**
 
-These drafts record the intended disposition from the owner-approved extraction
-decision. Review and post them only in the later external-issue action. VAM-001
-does not comment on or close any GitHub issue.
+These texts began as local drafts for the owner-approved extraction decision.
+After the owner separately instructed Codex to execute Issue disposition, the
+comments for #495, #496, and #497 were posted and those issues were closed.
+Issue #410 remains open and its text below remains an unposted future draft.
+No additional Issue mutation is authorized by this record.
 
 ## Issue #410
 

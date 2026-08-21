@@ -17,7 +17,7 @@ From exact `origin/main` commit
 `291d5595c9cb2208a6b74206acbba35a883eb918`, run:
 
 ```bash
-/home/zycas/文件/ChatGPT/Vault/.venv/bin/pytest -q tests/test_subject_extraction_boundary_docs.py
+python -m pytest -q tests/test_subject_extraction_boundary_docs.py
 ```
 
 The three executable documentation assertions fail: two missing files and one

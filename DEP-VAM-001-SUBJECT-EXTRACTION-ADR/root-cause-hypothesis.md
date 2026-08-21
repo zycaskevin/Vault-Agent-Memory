@@ -29,4 +29,6 @@ specifications and the progress ledger remain unchanged.
 ## Conclusion
 
 Confirmed. The gap is a missing transition record, not a runtime defect or a
-need to modify frozen history.
+need to modify frozen history. The bounded fix may add VAM-001 tests,
+governance, and DEP records; it excludes runtime changes and modifications to
+the frozen Subject history.

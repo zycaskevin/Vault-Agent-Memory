@@ -7,7 +7,7 @@ base=origin/main
  M .sddgov/work-claims.json
  M docs/subject-distillation.md
 ?? DEP-VAM-001-SUBJECT-EXTRACTION-ADR/
-?? docs/decision_records/[REDACTED_PHONE_OR_NUMBER]-extract-subject-distillation.md
+?? docs/decision_records/2026-08-21-extract-subject-distillation.md
 ?? docs/issue_comment_drafts/
 ?? docs/issues/
 ?? docs/specs/vam-001-subject-distillation-extraction.md

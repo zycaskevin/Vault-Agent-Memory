@@ -5,7 +5,7 @@ subject_progress_validator
 {"baseline_id":"0dc10cfc4a429662","sequence":8,"status":"PASS"}
 readme_smoke
 ✅ README documented command smoke passed
-  temp_project: /tmp/vault-readme-smoke-217t20bj
+  temp_project: $TMP_PROJECT
   commands: help, guide, init, add, compile --no-embed, default search, search --keyword-only, map build/read, search-qa run, semantic smoke, semantic cache-stats
 release_parity
 Release parity check passed:
@@ -20,7 +20,7 @@ diff_check
 governance_doctor
 {
   "ok": true,
-  "project": "/tmp/Vault-VAM-001",
+  "project": "$REPO_ROOT",
   "agent": "codex",
   "profile": "team-standard",
   "governance_version": "0.2.0-experimental.6",
@@ -33,7 +33,7 @@ governance_doctor
 governance_ci_verify
 {
   "ok": true,
-  "project": "/tmp/Vault-VAM-001",
+  "project": "$REPO_ROOT",
   "contract": ".sddgov/ci-cost-guard.json",
   "hosted_budget": {
     "max_runs_per_work_package": 1,

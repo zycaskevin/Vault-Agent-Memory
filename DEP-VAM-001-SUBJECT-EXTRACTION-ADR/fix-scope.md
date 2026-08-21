@@ -16,8 +16,10 @@ Keep the executable documentation test and required local governance records.
 ## Explicit non-scope
 
 All Python runtime, database, API, CLI, MCP, Gateway, Memory Provider, Mission,
-frozen Subject specification, progress, authorization, evidence, new-repository,
-and remote GitHub mutation work.
+new-repository, and remote GitHub mutation work. Existing frozen Subject
+specifications, progress, authorizations, and historical evidence remain
+unchanged; new VAM-001 tests, governance records, and DEP evidence are in
+scope.
 
 ## Blast radius
 

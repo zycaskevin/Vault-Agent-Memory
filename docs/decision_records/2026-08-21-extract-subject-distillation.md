@@ -105,8 +105,12 @@ DLI designs, but Vault-specific implementations and authority are not ported.
 | #496 | Close as not planned. | Repairing Mission V5 solely to authorize T-005 has no remaining product value. |
 | #497 | Close as superseded by this architecture decision. | Mission V6 and continued T-005 through T-033 authority are no longer required. |
 
-VAM-001 prepares comment drafts only. It does not perform these GitHub state
-changes.
+VAM-001 initially prepared comment drafts only. A later concrete owner
+instruction executed the bounded disposition: comments were posted and Issues
+#495, #496, and #497 were closed; #410 remains open. The action and its
+non-reusable authorization basis are recorded as
+`VAM-001-ISSUE-DISPOSITION`. This record grants no authority for another
+external mutation.
 
 ## Origin
 

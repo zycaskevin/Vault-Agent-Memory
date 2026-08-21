@@ -15,8 +15,10 @@
   the executable documentation contract; all protected historical artifacts
   remain unchanged.
 - Guardrails: no Mission V6, T-005 implementation, progress mutation, frozen
-  artifact change, API/runtime change, new repository, remote issue write,
-  push, merge, release, or deployment.
+  artifact change, API/runtime change, new repository, push, merge, release,
+  or deployment. This implementation package originally excluded remote Issue
+  writes; the owner later issued a separate concrete instruction to execute the
+  bounded disposition, recorded as `VAM-001-ISSUE-DISPOSITION`.
 - Keep condition: focused checks, relevant regressions, frozen-artifact diff,
   and strict redacted evidence verification pass.
 - Rollback condition: documentation misstates preserved task status, blurs the
@@ -26,8 +28,8 @@
 
 - In scope: extraction ADR; non-frozen Subject status; local issue-comment
   drafts; executable documentation check; local governance and evidence.
-- Non-scope: VAM-002/VAM-003, DLI repo work, online Issue/PR mutation, and all
-  runtime/database/API changes.
+- Non-scope: VAM-002/VAM-003, DLI repo work, additional online Issue/PR
+  mutation, and all runtime/database/API changes.
 - Dependencies: owner architecture directive, PR #494 merge commit
   `291d5595c9cb2208a6b74206acbba35a883eb918`, and the frozen Subject baseline.
 - Evidence requirement: full local L1 DEP with redacted Red/Green output.

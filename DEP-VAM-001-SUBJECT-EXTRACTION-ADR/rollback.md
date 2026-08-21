@@ -7,14 +7,20 @@ Vault/DLI dependency direction, or any non-scope artifact appears in the diff.
 
 ## Reversible steps
 
-Revert only the VAM-001 branch changes: its ADR, status paragraph, issue-comment
-drafts, executable documentation test, Issue/SDD/Work Package, decision entry,
-claim/event records, and DEP. Leave all frozen Subject artifacts untouched.
+Revert only the VAM-001 branch changes: its ADR
+`docs/decision_records/2026-08-21-extract-subject-distillation.md`, status
+paragraph, issue-disposition record, executable documentation test,
+Issue/SDD/Work Package, `.sddgov/external-actions.json`, decision entry,
+claim/event records, and DEP. Use `git diff --name-status <base>...HEAD` to
+prove every VAM-001-owned repository path is reverted while leaving all frozen
+Subject artifacts untouched. External Issue state is historical and must not
+be silently reopened by repository rollback.
 
 ## Data compatibility
 
-No schema, data, API, runtime, or external state changes exist. Rollback needs
-no migration, backup restore, compatibility shim, or GitHub action.
+No schema, data, API, or runtime changes exist. The already completed GitHub
+Issue disposition is external historical state; reversing it would be a new
+separately authorized operation, not an automatic rollback step.
 
 ## Post-rollback verification
 

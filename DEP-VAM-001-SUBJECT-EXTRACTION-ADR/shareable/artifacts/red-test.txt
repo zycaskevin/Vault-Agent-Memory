@@ -8,12 +8,12 @@ __________ test_extraction_adr_records_the_complete_boundary_decision __________
 
 tests/test_subject_extraction_boundary_docs.py:15:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-/home/zycas/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib/python3.11/pathlib.py:1058: in read_text
+$PYTHON_STDLIB/pathlib.py:1058: in read_text
     with self.open(mode='r', encoding=encoding, errors=errors) as f:
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
-self = PosixPath('/tmp/Vault-VAM-001/docs/decision_records/[REDACTED_PHONE_OR_NUMBER]-extract-subject-distillation.md')
+self = PosixPath('$REPO_ROOT/docs/decision_records/2026-08-21-extract-subject-distillation.md')
 mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
 
     def open(self, mode='r', buffering=-1, encoding=None,
@@ -26,9 +26,9 @@ mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
             encoding = io.text_encoding(encoding)
 >       return io.open(self, mode, buffering, encoding, errors, newline)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/Vault-VAM-001/docs/decision_records/[REDACTED_PHONE_OR_NUMBER]-extract-subject-distillation.md'
+E       FileNotFoundError: [Errno 2] No such file or directory: '$REPO_ROOT/docs/decision_records/2026-08-21-extract-subject-distillation.md'
 
-/home/zycas/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib/python3.11/pathlib.py:1044: FileNotFoundError
+$PYTHON_STDLIB/pathlib.py:1044: FileNotFoundError
 ___ test_subject_status_marks_runtime_as_extracted_without_rewriting_history ___
 
     def test_subject_status_marks_runtime_as_extracted_without_rewriting_history() -> None:
@@ -45,12 +45,12 @@ _______ test_issue_comment_drafts_are_bounded_and_not_execution_receipts _______
 
 tests/test_subject_extraction_boundary_docs.py:51:
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-/home/zycas/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib/python3.11/pathlib.py:1058: in read_text
+$PYTHON_STDLIB/pathlib.py:1058: in read_text
     with self.open(mode='r', encoding=encoding, errors=errors) as f:
          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
 
-self = PosixPath('/tmp/Vault-VAM-001/docs/issue_comment_drafts/VAM-001-subject-distillation-extraction.md')
+self = PosixPath('$REPO_ROOT/docs/issue_comment_drafts/VAM-001-subject-distillation-extraction.md')
 mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
 
     def open(self, mode='r', buffering=-1, encoding=None,
@@ -63,9 +63,9 @@ mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
             encoding = io.text_encoding(encoding)
 >       return io.open(self, mode, buffering, encoding, errors, newline)
                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/Vault-VAM-001/docs/issue_comment_drafts/VAM-001-subject-distillation-extraction.md'
+E       FileNotFoundError: [Errno 2] No such file or directory: '$REPO_ROOT/docs/issue_comment_drafts/VAM-001-subject-distillation-extraction.md'
 
-/home/zycas/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib/python3.11/pathlib.py:1044: FileNotFoundError
+$PYTHON_STDLIB/pathlib.py:1044: FileNotFoundError
 =========================== short test summary info ============================
 FAILED tests/test_subject_extraction_boundary_docs.py::test_extraction_adr_records_the_complete_boundary_decision
 FAILED tests/test_subject_extraction_boundary_docs.py::test_subject_status_marks_runtime_as_extracted_without_rewriting_history

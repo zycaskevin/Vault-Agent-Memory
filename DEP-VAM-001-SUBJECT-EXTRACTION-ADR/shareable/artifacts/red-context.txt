@@ -1,4 +1,4 @@
-command=/home/zycas/文件/ChatGPT/Vault/.venv/bin/pytest -q tests/test_subject_extraction_boundary_docs.py
+command=python -m pytest -q tests/test_subject_extraction_boundary_docs.py
 exit_status=1
 pytest 9.1.1
  M .sddgov/decisions.json

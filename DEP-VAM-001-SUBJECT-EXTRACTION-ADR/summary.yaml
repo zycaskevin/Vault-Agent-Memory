@@ -1,5 +1,5 @@
 {
-  "$schema": "../../schemas/debug-evidence-package.schema.json",
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
   "schema_version": "1.0",
   "dep_id": "DEP-VAM-001-SUBJECT-EXTRACTION-ADR",
   "issue": "VAM-001",

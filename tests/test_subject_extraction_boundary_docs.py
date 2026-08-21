@@ -13,6 +13,7 @@ PROGRESS = ROOT / "specs/subject-distillation/implementation-progress.json"
 
 def test_extraction_adr_records_the_complete_boundary_decision() -> None:
     text = ADR.read_text(encoding="utf-8")
+    normalized = " ".join(text.split())
     for heading in (
         "## Context",
         "## Decision",
@@ -33,6 +34,8 @@ def test_extraction_adr_records_the_complete_boundary_decision() -> None:
     assert "PR #494" in text
     assert "Vault imports `digital_life_identity`" in text
     assert "Digital Life Identity reads `vault.db`" in text
+    assert "The Vault adapter lives in the Digital Life Identity repository" in normalized
+    assert "Vault treats DLI payload semantics as opaque application data" in normalized
 
 
 def test_subject_status_marks_runtime_as_extracted_without_rewriting_history() -> None:
@@ -40,6 +43,7 @@ def test_subject_status_marks_runtime_as_extracted_without_rewriting_history() -
     normalized = " ".join(text.split())
     assert "preserved origin package" in normalized
     assert "Digital Life Identity Runtime" in normalized
+    assert "Runtime is not implemented" in text
     assert "T-001 through T-004 remain completed" in normalized
     assert "T-005 through T-033 remain pending" in normalized
 
@@ -48,7 +52,7 @@ def test_subject_status_marks_runtime_as_extracted_without_rewriting_history() -
     assert all(progress["tasks"][f"T-{number:03d}"] == "PENDING" for number in range(5, 34))
 
 
-def test_issue_comment_drafts_are_bounded_and_not_execution_receipts() -> None:
+def test_issue_disposition_record_is_bounded_and_exact() -> None:
     text = DRAFTS.read_text(encoding="utf-8")
     for issue in (410, 495, 496, 497):
         assert f"## Issue #{issue}" in text
@@ -57,4 +61,7 @@ def test_issue_comment_drafts_are_bounded_and_not_execution_receipts() -> None:
     assert "Close as superseded, not completed" in text
     assert "Close as not planned" in text
     assert "Close as superseded by the architecture decision" in text
-    assert "DRAFT ONLY — no GitHub mutation performed" in text
+    assert "DISPOSITION RECORD — bounded GitHub mutation completed" in text
+    assert "#495, #496, and #497 were posted and those issues were closed" in text
+    assert "Issue #410 remains open" in text
+    assert "No additional Issue mutation is authorized" in text

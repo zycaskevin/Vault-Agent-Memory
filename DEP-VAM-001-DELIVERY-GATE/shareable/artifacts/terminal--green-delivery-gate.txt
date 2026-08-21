@@ -1,5 +1,6 @@
 command=sddgov ci local-gate .
 environment=hosted-equivalent umask, source modes, and Python-only PATH shim
+pytest_version=pytest 9.1.1
 identity_isolation=PASS 446 nodes
 repository_suite=PASS 2926 tests, 10 skipped
 supporting_checks=PASS doctor, ci verify, README smoke, release parity

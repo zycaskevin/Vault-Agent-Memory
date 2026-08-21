@@ -34,42 +34,42 @@
   "shareable": [
     {
       "path": "shareable/artifacts/git--artifact-4.txt",
-      "sha256": "50726833e6a603c70c6c8733ff0a5c75f5c19726ea8c4163ad8eeaa6fb1ee889",
+      "sha256": "c512b5ea9861a555827f73abe6bec53a89e83626a3e365f72347e87073d3f219",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/green-context.txt",
-      "sha256": "50726833e6a603c70c6c8733ff0a5c75f5c19726ea8c4163ad8eeaa6fb1ee889",
+      "sha256": "c512b5ea9861a555827f73abe6bec53a89e83626a3e365f72347e87073d3f219",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/green-verification.txt",
-      "sha256": "c64387847c1921c963204c81e0bbbcddc607008b9b30777f7dabe0dd6db5cd33",
+      "sha256": "ccd859a05ffc644829142691a7da26c4baa4a995ba68f0b2e45791791e6ba6ac",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/red-context.txt",
-      "sha256": "48ef93f99db754c4595f874632f65ecc46104f15718f5219777c125d595a4b16",
+      "sha256": "af688e77f01d8719a25c4fa6b321ed0f400fd6aff3dc4f292ff884b2f486c407",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/red-test.txt",
-      "sha256": "41d920d61755dbdcbc5a85b82ec03b81686152f99d812495ef34e3a928e593b9",
+      "sha256": "a112515bb4a85b5035cc9529c209c57ec79a8925fceade7f1f25133fb6a5e12c",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/terminal--artifact-1.txt",
-      "sha256": "41d920d61755dbdcbc5a85b82ec03b81686152f99d812495ef34e3a928e593b9",
+      "sha256": "a112515bb4a85b5035cc9529c209c57ec79a8925fceade7f1f25133fb6a5e12c",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/terminal--artifact-2.txt",
-      "sha256": "48ef93f99db754c4595f874632f65ecc46104f15718f5219777c125d595a4b16",
+      "sha256": "af688e77f01d8719a25c4fa6b321ed0f400fd6aff3dc4f292ff884b2f486c407",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/terminal--artifact-3.txt",
-      "sha256": "c64387847c1921c963204c81e0bbbcddc607008b9b30777f7dabe0dd6db5cd33",
+      "sha256": "ccd859a05ffc644829142691a7da26c4baa4a995ba68f0b2e45791791e6ba6ac",
       "shareable": true
     }
   ]

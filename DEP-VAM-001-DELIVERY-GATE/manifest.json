@@ -12,7 +12,7 @@
     {
       "collector": "terminal",
       "path": "private/raw/terminal--green-delivery-gate.txt",
-      "sha256": "044a71b3aaffc48f463776652742d367c415e6c57f1e68688dcbc6fd3360c526",
+      "sha256": "1ad5dab7a6ac6474033017b5d899da21da4b51c54e812de1eb1977358d4f8d51",
       "collected_at": "2026-08-21T09:38:46Z",
       "shareable": false
     }
