@@ -1,5 +1,10 @@
 # Rollback
 
+rollback_version: 1.0
+target: immutable mergeCommit.oid of Pull Request 499 from codex/vam-003-l0-bootstrap-boundary into main in zycaskevin/Vault-Agent-Memory
+command: git revert --no-edit -m 1 "$(gh pr view 499 --repo zycaskevin/Vault-Agent-Memory --json state,baseRefName,headRefName,mergeCommit --jq 'select(.state == "MERGED" and .baseRefName == "main" and .headRefName == "codex/vam-003-l0-bootstrap-boundary" and .mergeCommit.oid != null) | .mergeCommit.oid')"
+verify: python scripts/readme_command_smoke.py
+
 ## Trigger
 
 Rollback if a supported legacy project stops resolving L0 content, a new
