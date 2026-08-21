@@ -15,12 +15,24 @@
       "sha256": "c88fa72d0147b8808df7d7c9f959ce8799da8b4c2fb04011e99771ff19e12e9c",
       "collected_at": "2026-08-21T15:28:41Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--gate-binding.txt",
+      "sha256": "5a3d4e5cad7a19f9083d0d02064df593d05c12c4711810d4bd39fdad683e76d8",
+      "collected_at": "2026-08-21T15:31:53Z",
+      "shareable": false
     }
   ],
   "shareable": [
     {
       "path": "shareable/artifacts/terminal--digest-red.txt",
       "sha256": "eebfb069f51afc68cd0a492cfad01464da5f6650b224a85eba37533d02b565c3",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--gate-binding.txt",
+      "sha256": "8e2cd8b4155c3aafb35ab3a357283a3d472f362e73f4fb6561fce8c4e5f67bb2",
       "shareable": true
     },
     {

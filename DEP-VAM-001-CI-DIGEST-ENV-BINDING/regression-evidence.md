@@ -13,6 +13,10 @@ Default digest `e155240b...`; CI-contract digest `1ba66ab1...`; hosted job
 Complete Local Green for the remediation tree passed all 446 isolated Subject
 nodes and 2,928 repository tests with 10 skips.
 
+The first CI-pinned audit binding matched implementation `4b4bef1`, digest
+`120dbb4c...`, and audit commit `d57edae`; no digest mismatch remained. The final
+gate will be recalculated once more after this DEP reaches Proof.
+
 ## Unaffected paths sampled
 
 Product runtime, frozen Subject artifacts, tests, documentation decisions,
