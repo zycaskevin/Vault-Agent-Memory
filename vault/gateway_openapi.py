@@ -15,7 +15,7 @@ DEFAULT_GATEWAY_HOST = "127.0.0.1"
 DEFAULT_GATEWAY_PORT = 8789
 DEFAULT_GATEWAY_AUDIT_MAX_BYTES = 5 * 1024 * 1024
 DEFAULT_GATEWAY_AUDIT_BACKUPS = 5
-GATEWAY_CONTRACT_VERSION = "2026-07-09"
+GATEWAY_CONTRACT_VERSION = "2026-08-21"
 GATEWAY_ENDPOINTS = [
     "/health",
     "/openapi.json",
@@ -24,6 +24,7 @@ GATEWAY_ENDPOINTS = [
     "/submit-candidate",
     "/memory/search",
     "/memory/create",
+    "/memory/changes",
     "/memory/{id}",
     "/memory/audit",
     "/memory/timeline",
@@ -119,6 +120,32 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                     "responses": {"200": {"description": "Candidate creation or gate rejection"}},
                 }
             },
+            "/memory/changes": {
+                "get": {
+                    "summary": "List policy-filtered memory changes using an opaque cursor.",
+                    "parameters": [
+                        {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
+                        {"name": "cursor", "in": "query", "schema": {"type": "string"}},
+                        {
+                            "name": "limit",
+                            "in": "query",
+                            "schema": {"type": "integer", "default": 50, "minimum": 1, "maximum": 100},
+                        },
+                        {"name": "include_private", "in": "query", "schema": {"type": "boolean", "default": False}},
+                        {"name": "max_sensitivity", "in": "query", "schema": {"type": "string", "default": "low"}},
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Readable current-memory changes without hidden-row totals",
+                            "content": {
+                                "application/json": {
+                                    "schema": {"$ref": "#/components/schemas/MemoryChangePage"}
+                                }
+                            },
+                        }
+                    },
+                }
+            },
             "/memory/{id}": {
                 "get": {
                     "summary": "Read a bounded active-memory range through Vault Memory API.",
@@ -127,6 +154,12 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
                         {"name": "line_start", "in": "query", "schema": {"type": "integer", "default": 1}},
                         {"name": "line_end", "in": "query", "schema": {"type": "integer", "default": 40}},
+                        {
+                            "name": "revision_id",
+                            "in": "query",
+                            "schema": {"type": "string"},
+                            "description": "Fail closed unless this is the current envelope revision.",
+                        },
                         {
                             "name": "result_adapter",
                             "in": "query",
@@ -225,6 +258,75 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                 },
             },
             "schemas": {
+                "MemoryChangeEnvelope": {
+                    "type": "object",
+                    "required": [
+                        "schema_version",
+                        "memory_id",
+                        "revision_id",
+                        "change_type",
+                        "content_sha256",
+                        "occurred_at",
+                        "recorded_at",
+                        "valid_from",
+                        "valid_until",
+                        "audit_ref",
+                        "evidence_ref",
+                    ],
+                    "properties": {
+                        "schema_version": {"const": "vault.memory-change.v1"},
+                        "memory_id": {"type": "string"},
+                        "revision_id": {"type": "string", "pattern": "^rev_[a-f0-9]{64}$"},
+                        "change_type": {"type": "string", "enum": ["upsert", "delete"]},
+                        "title": {"type": "string"},
+                        "kind": {"type": "string"},
+                        "content_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+                        "occurred_at": {"type": "string"},
+                        "recorded_at": {"type": "string"},
+                        "valid_from": {"type": "string"},
+                        "valid_until": {"type": "string"},
+                        "provenance": {
+                            "type": "object",
+                            "properties": {"source": {"type": "string"}},
+                        },
+                        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+                        "lifecycle": {
+                            "type": "object",
+                            "properties": {"status": {"type": "string"}},
+                        },
+                        "governance": {
+                            "type": "object",
+                            "properties": {
+                                "scope": {"type": "string"},
+                                "sensitivity": {"type": "string"},
+                            },
+                        },
+                        "audit_ref": {"type": "string"},
+                        "evidence_ref": {
+                            "type": "object",
+                            "required": ["memory_id", "revision_id", "operation"],
+                            "properties": {
+                                "memory_id": {"type": "string"},
+                                "revision_id": {"type": "string"},
+                                "operation": {"const": "read_bounded_evidence"},
+                            },
+                        },
+                    },
+                },
+                "MemoryChangePage": {
+                    "type": "object",
+                    "required": ["status", "changes", "count", "next_cursor", "has_more"],
+                    "properties": {
+                        "status": {"type": "string"},
+                        "changes": {
+                            "type": "array",
+                            "items": {"$ref": "#/components/schemas/MemoryChangeEnvelope"},
+                        },
+                        "count": {"type": "integer", "minimum": 0, "maximum": 100},
+                        "next_cursor": {"type": "string"},
+                        "has_more": {"type": "boolean"},
+                    },
+                },
                 "SearchRequest": {
                     "type": "object",
                     "required": ["agent_id", "query"],
@@ -359,6 +461,9 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
             "memory_api_update_writes_active_knowledge": False,
             "memory_api_delete_hard_deletes": False,
             "memory_api_delete_submits_review_candidate": True,
+            "memory_change_pages_hide_filtered_counts": True,
+            "memory_change_cursors_are_policy_bound": True,
+            "memory_bounded_evidence_revision_required": True,
             "memory_provider_interface": True,
             "default_memory_provider": "sqlite",
             "remote_direct_active_memory_writes": False,
@@ -372,6 +477,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
             "implemented_paths": [
                 "/memory/search",
                 "/memory/create",
+                "/memory/changes",
                 "/memory/{id}",
                 "/memory/audit",
                 "/memory/timeline",
@@ -381,6 +487,16 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                 "/memory/link",
                 "/memory/sync",
             ],
+            "memory_change_envelope": {
+                "schema_version": "vault.memory-change.v1",
+                "path": "/memory/changes",
+                "provider_independent": True,
+                "cursor_policy_bound": True,
+                "hidden_totals_exposed": False,
+                "bounded_evidence_path": "/memory/{id}",
+                "bounded_evidence_revision_parameter": "revision_id",
+                "historical_content_guaranteed": False,
+            },
             "provider_read_adoption": {
                 "paths": ["/memory/search", "/memory/{id}"],
                 "mode": "shadow_metadata_probe",

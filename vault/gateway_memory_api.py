@@ -138,11 +138,48 @@ def gateway_memory_get(
     include_private: bool = False,
     max_sensitivity: str = "low",
     result_adapter: str = "legacy",
+    revision_id: str = "",
     read_range_func: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Vault Memory API facade for bounded memory reads."""
     if int(memory_id or 0) <= 0:
         return _error("memory_id_invalid", "memory id must be a positive integer")
+    if revision_id:
+        project = Path(project_dir)
+        agent = _agent_id(agent_id)
+        if not (project / "vault.db").exists():
+            return _error("db_not_found", "vault.db missing", status="blocked")
+        if not agent:
+            return _error("agent_id_required", "Vault Memory API read requires agent_id")
+        payload = sqlite_memory_provider(project).read_bounded_evidence(
+            int(memory_id),
+            str(revision_id),
+            line_start=line_start,
+            line_end=line_end,
+            max_lines=max_lines,
+            agent_id=agent,
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+        )
+        payload["agent_id"] = agent
+        payload["memory_api"] = {
+            "endpoint": "/memory/{id}",
+            "facade": True,
+            "bounded_read": True,
+            "memory_id": int(memory_id),
+            "revision_bound": True,
+            "provider_id": "sqlite",
+            "read_policy_filtering": True,
+        }
+        payload.setdefault("safety", {}).update(
+            {
+                "bounded_read": True,
+                "revision_bound": True,
+                "read_policy_filtering": True,
+                "returns_full_raw_content": False,
+            }
+        )
+        return payload
     if _result_adapter(result_adapter) == "provider":
         return provider_memory_get(
             project_dir,
@@ -183,6 +220,49 @@ def gateway_memory_get(
         agent_id=agent_id,
         include_private=include_private,
         max_sensitivity=max_sensitivity,
+    )
+    return payload
+
+
+def gateway_memory_changes(
+    project_dir: str | Path,
+    *,
+    agent_id: str,
+    cursor: str = "",
+    limit: int = 50,
+    include_private: bool = False,
+    max_sensitivity: str = "low",
+) -> dict[str, Any]:
+    """List policy-filtered current-memory changes without hidden-row totals."""
+    project = Path(project_dir)
+    agent = _agent_id(agent_id)
+    if not (project / "vault.db").exists():
+        return _error("db_not_found", "vault.db missing", status="blocked")
+    if not agent:
+        return _error("agent_id_required", "Vault Memory API changes requires agent_id")
+    payload = sqlite_memory_provider(project).list_changes(
+        cursor=str(cursor or ""),
+        limit=limit,
+        agent_id=agent,
+        include_private=include_private,
+        max_sensitivity=max_sensitivity or "low",
+    )
+    payload["agent_id"] = agent
+    payload["memory_api"] = {
+        "endpoint": "/memory/changes",
+        "facade": True,
+        "provider_id": "sqlite",
+        "provider_independent_envelope": True,
+        "cursor_based": True,
+        "read_policy_filtering": True,
+    }
+    payload.setdefault("safety", {}).update(
+        {
+            "returns_raw_content": False,
+            "hidden_totals_exposed": False,
+            "cursor_advances_on_readable_changes_only": True,
+            "writes_active_knowledge": False,
+        }
     )
     return payload
 
@@ -468,6 +548,23 @@ def gateway_memory_http_get(
     audit_context: dict[str, Any],
 ) -> dict[str, Any] | None:
     agent = _request_agent({}, parsed)
+    if parsed.path == "/memory/changes":
+        payload = gateway_memory_changes(
+            project_dir,
+            agent_id=agent,
+            cursor=_str_query(parsed, "cursor", ""),
+            limit=_int_query(parsed, "limit", 50),
+            include_private=_bool_query(parsed, "include_private", False),
+            max_sensitivity=_str_query(parsed, "max_sensitivity", "low"),
+        )
+        append_audit(
+            Path(project_dir),
+            "memory_api_changes",
+            agent,
+            payload.get("status", "ok"),
+            **audit_context,
+        )
+        return payload
     if parsed.path == "/memory/audit":
         payload = gateway_memory_audit(
             project_dir,
@@ -509,6 +606,7 @@ def gateway_memory_http_get(
         include_private=_bool_query(parsed, "include_private", False),
         max_sensitivity=_str_query(parsed, "max_sensitivity", "low"),
         result_adapter=_str_query(parsed, "result_adapter", "legacy"),
+        revision_id=_str_query(parsed, "revision_id", ""),
     )
     append_audit(
         Path(project_dir),
@@ -675,7 +773,16 @@ def _memory_id_from_path(path: str) -> int | None:
     if not path.startswith(prefix):
         return None
     raw = path[len(prefix):].strip("/")
-    if not raw or "/" in raw or raw in {"search", "create", "audit", "timeline", "promote", "link", "sync"}:
+    if not raw or "/" in raw or raw in {
+        "search",
+        "create",
+        "changes",
+        "audit",
+        "timeline",
+        "promote",
+        "link",
+        "sync",
+    }:
         return None
     try:
         return int(raw)

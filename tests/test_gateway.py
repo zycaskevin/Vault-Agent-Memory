@@ -21,6 +21,7 @@ from vault.gateway import (
     gateway_health,
     gateway_memory_audit,
     gateway_memory_create,
+    gateway_memory_changes,
     gateway_memory_delete_request,
     gateway_memory_get,
     gateway_memory_search,
@@ -220,6 +221,7 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert "/openapi.json" in payload["gateway"]["endpoints"]
         assert "/memory/search" in payload["gateway"]["endpoints"]
         assert "/memory/create" in payload["gateway"]["endpoints"]
+        assert "/memory/changes" in payload["gateway"]["endpoints"]
         assert "/memory/{id}" in payload["gateway"]["endpoints"]
         assert "/central-candidates/submit" in payload["gateway"]["endpoints"]
         assert "/remote-semantic-search" in payload["gateway"]["endpoints"]
@@ -507,6 +509,7 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
         "/submit-candidate",
         "/memory/search",
         "/memory/create",
+        "/memory/changes",
         "/memory/{id}",
         "/memory/audit",
         "/memory/timeline",
@@ -547,6 +550,63 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     assert memory_api["legacy_gateway_endpoints_preserved"] is True
     assert memory_api["delete_semantics"] == "soft_delete_review_candidate_in_gateway_facade"
     assert "/memory/promote" in memory_api["planned_paths"]
+    assert "/memory/changes" in memory_api["implemented_paths"]
+    change_contract = memory_api["memory_change_envelope"]
+    assert change_contract["schema_version"] == "vault.memory-change.v1"
+    assert change_contract["cursor_policy_bound"] is True
+    assert change_contract["hidden_totals_exposed"] is False
+    assert change_contract["historical_content_guaranteed"] is False
+    change_schema = contract["components"]["schemas"]["MemoryChangeEnvelope"]
+    assert change_schema["properties"]["content_sha256"]["pattern"] == "^[a-f0-9]{64}$"
+    revision_parameter = next(
+        parameter
+        for parameter in contract["paths"]["/memory/{id}"]["get"]["parameters"]
+        if parameter["name"] == "revision_id"
+    )
+    assert revision_parameter.get("required", False) is False
+
+
+def test_gateway_memory_changes_are_policy_filtered_and_revision_bound(tmp_path):
+    project, public_id, _private_id = _project(tmp_path)
+
+    page = gateway_memory_changes(
+        project,
+        agent_id="work-agent",
+        max_sensitivity="low",
+        limit=10,
+    )
+    assert page["status"] == "ok"
+    assert page["count"] == 1
+    assert page["changes"][0]["memory_id"] == str(public_id)
+    assert page["memory_api"]["endpoint"] == "/memory/changes"
+    assert page["safety"]["hidden_totals_exposed"] is False
+    assert "total" not in page
+
+    revision_id = page["changes"][0]["revision_id"]
+    evidence = gateway_memory_get(
+        project,
+        memory_id=public_id,
+        revision_id=revision_id,
+        agent_id="work-agent",
+        line_start=1,
+        line_end=2,
+    )
+    assert evidence["status"] == "ok"
+    assert evidence["revision_id"] == revision_id
+    assert evidence["memory_api"]["revision_bound"] is True
+    assert evidence["safety"]["bounded_read"] is True
+
+    stale = gateway_memory_get(
+        project,
+        memory_id=public_id,
+        revision_id="rev_" + "0" * 64,
+        agent_id="work-agent",
+        line_start=1,
+        line_end=1,
+    )
+    assert stale["status"] == "error"
+    assert stale["error"] == "revision_mismatch"
+    assert "content" not in stale
 
 
 def test_provider_adapter_parity_report_is_metadata_only(tmp_path):
@@ -882,6 +942,30 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
         assert status == 200
         assert read["status"] == "ok"
         assert read["entry_id"] == public_id
+
+        status, changes = _request_json(
+            "GET",
+            host,
+            port,
+            "/memory/changes?agent_id=work-agent&max_sensitivity=low&limit=10",
+            None,
+        )
+        assert status == 200
+        assert changes["status"] == "ok"
+        assert changes["count"] == 1
+        assert changes["changes"][0]["memory_id"] == str(public_id)
+
+        revision_id = changes["changes"][0]["revision_id"]
+        status, revision_read = _request_json(
+            "GET",
+            host,
+            port,
+            f"/memory/{public_id}?agent_id=work-agent&line_start=1&line_end=2&revision_id={revision_id}",
+            None,
+        )
+        assert status == 200
+        assert revision_read["status"] == "ok"
+        assert revision_read["revision_id"] == revision_id
 
         status, provider_read = _request_json(
             "GET",

@@ -41,6 +41,7 @@ from .gateway_openapi import (
 )
 from .gateway_memory_api import (
     gateway_memory_audit,
+    gateway_memory_changes,  # noqa: F401 - public compatibility re-export
     gateway_memory_create,
     gateway_memory_delete_request,
     gateway_memory_get,

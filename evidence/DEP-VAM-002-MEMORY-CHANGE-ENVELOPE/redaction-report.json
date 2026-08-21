@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--gateway-red-test.txt",
+      "output": "terminal--gateway-red-test.txt",
+      "source_sha256": "8d3ce3f2ce27fb6258a5ac4b9398e710855659d2c2fa7aa25977bba989b9608d",
+      "output_sha256": "ae80e7650357139dfffa21122e14a328a2e91c18110b9493db884715040dfdf4",
+      "redactions": {
+        "phone": 1
+      }
+    },
+    {
+      "source": "terminal--red-test.txt",
+      "output": "terminal--red-test.txt",
+      "source_sha256": "6c0a64674c2ca222a6eb1036ce2c06ad6ad1b88a0a86963f08416c47b1d30401",
+      "output_sha256": "ec7e1973111d93a2185f5bb4dd29680e31bba758317b4c7880a3b7206e2af8fa",
+      "redactions": {
+        "phone": 1
+      }
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "phone": 2
+  },
+  "dep_id": "DEP-VAM-002-MEMORY-CHANGE-ENVELOPE",
+  "generated_at": "2026-08-21T10:08:24Z"
+}
