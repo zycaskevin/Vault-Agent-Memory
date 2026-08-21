@@ -1,0 +1,10 @@
+VAM-001 CI digest environment mismatch
+exact base: 291d5595c9cb2208a6b74206acbba35a883eb918
+exact head: b2c8378db44079080d1d9bbd418febf93e527ec9
+default-environment digest: e155240b5ede06c244793911bb42d6016a926889daa367c1d0559d8a24591f4c
+CI-contract digest with core.abbrev=40: 1ba66ab1f316b9da068b41a847c1717c028b451aae200cd4d54fe904ceebb611
+hosted governance job: [REDACTED_PHONE_OR_NUMBER]
+result: FAIL
+error: merge gate change_digest does not match
+root cause: textual git diff index abbreviations differ with core.abbrev
+required fix: calculate and bind the final gate under the pinned CI contract Git environment

@@ -2,10 +2,24 @@
   "schema_version": "1.0",
   "files": [
     {
+      "source": "terminal--checkout-binding.txt",
+      "output": "terminal--checkout-binding.txt",
+      "source_sha256": "bc9ca4b822d3bc1c7dd518ef73d5421a78f570e55a1d278bc3363afff06b35b8",
+      "output_sha256": "bc9ca4b822d3bc1c7dd518ef73d5421a78f570e55a1d278bc3363afff06b35b8",
+      "redactions": {}
+    },
+    {
       "source": "terminal--local-green.txt",
       "output": "terminal--local-green.txt",
       "source_sha256": "bdb82ce5718cc3003641668dc0c9d8650558351179927fc4d3a8c0cb89065722",
       "output_sha256": "bdb82ce5718cc3003641668dc0c9d8650558351179927fc4d3a8c0cb89065722",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--reviewer-red-clarification.txt",
+      "output": "terminal--reviewer-red-clarification.txt",
+      "source_sha256": "bd64c92bebd92e0e427dbe7d788744e7f927520fe9736ca7cef2c9c6bd4ef8d1",
+      "output_sha256": "bd64c92bebd92e0e427dbe7d788744e7f927520fe9736ca7cef2c9c6bd4ef8d1",
       "redactions": {}
     },
     {
@@ -19,5 +33,5 @@
   "blocked": [],
   "totals": {},
   "dep_id": "DEP-VAM-001-ROLLBACK-LOCAL-TARGET-BINDING",
-  "generated_at": "2026-08-21T15:00:31Z"
+  "generated_at": "2026-08-21T15:22:46Z"
 }

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 
@@ -13,12 +14,40 @@ DELIVERY_ROLLBACK = ROOT / "DEP-VAM-001-DELIVERY-GATE/rollback.md"
 
 
 def _h2_section(text: str, heading: str) -> str:
-    """Return one bounded Markdown H2 section, including its heading."""
-    marker = f"## {heading}"
-    assert text.count(marker) == 1
-    start = text.index(marker)
-    end = text.find("\n## ", start + len(marker))
-    return text[start:] if end == -1 else text[start:end]
+    """Return one real, non-fenced Markdown H2 section."""
+    headings: list[tuple[str, int]] = []
+    fence_character: str | None = None
+    fence_length = 0
+    offset = 0
+    for line in text.splitlines(keepends=True):
+        content = line.rstrip("\r\n")
+        if fence_character is None:
+            opening = re.match(r" {0,3}(`{3,}|~{3,})", content)
+            if opening:
+                token = opening.group(1)
+                fence_character = token[0]
+                fence_length = len(token)
+            elif content.startswith("## "):
+                headings.append((content.removeprefix("## "), offset))
+        elif re.fullmatch(
+            rf" {{0,3}}{re.escape(fence_character)}{{{fence_length},}}[ \t]*",
+            content,
+        ):
+            fence_character = None
+            fence_length = 0
+        offset += len(line)
+
+    matches = [index for index, (name, _offset) in enumerate(headings) if name == heading]
+    assert len(matches) == 1
+    index = matches[0]
+    start = headings[index][1]
+    end = headings[index + 1][1] if index + 1 < len(headings) else len(text)
+    return text[start:end]
+
+
+def test_h2_section_ignores_prose_and_fenced_examples() -> None:
+    sample = "Prose mentions ## Target\n```md\n## Target\n```\n## Target\nbody\n## Next\n"
+    assert _h2_section(sample, "Target") == "## Target\nbody\n"
 
 
 def test_extraction_adr_records_the_complete_boundary_decision() -> None:
@@ -50,6 +79,11 @@ def test_extraction_adr_records_the_complete_boundary_decision() -> None:
     assert "The following are forbidden boundaries:" in integration
     assert "Vault imports `digital_life_identity`." in integration
     assert "Digital Life Identity reads `vault.db` or imports VaultDB internals." in integration
+    assert "Either repository creates cross-database foreign keys." in integration
+    assert (
+        "Vault adds identity-, personality-, or subject-model-specific endpoints."
+        in integration
+    )
     assert "The Vault adapter lives in the Digital Life Identity repository" in normalized
     assert "Vault treats DLI payload semantics as opaque application data" in normalized
     assert "action ID `VAM-001-ISSUE-DISPOSITION`" in normalized
@@ -109,11 +143,17 @@ def test_delivery_rollback_binds_local_main_head_before_revert() -> None:
     )
     ordered_guards = (
         'merge_oid="$(gh pr view 498',
-        'git merge-base --is-ancestor ec107d134fc491cc48d44f5a01b919da30c2f913 "$merge_oid"',
+        "test \"$(git rev-list --parents -n 1 \"$merge_oid\" | awk '{print NF - 1}')\" -eq 2",
+        'git merge-base --is-ancestor ec107d134fc491cc48d44f5a01b919da30c2f913 "$merge_oid^2"',
+        '! git merge-base --is-ancestor ec107d134fc491cc48d44f5a01b919da30c2f913 "$merge_oid^1"',
         'test "$(git branch --show-current)" = main',
         'test "$(git rev-parse HEAD)" = "$merge_oid"',
-        'sddgov autonomy evaluate "$VAM001_ROLLBACK_REQUEST"',
+        'approval_json="$(sddgov autonomy evaluate "$VAM001_ROLLBACK_REQUEST" --path .)"',
+        "printf '%s\\n' \"$approval_json\" | python -c",
         "git revert --no-commit ec107d134fc491cc48d44f5a01b919da30c2f913",
+        "git restore --source=HEAD --staged --worktree -- DEP-VAM-001-DELIVERY-GATE",
+        'test "$(git diff --cached --name-only)" = docs/subject-distillation.md',
+        'test -z "$(git diff --name-only)"',
     )
     assert all(command.count(fragment) == 1 for fragment in ordered_guards)
     assert [command.index(fragment) for fragment in ordered_guards] == sorted(

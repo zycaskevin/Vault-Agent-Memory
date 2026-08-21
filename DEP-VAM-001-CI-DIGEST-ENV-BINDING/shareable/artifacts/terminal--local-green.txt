@@ -1,0 +1,9 @@
+VAM-001 CI digest environment binding verification
+result: PASS pending final audit binding
+exact pre-fix head: b2c8378db44079080d1d9bbd418febf93e527ec9
+default digest: e155240b5ede06c244793911bb42d6016a926889daa367c1d0559d8a24591f4c
+CI-contract core.abbrev=40 digest: 1ba66ab1f316b9da068b41a847c1717c028b451aae200cd4d54fe904ceebb611
+divergence reproduction: PASS
+identity-isolated Subject tests: 446 nodes passed
+repository suite: 2928 passed, 10 skipped, 1 warning
+final verification rule: calculate implementation digest only after non-audit commit, under CI-contract Git environment, then bind it in an audit-only commit

@@ -1,0 +1,12 @@
+VAM-001 current-head review remediation verification
+result: PASS
+tested branch: codex/vam-001-subject-extraction-adr
+base HEAD before remediation commit: b2c8378db44079080d1d9bbd418febf93e527ec9
+focused suite: 58 passed
+production progress validator: baseline_id=0dc10cfc4a429662 sequence=8 status=PASS
+ruff: PASS
+git diff --check: PASS
+supplemented local-target DEP strict verification: PASS
+identity-isolated Subject tests: 446 nodes passed
+repository suite: 2928 passed, 10 skipped, 1 warning
+warning disposition: pre-existing invalid escape sequence, unrelated and retained visibly
