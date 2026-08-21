@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--ancestor-race-diagnostic.txt",
+      "output": "terminal--ancestor-race-diagnostic.txt",
+      "source_sha256": "2a342ff8b87b19eefa16f5b401430968133f6a6e21f2ebeb178bb3f5989a116b",
+      "output_sha256": "2a342ff8b87b19eefa16f5b401430968133f6a6e21f2ebeb178bb3f5989a116b",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--reviewer-local-green-red.txt",
+      "output": "terminal--reviewer-local-green-red.txt",
+      "source_sha256": "42b5d4e002d0b56b1f03d7df281f6b1ffd1bc3f1d156aaf01af45864e36ae9da",
+      "output_sha256": "42b5d4e002d0b56b1f03d7df281f6b1ffd1bc3f1d156aaf01af45864e36ae9da",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--targeted-stable-checkout-green.txt",
+      "output": "terminal--targeted-stable-checkout-green.txt",
+      "source_sha256": "c21f7213dd69fe5ceb9947029ca43aa8603d49c2eaa540b3acdfb2383292dd03",
+      "output_sha256": "c21f7213dd69fe5ceb9947029ca43aa8603d49c2eaa540b3acdfb2383292dd03",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-001-REVIEWER-TMP-ANCESTOR-RACE",
+  "generated_at": "2026-08-21T16:43:34Z"
+}
