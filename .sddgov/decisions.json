@@ -10,6 +10,16 @@
       "status": "approved",
       "recorded_at": "2026-08-21T03:55:47Z",
       "reopen_condition": "A verified requirement shows that governed identity modeling cannot remain outside Vault without violating the generic Memory API boundary."
+    },
+    {
+      "decision_id": "DEC-VAM-GITHUB-PAGES-BOUNDARY-FREEZE",
+      "risk_level": "L2",
+      "summary": "Authorize reversible GitHub Pages deployments caused only by sequentially merging PRs 498, 499, 500, and 501 after every exact gate is green.",
+      "scope": "production_deploy:github-pages-boundary-freeze-sequence",
+      "basis": "Owner explicitly authorized the independent Reviewer Agent, bounded PR 499 evidence repair, review-thread handling, sequential merges 498 -> 499 -> 500 -> 501, and their automatic public GitHub Pages deployments in the current Codex task on 2026-08-21 Asia/Taipei.",
+      "status": "approved",
+      "recorded_at": "2026-08-21T14:10:47Z",
+      "reopen_condition": "Any changed PR set or order, unrelated deployment, failed guard, destructive or irreversible effect, secret or permission change, or deployment outside the automatic Pages workflow requires a new decision."
     }
   ]
 }
