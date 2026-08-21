@@ -34,22 +34,22 @@
   "shareable": [
     {
       "path": "shareable/artifacts/terminal--focused-green-test.txt",
-      "sha256": "3bebc399942c5407bd527855491cb4365edc804cc0d91b0850a70a5f9b9b459d",
+      "sha256": "829d2953f1db58ff489d1565b71fc78968ab68393af01cbb40d49cf7a4847e98",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/terminal--gateway-red-test.txt",
-      "sha256": "ae80e7650357139dfffa21122e14a328a2e91c18110b9493db884715040dfdf4",
+      "sha256": "6273b8fcd071b8e02c4972b22ba39794d75bf1661b2c4052c42580bf7a5d9321",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/terminal--local-green-summary.txt",
-      "sha256": "5639ca408ae82fef7f5d7cfa6d4bc771b8af0c583ebcecc4019bde188e4f4844",
+      "sha256": "f9bddbafa8779c8084ee824ad81de2adaed1f48e98aa4938bce409503e823202",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/terminal--red-test.txt",
-      "sha256": "ec7e1973111d93a2185f5bb4dd29680e31bba758317b4c7880a3b7206e2af8fa",
+      "sha256": "c175e925b6e1fc24592e7182db5ea412019a0bd873dab6ce7be87770a743c0fe",
       "shareable": true
     }
   ]

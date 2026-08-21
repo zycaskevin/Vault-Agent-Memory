@@ -5,40 +5,45 @@
       "source": "terminal--focused-green-test.txt",
       "output": "terminal--focused-green-test.txt",
       "source_sha256": "2efea9a20f135163a5be9fbd8a4882b0fc2a97e07f1beb0ca0bf3c4cd6982d26",
-      "output_sha256": "3bebc399942c5407bd527855491cb4365edc804cc0d91b0850a70a5f9b9b459d",
+      "output_sha256": "829d2953f1db58ff489d1565b71fc78968ab68393af01cbb40d49cf7a4847e98",
       "redactions": {
-        "phone": 1
+        "hostname": 1
       }
     },
     {
       "source": "terminal--gateway-red-test.txt",
       "output": "terminal--gateway-red-test.txt",
       "source_sha256": "8d3ce3f2ce27fb6258a5ac4b9398e710855659d2c2fa7aa25977bba989b9608d",
-      "output_sha256": "ae80e7650357139dfffa21122e14a328a2e91c18110b9493db884715040dfdf4",
+      "output_sha256": "6273b8fcd071b8e02c4972b22ba39794d75bf1661b2c4052c42580bf7a5d9321",
       "redactions": {
-        "phone": 1
+        "hostname": 1,
+        "workstation_path": 3
       }
     },
     {
       "source": "terminal--local-green-summary.txt",
       "output": "terminal--local-green-summary.txt",
       "source_sha256": "5639ca408ae82fef7f5d7cfa6d4bc771b8af0c583ebcecc4019bde188e4f4844",
-      "output_sha256": "5639ca408ae82fef7f5d7cfa6d4bc771b8af0c583ebcecc4019bde188e4f4844",
-      "redactions": {}
+      "output_sha256": "f9bddbafa8779c8084ee824ad81de2adaed1f48e98aa4938bce409503e823202",
+      "redactions": {
+        "workstation_path": 2
+      }
     },
     {
       "source": "terminal--red-test.txt",
       "output": "terminal--red-test.txt",
       "source_sha256": "6c0a64674c2ca222a6eb1036ce2c06ad6ad1b88a0a86963f08416c47b1d30401",
-      "output_sha256": "ec7e1973111d93a2185f5bb4dd29680e31bba758317b4c7880a3b7206e2af8fa",
+      "output_sha256": "c175e925b6e1fc24592e7182db5ea412019a0bd873dab6ce7be87770a743c0fe",
       "redactions": {
-        "phone": 1
+        "hostname": 1,
+        "workstation_path": 2
       }
     }
   ],
   "blocked": [],
   "totals": {
-    "phone": 3
+    "hostname": 3,
+    "workstation_path": 7
   },
   "dep_id": "DEP-VAM-002-MEMORY-CHANGE-ENVELOPE",
   "generated_at": "2026-08-21T10:19:49Z"

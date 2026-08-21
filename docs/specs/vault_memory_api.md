@@ -158,12 +158,20 @@ adapter cannot infer how many private or higher-sensitivity rows were filtered.
 Cursors are bound to the agent/private/sensitivity policy that created them and
 fail closed when reused under another policy.
 
+The SQLite implementation scans bounded keyset batches containing only the
+ordering and policy columns. Raw content and latest audit ids are fetched only
+for readable rows selected into the response page.
+
 The existing bounded `GET /memory/{id}` accepts an optional `revision_id`. When
 provided, Vault returns content only if it still matches the current envelope
 revision and the normal read policy permits access. The provider enforces a
 maximum of 80 lines and rechecks the revision after the read. This first
 contract does not promise historical content reconstruction for revisions that
 Vault did not store as snapshots.
+
+For revision-bound reads, `{id}` is an opaque provider reference. The Gateway
+passes its string form unchanged to the provider; the SQLite adapter, not the
+Gateway, validates and decodes the current decimal representation.
 
 The complete field and compatibility contract is defined in
 `docs/specs/vam-002-memory-change-envelope.md`.

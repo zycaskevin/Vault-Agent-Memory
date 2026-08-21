@@ -10,9 +10,11 @@ import subprocess
 import sys
 import threading
 import time
+from urllib.parse import urlparse
 
 import pytest
 
+import vault.gateway_memory_api as gateway_memory_api_module
 from vault.cli import main
 from vault.db import VaultDB
 from vault.docmap import build_document_map_for_entry
@@ -564,6 +566,13 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
         if parameter["name"] == "revision_id"
     )
     assert revision_parameter.get("required", False) is False
+    memory_id_parameter = next(
+        parameter
+        for parameter in contract["paths"]["/memory/{id}"]["get"]["parameters"]
+        if parameter["name"] == "id"
+    )
+    assert memory_id_parameter["schema"]["type"] == "string"
+    assert memory_id_parameter["x-vault-opaque-memory-id"] is True
 
 
 def test_gateway_memory_changes_are_policy_filtered_and_revision_bound(tmp_path):
@@ -607,6 +616,38 @@ def test_gateway_memory_changes_are_policy_filtered_and_revision_bound(tmp_path)
     assert stale["status"] == "error"
     assert stale["error"] == "revision_mismatch"
     assert "content" not in stale
+
+
+def test_gateway_preserves_opaque_memory_reference_for_provider_validation(tmp_path, monkeypatch):
+    project, _public_id, _private_id = _project(tmp_path)
+
+    class OpaqueReferenceProvider:
+        provider_id = "opaque-test"
+
+        def __init__(self):
+            self.received_memory_id = None
+
+        def read_bounded_evidence(self, memory_id, revision_id, **kwargs):
+            self.received_memory_id = memory_id
+            return {"status": "error", "error": "memory_id_invalid"}
+
+    provider = OpaqueReferenceProvider()
+    monkeypatch.setattr(gateway_memory_api_module, "sqlite_memory_provider", lambda _project: provider)
+
+    payload = gateway_memory_api_module.gateway_memory_http_get(
+        urlparse(
+            "/memory/00042?agent_id=work-agent&line_start=1&line_end=1&revision_id="
+            + "rev_"
+            + "0" * 64
+        ),
+        project,
+        append_audit=lambda *_args, **_kwargs: None,
+        audit_context={},
+    )
+
+    assert payload is not None
+    assert provider.received_memory_id == "00042"
+    assert payload["memory_api"]["memory_id"] == "00042"
 
 
 def test_provider_adapter_parity_report_is_metadata_only(tmp_path):

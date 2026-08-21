@@ -30,6 +30,12 @@ from .search_utils import normalize_search_limit
 
 
 MEMORY_PROVIDER_INTERFACE_VERSION = "2026-08-21"
+_MEMORY_CHANGE_SCAN_BATCH_SIZE = 100
+_MEMORY_CHANGE_RECORDED_AT_SQL = "COALESCE(NULLIF(updated_at, ''), created_at, '')"
+_MEMORY_CHANGE_POLICY_COLUMNS = (
+    "id, scope, sensitivity, owner_agent, allowed_agents, status, "
+    "updated_at, created_at"
+)
 
 # Fields that must never be directly modified through update_memory
 _PROTECTED_UPDATE_FIELDS = frozenset({
@@ -287,32 +293,68 @@ class SQLiteMemoryProvider:
                     "message": "change cursor is invalid for the current read policy",
                 }
 
-        with VaultDB(self.resolved_db_path) as db:
-            rows = [
-                dict(row)
-                for row in db.conn.execute(
-                    """SELECT * FROM knowledge
-                       ORDER BY COALESCE(NULLIF(updated_at, ''), created_at, ''), id"""
-                ).fetchall()
-            ]
-            audit_refs = {
-                str(row["target_id"]): f"audit:{int(row['audit_id'])}"
-                for row in db.conn.execute(
-                    """SELECT target_id, MAX(id) AS audit_id
-                       FROM memory_audit_log
-                       WHERE target_type='knowledge'
-                       GROUP BY target_id"""
-                ).fetchall()
-            }
-
-        visible = [
-            row
-            for row in rows
-            if (cursor_key is None or change_order_key(row) > cursor_key)
-            and can_read_memory(row, read_policy)
-        ]
         limit_i = normalize_change_limit(limit)
-        selected = visible[:limit_i]
+        visible: list[dict[str, Any]] = []
+        scan_key = cursor_key
+        with VaultDB(self.resolved_db_path) as db:
+            while len(visible) <= limit_i:
+                where_sql = ""
+                parameters: list[Any] = []
+                if scan_key is not None:
+                    where_sql = (
+                        f"WHERE ({_MEMORY_CHANGE_RECORDED_AT_SQL} > ? OR "
+                        f"({_MEMORY_CHANGE_RECORDED_AT_SQL} = ? AND id > ?))"
+                    )
+                    parameters.extend((scan_key[0], scan_key[0], scan_key[1]))
+                parameters.append(_MEMORY_CHANGE_SCAN_BATCH_SIZE)
+                batch = [
+                    dict(row)
+                    for row in db.conn.execute(
+                        f"""SELECT {_MEMORY_CHANGE_POLICY_COLUMNS}
+                            FROM knowledge
+                            {where_sql}
+                            ORDER BY {_MEMORY_CHANGE_RECORDED_AT_SQL}, id
+                            LIMIT ?""",
+                        parameters,
+                    ).fetchall()
+                ]
+                if not batch:
+                    break
+                for row in batch:
+                    scan_key = change_order_key(row)
+                    if can_read_memory(row, read_policy):
+                        visible.append(row)
+                        if len(visible) > limit_i:
+                            break
+                if len(visible) > limit_i or len(batch) < _MEMORY_CHANGE_SCAN_BATCH_SIZE:
+                    break
+
+            selected_metadata = visible[:limit_i]
+            selected_ids = [int(row["id"]) for row in selected_metadata]
+            selected: list[dict[str, Any]] = []
+            audit_refs: dict[str, str] = {}
+            if selected_ids:
+                placeholders = ",".join("?" for _ in selected_ids)
+                rows_by_id = {
+                    int(row["id"]): dict(row)
+                    for row in db.conn.execute(
+                        f"SELECT * FROM knowledge WHERE id IN ({placeholders})",
+                        selected_ids,
+                    ).fetchall()
+                }
+                selected = [rows_by_id[row_id] for row_id in selected_ids if row_id in rows_by_id]
+                audit_refs = {
+                    str(row["target_id"]): f"audit:{int(row['audit_id'])}"
+                    for row in db.conn.execute(
+                        f"""SELECT target_id, MAX(id) AS audit_id
+                            FROM memory_audit_log
+                            WHERE target_type='knowledge'
+                              AND target_id IN ({placeholders})
+                            GROUP BY target_id""",
+                        [str(row_id) for row_id in selected_ids],
+                    ).fetchall()
+                }
+
         changes = [
             memory_change_envelope(row, audit_ref=audit_refs.get(str(row.get("id")), ""))
             for row in selected
@@ -330,7 +372,7 @@ class SQLiteMemoryProvider:
             "changes": changes,
             "count": len(changes),
             "next_cursor": next_cursor,
-            "has_more": len(visible) > len(selected),
+            "has_more": len(visible) > limit_i,
             "provider": self.provider_id,
             "safety": {
                 "read_policy_filtering": True,

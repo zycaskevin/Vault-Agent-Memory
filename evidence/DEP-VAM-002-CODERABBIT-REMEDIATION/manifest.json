@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-REMEDIATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--review-red.txt",
+      "sha256": "ce0d8afccb4f797d2249d9c70095e547073eb9c95ee3c09313654d490a0182de",
+      "collected_at": "2026-08-21T11:28:14Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--review-green.txt",
+      "sha256": "751009fd51c461dbe8805387e742f9479304ec6dc72becf7e740940960883ed0",
+      "collected_at": "2026-08-21T11:34:31Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--review-green.txt",
+      "sha256": "751009fd51c461dbe8805387e742f9479304ec6dc72becf7e740940960883ed0",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--review-red.txt",
+      "sha256": "ce0d8afccb4f797d2249d9c70095e547073eb9c95ee3c09313654d490a0182de",
+      "shareable": true
+    }
+  ]
+}

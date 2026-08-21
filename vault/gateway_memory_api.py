@@ -130,7 +130,7 @@ def gateway_memory_create(
 def gateway_memory_get(
     project_dir: str | Path,
     *,
-    memory_id: int,
+    memory_id: int | str,
     agent_id: str,
     line_start: int = 1,
     line_end: int = 40,
@@ -142,8 +142,9 @@ def gateway_memory_get(
     read_range_func: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Vault Memory API facade for bounded memory reads."""
-    if int(memory_id or 0) <= 0:
-        return _error("memory_id_invalid", "memory id must be a positive integer")
+    memory_ref = str(memory_id or "").strip()
+    if not memory_ref:
+        return _error("memory_id_invalid", "memory id is required")
     if revision_id:
         project = Path(project_dir)
         agent = _agent_id(agent_id)
@@ -152,7 +153,7 @@ def gateway_memory_get(
         if not agent:
             return _error("agent_id_required", "Vault Memory API read requires agent_id")
         payload = sqlite_memory_provider(project).read_bounded_evidence(
-            int(memory_id),
+            memory_ref,
             str(revision_id),
             line_start=line_start,
             line_end=line_end,
@@ -166,7 +167,7 @@ def gateway_memory_get(
             "endpoint": "/memory/{id}",
             "facade": True,
             "bounded_read": True,
-            "memory_id": int(memory_id),
+            "memory_id": memory_ref,
             "revision_bound": True,
             "provider_id": "sqlite",
             "read_policy_filtering": True,
@@ -180,10 +181,16 @@ def gateway_memory_get(
             }
         )
         return payload
+    try:
+        legacy_memory_id = int(memory_ref)
+    except (TypeError, ValueError):
+        return _error("memory_id_invalid", "legacy memory id must be a positive integer")
+    if legacy_memory_id <= 0:
+        return _error("memory_id_invalid", "legacy memory id must be a positive integer")
     if _result_adapter(result_adapter) == "provider":
         return provider_memory_get(
             project_dir,
-            memory_id=int(memory_id),
+            memory_id=legacy_memory_id,
             agent_id=agent_id,
             line_start=line_start,
             line_end=line_end,
@@ -196,7 +203,7 @@ def gateway_memory_get(
 
     payload = read_range_func(
         project_dir,
-        knowledge_id=int(memory_id),
+        knowledge_id=legacy_memory_id,
         agent_id=agent_id,
         line_start=line_start,
         line_end=line_end,
@@ -209,14 +216,14 @@ def gateway_memory_get(
         "facade": True,
         "legacy_equivalent": "/read-range",
         "bounded_read": True,
-        "memory_id": int(memory_id),
+        "memory_id": legacy_memory_id,
         "result_adapter": "legacy",
         "default_result_adapter": True,
     }
     _attach_provider_get_probe(
         payload,
         project_dir,
-        memory_id=int(memory_id),
+        memory_id=legacy_memory_id,
         agent_id=agent_id,
         include_private=include_private,
         max_sensitivity=max_sensitivity,
@@ -593,7 +600,7 @@ def gateway_memory_http_get(
             **audit_context,
         )
         return payload
-    memory_id = _memory_id_from_path(parsed.path)
+    memory_id = _memory_reference_from_path(parsed.path)
     if memory_id is None:
         return None
     payload = gateway_memory_get(
@@ -768,7 +775,7 @@ def _request_agent(body: dict[str, Any], parsed: Any) -> str:
     return _agent_id(body.get("agent_id") or (query.get("agent_id") or [""])[0])
 
 
-def _memory_id_from_path(path: str) -> int | None:
+def _memory_reference_from_path(path: str) -> str | None:
     prefix = "/memory/"
     if not path.startswith(prefix):
         return None
@@ -784,8 +791,15 @@ def _memory_id_from_path(path: str) -> int | None:
         "sync",
     }:
         return None
+    return raw
+
+
+def _memory_id_from_path(path: str) -> int | None:
+    memory_ref = _memory_reference_from_path(path)
+    if memory_ref is None:
+        return None
     try:
-        return int(raw)
+        return int(memory_ref)
     except ValueError:
         return 0
 

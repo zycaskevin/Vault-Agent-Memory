@@ -67,6 +67,11 @@ only to the last change actually returned to the caller. Hidden rows do not
 change the visible cursor, count, or `has_more` value. Reusing a cursor under a
 different agent or sensitivity/private policy fails closed.
 
+The SQLite adapter implements this with bounded keyset batches containing only
+ordering and read-policy columns. It fetches `content_raw` and latest audit ids
+only for the readable rows selected for the response page; it does not load the
+entire knowledge or audit table before filtering.
+
 ## Bounded evidence
 
 `MemoryProvider.read_bounded_evidence(...)` accepts `memory_id`,
@@ -89,7 +94,10 @@ exists.
 - `GET /memory/changes`: list readable changes using `agent_id`, `cursor`,
   `limit`, `include_private`, and `max_sensitivity` query parameters.
 - `GET /memory/{id}`: existing bounded read; an optional `revision_id` binds the
-  response to a change envelope revision.
+  response to a change envelope revision. For a revision-bound read, the
+  Gateway preserves `{id}` as an opaque string and the selected provider alone
+  validates or decodes it. The SQLite provider currently accepts its decimal
+  row-id representation.
 
 Existing Memory API routes and their default authorities remain unchanged.
 

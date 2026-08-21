@@ -32,6 +32,10 @@ Cursors are opaque, read-policy-bound pagination hints. They are not
 credentials. Authorization is reevaluated on every call. Cursor progress,
 counts, and `has_more` are calculated only from readable rows.
 
+The Gateway preserves revision-bound memory ids as provider-owned opaque
+strings. The SQLite adapter uses bounded keyset policy scans and hydrates raw
+content plus audit references only for selected readable rows.
+
 ## Alternatives considered
 
 1. Let consumers read SQLite directly. Rejected because it bypasses policy and

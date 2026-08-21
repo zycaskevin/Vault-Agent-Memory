@@ -150,7 +150,14 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                 "get": {
                     "summary": "Read a bounded active-memory range through Vault Memory API.",
                     "parameters": [
-                        {"name": "id", "in": "path", "required": True, "schema": {"type": "integer"}},
+                        {
+                            "name": "id",
+                            "in": "path",
+                            "required": True,
+                            "schema": {"type": "string", "minLength": 1},
+                            "description": "Opaque provider memory identifier; consumers must not parse it.",
+                            "x-vault-opaque-memory-id": True,
+                        },
                         {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
                         {"name": "line_start", "in": "query", "schema": {"type": "integer", "default": 1}},
                         {"name": "line_end", "in": "query", "schema": {"type": "integer", "default": 40}},
