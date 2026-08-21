@@ -16,7 +16,7 @@ baseline.
 Run:
 
 ```text
-/home/zycas/文件/ChatGPT/Vault/.venv/bin/pytest -q tests/test_memory_change_envelope.py
+python -m pytest -q tests/test_memory_change_envelope.py
 ```
 
 The collection error is captured in the red-test shareable artifact.

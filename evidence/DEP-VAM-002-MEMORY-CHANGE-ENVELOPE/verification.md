@@ -5,14 +5,16 @@
 Primary command:
 
 ```text
-umask 022 && PATH=/tmp/vam-python-path-vam002:/home/zycas/.local/bin:/usr/local/bin:/usr/bin:/bin sddgov ci local-gate .
+umask 022 && PATH=$PYTHON_SHIM:$USER_BIN:/usr/local/bin:/usr/bin:/bin sddgov ci local-gate .
 ```
 
 Result: PASS. Governance doctor and CI contract verification passed; README
 command smoke and release parity passed; 446 identity-isolated frozen Subject
 nodes passed; the remaining suite reported 2928 passed and 10 skipped.
 
-Focused provider/Gateway/change-envelope suite: 40 passed.
+Original focused provider/Gateway/change-envelope suite: 40 passed. The
+CodeRabbit remediation exact head subsequently passed 42 focused tests, 446
+identity-isolated nodes, and 2,930 repository tests with 10 skips.
 
 ## Before/after evidence
 

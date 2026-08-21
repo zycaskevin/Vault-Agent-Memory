@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 
+import vault.memory_provider as memory_provider_module
 from vault.db import VaultDB
 from vault.memory_change_envelope import MEMORY_CHANGE_SCHEMA_VERSION
 from vault.memory_provider import MemoryProvider, sqlite_memory_provider
@@ -100,6 +101,46 @@ def test_provider_change_page_is_stable_policy_filtered_and_cursor_based(tmp_pat
     assert repeated["next_cursor"] == second_page["next_cursor"]
 
 
+def test_change_page_uses_bounded_policy_scans_and_selected_row_hydration(tmp_path, monkeypatch):
+    project, _first_id, _second_id, _private_id = _change_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        db.conn.executemany(
+            """INSERT INTO knowledge
+               (title, content_raw, scope, sensitivity, owner_agent, created_at, updated_at)
+               VALUES (?, ?, 'private', 'high', 'private-agent', '', '')""",
+            [(f"Hidden {index}", f"private {index}") for index in range(125)],
+        )
+        db.conn.commit()
+    statements: list[str] = []
+
+    class TracedVaultDB(VaultDB):
+        def connect(self):
+            connected = super().connect()
+            connected.conn.set_trace_callback(statements.append)
+            return connected
+
+    monkeypatch.setattr(memory_provider_module, "VaultDB", TracedVaultDB)
+    page = sqlite_memory_provider(project).list_changes(
+        agent_id="work-agent",
+        max_sensitivity="low",
+        limit=1,
+    )
+
+    assert page["status"] == "ok"
+    assert page["count"] == 1
+    selects = [statement.lower() for statement in statements if statement.lstrip().lower().startswith("select")]
+    policy_scans = [statement for statement in selects if "from knowledge" in statement and "order by coalesce" in statement]
+    assert len(policy_scans) >= 2
+    assert all("select *" not in statement for statement in policy_scans)
+    assert all("content_raw" not in statement for statement in policy_scans)
+    assert all(" limit " in statement for statement in policy_scans)
+    hydrated_rows = [statement for statement in selects if "select * from knowledge" in statement]
+    assert hydrated_rows
+    assert all("where id in" in statement for statement in hydrated_rows)
+    audit_queries = [statement for statement in selects if "from memory_audit_log" in statement]
+    assert all("target_id in" in statement for statement in audit_queries)
+
+
 def test_change_cursor_is_opaque_validated_and_bound_to_read_policy(tmp_path):
     project, _first_id, _second_id, _private_id = _change_project(tmp_path)
     provider = sqlite_memory_provider(project)
@@ -167,13 +208,14 @@ def test_revision_bound_bounded_evidence_fails_closed_when_stale(tmp_path):
         first_id,
         metadata["revision_id"],
         line_start=1,
-        line_end=4,
+        line_end=81,
         max_lines=2_000,
         agent_id="work-agent",
         max_sensitivity="low",
     )
-    assert too_large["status"] == "ok"
-    assert too_large["safety"]["max_lines"] == 80
+    assert too_large["status"] == "error"
+    assert too_large["error"] == "range_too_large"
+    assert too_large["max_lines"] == 80
 
     denied = provider.read_bounded_evidence(
         private_id,

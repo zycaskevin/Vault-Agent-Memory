@@ -1,5 +1,5 @@
 VAM-002 Local Green
-Command: umask 022 && PATH=/tmp/vam-python-path-vam002:/home/zycas/.local/bin:/usr/local/bin:/usr/bin:/bin sddgov ci local-gate .
+Command: umask 022 && PATH=$PYTHON_SHIM:$USER_BIN:/usr/local/bin:/usr/bin:/bin sddgov ci local-gate .
 Result: PASS
 Governance doctor: ok
 CI contract verify: ok
