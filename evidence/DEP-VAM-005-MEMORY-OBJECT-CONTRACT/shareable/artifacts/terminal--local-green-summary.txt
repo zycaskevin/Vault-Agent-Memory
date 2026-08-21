@@ -1,7 +1,7 @@
-VAM-005 stacked Local Green
-Dependency: VAM-002 commit 48cea2cb60c1d90dc6e4eeef92e2d1f604623cb7
+VAM-005 initial stacked Local Green
+Initial dependency: VAM-002 commit 48cea2cb60c1d90dc6e4eeef92e2d1f604623cb7
 Implementation: e026599
-Command: umask 022 && PATH=/tmp/vam-python-path-vam005:/home/zycas/.local/bin:/usr/local/bin:/usr/bin:/bin sddgov ci local-gate .
+Command: umask 022 && PATH=$SDDGOV_SHIM:$PATH sddgov ci local-gate .
 Result: PASS
 Governance doctor: ok
 CI contract verify: ok

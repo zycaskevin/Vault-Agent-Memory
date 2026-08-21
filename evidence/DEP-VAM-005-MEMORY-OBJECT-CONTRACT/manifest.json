@@ -27,17 +27,17 @@
   "shareable": [
     {
       "path": "shareable/artifacts/terminal--focused-green-test.txt",
-      "sha256": "e22ef02e42423e82cdc71f865fbd11b51e8f2314b66d675ebdd01f5aca8fa686",
+      "sha256": "6e4a3169a6c0708b580d7da987326b9b265537f84ca974dcb8de0623dd5a8097",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/terminal--local-green-summary.txt",
-      "sha256": "eab4ceca2132673f0173460925fe965811210cea7753871acfb6e041dd629d0e",
+      "sha256": "67d906fe2ba84c4bca1e8002857d017bcb79e2e5915b57ad0bd43fa220ed1d59",
       "shareable": true
     },
     {
       "path": "shareable/artifacts/terminal--red-test.txt",
-      "sha256": "f6920186b5a350809aef217015a75caab3f11d991987baab6f7fbbbbbd802822",
+      "sha256": "afdf76f49cb0f74b23d074fd19edfcc58f37649d47b31e218cfabee73963a464",
       "shareable": true
     }
   ]

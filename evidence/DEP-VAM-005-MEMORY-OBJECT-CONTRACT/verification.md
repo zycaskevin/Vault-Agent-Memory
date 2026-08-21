@@ -5,14 +5,16 @@
 Primary command:
 
 ```text
-umask 022 && PATH=/tmp/vam-python-path-vam005:/home/zycas/.local/bin:/usr/local/bin:/usr/bin:/bin sddgov ci local-gate .
+umask 022 && PATH=$SDDGOV_SHIM:$PATH sddgov ci local-gate .
 ```
 
-Result: PASS. Governance doctor and CI contract verification passed; README
-command smoke and release parity passed; 446 identity-isolated frozen Subject
-nodes passed; the remaining suite reported 2933 passed and 10 skipped.
+Result: PASS at stacked integration commit `fa7136d`. Governance doctor and CI
+contract verification passed; README command smoke and release parity passed;
+446 identity-isolated frozen Subject nodes passed; the remaining suite reported
+2935 passed, 10 skipped, and 1 pre-existing warning.
 
-Focused MemoryObject/provider/Gateway/VAM-002 suite: 45 passed.
+Focused MemoryObject/provider/Gateway/VAM-002 suite: 47 passed after integrating
+VAM-002 commit `5dd09ef`. Changed-Python Ruff and the module-size gate passed.
 
 ## Before/after evidence
 
@@ -31,4 +33,3 @@ opaque metadata; VAM-002 emits canonical kinds; all focused and full gates pass.
 - Provider object search/get follows existing provider behavior and is not a
   new public Gateway result-authority switch.
 - Independent focused architecture review remains required before merge.
-- Governance CLI/package version mismatch remains a doctor warning only.

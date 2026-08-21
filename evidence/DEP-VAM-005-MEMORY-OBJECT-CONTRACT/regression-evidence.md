@@ -8,10 +8,14 @@ pre-write rejection, OpenAPI/provider parity, and VAM-002 canonical mapping.
 
 ## Related tests executed
 
-- MemoryObject/provider/Gateway/VAM-002 focused suite: 45 passed.
+- MemoryObject/provider/Gateway/VAM-002 focused suite: 45 passed at the
+  implementation commit; 47 passed after integrating VAM-002 commit `5dd09ef`.
 - Deployment-positioning docs: 12 passed.
-- Changed-Python Ruff: passed.
-- Full Local Green: 446 identity-isolated nodes plus 2933 passed / 10 skipped.
+- Full Local Green at stacked integration commit `fa7136d`: 446
+  identity-isolated nodes plus 2935 passed / 10 skipped / 1 pre-existing
+  warning.
+- Changed-Python Ruff and the module-size gate both passed after dependency
+  integration.
 
 ## Unaffected paths sampled
 

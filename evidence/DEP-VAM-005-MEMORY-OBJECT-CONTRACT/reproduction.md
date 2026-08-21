@@ -16,7 +16,7 @@ three deterministic failures.
 Run:
 
 ```text
-env PYTHONPATH=. /home/zycas/文件/ChatGPT/Vault/.venv/bin/pytest -q tests/test_memory_object_contract.py
+env PYTHONPATH=. $REPO_VENV/bin/pytest -q tests/test_memory_object_contract.py
 ```
 
 The shareable RED artifact records missing provider operations and response
