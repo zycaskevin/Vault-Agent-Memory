@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-DELIVERY-GATE",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--red-delivery-gate.txt",
+      "sha256": "27d69a426b9e93417107f3c74e9477f555834a5070daa6775c78f4f48badcd6b",
+      "collected_at": "2026-08-21T09:30:16Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--green-delivery-gate.txt",
+      "sha256": "044a71b3aaffc48f463776652742d367c415e6c57f1e68688dcbc6fd3360c526",
+      "collected_at": "2026-08-21T09:38:46Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--green-delivery-gate.txt",
+      "sha256": "044a71b3aaffc48f463776652742d367c415e6c57f1e68688dcbc6fd3360c526",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--red-delivery-gate.txt",
+      "sha256": "27d69a426b9e93417107f3c74e9477f555834a5070daa6775c78f4f48badcd6b",
+      "shareable": true
+    }
+  ]
+}

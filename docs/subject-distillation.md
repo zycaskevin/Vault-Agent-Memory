@@ -38,7 +38,7 @@ It may consume Vault only through a generic Memory API or provider protocol.
 The earlier public-safety validator remains a separate Phase 0 mechanism and
 does not implement the Subject domain.
 
-Vault's Subject runtime is not implemented and will not be continued. In
+Runtime is not implemented in Vault and will not be continued there. In
 particular, this package does not register the v15 migration or add Subject
 emission, retrieval, promotion, Context Pack, decision, relationship, deletion,
 evaluation, CLI, MCP, Gateway, Person, or Organization runtime behavior.
