@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-PRIVATE-CHECKOUT-REMOTE-REF",
+  "issue": "PR-498",
+  "sdd_references": [
+    "VAM-001"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-21T16:47:32Z",
+  "updated_at": "2026-08-21T16:48:41Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-21T16:47:32Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-21T16:48:41Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-21T16:48:41Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-21T16:48:41Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-21T16:48:41Z"
+      }
+    ]
+  },
+  "expected_behavior": "A fresh private checkout exposes origin/main at the exact PR base before Local Green starts.",
+  "actual_behavior": "The local-source Builder clone had the formal origin URL but no origin/main ref, so the SDG-012 identity node failed until the exact ref was fetched.",
+  "environment": {
+    "commit": "c52aee2e5dec50406209c1f4d3be69add5eb3c86",
+    "branch": "codex/vam-001-subject-extraction-adr",
+    "runtime": "Linux; pinned Python Local Green; sddgov 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

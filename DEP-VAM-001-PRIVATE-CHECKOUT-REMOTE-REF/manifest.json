@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-PRIVATE-CHECKOUT-REMOTE-REF",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--private-checkout-origin-main-red.txt",
+      "sha256": "773014c761bcf2b357acbfde573809e3d653f24a0ba82fb95117b5dfb2f8fce7",
+      "collected_at": "2026-08-21T16:47:50Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--private-checkout-origin-main-green.txt",
+      "sha256": "6b222a479ef4bc623ead409d12934e187059110eb51883cf3a6fa0795254c75f",
+      "collected_at": "2026-08-21T16:47:50Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--private-checkout-origin-main-green.txt",
+      "sha256": "6b222a479ef4bc623ead409d12934e187059110eb51883cf3a6fa0795254c75f",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--private-checkout-origin-main-red.txt",
+      "sha256": "773014c761bcf2b357acbfde573809e3d653f24a0ba82fb95117b5dfb2f8fce7",
+      "shareable": true
+    }
+  ]
+}
