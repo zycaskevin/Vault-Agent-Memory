@@ -36,6 +36,9 @@ def test_extraction_adr_records_the_complete_boundary_decision() -> None:
     assert "Digital Life Identity reads `vault.db`" in text
     assert "The Vault adapter lives in the Digital Life Identity repository" in normalized
     assert "Vault treats DLI payload semantics as opaque application data" in normalized
+    assert "action ID `VAM-001-ISSUE-DISPOSITION`" in normalized
+    assert "Authorization came from the controlling owner instruction" in normalized
+    assert "No signed L3 receipt is reusable" in normalized
 
 
 def test_subject_status_marks_runtime_as_extracted_without_rewriting_history() -> None:

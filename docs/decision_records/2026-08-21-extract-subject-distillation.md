@@ -106,11 +106,11 @@ DLI designs, but Vault-specific implementations and authority are not ported.
 | #497 | Close as superseded by this architecture decision. | Mission V6 and continued T-005 through T-033 authority are no longer required. |
 
 VAM-001 initially prepared comment drafts only. A later concrete owner
-instruction executed the bounded disposition: comments were posted and Issues
-#495, #496, and #497 were closed; #410 remains open. The action and its
-non-reusable authorization basis are recorded as
-`VAM-001-ISSUE-DISPOSITION`. This record grants no authority for another
-external mutation.
+instruction executed the bounded disposition: comments were posted and
+Issues #495, #496, and #497 were closed; Issue #410 remains open. The completed action
+is recorded under action ID `VAM-001-ISSUE-DISPOSITION`. Authorization came
+from the controlling owner instruction. No signed L3 receipt is reusable, and
+this record grants no authority for another external mutation.
 
 ## Origin
 
