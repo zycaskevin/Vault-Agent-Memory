@@ -25,18 +25,20 @@ Run project initialization, both source-inference cases, setup-agent guidance,
 README smoke, and the complete local governance gate. Confirm no user data was
 renamed or removed.
 
-## Trigger
+## Rollback completeness audit
 
-TODO
+### Trigger
 
-## Reversible steps
+The compatibility, initialization, and boundary violations above are the rollback triggers.
 
-TODO
+### Reversible steps
 
-## Data compatibility
+Revert only the VAM-003 change and preserve user directories exactly as stated above.
 
-TODO
+### Data compatibility
 
-## Post-rollback verification
+No stored data or schema migration exists; both input spellings remain readable.
 
-TODO
+### Post-rollback verification
+
+Run the focused compatibility checks and complete local governance gate described above.

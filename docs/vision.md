@@ -107,7 +107,7 @@ capture
   -> review
   -> active memory
   -> retrieval / bounded read
-  -> dream report
+  -> lifecycle report
   -> consolidate
   -> archive / expire / cold storage
   -> recall when needed

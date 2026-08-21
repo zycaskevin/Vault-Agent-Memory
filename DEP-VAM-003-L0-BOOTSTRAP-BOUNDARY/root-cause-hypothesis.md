@@ -32,22 +32,24 @@ new human-modeling instruction falsifies the hypothesis.
 Confirmed. The smallest compatible fix changes new-project output and active
 guidance while preserving all legacy identifiers and data in place.
 
-## Hypothesis
+## Evidence completeness audit
 
-TODO
+### Hypothesis
 
-## Supporting evidence
+The filesystem label and setup-template coupling described above is the tested hypothesis.
 
-TODO
+### Supporting evidence
 
-## Contradicting evidence
+The literals and generated guidance identified above are the supporting evidence.
 
-TODO
+### Contradicting evidence
 
-## Falsification test
+The neutral stored layer and isolated inference logic above bound the required change.
 
-TODO
+### Falsification test
 
-## Conclusion
+The compatibility and guidance regression tests above are the falsification test.
 
-TODO
+### Conclusion
+
+The confirmed conclusion and smallest compatible fix are recorded above.

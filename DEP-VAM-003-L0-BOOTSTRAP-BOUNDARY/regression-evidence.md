@@ -26,19 +26,20 @@ full suite.
 
 ## Unverified boundary
 
-Independent CodeRabbit review is pending because the CLI is absent and its
-remote-script installer was rejected by the environment safety policy. This
-does not weaken local proof; it blocks merge readiness until an independent
-review is supplied.
+Remote CodeRabbit review supplied actionable findings on the original pull
+request head. Those findings are addressed in the follow-up change; the new
+exact head must complete hosted CI and independent re-review before merge.
 
-## Regression test added or strengthened
+## Regression completeness audit
 
-TODO
+### Regression test added or strengthened
 
-## Related tests executed
+The focused boundary test and updated compatibility assertions are identified above.
 
-TODO
+### Related tests executed
 
-## Unaffected paths sampled
+Focused, integration, identity-isolated, complete repository, and documentation gates are recorded above.
 
-TODO
+### Unaffected paths sampled
+
+Frozen Subject history, legacy inference, identifiers, layer values, candidate flow, and setup paths were sampled.

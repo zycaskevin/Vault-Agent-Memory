@@ -24,16 +24,16 @@ Branch `codex/vam-003-l0-bootstrap-boundary`, base commit
 `291d5595c9cb2208a6b74206acbba35a883eb918`, CPython 3.11.15, pytest 9.1.1,
 isolated worktree, no private fixture or network dependency.
 
-TODO
+## Evidence completeness audit
 
-## Actual
+### Actual
 
-TODO
+The observed pre-fix behavior is fully recorded in the `Actual` section above.
 
-## Deterministic steps
+### Deterministic steps
 
-TODO
+The focused pytest command above is sufficient to reproduce the boundary failure.
 
-## Environment and preconditions
+### Environment and preconditions
 
-TODO
+The branch, exact base, runtime, isolation, and dependency conditions are recorded above.

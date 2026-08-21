@@ -22,17 +22,19 @@ manifest declare the provider boundary, and all focused/full gates pass.
 - Existing `L0-identity` data is intentionally not renamed or migrated.
 - Repository governance is 0.2.0-experimental.6 while the installed CLI is
   0.2.0-experimental.3; doctor reports a warning only.
-- Independent review remains required before merge; CodeRabbit could not be
-  installed safely in this environment.
+- CodeRabbit reviewed the original pull-request head; the corrected exact head
+  still requires hosted CI and independent re-review before merge.
 
-## Green command and result
+## Verification completeness audit
 
-TODO
+### Green command and result
 
-## Before/after evidence
+The complete local gate result and hosted-equivalent conditions are recorded above.
 
-TODO
+### Before/after evidence
 
-## Remaining limitations
+The eleven initial failures and the verified compatible outcome are recorded above.
 
-TODO
+### Remaining limitations
+
+The compatibility labels, preserved legacy data, CLI warning, and independent-review requirement remain explicit above.

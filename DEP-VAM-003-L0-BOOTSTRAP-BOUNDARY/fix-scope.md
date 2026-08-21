@@ -26,18 +26,20 @@ New project directory names and generated documentation change. Existing
 projects continue to compile and read with their current paths and database
 values.
 
-## Smallest sufficient change
+## Scope completeness audit
 
-TODO
+### Smallest sufficient change
 
-## Files or components in scope
+The canonical-output and legacy-read compatibility change above is sufficient.
 
-TODO
+### Files or components in scope
 
-## Explicit non-scope
+All code, generated guidance, active documentation, tests, and governance records are listed above.
 
-TODO
+### Explicit non-scope
 
-## Blast radius
+The exclusions above remain binding, including no migration, release, deploy, or merge.
 
-TODO
+### Blast radius
+
+The blast radius is limited to new directory output and generated documentation as recorded above.
