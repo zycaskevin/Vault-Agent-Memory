@@ -1,0 +1,73 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__________ test_extraction_adr_records_the_complete_boundary_decision __________
+
+    def test_extraction_adr_records_the_complete_boundary_decision() -> None:
+>       text = ADR.read_text(encoding="utf-8")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_subject_extraction_boundary_docs.py:15:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/home/zycas/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib/python3.11/pathlib.py:1058: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PosixPath('/tmp/Vault-VAM-001/docs/decision_records/[REDACTED_PHONE_OR_NUMBER]-extract-subject-distillation.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/Vault-VAM-001/docs/decision_records/[REDACTED_PHONE_OR_NUMBER]-extract-subject-distillation.md'
+
+/home/zycas/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib/python3.11/pathlib.py:1044: FileNotFoundError
+___ test_subject_status_marks_runtime_as_extracted_without_rewriting_history ___
+
+    def test_subject_status_marks_runtime_as_extracted_without_rewriting_history() -> None:
+        text = STATUS.read_text(encoding="utf-8")
+>       assert "preserved origin package" in text
+E       AssertionError: assert 'preserved origin package' in '# Subject Distillation\n\nSubject Distillation is the extensible, generic Subject contract for governed\nmodels of a ...first writes and bounded reads\nremain the safe integration direction for any separately authorized future\nruntime.\n'
+
+tests/test_subject_extraction_boundary_docs.py:40: AssertionError
+_______ test_issue_comment_drafts_are_bounded_and_not_execution_receipts _______
+
+    def test_issue_comment_drafts_are_bounded_and_not_execution_receipts() -> None:
+>       text = DRAFTS.read_text(encoding="utf-8")
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_subject_extraction_boundary_docs.py:51:
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+/home/zycas/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib/python3.11/pathlib.py:1058: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+self = PosixPath('/tmp/Vault-VAM-001/docs/issue_comment_drafts/VAM-001-subject-distillation-extraction.md')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/Vault-VAM-001/docs/issue_comment_drafts/VAM-001-subject-distillation-extraction.md'
+
+/home/zycas/.local/share/uv/python/cpython-3.11.15-linux-aarch64-gnu/lib/python3.11/pathlib.py:1044: FileNotFoundError
+=========================== short test summary info ============================
+FAILED tests/test_subject_extraction_boundary_docs.py::test_extraction_adr_records_the_complete_boundary_decision
+FAILED tests/test_subject_extraction_boundary_docs.py::test_subject_status_marks_runtime_as_extracted_without_rewriting_history
+FAILED tests/test_subject_extraction_boundary_docs.py::test_issue_comment_drafts_are_bounded_and_not_execution_receipts
+3 failed in 0.04s

@@ -1,4 +1,15 @@
 {
   "schema_version": "1.0",
-  "decisions": []
+  "decisions": [
+    {
+      "decision_id": "DEC-VAM-001",
+      "risk_level": "L2",
+      "summary": "Extract Subject Distillation runtime ownership from Vault into the separate Digital Life Identity product while preserving completed origin history.",
+      "scope": "Vault/DLI responsibility boundary, T-001 through T-033 disposition, referenced GitHub issue disposition, compatibility, and one-way future integration.",
+      "basis": "Owner-provided Digital Life Identity Runtime v0.1 SDD and explicit instruction to begin VAM-001 on 2026-08-21 Asia/Taipei.",
+      "status": "approved",
+      "recorded_at": "2026-08-21T03:55:47Z",
+      "reopen_condition": "A verified requirement shows that governed identity modeling cannot remain outside Vault without violating the generic Memory API boundary."
+    }
+  ]
 }

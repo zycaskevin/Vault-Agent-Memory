@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "git--artifact-4.txt",
+      "output": "git--artifact-4.txt",
+      "source_sha256": "c512b5ea9861a555827f73abe6bec53a89e83626a3e365f72347e87073d3f219",
+      "output_sha256": "50726833e6a603c70c6c8733ff0a5c75f5c19726ea8c4163ad8eeaa6fb1ee889",
+      "redactions": {
+        "phone": 1
+      }
+    },
+    {
+      "source": "green-context.txt",
+      "output": "green-context.txt",
+      "source_sha256": "c512b5ea9861a555827f73abe6bec53a89e83626a3e365f72347e87073d3f219",
+      "output_sha256": "50726833e6a603c70c6c8733ff0a5c75f5c19726ea8c4163ad8eeaa6fb1ee889",
+      "redactions": {
+        "phone": 1
+      }
+    },
+    {
+      "source": "green-verification.txt",
+      "output": "green-verification.txt",
+      "source_sha256": "c64387847c1921c963204c81e0bbbcddc607008b9b30777f7dabe0dd6db5cd33",
+      "output_sha256": "c64387847c1921c963204c81e0bbbcddc607008b9b30777f7dabe0dd6db5cd33",
+      "redactions": {}
+    },
+    {
+      "source": "red-context.txt",
+      "output": "red-context.txt",
+      "source_sha256": "48ef93f99db754c4595f874632f65ecc46104f15718f5219777c125d595a4b16",
+      "output_sha256": "48ef93f99db754c4595f874632f65ecc46104f15718f5219777c125d595a4b16",
+      "redactions": {}
+    },
+    {
+      "source": "red-test.txt",
+      "output": "red-test.txt",
+      "source_sha256": "c2184b7c22d0173c94ee51e6bcf68e2e16d63b01c0ba0d50b4b3d0004a2f0bac",
+      "output_sha256": "41d920d61755dbdcbc5a85b82ec03b81686152f99d812495ef34e3a928e593b9",
+      "redactions": {
+        "phone": 2,
+        "trailing_whitespace": 6
+      }
+    },
+    {
+      "source": "terminal--artifact-1.txt",
+      "output": "terminal--artifact-1.txt",
+      "source_sha256": "c2184b7c22d0173c94ee51e6bcf68e2e16d63b01c0ba0d50b4b3d0004a2f0bac",
+      "output_sha256": "41d920d61755dbdcbc5a85b82ec03b81686152f99d812495ef34e3a928e593b9",
+      "redactions": {
+        "phone": 2,
+        "trailing_whitespace": 6
+      }
+    },
+    {
+      "source": "terminal--artifact-2.txt",
+      "output": "terminal--artifact-2.txt",
+      "source_sha256": "48ef93f99db754c4595f874632f65ecc46104f15718f5219777c125d595a4b16",
+      "output_sha256": "48ef93f99db754c4595f874632f65ecc46104f15718f5219777c125d595a4b16",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--artifact-3.txt",
+      "output": "terminal--artifact-3.txt",
+      "source_sha256": "c64387847c1921c963204c81e0bbbcddc607008b9b30777f7dabe0dd6db5cd33",
+      "output_sha256": "c64387847c1921c963204c81e0bbbcddc607008b9b30777f7dabe0dd6db5cd33",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "phone": 6,
+    "trailing_whitespace": 12
+  },
+  "dep_id": "DEP-VAM-001-SUBJECT-EXTRACTION-ADR",
+  "generated_at": "2026-08-21T04:01:47Z"
+}

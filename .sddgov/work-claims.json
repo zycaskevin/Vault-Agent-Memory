@@ -2,46 +2,11 @@
   "schema_version": "1.0",
   "claims": [
     {
-      "work_package": "SDG-007",
+      "work_package": "VAM-001",
       "agent": "codex",
       "status": "active",
-      "claimed_at": "2026-08-16T02:02:20Z",
-      "expires_at": "2026-08-16T10:02:20Z"
-    },
-    {
-      "work_package": "SDG-008",
-      "agent": "codex",
-      "status": "active",
-      "claimed_at": "2026-08-16T03:40:50Z",
-      "expires_at": "2026-08-16T11:40:50Z"
-    },
-    {
-      "work_package": "SDG-010",
-      "agent": "codex",
-      "status": "active",
-      "claimed_at": "2026-08-16T07:00:05Z",
-      "expires_at": "2026-08-16T15:00:05Z"
-    },
-    {
-      "work_package": "SDG-011",
-      "agent": "codex",
-      "status": "active",
-      "claimed_at": "2026-08-16T08:18:38Z",
-      "expires_at": "2026-08-16T16:18:38Z"
-    },
-    {
-      "work_package": "SDG-012",
-      "agent": "codex",
-      "status": "active",
-      "claimed_at": "2026-08-16T11:11:20Z",
-      "expires_at": "2026-08-16T19:11:20Z"
-    },
-    {
-      "work_package": "SDG-005",
-      "agent": "codex",
-      "status": "active",
-      "claimed_at": "2026-08-20T05:38:43Z",
-      "expires_at": "2026-08-20T13:38:43Z"
+      "claimed_at": "2026-08-21T03:57:18Z",
+      "expires_at": "2026-08-21T11:57:18Z"
     }
   ]
 }

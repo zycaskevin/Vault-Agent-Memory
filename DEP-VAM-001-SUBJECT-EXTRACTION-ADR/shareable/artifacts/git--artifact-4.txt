@@ -1,0 +1,15 @@
+verification_exit_status=0
+base=origin/main
+291d5595c9cb2208a6b74206acbba35a883eb918
+291d5595c9cb2208a6b74206acbba35a883eb918
+ M .sddgov/decisions.json
+ M .sddgov/events.jsonl
+ M .sddgov/work-claims.json
+ M docs/subject-distillation.md
+?? DEP-VAM-001-SUBJECT-EXTRACTION-ADR/
+?? docs/decision_records/[REDACTED_PHONE_OR_NUMBER]-extract-subject-distillation.md
+?? docs/issue_comment_drafts/
+?? docs/issues/
+?? docs/specs/vam-001-subject-distillation-extraction.md
+?? docs/work-packages/VAM-001-subject-distillation-extraction-adr.md
+?? tests/test_subject_extraction_boundary_docs.py
