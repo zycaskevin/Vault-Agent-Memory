@@ -1,0 +1,13 @@
+VAM-002 Local Green
+Command: umask 022 && PATH=/tmp/vam-python-path-vam002:/home/zycas/.local/bin:/usr/local/bin:/usr/bin:/bin sddgov ci local-gate .
+Result: PASS
+Governance doctor: ok
+CI contract verify: ok
+README documented command smoke: passed
+Release parity: passed (0.10.2)
+Identity-isolated frozen Subject suite: 446 nodes passed
+Remaining pytest suite: 2928 passed, 10 skipped, 1 pre-existing warning
+Focused provider/Gateway/change-envelope suite: 40 passed
+Database migrations: none
+Default Gateway authority switch: none
+Private/live data: none

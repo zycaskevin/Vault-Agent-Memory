@@ -2,6 +2,15 @@
   "schema_version": "1.0",
   "files": [
     {
+      "source": "terminal--focused-green-test.txt",
+      "output": "terminal--focused-green-test.txt",
+      "source_sha256": "2efea9a20f135163a5be9fbd8a4882b0fc2a97e07f1beb0ca0bf3c4cd6982d26",
+      "output_sha256": "3bebc399942c5407bd527855491cb4365edc804cc0d91b0850a70a5f9b9b459d",
+      "redactions": {
+        "phone": 1
+      }
+    },
+    {
       "source": "terminal--gateway-red-test.txt",
       "output": "terminal--gateway-red-test.txt",
       "source_sha256": "8d3ce3f2ce27fb6258a5ac4b9398e710855659d2c2fa7aa25977bba989b9608d",
@@ -9,6 +18,13 @@
       "redactions": {
         "phone": 1
       }
+    },
+    {
+      "source": "terminal--local-green-summary.txt",
+      "output": "terminal--local-green-summary.txt",
+      "source_sha256": "5639ca408ae82fef7f5d7cfa6d4bc771b8af0c583ebcecc4019bde188e4f4844",
+      "output_sha256": "5639ca408ae82fef7f5d7cfa6d4bc771b8af0c583ebcecc4019bde188e4f4844",
+      "redactions": {}
     },
     {
       "source": "terminal--red-test.txt",
@@ -22,8 +38,8 @@
   ],
   "blocked": [],
   "totals": {
-    "phone": 2
+    "phone": 3
   },
   "dep_id": "DEP-VAM-002-MEMORY-CHANGE-ENVELOPE",
-  "generated_at": "2026-08-21T10:08:24Z"
+  "generated_at": "2026-08-21T10:19:49Z"
 }

@@ -8,9 +8,9 @@
   ],
   "risk_level": "L2",
   "created_at": "2026-08-21T10:04:10Z",
-  "updated_at": "2026-08-21T10:05:07Z",
+  "updated_at": "2026-08-21T10:20:13Z",
   "workflow": {
-    "phase": "fix",
+    "phase": "proof",
     "history": [
       {
         "phase": "red",
@@ -23,13 +23,21 @@
       {
         "phase": "fix",
         "at": "2026-08-21T10:05:07Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-21T10:20:13Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-21T10:20:13Z"
       }
     ]
   },
   "expected_behavior": "Provider-independent policy-filtered change pages and revision-bound bounded evidence are available.",
   "actual_behavior": "The origin/main baseline has no change-envelope module, provider operations, or Gateway changes route; the focused test fails during import.",
   "environment": {
-    "commit": "291d5595c9cb2208a6b74206acbba35a883eb918",
+    "commit": "bd3495214bf7738cc6d77e4fb1bad7c6c1521b4c",
     "branch": "codex/vam-002-memory-change-envelope",
     "runtime": "Python 3.11 repository development virtual environment"
   },
