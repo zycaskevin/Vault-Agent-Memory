@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "local-green-identity-failure.txt",
+      "output": "local-green-identity-failure.txt",
+      "source_sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "output_sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "redactions": {}
+    },
+    {
+      "source": "stable-root-green.txt",
+      "output": "stable-root-green.txt",
+      "source_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "output_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--local-green-identity-red.txt",
+      "output": "terminal--local-green-identity-red.txt",
+      "source_sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "output_sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--stable-root-green.txt",
+      "output": "terminal--stable-root-green.txt",
+      "source_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "output_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
+  "generated_at": "2026-08-21T10:58:36Z"
+}

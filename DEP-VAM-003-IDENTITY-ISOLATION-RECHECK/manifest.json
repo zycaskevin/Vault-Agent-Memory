@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-identity-red.txt",
+      "sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "collected_at": "2026-08-21T10:51:23Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--stable-root-green.txt",
+      "sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "collected_at": "2026-08-21T10:58:36Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/local-green-identity-failure.txt",
+      "sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/stable-root-green.txt",
+      "sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--local-green-identity-red.txt",
+      "sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--stable-root-green.txt",
+      "sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "shareable": true
+    }
+  ]
+}

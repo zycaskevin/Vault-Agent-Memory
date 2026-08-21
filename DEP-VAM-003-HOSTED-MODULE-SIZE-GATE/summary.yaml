@@ -1,0 +1,46 @@
+{
+  "$schema": "../../schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-003-HOSTED-MODULE-SIZE-GATE",
+  "issue": "VAM-003",
+  "sdd_references": [
+    "VAM-003-l0-bootstrap-boundary"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-21T10:48:21Z",
+  "updated_at": "2026-08-21T10:59:21Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-21T10:48:21Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-21T10:49:17Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-21T10:49:42Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-21T10:58:36Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-21T10:59:21Z"
+      }
+    ]
+  },
+  "expected_behavior": "The hosted module-size gate accepts VAM-003 without increasing a legacy module beyond its recorded baseline.",
+  "actual_behavior": "vault/agent_setup.py had 1232 lines, one above the allowed 1231-line baseline.",
+  "environment": {
+    "commit": "0539ae33f36a290a4e853630bacbe6ef7749382b",
+    "branch": "codex/vam-003-l0-bootstrap-boundary",
+    "runtime": "GitHub Actions Ubuntu 24.04; Python module-size gate"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

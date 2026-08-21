@@ -1,0 +1,6 @@
+source=VAM-003 local `sddgov ci local-gate .` exact post-fix worktree
+command=python scripts/run_subject_identity_test_isolation.py --phase candidate
+exit_status=1
+failed_node=tests/test_subject_authorization_runner.py::test_existing_nonpending_progress_denies_before_materialization[IN_PROGRESS]
+symptom=_propose expected exit 0 but received fixed deny exit 2
+runner_output=SUBJECT_IMPLEMENTATION_AUTHORIZATION_RUNNER_DENY

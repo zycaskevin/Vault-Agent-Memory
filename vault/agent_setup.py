@@ -117,7 +117,6 @@ from vault.db import VaultDB
 from vault.import_obsidian import sync_obsidian_vault
 from vault.memory_layers import CANONICAL_MEMORY_DIRECTORIES
 
-
 DEFAULT_FEATURES = ["core", "mcp"]
 VALID_FEATURES = {
     "core",
