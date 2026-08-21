@@ -134,11 +134,16 @@ separate behavior slices with separate review.
 
 ## Rollback
 
-If this record misstates the owner decision, revert the VAM-001 documentation,
-test, and local governance records. No data rollback is required.
+If the compatibility wording is shown to misstate this decision, a separately
+authorized rollback may change only `docs/subject-distillation.md` and its
+assertions in `tests/test_subject_extraction_boundary_docs.py`. No existing
+`.sddgov` decision, event, action, or claim is a rollback target; the rollback
+must add its own Work Package, L3 approval record, DEP, and merge-gate records.
 
-Once a new product has relied on this decision, a future architecture change
-must supersede this ADR rather than erase the provenance trail.
+This extraction ADR, the completed Issue-disposition record, both VAM-001 DEP
+packages, and all frozen Subject artifacts are immutable provenance and must
+not be reverted or deleted. A future architecture change must supersede this
+ADR rather than erase the provenance trail. No data rollback is required.
 
 ## Future integration contract
 

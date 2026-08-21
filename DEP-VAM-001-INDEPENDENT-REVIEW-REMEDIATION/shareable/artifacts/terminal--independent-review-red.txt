@@ -1,0 +1,7 @@
+source=https://github.com/zycaskevin/Vault-Agent-Memory/pull/498#pullrequestreview-[REDACTED_PHONE_OR_NUMBER]
+verdict=FAIL
+finding_1=Issue disposition assertions are global and do not bind #410, #495, #496, and #497 outcomes to their matching sections; #410 is not enforced as an unposted future draft.
+finding_2=The authoritative rollback path commands a whole-PR revert while its prose permits only the compatibility change and forbids removing the extraction ADR.
+reviewed_base=291d5595c9cb2208a6b74206acbba35a883eb918
+reviewed_head=f46325de069be3fc9c18983bb49f0664be1a32b2
+receipt_created=false

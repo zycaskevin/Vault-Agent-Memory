@@ -11,6 +11,15 @@ DRAFTS = ROOT / "docs/issue_comment_drafts/VAM-001-subject-distillation-extracti
 PROGRESS = ROOT / "specs/subject-distillation/implementation-progress.json"
 
 
+def _h2_section(text: str, heading: str) -> str:
+    """Return one bounded Markdown H2 section, including its heading."""
+    marker = f"## {heading}"
+    assert text.count(marker) == 1
+    start = text.index(marker)
+    end = text.find("\n## ", start + len(marker))
+    return text[start:] if end == -1 else text[start:end]
+
+
 def test_extraction_adr_records_the_complete_boundary_decision() -> None:
     text = ADR.read_text(encoding="utf-8")
     normalized = " ".join(text.split())
@@ -32,8 +41,14 @@ def test_extraction_adr_records_the_complete_boundary_decision() -> None:
 
     assert "291d5595c9cb2208a6b74206acbba35a883eb918" in text
     assert "PR #494" in text
-    assert "Vault imports `digital_life_identity`" in text
-    assert "Digital Life Identity reads `vault.db`" in text
+    dli_ownership = " ".join(_h2_section(text, "What Digital Life Identity owns").split())
+    assert "Digital Life Identity owns Subject Core application semantics" in dli_ownership
+    assert "purpose-scoped Context Packs" in dli_ownership
+
+    integration = " ".join(_h2_section(text, "Future integration contract").split())
+    assert "The following are forbidden boundaries:" in integration
+    assert "Vault imports `digital_life_identity`." in integration
+    assert "Digital Life Identity reads `vault.db` or imports VaultDB internals." in integration
     assert "The Vault adapter lives in the Digital Life Identity repository" in normalized
     assert "Vault treats DLI payload semantics as opaque application data" in normalized
     assert "action ID `VAM-001-ISSUE-DISPOSITION`" in normalized
@@ -57,14 +72,28 @@ def test_subject_status_marks_runtime_as_extracted_without_rewriting_history() -
 
 def test_issue_disposition_record_is_bounded_and_exact() -> None:
     text = DRAFTS.read_text(encoding="utf-8")
-    for issue in (410, 495, 496, 497):
-        assert f"## Issue #{issue}" in text
+    introduction = text[: text.index("## Issue #410")]
+    sections = {
+        issue: _h2_section(text, f"Issue #{issue}")
+        for issue in (410, 495, 496, 497)
+    }
+    expected_states = {
+        410: "Keep open until the DLI Sprint 1 repository is available",
+        495: "Close as superseded, not completed",
+        496: "Close as not planned",
+        497: "Close as superseded by the architecture decision",
+    }
+    for issue, expected_state in expected_states.items():
+        assert expected_state in sections[issue]
+        assert all(
+            expected_state not in section
+            for other_issue, section in sections.items()
+            if other_issue != issue
+        )
 
-    assert "Keep open until the DLI Sprint 1 repository is available" in text
-    assert "Close as superseded, not completed" in text
-    assert "Close as not planned" in text
-    assert "Close as superseded by the architecture decision" in text
-    assert "DISPOSITION RECORD — bounded GitHub mutation completed" in text
-    assert "#495, #496, and #497 were posted and those issues were closed" in text
-    assert "Issue #410 remains open" in text
-    assert "No additional Issue mutation is authorized" in text
+    assert "Draft comment for use after the repository has a stable public location" in sections[410]
+    assert "Do not post this draft until `<DLI_REPOSITORY_URL>` is real" in sections[410]
+    assert "DISPOSITION RECORD — bounded GitHub mutation completed" in introduction
+    assert "#495, #496, and #497 were posted and those issues were closed" in introduction
+    assert "Issue #410 remains open and its text below remains an unposted future draft" in introduction
+    assert "No additional Issue mutation is authorized" in introduction

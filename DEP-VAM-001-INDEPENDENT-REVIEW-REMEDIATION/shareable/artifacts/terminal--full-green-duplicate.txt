@@ -1,0 +1,12 @@
+VAM-001 independent-review remediation full Local Green
+result: PASS
+governance doctor: PASS
+CI contract verification: PASS
+README command smoke: PASS
+release parity: PASS
+identity-isolated Subject tests: 446 nodes passed
+repository suite: 2926 passed, 10 skipped, 1 warning
+focused remediation suite: 56 passed
+production Subject progress validator: baseline_id=0dc10cfc4a429662 sequence=8 status=PASS
+ruff: PASS
+git diff --check: PASS
