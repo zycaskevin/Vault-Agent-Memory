@@ -2,13 +2,13 @@
 
 ## Green command and result
 
-From `/home/zycas/文件/ChatGPT/Vault-VAM-003-stable`,
+From `$STABLE_WORKTREE`,
 `sddgov ci local-gate .` passed: 446 identity nodes followed by 2,935 passed
 and 10 skipped in the disjoint suite.
 
 ## Before/after evidence
 
-The shared `/tmp` worktree failed closed at two different proposal-building
+The shared `$TEMP_WORKTREE` failed closed at two different proposal-building
 nodes. Moving the unchanged candidate to a stable dedicated root produced a
 complete Green run, matching the repository's existing race evidence.
 

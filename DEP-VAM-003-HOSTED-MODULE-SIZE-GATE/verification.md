@@ -10,9 +10,11 @@ returned exit 0.
 
 Before: hosted CI reported 1,232 lines against a 1,231-line allowance. After:
 the same module-size script reports 1,231/1,231, with no baseline update.
+GitHub Actions run `32476650092`, job `96754282568`, checked exact head
+`53cea80b9cfc3552626f35f15a803b39f666ee95`; the module-size job and its
+`Check module size baseline` step both concluded `success`.
 
 ## Remaining limitations
 
-The Ready-for-review hosted revision predates this fix and must be replaced by
-a new exact head after commit/push. Its governance merge gate also requires a
-fresh exact-base independent review receipt.
+The product and module-size hosted jobs are Green. The separate governance
+merge gate still requires a fresh exact-base independent review receipt.

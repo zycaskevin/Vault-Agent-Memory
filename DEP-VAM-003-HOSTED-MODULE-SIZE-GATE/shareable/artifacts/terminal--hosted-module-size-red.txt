@@ -1,4 +1,4 @@
-source=GitHub Actions Release Readiness CI run [REDACTED_PHONE_OR_NUMBER], job [REDACTED_PHONE_OR_NUMBER]
+source=GitHub Actions Release Readiness CI run 32473949789, job 96746338443
 command=python scripts/module_size_gate.py
 exit_status=1
 Module size gate: FAIL

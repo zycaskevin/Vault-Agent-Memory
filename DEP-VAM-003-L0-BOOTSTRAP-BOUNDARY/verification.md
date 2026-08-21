@@ -23,7 +23,7 @@ manifest declare the provider boundary, and all focused/full gates pass.
 - Repository governance is 0.2.0-experimental.6 while the installed CLI is
   0.2.0-experimental.3; doctor reports a warning only.
 - CodeRabbit reviewed the original pull-request head; the corrected exact head
-  still requires hosted CI and independent re-review before merge.
+  requires CI to run on the hosted runner and independent re-review before merge.
 
 ## Verification completeness audit
 

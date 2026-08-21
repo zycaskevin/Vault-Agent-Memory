@@ -21,5 +21,5 @@ the previous VAM-003 exact head.
 
 ## Environment and preconditions
 
-Local Linux worktree `/tmp/Vault-VAM-003`; candidate phase; the isolation
+Local Linux `$TEMP_WORKTREE`; candidate phase; the isolation
 runner creates a fresh `HOME`, `TMPDIR`, and pytest base temp for every node.

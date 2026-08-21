@@ -12,8 +12,10 @@
       "source": "stable-root-green.txt",
       "output": "stable-root-green.txt",
       "source_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
-      "output_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
-      "redactions": {}
+      "output_sha256": "cd80a31658239d7f2a27584265c5c8002351f56e5c9c24cb44011a3bd643aba1",
+      "redactions": {
+        "workstation_path": 1
+      }
     },
     {
       "source": "terminal--local-green-identity-red.txt",
@@ -26,12 +28,16 @@
       "source": "terminal--stable-root-green.txt",
       "output": "terminal--stable-root-green.txt",
       "source_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
-      "output_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
-      "redactions": {}
+      "output_sha256": "cd80a31658239d7f2a27584265c5c8002351f56e5c9c24cb44011a3bd643aba1",
+      "redactions": {
+        "workstation_path": 1
+      }
     }
   ],
   "blocked": [],
-  "totals": {},
+  "totals": {
+    "workstation_path": 2
+  },
   "dep_id": "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
   "generated_at": "2026-08-21T10:58:36Z"
 }
