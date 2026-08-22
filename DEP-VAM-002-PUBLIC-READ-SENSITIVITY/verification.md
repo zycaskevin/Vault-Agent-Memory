@@ -18,6 +18,12 @@ Malformed stored governance labels are denied under active policy, accepted
 governance updates are canonical lowercase, and mixed-case delete becomes a
 delete tombstone.
 
+The follow-up cycle's raw RED was collected at 2026-08-22T13:55:48Z. Evidence
+review and the bounded fix occurred after that capture; the exact final Green
+was collected at 2026-08-22T13:57:46Z. The governance schema permits only one
+linear Red/Evidence/Fix/Green history for a Green DEP, so `summary.yaml` records
+the final Green completion time while these artifacts retain both cycles.
+
 ## Remaining limitations
 
 The real-loopback HTTP assertions and complete suite remain assigned to one

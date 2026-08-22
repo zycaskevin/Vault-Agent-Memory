@@ -26,14 +26,14 @@
       },
       {
         "phase": "green",
-        "at": "2026-08-22T13:48:55Z"
+        "at": "2026-08-22T13:57:46Z"
       }
     ]
   },
   "expected_behavior": "Every VAM-002 provider read requires a non-empty agent identity; every public Memory API read facade rejects an unknown sensitivity ceiling before adapter dispatch; malformed stored governance labels fail closed; trusted updates store canonical labels; and tombstones are emitted consistently.",
   "actual_behavior": "Missing provider identity, invalid facade sensitivity, unknown stored scope or sensitivity, and mixed-case lifecycle status could expose governed data or misclassify a tombstone; HTTP and normative evidence contracts were also incomplete.",
   "environment": {
-    "commit": "b7326b344ef4bbf42e64691859fa6aaf396fb9f3 plus uncommitted stored-label/tombstone Red-Fix-Green remediation",
+    "commit": "initial Red at d2bed8a66895691e6765498490902b123129724a; follow-up Red/Fix/Green at b7326b344ef4bbf42e64691859fa6aaf396fb9f3 plus uncommitted test-only then bounded implementation/evidence changes",
     "branch": "codex/vam-002-memory-change-envelope",
     "runtime": "CPython 3.11 repository development environment; Agentic SDD Governance 0.2.0-experimental.6"
   },

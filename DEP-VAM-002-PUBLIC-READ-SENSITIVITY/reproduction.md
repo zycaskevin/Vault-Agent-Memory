@@ -35,6 +35,8 @@ Green artifact records the current executable node set.
 
 ## Environment and preconditions
 
-Exact branch head `d2bed8a66895691e6765498490902b123129724a`, SQLite fixture
-with synthetic shared-high/private-high and malformed governance rows, CPython
-3.11.
+The initial public-facade and missing-agent RED was captured at exact branch
+head `d2bed8a66895691e6765498490902b123129724a` with synthetic shared-high and
+private-high rows. The stored-label/tombstone RED was captured later at exact
+committed head `b7326b344ef4bbf42e64691859fa6aaf396fb9f3` plus uncommitted
+test-only RED changes, using malformed governance rows. Both used CPython 3.11.
