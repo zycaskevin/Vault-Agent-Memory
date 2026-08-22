@@ -1,0 +1,5 @@
+VAM-001 reviewer red evidence clarification
+references: terminal--reviewer-red.txt
+original finding remains valid: local branch and HEAD were not bound
+corrected risk wording: git revert --no-commit does not move the branch reference; it can mutate the index and working tree of the wrong checkout
+preserved fix: require local branch main and local HEAD equal the exact resolved merge commit before approval consumption or revert

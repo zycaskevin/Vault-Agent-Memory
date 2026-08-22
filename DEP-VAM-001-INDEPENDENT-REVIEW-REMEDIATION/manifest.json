@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-INDEPENDENT-REVIEW-REMEDIATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--independent-review-red.txt",
+      "sha256": "2484eb2f41057aab04a473d30281ccc07c7c28a1b2a6c8cd80f50d2090de4385",
+      "collected_at": "2026-08-21T14:29:47Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--focused-green.txt",
+      "sha256": "fa0576ace060ea3748b1ce3beec32cb4544fbab72ef48e5c209d776171695978",
+      "collected_at": "2026-08-21T14:35:14Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--full-green-duplicate.txt",
+      "sha256": "0d1dc94e3e065862cd0094346a6b670cbf735ccba3871c947ec7fb93748d5e7f",
+      "collected_at": "2026-08-21T14:40:38Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--full-green.txt",
+      "sha256": "0d1dc94e3e065862cd0094346a6b670cbf735ccba3871c947ec7fb93748d5e7f",
+      "collected_at": "2026-08-21T14:40:47Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--focused-green.txt",
+      "sha256": "fa0576ace060ea3748b1ce3beec32cb4544fbab72ef48e5c209d776171695978",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--full-green-duplicate.txt",
+      "sha256": "0d1dc94e3e065862cd0094346a6b670cbf735ccba3871c947ec7fb93748d5e7f",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--full-green.txt",
+      "sha256": "0d1dc94e3e065862cd0094346a6b670cbf735ccba3871c947ec7fb93748d5e7f",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--independent-review-red.txt",
+      "sha256": "1d70745ce5b8ceff62730d7e9e306d04567fe86ac584d29e2b7d49b754c373bc",
+      "shareable": true
+    }
+  ]
+}

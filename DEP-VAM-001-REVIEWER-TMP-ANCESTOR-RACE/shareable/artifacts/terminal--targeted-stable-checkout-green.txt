@@ -1,0 +1,9 @@
+source=Builder targeted Green at exact PR head d355d32e442e388598b1ee502527839050d63559
+checkout_root=/home/zycas/.codex/sddgov-review-checkouts/PR498-builder-20260822
+checkout_mode=0700
+origin=https://github.com/zycaskevin/Vault-Agent-Memory.git
+command=umask 022; env PYTHONPATH=. SUBJECT_MISSION_V5_PHASE=candidate GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 /tmp/vam-python-path-vam001/python -m pytest -q -p no:cacheprovider tests/test_subject_development_mission_v5.py::test_mission_private_lifecycle_denies_private_file_replacement
+result=1 passed in 0.52s
+exit_status=0
+worktree_head=d355d32e442e388598b1ee502527839050d63559
+worktree_state=clean

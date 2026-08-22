@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-ROLLBACK-LOCAL-TARGET-BINDING",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--reviewer-red.txt",
+      "sha256": "8fe083a1e151bf785ab51e548589802a331092fe79d7f27ffeadd3fd6a3c3f27",
+      "collected_at": "2026-08-21T14:55:23Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green.txt",
+      "sha256": "bdb82ce5718cc3003641668dc0c9d8650558351179927fc4d3a8c0cb89065722",
+      "collected_at": "2026-08-21T15:00:31Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--checkout-binding.txt",
+      "sha256": "bc9ca4b822d3bc1c7dd518ef73d5421a78f570e55a1d278bc3363afff06b35b8",
+      "collected_at": "2026-08-21T15:22:46Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--reviewer-red-clarification.txt",
+      "sha256": "bd64c92bebd92e0e427dbe7d788744e7f927520fe9736ca7cef2c9c6bd4ef8d1",
+      "collected_at": "2026-08-21T15:22:46Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--checkout-binding.txt",
+      "sha256": "bc9ca4b822d3bc1c7dd518ef73d5421a78f570e55a1d278bc3363afff06b35b8",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--local-green.txt",
+      "sha256": "bdb82ce5718cc3003641668dc0c9d8650558351179927fc4d3a8c0cb89065722",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--reviewer-red-clarification.txt",
+      "sha256": "bd64c92bebd92e0e427dbe7d788744e7f927520fe9736ca7cef2c9c6bd4ef8d1",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--reviewer-red.txt",
+      "sha256": "8fe083a1e151bf785ab51e548589802a331092fe79d7f27ffeadd3fd6a3c3f27",
+      "shareable": true
+    }
+  ]
+}

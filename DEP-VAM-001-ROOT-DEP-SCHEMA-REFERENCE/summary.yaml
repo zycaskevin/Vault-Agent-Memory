@@ -1,0 +1,46 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-ROOT-DEP-SCHEMA-REFERENCE",
+  "issue": "PR-498",
+  "sdd_references": [
+    "VAM-001"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-22T01:30:52Z",
+  "updated_at": "2026-08-22T01:32:24Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-22T01:30:52Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-22T01:31:40Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-22T01:31:40Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-22T01:32:24Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-22T01:32:24Z"
+      }
+    ]
+  },
+  "expected_behavior": "Every root-level VAM-001 DEP schema selector resolves exactly to the repository Governance Root schema.",
+  "actual_behavior": "Two new DEP selectors resolved outside the repository, while strict DEP verification did not detect the invalid references.",
+  "environment": {
+    "commit": "20a520a0883994717d0492447a587a2b7e094164",
+    "branch": "codex/vam-001-subject-extraction-adr",
+    "runtime": "Linux; pinned Python 3.11 pytest; sddgov 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

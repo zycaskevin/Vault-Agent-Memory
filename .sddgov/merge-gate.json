@@ -1,13 +1,22 @@
 {
   "schema_version": "1.0",
-  "base_sha": "327ebe1b557fc30cbc5482a1de87e1757b8873da",
-  "head_sha": "470cac8e7289ec013bfa2edb8082a305f4631fb8",
+  "base_sha": "291d5595c9cb2208a6b74206acbba35a883eb918",
+  "head_sha": "e3f35e59bd0c5ba5117973de4357d06b4ffc9ff5",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "06d19cc8dbfb1314c19a14a8c898766c4dc60ab623c8c378ca75549c1add5790",
+  "change_digest": "caa07c3283b99232577358640fa822c4ecb7ac115425dac81405ff3c49603815",
   "deps": [
-    "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION"
+    "DEP-VAM-001-SUBJECT-EXTRACTION-ADR",
+    "DEP-VAM-001-DELIVERY-GATE",
+    "DEP-VAM-001-INDEPENDENT-REVIEW-REMEDIATION",
+    "DEP-VAM-001-ROLLBACK-LOCAL-TARGET-BINDING",
+    "DEP-VAM-001-FINAL-REVIEW-HARDENING",
+    "DEP-VAM-001-CURRENT-HEAD-REVIEW-REMEDIATION",
+    "DEP-VAM-001-CI-DIGEST-ENV-BINDING",
+    "DEP-VAM-001-REVIEWER-TMP-ANCESTOR-RACE",
+    "DEP-VAM-001-PRIVATE-CHECKOUT-REMOTE-REF",
+    "DEP-VAM-001-ROOT-DEP-SCHEMA-REFERENCE"
   ],
-  "rollback_path": "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/rollback.md",
-  "protected_file_review": ".sddgov/reviews/REV-SDG-005.json"
+  "rollback_path": "DEP-VAM-001-DELIVERY-GATE/rollback.md",
+  "protected_file_review": ".sddgov/reviews/REV-VAM-001.json"
 }

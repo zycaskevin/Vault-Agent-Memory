@@ -1,0 +1,7 @@
+source=Builder targeted sandbox Green at audit head c52aee2e5dec50406209c1f4d3be69add5eb3c86
+precondition=git fetch origin main:refs/remotes/origin/main
+base_assertion=refs/remotes/origin/main equals 291d5595c9cb2208a6b74206acbba35a883eb918
+command=umask 022; env PYTHONPATH=. SUBJECT_MISSION_V5_PHASE=candidate GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 /tmp/vam-python-path-vam001/python -m pytest -q -p no:cacheprovider tests/test_subject_development_mission_v5.py::test_sdg012_current_main_transition_accepts_only_exact_delivery
+result=1 passed in 4.57s
+exit_status=0
+post_test_worktree=clean

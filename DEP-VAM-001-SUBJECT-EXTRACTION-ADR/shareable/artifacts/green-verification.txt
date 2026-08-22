@@ -1,0 +1,82 @@
+focused_tests
+...................................................................      [100%]
+67 passed in 0.08s
+subject_progress_validator
+{"baseline_id":"0dc10cfc4a429662","sequence":8,"status":"PASS"}
+readme_smoke
+✅ README documented command smoke passed
+  temp_project: $TMP_PROJECT
+  commands: help, guide, init, add, compile --no-embed, default search, search --keyword-only, map build/read, search-qa run, semantic smoke, semantic cache-stats
+release_parity
+Release parity check passed:
+  release tag: not provided; checked local version file parity
+  pyproject.toml [project].version: 0.10.2
+  vault.__version__: 0.10.2
+  CHANGELOG.md top entry: 0.10.2
+ruff
+All checks passed!
+frozen_diff
+diff_check
+governance_doctor
+{
+  "ok": true,
+  "project": "$REPO_ROOT",
+  "agent": "codex",
+  "profile": "team-standard",
+  "governance_version": "0.2.0-experimental.6",
+  "managed_file_count": 59,
+  "errors": [],
+  "warnings": [
+    "installed governance version 0.2.0-experimental.6 differs from CLI 0.2.0-experimental.3"
+  ]
+}
+governance_ci_verify
+{
+  "ok": true,
+  "project": "$REPO_ROOT",
+  "contract": ".sddgov/ci-cost-guard.json",
+  "hosted_budget": {
+    "max_runs_per_work_package": 1,
+    "max_reruns_per_revision": 1,
+    "expected_minutes": 20,
+    "full_matrix": "manual_or_ready_for_review"
+  },
+  "workflows": [
+    {
+      "workflow": "ci.yml",
+      "automatic": true,
+      "hosted_jobs": [
+        "test",
+        "readme-command-smoke",
+        "one-click-install-smoke-linux",
+        "one-click-install-smoke-windows",
+        "uv-dev-smoke",
+        "search-qa-regression",
+        "memory-foundation-contract",
+        "build-smoke",
+        "release-parity",
+        "module-size",
+        "lint-knowledge",
+        "secret-scan-light",
+        "history-privacy-scan",
+        "governance-merge-gate"
+      ]
+    },
+    {
+      "workflow": "external-reproduction-validation.yml",
+      "automatic": true,
+      "hosted_jobs": [
+        "validate"
+      ]
+    },
+    {
+      "workflow": "pages.yml",
+      "exempt": true
+    },
+    {
+      "workflow": "publish.yml",
+      "exempt": true
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,10 @@
+source=independent Reviewer finding plus Builder executable Red at head 20a520a0883994717d0492447a587a2b7e094164
+finding=two new root-level DEP summary files used ../../schemas/debug-evidence-package.schema.json
+affected=DEP-VAM-001-REVIEWER-TMP-ANCESTOR-RACE/summary.yaml; DEP-VAM-001-PRIVATE-CHECKOUT-REMOTE-REF/summary.yaml
+expected_resolved_path=.agentic-sdd-governance/schemas/debug-evidence-package.schema.json
+actual_resolved_path=parent of repository/schemas/debug-evidence-package.schema.json
+command=env PYTHONPATH=. /tmp/vam-python-path-vam001/python -m pytest -q -p no:cacheprovider tests/test_subject_extraction_boundary_docs.py::test_vam001_root_dep_schema_references_resolve_exactly
+result=FAILED assertion: resolved schema path did not equal repository Governance Root schema
+exit_status=1
+strict_verifier_observation=all 9 DEP strict checks passed before this test, proving the current verifier does not enforce resolvable $schema references
+reviewer_disposition=FAIL; Reviewer Local Green not executed; no signing or push
