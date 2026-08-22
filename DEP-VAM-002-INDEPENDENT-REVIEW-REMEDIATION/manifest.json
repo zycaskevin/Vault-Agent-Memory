@@ -15,9 +15,21 @@
       "sha256": "6b184e7abb8213ce59216a779bc8461562be7dd35c1e95f0499b572461cbe713",
       "collected_at": "2026-08-22T11:44:47Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--exact-head-builder-local-green.txt",
+      "sha256": "10da27edc89028cc498461391f5b8f19c8a8d50089bbae2038a478f82353c10d",
+      "collected_at": "2026-08-22T12:00:36Z",
+      "shareable": false
     }
   ],
   "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--exact-head-builder-local-green.txt",
+      "sha256": "9363776a48d814d2f168be8bd524c36789767d5b663b20ab1b5741fa0fe70351",
+      "shareable": true
+    },
     {
       "path": "shareable/artifacts/terminal--independent-review-green.txt",
       "sha256": "6b184e7abb8213ce59216a779bc8461562be7dd35c1e95f0499b572461cbe713",

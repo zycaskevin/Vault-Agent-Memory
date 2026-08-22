@@ -2,6 +2,15 @@
   "schema_version": "1.0",
   "files": [
     {
+      "source": "terminal--exact-head-builder-local-green.txt",
+      "output": "terminal--exact-head-builder-local-green.txt",
+      "source_sha256": "10da27edc89028cc498461391f5b8f19c8a8d50089bbae2038a478f82353c10d",
+      "output_sha256": "9363776a48d814d2f168be8bd524c36789767d5b663b20ab1b5741fa0fe70351",
+      "redactions": {
+        "workstation_path": 1
+      }
+    },
+    {
       "source": "terminal--independent-review-green.txt",
       "output": "terminal--independent-review-green.txt",
       "source_sha256": "6b184e7abb8213ce59216a779bc8461562be7dd35c1e95f0499b572461cbe713",
@@ -17,7 +26,9 @@
     }
   ],
   "blocked": [],
-  "totals": {},
+  "totals": {
+    "workstation_path": 1
+  },
   "dep_id": "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION",
-  "generated_at": "2026-08-22T11:44:47Z"
+  "generated_at": "2026-08-22T12:00:36Z"
 }

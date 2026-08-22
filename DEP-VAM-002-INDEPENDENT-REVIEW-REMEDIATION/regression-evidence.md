@@ -16,8 +16,10 @@
 
 Focused sandbox-safe Green: 16 passed. This includes the complete change
 envelope/provider files, three direct Gateway contract nodes, and the rollback
-fail-closed node. Changed core modules pass Ruff. The real loopback node and
-complete suite remain assigned to the exact committed private Local Green.
+fail-closed node. Changed core modules pass Ruff. The exact committed private
+Local Green then exercised the real loopback node and complete suite: 446
+identity-isolated Subject nodes passed, followed by 2,962 passed, 10 skipped,
+and one already dispositioned warning.
 
 ## Unaffected paths sampled
 
