@@ -1,22 +1,15 @@
 {
   "schema_version": "1.0",
-  "base_sha": "291d5595c9cb2208a6b74206acbba35a883eb918",
-  "head_sha": "e3f35e59bd0c5ba5117973de4357d06b4ffc9ff5",
+  "base_sha": "db1763482f0f603ccd63817f26c73308bc186697",
+  "head_sha": "1375b46b5a7b0a653302a703dffaa984ea80bc00",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "caa07c3283b99232577358640fa822c4ecb7ac115425dac81405ff3c49603815",
+  "change_digest": "3b835ecccf89e1926b5830fcaf7169e1c53e1143e5ee9d770c258ecbec87a798",
   "deps": [
-    "DEP-VAM-001-SUBJECT-EXTRACTION-ADR",
-    "DEP-VAM-001-DELIVERY-GATE",
-    "DEP-VAM-001-INDEPENDENT-REVIEW-REMEDIATION",
-    "DEP-VAM-001-ROLLBACK-LOCAL-TARGET-BINDING",
-    "DEP-VAM-001-FINAL-REVIEW-HARDENING",
-    "DEP-VAM-001-CURRENT-HEAD-REVIEW-REMEDIATION",
-    "DEP-VAM-001-CI-DIGEST-ENV-BINDING",
-    "DEP-VAM-001-REVIEWER-TMP-ANCESTOR-RACE",
-    "DEP-VAM-001-PRIVATE-CHECKOUT-REMOTE-REF",
-    "DEP-VAM-001-ROOT-DEP-SCHEMA-REFERENCE"
+    "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY",
+    "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
+    "DEP-VAM-003-HOSTED-MODULE-SIZE-GATE"
   ],
-  "rollback_path": "DEP-VAM-001-DELIVERY-GATE/rollback.md",
-  "protected_file_review": ".sddgov/reviews/REV-VAM-001.json"
+  "rollback_path": "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY/rollback.md",
+  "protected_file_review": ".sddgov/reviews/REV-VAM-003.json"
 }
