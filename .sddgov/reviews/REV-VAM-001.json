@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "algorithm": "ed25519",
+  "review": {
+    "review_id": "REV-VAM-001",
+    "reviewer_id": "codex-vam001-independent-reviewer-20260822",
+    "builder_id": "codex",
+    "change_digest": "caa07c3283b99232577358640fa822c4ecb7ac115425dac81405ff3c49603815",
+    "gate_metadata_digest": "eeb663fb9a9a593a90d6d5f1b7ae5c6a1f2a7891c7efe73278bd1902bec29328",
+    "verdict": "approved",
+    "issued_at": "2026-08-22T02:48:40Z",
+    "expires_at": "2026-08-22T03:48:40Z",
+    "nonce": "lqOyPG7NCALwlhaxkzxyCENR"
+  },
+  "signature": "GOvzax0E8gtENkoJ2cVE+YEWDEJlvXgKP79zCn5TQuejA9FNhzstLBmepm9POw63cfNekvmMbGlUKEn3Tk1jCg=="
+}
