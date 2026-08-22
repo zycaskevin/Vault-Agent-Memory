@@ -32,12 +32,21 @@
       "redactions": {
         "workstation_path": 1
       }
+    },
+    {
+      "source": "exact-head-builder-local-green.txt",
+      "output": "exact-head-builder-local-green.txt",
+      "source_sha256": "8078c2cca9c7449ef50e17631d6041829866c01e26cf270c08b9d9c1c778b6a8",
+      "output_sha256": "c21e45f1acf0abdc52bab64b36f5acdb8020d761624a882967b119eaffb822b0",
+      "redactions": {
+        "workstation_path": 1
+      }
     }
   ],
   "blocked": [],
   "totals": {
-    "workstation_path": 2
+    "workstation_path": 3
   },
   "dep_id": "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
-  "generated_at": "2026-08-21T10:58:36Z"
+  "generated_at": "2026-08-22T03:54:58Z"
 }

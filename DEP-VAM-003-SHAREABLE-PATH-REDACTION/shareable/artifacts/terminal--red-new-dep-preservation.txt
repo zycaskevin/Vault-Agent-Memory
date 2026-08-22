@@ -1,0 +1,13 @@
+command: /tmp/vam-python-path-vam001/python -m pytest -q tests/test_vault_boundary_freeze.py::test_vam003_rollback_approval_and_cleanliness_guards_fail_closed
+workdir: /tmp/vam-pr499-builder-oI8F3s/repo
+pre-remediation head: 26519313d479b6bb240ec1f815dcac5f950f53b4
+result: exit 1
+summary: 1 failed in 0.03s
+
+actual:
+The guarded PR #499 rollback preservation list includes the earlier independent
+review remediation DEP but not the newly created shareable-path redaction DEP.
+
+expected:
+The rollback restores both remediation DEP directories from HEAD so the
+uncommitted rollback candidate cannot remove governance provenance.

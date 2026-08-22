@@ -15,6 +15,13 @@
       "sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
       "collected_at": "2026-08-21T10:58:36Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/exact-head-builder-local-green.txt",
+      "sha256": "8078c2cca9c7449ef50e17631d6041829866c01e26cf270c08b9d9c1c778b6a8",
+      "collected_at": "2026-08-22T03:37:48Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -40,7 +47,7 @@
     },
     {
       "path": "shareable/artifacts/exact-head-builder-local-green.txt",
-      "sha256": "8078c2cca9c7449ef50e17631d6041829866c01e26cf270c08b9d9c1c778b6a8",
+      "sha256": "c21e45f1acf0abdc52bab64b36f5acdb8020d761624a882967b119eaffb822b0",
       "shareable": true
     }
   ]

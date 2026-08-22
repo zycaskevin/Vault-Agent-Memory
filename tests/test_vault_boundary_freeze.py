@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -151,6 +152,8 @@ def test_vam003_rollback_approval_and_cleanliness_guards_fail_closed() -> None:
     assert "assert " not in guarded_block
     assert "raise SystemExit" in rollback
     assert rollback.count("git status --porcelain=v1 --untracked-files=all") >= 2
+    assert "DEP-VAM-003-INDEPENDENT-REVIEW-REMEDIATION" in guarded_block
+    assert "DEP-VAM-003-SHAREABLE-PATH-REDACTION" in guarded_block
 
     snippets = re.findall(r"python -c '([^']+)'", rollback)
     approval_snippet = next(
@@ -222,3 +225,51 @@ def test_vam003_rollback_exposes_merge_verifier_contract() -> None:
             placeholder in lowered
             for placeholder in ("todo", "replace", "unavailable", "<", ">")
         )
+
+
+def test_exact_head_builder_proof_redacts_workstation_path_and_binds_hashes() -> None:
+    dep = ROOT / "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK"
+    relative = "shareable/artifacts/exact-head-builder-local-green.txt"
+    artifact = dep / relative
+    content = artifact.read_text(encoding="utf-8")
+
+    assert "/home/" not in content
+    assert "$BUILDER_WORKTREE" in content
+
+    output_sha256 = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    manifest = json.loads((dep / "manifest.json").read_text(encoding="utf-8"))
+    manifest_record = next(
+        record for record in manifest["shareable"] if record["path"] == relative
+    )
+    assert manifest_record["sha256"] == output_sha256
+    raw_record = next(
+        record
+        for record in manifest["raw"]
+        if record["path"] == "private/raw/exact-head-builder-local-green.txt"
+    )
+    assert raw_record["sha256"] == (
+        "8078c2cca9c7449ef50e17631d6041829866c01e26cf270c08b9d9c1c778b6a8"
+    )
+
+    report = json.loads(
+        (dep / "redaction-report.json").read_text(encoding="utf-8")
+    )
+    report_record = next(
+        record
+        for record in report["files"]
+        if record["output"] == "exact-head-builder-local-green.txt"
+    )
+    assert report_record["source_sha256"] == (
+        "8078c2cca9c7449ef50e17631d6041829866c01e26cf270c08b9d9c1c778b6a8"
+    )
+    assert report_record["output_sha256"] == output_sha256
+    assert report_record["redactions"] == {"workstation_path": 1}
+
+
+def test_all_vam003_shareable_evidence_omits_owner_home_paths() -> None:
+    artifacts = sorted(ROOT.glob("DEP-VAM-003-*/shareable/artifacts/*"))
+
+    assert artifacts
+    for artifact in artifacts:
+        if artifact.is_file():
+            assert b"/home/" not in artifact.read_bytes(), artifact

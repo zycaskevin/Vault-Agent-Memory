@@ -15,6 +15,8 @@ negative probes.
 
 ## Remaining limitations
 
-The complete Local Green must be rerun at the newly committed and gate-bound
-head before push. Independent review and receipt signing remain separate
+The complete Builder Local Green passed at exact committed and gate-bound head
+`26519313d479b6bb240ec1f815dcac5f950f53b4` before its push: 446 isolated
+Subject nodes passed, followed by 2,946 passed, 10 skipped, and one already
+dispositioned warning. Independent review and receipt signing remain separate
 protected-file gates.

@@ -50,6 +50,7 @@ git restore --source=HEAD --staged --worktree -- \
   DEP-VAM-003-IDENTITY-ISOLATION-RECHECK \
   DEP-VAM-003-INDEPENDENT-REVIEW-REMEDIATION \
   DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY \
+  DEP-VAM-003-SHAREABLE-PATH-REDACTION \
   docs/issues/VAM-003-l0-bootstrap-boundary.md \
   docs/specs/vam-003-l0-bootstrap-boundary.md \
   docs/work-packages/VAM-003-l0-bootstrap-boundary.md

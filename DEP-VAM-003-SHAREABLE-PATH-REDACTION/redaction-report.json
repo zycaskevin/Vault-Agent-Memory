@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--green-new-dep-preservation.txt",
+      "output": "terminal--green-new-dep-preservation.txt",
+      "source_sha256": "22a92336d62f0df931ea45cd59ffaf65a36e06d46290e9fdcc822b2bea91cdc7",
+      "output_sha256": "22a92336d62f0df931ea45cd59ffaf65a36e06d46290e9fdcc822b2bea91cdc7",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--green-shareable-final.txt",
+      "output": "terminal--green-shareable-final.txt",
+      "source_sha256": "9d59d89cf7d69d117008468151931b4f08985ab1b6a675bb98c49de635448616",
+      "output_sha256": "9d59d89cf7d69d117008468151931b4f08985ab1b6a675bb98c49de635448616",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--green-shareable-path.txt",
+      "output": "terminal--green-shareable-path.txt",
+      "source_sha256": "724aa5335f3510dc03a3694b280f9a6253e2cf6c51d2138fc4c61fddf6bff3be",
+      "output_sha256": "724aa5335f3510dc03a3694b280f9a6253e2cf6c51d2138fc4c61fddf6bff3be",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--red-new-dep-preservation.txt",
+      "output": "terminal--red-new-dep-preservation.txt",
+      "source_sha256": "2562a20b96fc54f86e2d315269a57aba8f434168cf773044ddd1921ec15070d2",
+      "output_sha256": "2562a20b96fc54f86e2d315269a57aba8f434168cf773044ddd1921ec15070d2",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--red-shareable-path.txt",
+      "output": "terminal--red-shareable-path.txt",
+      "source_sha256": "3218fe4309c450d643cb1f2911e99c8ed22ee7e8cddf876251dd06677c5d30aa",
+      "output_sha256": "3218fe4309c450d643cb1f2911e99c8ed22ee7e8cddf876251dd06677c5d30aa",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-003-SHAREABLE-PATH-REDACTION",
+  "generated_at": "2026-08-22T04:04:32Z"
+}

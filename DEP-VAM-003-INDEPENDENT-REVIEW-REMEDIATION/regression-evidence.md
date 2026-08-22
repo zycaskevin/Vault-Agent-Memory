@@ -14,6 +14,9 @@ approval and mismatched path input exit nonzero while valid inputs exit zero.
 - Red: 5 failed, 12 passed.
 - Green boundary/rollback file: 17 passed.
 - Green VAM-003 focused suite: 230 passed.
+- Exact committed/gate-bound Builder Local Green at `26519313`: 446 isolated
+  Subject nodes passed, then 2,946 passed and 10 skipped with one already
+  dispositioned warning.
 
 ## Unaffected paths sampled
 

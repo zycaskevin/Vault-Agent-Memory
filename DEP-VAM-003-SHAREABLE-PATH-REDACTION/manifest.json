@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-003-SHAREABLE-PATH-REDACTION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--red-shareable-path.txt",
+      "sha256": "3218fe4309c450d643cb1f2911e99c8ed22ee7e8cddf876251dd06677c5d30aa",
+      "collected_at": "2026-08-22T03:54:50Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--green-shareable-path.txt",
+      "sha256": "faf39b2f264421a6501b5b0a05fcbce49f6bb29204ba44a763bade6d75697f33",
+      "collected_at": "2026-08-22T03:56:47Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--green-shareable-final.txt",
+      "sha256": "9d59d89cf7d69d117008468151931b4f08985ab1b6a675bb98c49de635448616",
+      "collected_at": "2026-08-22T04:01:16Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--red-new-dep-preservation.txt",
+      "sha256": "2562a20b96fc54f86e2d315269a57aba8f434168cf773044ddd1921ec15070d2",
+      "collected_at": "2026-08-22T04:03:46Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--green-new-dep-preservation.txt",
+      "sha256": "22a92336d62f0df931ea45cd59ffaf65a36e06d46290e9fdcc822b2bea91cdc7",
+      "collected_at": "2026-08-22T04:04:32Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--green-new-dep-preservation.txt",
+      "sha256": "22a92336d62f0df931ea45cd59ffaf65a36e06d46290e9fdcc822b2bea91cdc7",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--green-shareable-final.txt",
+      "sha256": "9d59d89cf7d69d117008468151931b4f08985ab1b6a675bb98c49de635448616",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--green-shareable-path.txt",
+      "sha256": "724aa5335f3510dc03a3694b280f9a6253e2cf6c51d2138fc4c61fddf6bff3be",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--red-new-dep-preservation.txt",
+      "sha256": "2562a20b96fc54f86e2d315269a57aba8f434168cf773044ddd1921ec15070d2",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--red-shareable-path.txt",
+      "sha256": "3218fe4309c450d643cb1f2911e99c8ed22ee7e8cddf876251dd06677c5d30aa",
+      "shareable": true
+    }
+  ]
+}
