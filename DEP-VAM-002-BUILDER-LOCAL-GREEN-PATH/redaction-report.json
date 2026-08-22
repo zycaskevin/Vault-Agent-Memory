@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--local-green-path-red.txt",
+      "output": "terminal--local-green-path-red.txt",
+      "source_sha256": "4fd3b97d840784c0bb37e2e862e050226ea50859fa5ebb369f7c93a771b1005d",
+      "output_sha256": "4fd3b97d840784c0bb37e2e862e050226ea50859fa5ebb369f7c93a771b1005d",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
+  "generated_at": "2026-08-22T18:52:05Z"
+}

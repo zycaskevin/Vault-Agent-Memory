@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green-path-red.txt",
+      "sha256": "4fd3b97d840784c0bb37e2e862e050226ea50859fa5ebb369f7c93a771b1005d",
+      "collected_at": "2026-08-22T18:52:05Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--local-green-path-red.txt",
+      "sha256": "4fd3b97d840784c0bb37e2e862e050226ea50859fa5ebb369f7c93a771b1005d",
+      "shareable": true
+    }
+  ]
+}
