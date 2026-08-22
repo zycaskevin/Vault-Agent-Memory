@@ -158,6 +158,12 @@ adapter cannot infer how many private or higher-sensitivity rows were filtered.
 Cursors are bound to the agent/private/sensitivity policy that created them and
 fail closed when reused under another policy.
 
+The public change and revision-bound read surfaces accept only `low`, `medium`,
+`high`, or `restricted` as `max_sensitivity`. Unknown non-empty values return
+`max_sensitivity_invalid` without rows or content. Invalid cursors, cursor
+policy mismatches, and invalid sensitivity ceilings are HTTP 400 client errors,
+not successful page/read responses.
+
 The SQLite implementation scans bounded keyset batches containing only the
 ordering and policy columns. Raw content and latest audit ids are fetched only
 for readable rows selected into the response page.

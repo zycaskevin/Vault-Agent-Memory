@@ -21,6 +21,16 @@ strings; the SQLite adapter continues to decode its current decimal format.
 
 ## Post-rollback verification
 
-Run focused envelope/Gateway tests, OpenAPI assertions, SQL-trace regression,
-the complete local governance gate, and strict verification of both VAM-002
-DEPs.
+Run these exact checks from the rollback candidate:
+
+```bash
+python -m pytest -q tests/test_memory_change_envelope.py tests/test_memory_provider.py
+python -m pytest -q tests/test_gateway.py -k 'memory_changes or revision_bound or openapi_contract'
+ruff check vault/memory_change_envelope.py vault/memory_provider.py vault/gateway_memory_api.py vault/gateway_openapi.py tests/test_memory_change_envelope.py
+sddgov evidence verify evidence/DEP-VAM-002-MEMORY-CHANGE-ENVELOPE --strict
+sddgov evidence verify evidence/DEP-VAM-002-CODERABBIT-REMEDIATION --strict
+sddgov ci local-gate .
+```
+
+Every command must exit 0; the focused tests must preserve opaque ids, bounded
+policy scanning, revision-bound reads, and OpenAPI assertions.

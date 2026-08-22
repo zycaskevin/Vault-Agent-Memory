@@ -18,8 +18,20 @@ from .memory_provider import sqlite_memory_provider
 from .memory_provider_result_adapter import provider_memory_get, provider_memory_search
 from .multi_host import list_audit_log, record_audit_event
 
-
 AppendGatewayAudit = Callable[..., None]
+_MEMORY_API_BAD_REQUEST_ERRORS = frozenset(
+    {"invalid_cursor", "cursor_policy_mismatch", "max_sensitivity_invalid"}
+)
+
+
+def gateway_memory_http_status(payload: dict[str, Any]) -> int:
+    """Map the bounded VAM-002 client-error set to its HTTP contract."""
+    if (
+        str(payload.get("status") or "") == "error"
+        and str(payload.get("error") or "") in _MEMORY_API_BAD_REQUEST_ERRORS
+    ):
+        return 400
+    return 200
 
 
 def gateway_memory_search(

@@ -16,10 +16,11 @@ before applying the read policy and page limit.
 
 ## Deterministic steps
 
-Run `python -m pytest -q --tb=no tests/test_memory_change_envelope.py
-tests/test_gateway.py -k 'bounded_policy_scans or revision_bound_bounded or
-openapi_contract_documents or preserves_opaque'` before changing production
-code.
+Before changing production code, run:
+
+```bash
+python -m pytest -q --tb=no tests/test_memory_change_envelope.py tests/test_gateway.py -k 'bounded_policy_scans or revision_bound_bounded or openapi_contract_documents or preserves_opaque'
+```
 
 ## Environment and preconditions
 

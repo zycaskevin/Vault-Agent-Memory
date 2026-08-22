@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--independent-review-green.txt",
+      "output": "terminal--independent-review-green.txt",
+      "source_sha256": "6b184e7abb8213ce59216a779bc8461562be7dd35c1e95f0499b572461cbe713",
+      "output_sha256": "6b184e7abb8213ce59216a779bc8461562be7dd35c1e95f0499b572461cbe713",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--independent-review-red.txt",
+      "output": "terminal--independent-review-red.txt",
+      "source_sha256": "7cee2f97dadc062b6f7c5955080d62954feab227a032343a7fd34a86e33806df",
+      "output_sha256": "7cee2f97dadc062b6f7c5955080d62954feab227a032343a7fd34a86e33806df",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION",
+  "generated_at": "2026-08-22T11:44:47Z"
+}

@@ -10,12 +10,18 @@ from .governance_contract import governance_contract_payload
 from .memory_provider import memory_provider_contract_payload
 from .search_utils import MAX_SEARCH_QUERY_CHARS
 
-
 DEFAULT_GATEWAY_HOST = "127.0.0.1"
 DEFAULT_GATEWAY_PORT = 8789
 DEFAULT_GATEWAY_AUDIT_MAX_BYTES = 5 * 1024 * 1024
 DEFAULT_GATEWAY_AUDIT_BACKUPS = 5
 GATEWAY_CONTRACT_VERSION = "2026-08-21"
+MEMORY_API_SENSITIVITY_LEVELS = ["low", "medium", "high", "restricted"]
+_MEMORY_API_BAD_REQUEST = {
+    "description": "Invalid cursor, cursor policy, or sensitivity ceiling",
+    "content": {
+        "application/json": {"schema": {"$ref": "#/components/schemas/MemoryAPIError"}}
+    },
+}
 GATEWAY_ENDPOINTS = [
     "/health",
     "/openapi.json",
@@ -132,7 +138,15 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                             "schema": {"type": "integer", "default": 50, "minimum": 1, "maximum": 100},
                         },
                         {"name": "include_private", "in": "query", "schema": {"type": "boolean", "default": False}},
-                        {"name": "max_sensitivity", "in": "query", "schema": {"type": "string", "default": "low"}},
+                        {
+                            "name": "max_sensitivity",
+                            "in": "query",
+                            "schema": {
+                                "type": "string",
+                                "enum": MEMORY_API_SENSITIVITY_LEVELS,
+                                "default": "low",
+                            },
+                        },
                     ],
                     "responses": {
                         "200": {
@@ -142,7 +156,8 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                                     "schema": {"$ref": "#/components/schemas/MemoryChangePage"}
                                 }
                             },
-                        }
+                        },
+                        "400": _MEMORY_API_BAD_REQUEST,
                     },
                 }
             },
@@ -168,6 +183,15 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                             "description": "Fail closed unless this is the current envelope revision.",
                         },
                         {
+                            "name": "max_sensitivity",
+                            "in": "query",
+                            "schema": {
+                                "type": "string",
+                                "enum": MEMORY_API_SENSITIVITY_LEVELS,
+                                "default": "low",
+                            },
+                        },
+                        {
                             "name": "result_adapter",
                             "in": "query",
                             "schema": {"type": "string", "enum": ["legacy", "provider"], "default": "legacy"},
@@ -177,7 +201,10 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                             ),
                         },
                     ],
-                    "responses": {"200": {"description": "Bounded memory read or access denial"}},
+                    "responses": {
+                        "200": {"description": "Bounded memory read or access denial"},
+                        "400": _MEMORY_API_BAD_REQUEST,
+                    },
                 },
                 "patch": {
                     "summary": "Submit an update request as a review candidate; does not edit active memory.",
@@ -341,6 +368,22 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         "count": {"type": "integer", "minimum": 0, "maximum": 100},
                         "next_cursor": {"type": "string"},
                         "has_more": {"type": "boolean"},
+                    },
+                },
+                "MemoryAPIError": {
+                    "type": "object",
+                    "required": ["status", "error", "message"],
+                    "properties": {
+                        "status": {"const": "error"},
+                        "error": {
+                            "type": "string",
+                            "enum": [
+                                "invalid_cursor",
+                                "cursor_policy_mismatch",
+                                "max_sensitivity_invalid",
+                            ],
+                        },
+                        "message": {"type": "string"},
                     },
                 },
                 "SearchRequest": {

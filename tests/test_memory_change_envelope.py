@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+from pathlib import Path
 
 import vault.memory_provider as memory_provider_module
 from vault.db import VaultDB
-from vault.memory_change_envelope import MEMORY_CHANGE_SCHEMA_VERSION
+from vault.memory_change_envelope import MEMORY_CHANGE_SCHEMA_VERSION, memory_change_envelope
 from vault.memory_provider import MemoryProvider, sqlite_memory_provider
 
 
@@ -138,6 +139,7 @@ def test_change_page_uses_bounded_policy_scans_and_selected_row_hydration(tmp_pa
     assert hydrated_rows
     assert all("where id in" in statement for statement in hydrated_rows)
     audit_queries = [statement for statement in selects if "from memory_audit_log" in statement]
+    assert audit_queries
     assert all("target_id in" in statement for statement in audit_queries)
 
 
@@ -223,6 +225,92 @@ def test_change_cursor_is_opaque_validated_and_bound_to_read_policy(tmp_path):
     assert rebound["status"] == "error"
     assert rebound["error"] == "cursor_policy_mismatch"
     assert "changes" not in rebound
+
+
+def test_invalid_max_sensitivity_fails_closed_for_changes_and_revision_reads(tmp_path):
+    project, _first_id, _second_id, _private_id = _change_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        high_id = db.add_knowledge(
+            title="High sensitivity shared change",
+            content_raw="high sensitivity content must not leak through an invalid policy",
+            scope="shared",
+            sensitivity="high",
+        )
+    provider = sqlite_memory_provider(project)
+    high_metadata = provider.get_metadata(
+        high_id,
+        agent_id="work-agent",
+        max_sensitivity="high",
+    )
+    assert high_metadata is not None
+
+    invalid_page = provider.list_changes(
+        agent_id="work-agent",
+        max_sensitivity="typo",
+        limit=100,
+    )
+    assert invalid_page == {
+        "status": "error",
+        "error": "max_sensitivity_invalid",
+        "message": "max_sensitivity must be low, medium, high, or restricted",
+    }
+    assert "changes" not in invalid_page
+    assert provider.get_metadata(
+        high_id,
+        agent_id="work-agent",
+        max_sensitivity="typo",
+    ) is None
+    assert provider.get_revision(
+        high_id,
+        high_metadata["revision_id"],
+        agent_id="work-agent",
+        max_sensitivity="typo",
+    ) is None
+
+    invalid_read = provider.read_bounded_evidence(
+        high_id,
+        high_metadata["revision_id"],
+        line_start=1,
+        line_end=1,
+        agent_id="work-agent",
+        max_sensitivity="typo",
+    )
+    assert invalid_read == {
+        "status": "error",
+        "error": "max_sensitivity_invalid",
+        "message": "max_sensitivity must be low, medium, high, or restricted",
+    }
+    assert "content" not in invalid_read
+
+
+def test_audit_reference_is_advisory_and_not_part_of_the_row_revision_contract():
+    row = {
+        "id": 42,
+        "title": "Stable row snapshot",
+        "content_raw": "same row bytes",
+        "created_at": "2026-08-22T00:00:00Z",
+        "updated_at": "2026-08-22T00:00:00Z",
+        "scope": "shared",
+        "sensitivity": "low",
+        "status": "active",
+    }
+    before = memory_change_envelope(row, audit_ref="")
+    after_audit_only_event = memory_change_envelope(row, audit_ref="audit:9")
+
+    assert before["revision_id"] == after_audit_only_event["revision_id"]
+    assert before["audit_ref"] == ""
+    assert after_audit_only_event["audit_ref"] == "audit:9"
+
+    root = Path(__file__).resolve().parents[1]
+    spec = (root / "docs/specs/vam-002-memory-change-envelope.md").read_text(encoding="utf-8")
+    decision = (root / "docs/decision_records/2026-08-21-memory-change-envelope.md").read_text(
+        encoding="utf-8"
+    )
+    for contract in (spec, decision):
+        normalized_contract = " ".join(contract.split())
+        assert "canonical knowledge-row snapshot fields" in normalized_contract
+        assert "audit_ref" in normalized_contract
+        assert "does not change revision_id" in normalized_contract
 
 
 def test_revision_bound_bounded_evidence_fails_closed_when_stale(tmp_path):

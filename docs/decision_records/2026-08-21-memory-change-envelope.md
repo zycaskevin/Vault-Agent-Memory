@@ -28,6 +28,11 @@ revision digest, a full raw-content SHA-256, distinct occurrence/recording and
 validity times, a bounded-evidence reference, and the latest available
 metadata-only audit reference.
 
+The revision digest binds canonical knowledge-row snapshot fields. `audit_ref`
+is advisory metadata resolved from the latest audit event and does not change
+revision_id when the row itself is unchanged. Audit-only progression belongs
+to `/memory/audit`, not the row-based change cursor.
+
 Cursors are opaque, read-policy-bound pagination hints. They are not
 credentials. Authorization is reevaluated on every call. Cursor progress,
 counts, and `has_more` are calculated only from readable rows.

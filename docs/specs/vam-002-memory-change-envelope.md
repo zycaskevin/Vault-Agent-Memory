@@ -28,6 +28,7 @@ Status: implementation target
       }
     }
   ],
+  "count": 1,
   "next_cursor": "<opaque cursor or empty>",
   "has_more": false
 }
@@ -40,10 +41,14 @@ count.
 
 For the SQLite provider, `memory_id` is the decimal knowledge-row id serialized
 as an opaque string. Consumers must not parse it or assume another provider
-uses the same format. `revision_id` is a deterministic digest of every field
-surfaced by the current envelope. Repeating a read of unchanged state therefore
-returns the same revision id; a surfaced content, lifecycle, provenance,
-confidence, status, or governance change returns a different revision id.
+uses the same format. `revision_id` is a deterministic digest of the canonical
+knowledge-row snapshot fields surfaced by the current envelope. Repeating a
+read of unchanged row state therefore returns the same revision id; a surfaced
+content, lifecycle, provenance, confidence, status, or governance change
+returns a different revision id. `audit_ref` is advisory metadata hydrated from
+the latest audit event, not a canonical row field; an audit-only event does not
+change revision_id or advance row-based change ordering. Consumers use
+`/memory/audit` when they need audit-event progression.
 
 `content_sha256` is the full SHA-256 of the exact current `content_raw` bytes
 encoded as UTF-8. It is separate from legacy short hashes and document-node
@@ -61,6 +66,9 @@ range hashes.
 The cursor is an opaque base64url token containing a version, the last returned
 readable ordering key, and a hash of the read-policy inputs. It is not an
 authorization token. Every page independently applies Vault policy.
+
+Unknown non-empty `max_sensitivity` values fail closed and never remove the
+caller's ceiling.
 
 Ordering is ascending by `(recorded_at, memory row id)`. The cursor advances
 only to the last change actually returned to the caller. Hidden rows do not
@@ -104,6 +112,9 @@ exists.
   Gateway preserves `{id}` as an opaque string and the selected provider alone
   validates or decodes it. The SQLite provider currently accepts its decimal
   row-id representation.
+- `invalid_cursor`, `cursor_policy_mismatch`, and `max_sensitivity_invalid`
+  return HTTP 400 with the documented Memory API error schema; they are never
+  encoded as a successful change page or bounded read.
 
 Existing Memory API routes and their default authorities remain unchanged.
 

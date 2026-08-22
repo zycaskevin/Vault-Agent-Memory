@@ -1,0 +1,15 @@
+PR: #500
+Phase: independent-review remediation focused Green
+Worktree: $BUILDER_WORKTREE
+Base reviewed head: 67e38bbce4f978a23453117a91d6b53bf1180948
+Command: focused VAM-002 provider, Gateway contract, and rollback tests
+Result: PASS, 16 passed in 0.61s
+Invalid sensitivity list/read/get_metadata/get_revision: PASS, fail closed
+Gateway client-error HTTP mapper and OpenAPI enum/error schema: PASS
+Canonical row revision and advisory audit_ref contract: PASS
+Selected-row audit-query non-vacuous assertion: PASS
+Optimized-Python rollback approval and allowlist guards: PASS
+Changed core modules Ruff: PASS
+Full real-loopback Gateway node: deferred to exact committed private-checkout Local Green
+Complete Local Green: required at the committed remediation head before Proof/push
+Captured at: 2026-08-22T11:42:00Z

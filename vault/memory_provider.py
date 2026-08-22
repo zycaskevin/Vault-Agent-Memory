@@ -11,7 +11,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
-from .access_policy import can_read_memory, filter_readable_memories, normalize_read_policy
+from .access_policy import (
+    InvalidMaxSensitivity,
+    can_read_memory,
+    filter_readable_memories,
+    normalize_read_policy,
+    strict_read_policy,
+)
 from .db import VaultDB
 from .governance_contract import governance_contract_payload
 from .memory import create_candidate, promote_candidate
@@ -28,7 +34,6 @@ from .memory_change_envelope import (
 from .multi_host import list_audit_log, record_audit_event
 from .search_utils import normalize_search_limit
 
-
 MEMORY_PROVIDER_INTERFACE_VERSION = "2026-08-21"
 _MEMORY_CHANGE_SCAN_BATCH_SIZE = 100
 _MEMORY_CHANGE_RECORDED_AT_SQL = "COALESCE(NULLIF(updated_at, ''), created_at, '')"
@@ -36,6 +41,11 @@ _MEMORY_CHANGE_POLICY_COLUMNS = (
     "id, scope, sensitivity, owner_agent, allowed_agents, status, "
     "updated_at, created_at"
 )
+_INVALID_MAX_SENSITIVITY = {
+    "status": "error",
+    "error": "max_sensitivity_invalid",
+    "message": "max_sensitivity must be low, medium, high, or restricted",
+}
 
 # Fields that must never be directly modified through update_memory
 _PROTECTED_UPDATE_FIELDS = frozenset({
@@ -276,11 +286,14 @@ class SQLiteMemoryProvider:
         include_private: bool = False,
         max_sensitivity: str = "",
     ) -> dict[str, Any]:
-        read_policy = normalize_read_policy(
-            agent_id=agent_id,
-            include_private=include_private,
-            max_sensitivity=max_sensitivity,
-        )
+        try:
+            read_policy = strict_read_policy(
+                agent_id=agent_id,
+                include_private=include_private,
+                max_sensitivity=max_sensitivity,
+            )
+        except InvalidMaxSensitivity:
+            return dict(_INVALID_MAX_SENSITIVITY)
         policy_hash = read_policy_fingerprint(read_policy)
         cursor_key: tuple[str, int] | None = None
         if cursor:
@@ -397,11 +410,14 @@ class SQLiteMemoryProvider:
         memory_id_i = _positive_memory_id(memory_id)
         if memory_id_i is None:
             return None
-        read_policy = normalize_read_policy(
-            agent_id=agent_id,
-            include_private=include_private,
-            max_sensitivity=max_sensitivity,
-        )
+        try:
+            read_policy = strict_read_policy(
+                agent_id=agent_id,
+                include_private=include_private,
+                max_sensitivity=max_sensitivity,
+            )
+        except InvalidMaxSensitivity:
+            return None
         with VaultDB(self.resolved_db_path) as db:
             row = db.get_knowledge(memory_id_i)
             audit = db.conn.execute(
@@ -438,6 +454,14 @@ class SQLiteMemoryProvider:
         include_private: bool = False,
         max_sensitivity: str = "",
     ) -> dict[str, Any]:
+        try:
+            read_policy = strict_read_policy(
+                agent_id=agent_id,
+                include_private=include_private,
+                max_sensitivity=max_sensitivity,
+            )
+        except InvalidMaxSensitivity:
+            return dict(_INVALID_MAX_SENSITIVITY)
         memory_id_i = _positive_memory_id(memory_id)
         if memory_id_i is None:
             return {"status": "error", "error": "memory_id_invalid"}
@@ -450,11 +474,7 @@ class SQLiteMemoryProvider:
         if metadata is None:
             return {"status": "error", "error": "not_found_or_not_readable"}
         if (
-            normalize_read_policy(
-                agent_id=agent_id,
-                include_private=include_private,
-                max_sensitivity=max_sensitivity,
-            ).active
+            read_policy.active
             and metadata.get("lifecycle", {}).get("status") != "active"
         ):
             return {"status": "error", "error": "not_found_or_not_readable"}

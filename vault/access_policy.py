@@ -48,6 +48,10 @@ class ReadPolicy:
         return bool(self.agent_id or self.max_sensitivity or self.include_private or self.allowed_statuses)
 
 
+class InvalidMaxSensitivity(ValueError):
+    """Raised when a strict public read boundary receives an unknown ceiling."""
+
+
 def normalize_read_policy(
     *,
     agent_id: Any = "",
@@ -64,6 +68,30 @@ def normalize_read_policy(
         include_private=bool(include_private),
         max_sensitivity=sensitivity,
         allowed_statuses=statuses,
+    )
+
+
+def strict_read_policy(
+    *,
+    agent_id: Any = "",
+    include_private: Any = False,
+    max_sensitivity: Any = "",
+    allowed_statuses: Any = None,
+) -> ReadPolicy:
+    """Normalize a public read policy while rejecting unknown sensitivity labels.
+
+    Legacy local surfaces keep the permissive ``normalize_read_policy`` behavior.
+    New provider/API contracts use this helper so a typo can never remove a
+    caller-supplied sensitivity ceiling.
+    """
+    sensitivity = str(max_sensitivity or "").strip().lower()
+    if sensitivity and sensitivity not in SENSITIVITY_RANK:
+        raise InvalidMaxSensitivity(sensitivity)
+    return normalize_read_policy(
+        agent_id=agent_id,
+        include_private=include_private,
+        max_sensitivity=sensitivity,
+        allowed_statuses=allowed_statuses,
     )
 
 
