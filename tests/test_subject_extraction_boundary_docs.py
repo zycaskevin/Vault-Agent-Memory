@@ -11,6 +11,7 @@ STATUS = ROOT / "docs/subject-distillation.md"
 DRAFTS = ROOT / "docs/issue_comment_drafts/VAM-001-subject-distillation-extraction.md"
 PROGRESS = ROOT / "specs/subject-distillation/implementation-progress.json"
 DELIVERY_ROLLBACK = ROOT / "DEP-VAM-001-DELIVERY-GATE/rollback.md"
+DEP_SCHEMA = ROOT / ".agentic-sdd-governance/schemas/debug-evidence-package.schema.json"
 
 
 def _h2_section(text: str, heading: str) -> str:
@@ -48,6 +49,16 @@ def _h2_section(text: str, heading: str) -> str:
 def test_h2_section_ignores_prose_and_fenced_examples() -> None:
     sample = "Prose mentions ## Target\n```md\n## Target\n```\n## Target\nbody\n## Next\n"
     assert _h2_section(sample, "Target") == "## Target\nbody\n"
+
+
+def test_vam001_root_dep_schema_references_resolve_exactly() -> None:
+    summaries = sorted(ROOT.glob("DEP-VAM-001-*/summary.yaml"))
+    assert summaries
+    for summary in summaries:
+        payload = json.loads(summary.read_text(encoding="utf-8"))
+        resolved = (summary.parent / payload["$schema"]).resolve()
+        assert resolved == DEP_SCHEMA.resolve(), summary
+        assert resolved.is_file(), summary
 
 
 def test_extraction_adr_records_the_complete_boundary_decision() -> None:

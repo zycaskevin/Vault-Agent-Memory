@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-ROOT-DEP-SCHEMA-REFERENCE",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--root-dep-schema-red.txt",
+      "sha256": "acf977d8318cc49820df4b398ce334fdf5ae676b10afc33a4abcd704f7aaa7aa",
+      "collected_at": "2026-08-22T01:31:06Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--root-dep-schema-green.txt",
+      "sha256": "e43048263b43c1e0c17b216f9e790110700f8bbf717832e810683163fa6b3385",
+      "collected_at": "2026-08-22T01:32:23Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--root-dep-schema-green.txt",
+      "sha256": "e43048263b43c1e0c17b216f9e790110700f8bbf717832e810683163fa6b3385",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--root-dep-schema-red.txt",
+      "sha256": "acf977d8318cc49820df4b398ce334fdf5ae676b10afc33a4abcd704f7aaa7aa",
+      "shareable": true
+    }
+  ]
+}
