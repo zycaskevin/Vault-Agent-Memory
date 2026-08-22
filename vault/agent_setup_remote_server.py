@@ -766,7 +766,7 @@ def _write_remote_client_templates(out: Path) -> dict[str, str]:
             "hermes": {
                 "target": "Hermes profile AGENTS.md or runtime bootstrap",
                 "env": {"VAULT_REMOTE_URL": gateway_url, "VAULT_GATEWAY_TOKEN": "replace-with-stable-secret"},
-                "startup_note": "Keep profile identity private; use remote shared memory for project knowledge.",
+                "startup_note": "Keep application-owned model data outside shared memory; use remote Vault for project knowledge.",
             },
             "openclaw": {
                 "target": "OpenClaw workspace bootstrap or gateway plugin config",
@@ -929,7 +929,7 @@ def _render_remote_gateway_snippets(gateway_url: str) -> str:
             "",
             "## Hermes / OpenClaw",
             "",
-            "Keep identity/personality memory in the runtime profile. Use the remote Gateway for shared project knowledge and candidate-first lessons.",
+            "Keep application-owned model data in the runtime. Use the remote Gateway for shared project knowledge and candidate-first lessons.",
             "",
             "## Coze / n8n",
             "",

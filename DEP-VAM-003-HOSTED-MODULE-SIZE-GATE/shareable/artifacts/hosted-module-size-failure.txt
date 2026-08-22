@@ -1,0 +1,6 @@
+source=GitHub Actions Release Readiness CI run 32473949789, job 96746338443
+command=python scripts/module_size_gate.py
+exit_status=1
+Module size gate: FAIL
+  - vault/agent_setup.py has 1232 lines; allowed 1231 from baseline
+Split the module or update the baseline with an explicit review note.

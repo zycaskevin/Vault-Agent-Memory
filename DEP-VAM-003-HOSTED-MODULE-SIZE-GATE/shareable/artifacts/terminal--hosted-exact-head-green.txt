@@ -1,0 +1,9 @@
+source=GitHub Actions Release Readiness CI
+repository=zycaskevin/Vault-Agent-Memory
+workflow_run=32476650092
+job_id=96754282568
+exact_head=53cea80b9cfc3552626f35f15a803b39f666ee95
+job=Module size gate
+job_conclusion=success
+check_step=Check module size baseline
+check_step_conclusion=success

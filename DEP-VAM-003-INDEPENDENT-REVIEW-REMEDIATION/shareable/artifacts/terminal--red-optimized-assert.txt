@@ -1,0 +1,15 @@
+independent-review supplemental finding
+commit: 8eec35c3b228efbdfc8707a11e2d31e885002562
+
+rollback guarded command contained a second optimization-sensitive assertion:
+git diff --cached --name-only -z | python -c '...; assert actual == expected, ...'
+
+impact:
+PYTHONOPTIMIZE=1 or python -O removes the staged-path equality check, so an
+incorrect rollback candidate could pass that allowlist guard.
+
+required proof:
+- no Python assert remains inside the guarded rollback command
+- an invalid approval exits nonzero under python -O
+- a mismatched staged path set exits nonzero under python -O
+- the exact expected staged path set exits zero under python -O

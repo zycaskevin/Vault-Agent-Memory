@@ -1,0 +1,17 @@
+command: /tmp/vam-python-path-vam001/python -m pytest -q tests/test_vault_boundary_freeze.py
+workdir: /tmp/vam-pr499-builder-oI8F3s/repo
+commit: 26519313d479b6bb240ec1f815dcac5f950f53b4
+result: exit 1
+summary: 1 failed, 17 passed in 0.40s
+
+failure:
+test_exact_head_builder_proof_redacts_workstation_path_and_binds_hashes
+
+actual:
+DEP-VAM-003-IDENTITY-ISOLATION-RECHECK/shareable/artifacts/exact-head-builder-local-green.txt
+contains an absolute owner-home checkout path.
+
+expected:
+The shareable artifact uses a stable $BUILDER_WORKTREE placeholder, its output
+hash is bound in manifest.json, and redaction-report.json records the original
+source hash, redacted output hash, and one workstation_path redaction.

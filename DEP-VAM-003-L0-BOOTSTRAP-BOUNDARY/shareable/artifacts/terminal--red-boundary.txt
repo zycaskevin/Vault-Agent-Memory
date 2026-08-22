@@ -1,0 +1,5 @@
+command=python -m pytest -q tests/test_vault_boundary_freeze.py
+result=FAIL 11 failed, 1 passed
+failures=new project directory, canonical layer inference, generated guidance, manifest, primary public docs
+compatibility_control=PASS legacy L0-identity source still maps to L0
+private_data=none

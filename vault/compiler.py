@@ -382,12 +382,9 @@ def assign_layer(metadata: dict) -> str:
 
     # 根據目錄推斷
     source = str(metadata.get("source", ""))
-    dir_map = {
-        "L0-identity": "L0",
-        "L1-core-facts": "L1",
-        "L2-context": "L2",
-        "L3-knowledge": "L3",
-    }
+    from .memory_layers import MEMORY_DIRECTORY_LAYERS
+
+    dir_map = MEMORY_DIRECTORY_LAYERS
     for d, layer_name in dir_map.items():
         if d in source:
             return layer_name

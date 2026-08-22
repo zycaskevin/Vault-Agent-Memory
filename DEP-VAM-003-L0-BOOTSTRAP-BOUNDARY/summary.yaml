@@ -1,0 +1,46 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY",
+  "issue": "VAM-003",
+  "sdd_references": [
+    "docs/specs/vam-003-l0-bootstrap-boundary.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-21T09:43:45Z",
+  "updated_at": "2026-08-21T09:56:34Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-21T09:43:45Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-21T09:44:18Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-21T09:44:18Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-21T09:56:34Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-21T09:56:34Z"
+      }
+    ]
+  },
+  "expected_behavior": "New Vault projects use L0-bootstrap and generated setup guidance stays within generic governed memory while legacy L0-identity paths remain readable.",
+  "actual_behavior": "New projects create L0-identity, the canonical bootstrap path is not inferred, and active setup/public guidance teaches identity and profile modeling.",
+  "environment": {
+    "commit": "291d5595c9cb2208a6b74206acbba35a883eb918",
+    "branch": "codex/vam-003-l0-bootstrap-boundary",
+    "runtime": "CPython 3.11.15; pytest 9.1.1; isolated Git worktree"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

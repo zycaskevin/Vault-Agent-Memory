@@ -1,0 +1,10 @@
+command: /tmp/vam-python-path-vam001/python -m pytest -q tests/test_vault_boundary_freeze.py::test_shareable_redaction_proof_does_not_claim_its_green_is_pending
+workdir: /tmp/vam-pr499-builder-oI8F3s/repo
+result: exit 0
+summary: 1 passed in 0.01s
+
+proof:
+- DEP workflow phase remains proof
+- verification no longer says complete Builder Local Green is pending
+- verification states Local Green is enforced separately by the merge gate
+- independent review and receipt signing remain separate protected-file gates

@@ -139,9 +139,9 @@ def render_agent_access_matrix(roster: list[dict[str, Any]]) -> str:
             "",
             "Rules:",
             "",
-            "- Persona files, raw private chats, and high-sensitivity profile notes stay in each agent's private memory.",
+            "- Application-owned model files and raw private interactions stay outside shared Vault memory.",
             "- Shared project memory should be reviewed, source-backed, and usually `sensitivity: low` or `medium`.",
-            "- Care/profile agents may publish reviewed L2 summaries, not raw private conversations.",
+            "- Legacy care/profile role labels may publish reviewed, sourced L2 summaries; they do not make Vault a human-model runtime.",
             "- Remote readers use `SUPABASE_ANON_KEY` or a scoped authenticated token, never the service role key.",
             "",
         ]
@@ -286,7 +286,7 @@ def write_memory_layout_manifest(
         "private_db_path": str(private_path / "vault.db") if private_path else "",
         "rules": {
             "shared": "Reviewed project knowledge, SOPs, fixes, release process, benchmark evidence, and safety rules.",
-            "private": "Agent identity, private preferences, personal notes, and agent-specific working style. Local-only by default.",
+            "private": "Application-owned private memory and local notes. Local-only by default; Vault does not infer a person model.",
         },
         "startup_commands": [
             "vault update-status",
@@ -310,7 +310,7 @@ def write_memory_layout_manifest(
                 f"- Private Agent vault: `{private_path or ''}`",
                 "",
                 "Shared project memory is for reviewed project knowledge, SOPs, fixes, release process, benchmark evidence, and safety rules.",
-                "Private Agent memory is local-only by default and is for identity, private preferences, personal notes, and agent-specific working style.",
+                "Private Agent memory is local-only by default and remains application-owned; Vault stores governed memory without inferring a person model.",
                 "",
                 "Startup:",
                 "",

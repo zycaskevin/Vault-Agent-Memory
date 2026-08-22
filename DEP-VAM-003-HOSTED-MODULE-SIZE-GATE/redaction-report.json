@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "green-verification.txt",
+      "output": "green-verification.txt",
+      "source_sha256": "be634499be3d3401207734a457305fa850daced6e876e7e768d789cc3214cfac",
+      "output_sha256": "be634499be3d3401207734a457305fa850daced6e876e7e768d789cc3214cfac",
+      "redactions": {}
+    },
+    {
+      "source": "hosted-module-size-failure.txt",
+      "output": "hosted-module-size-failure.txt",
+      "source_sha256": "c28a6f99e9226ed4e4821f48bb6523dd9c2dbb092d2a49ec53185222ae500df7",
+      "output_sha256": "c28a6f99e9226ed4e4821f48bb6523dd9c2dbb092d2a49ec53185222ae500df7",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--green-verification.txt",
+      "output": "terminal--green-verification.txt",
+      "source_sha256": "be634499be3d3401207734a457305fa850daced6e876e7e768d789cc3214cfac",
+      "output_sha256": "be634499be3d3401207734a457305fa850daced6e876e7e768d789cc3214cfac",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--hosted-exact-head-green.txt",
+      "output": "terminal--hosted-exact-head-green.txt",
+      "source_sha256": "a7bcde4c59b21b9ea77436f0d189c19ab1c28935fa7623d79b884028cc010a07",
+      "output_sha256": "a7bcde4c59b21b9ea77436f0d189c19ab1c28935fa7623d79b884028cc010a07",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--hosted-module-size-red.txt",
+      "output": "terminal--hosted-module-size-red.txt",
+      "source_sha256": "c28a6f99e9226ed4e4821f48bb6523dd9c2dbb092d2a49ec53185222ae500df7",
+      "output_sha256": "c28a6f99e9226ed4e4821f48bb6523dd9c2dbb092d2a49ec53185222ae500df7",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-003-HOSTED-MODULE-SIZE-GATE",
+  "generated_at": "2026-08-21T11:44:24Z"
+}

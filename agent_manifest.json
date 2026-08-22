@@ -57,10 +57,10 @@
     "ask whether optional semantic search and embedding dependencies should be enabled",
     "ask whether optional Supabase sync/read dependencies should be enabled",
     "ask whether optional Headroom context compression is needed for long logs or tool output",
-    "ask whether Profile / Dream / Forgetting memory-agent guidance should be generated",
+    "ask whether generic memory-maintenance guidance should be generated",
     "ask whether to generate report-first memory automation schedule templates for cron, LaunchAgent, or n8n",
     "ask whether developer/benchmark dependencies should be enabled",
-    "ask whether user profile/persona memory should stay private by default, with only reviewed summaries shared",
+    "keep application-owned identity/persona models outside Vault; accept only explicitly reviewed, sourced memory summaries",
     "if optional features are selected, ask whether to install their Python dependencies now",
     "if semantic search is selected, ask whether to download and configure a local ONNX embedding model",
     "if Supabase sync is selected, start with simple setup guidance and ask whether to generate daily cron, LaunchAgent, or n8n sync templates",
@@ -192,23 +192,23 @@
     {
       "id": "memory_agents",
       "default": false,
-      "prompt": "Generate Profile / Dream / Forgetting memory-agent guidance?",
-      "when_to_install": "Use when the user wants dedicated memory-maintenance agents, user-profile summaries, dream reports, or governed forgetting workflows.",
+      "prompt": "Generate generic memory-maintenance agent guidance?",
+      "when_to_install": "Use when the user wants candidate curation, lifecycle reports, or governed reversible archive and expiry workflows.",
       "install_commands": [
         "vault setup-agent --non-interactive --agent generic --scope shared --agent-project-dir /path/to/project --features core,mcp,memory_agents --language en --json"
       ],
       "post_install": [
         "Review /path/to/project/agent-install/README-memory-agents.md.",
-        "Keep Profile agents candidate-only by default.",
-        "Keep Dream / Forgetting agents report-only by default.",
+        "Keep candidate curators candidate-only by default.",
+        "Keep lifecycle reporters and archive advisors report-only by default.",
         "Use vault automation plan --write-policy to create a policy boundary before scheduled maintenance.",
         "Use vault automation run for routine report-first maintenance; add --apply only when automation_policy.yaml allows reversible archival.",
         "Use vault automation doctor before cron, LaunchAgent, n8n, or host-agent scheduling.",
         "Use vault usage stats to inspect coarse retrieval signals before proposing cleanup.",
         "Use vault usage archive-expired as a dry-run first; add --apply only under a user-approved policy.",
-        "Do not promote, delete, or sync private profile memory without user-approved policy."
+        "Do not promote, delete, or sync private application-owned context without user-approved policy."
       ],
-      "notes": "This feature writes guidance only. Automation commands are policy-based and reversible by default; they do not hard-delete entries or promote private memory."
+      "notes": "This compatibility feature ID writes generic maintenance guidance only. It does not construct identity, personality, relationship, life-phase, care, or human models. Automation commands are policy-based and reversible by default."
     },
     {
       "id": "memory_automation",
@@ -300,7 +300,7 @@
   "memory_governance": {
     "rule": "L0-L3 describe memory depth and usage, not access control.",
     "vision": "Vault Agent Memory is the user-owned memory core; agent runtimes are hands; models are compute tools.",
-    "user_centered_design": "Vault can store project knowledge and reviewed user profile memory. Raw private interactions stay private; trusted agents may share short reviewed summaries.",
+    "user_centered_design": "Vault stores governed memory and reviewed, sourced summaries. Application-owned identity or human models stay outside Vault, and raw private interactions stay private unless a specific governed write is explicitly approved.",
     "progressive_memory_disclosure": "Start with boot summaries and active context, then topic maps, search candidates, bounded source ranges, and raw/archive memory only when task and permissions justify it.",
     "access_metadata": [
       "scope",
@@ -316,15 +316,17 @@
       "tools": ["vault search", "vault_search", "vault_map_show", "vault_read_range"],
       "rule": "For shared vaults, pass agent_id on reads. Use include_private only when the user or local policy allows that agent to read owner/allow-list private memory. Use max_sensitivity as a hard cap."
     },
-    "profile_guidance": {
-      "L0": "minimal identity only; private by default",
-      "L1": "durable work preferences and collaboration rules",
-      "L2": "recent state or care summaries; use expires_at",
-      "L3_private": "deep analysis and raw private interaction history"
+    "L0_boundary": {
+      "canonical_directory": "L0-bootstrap",
+      "legacy_read_alias": "L0-identity",
+      "owns_identity_modeling": false,
+      "migrates_legacy_data": false,
+      "purpose": "stable project framing, startup rules, and reviewed bootstrap context"
     },
     "dedicated_memory_agents": {
-      "profile_agent": "Maintains stable user profile, preferences, care summaries, and agent-specific boundaries without exposing raw private chats.",
-      "dream_forgetting_agent": "Runs dream reports, usage review, TTL archive previews, deduplication, stale-memory review, promotion/archive suggestions, and expiry recommendations for low-value context."
+      "candidate_curator": "Proposes sourced bootstrap, rule, decision, and knowledge candidates without writing active memory directly.",
+      "lifecycle_reporter": "Runs usage review, TTL archive previews, deduplication, stale-memory review, and promotion/archive suggestions without applying them directly.",
+      "archive_advisor": "Proposes reversible archive, expiry, merge, or downgrade actions and never hard-deletes memory."
     },
     "automation_policy": {
       "default_mode": "balanced",
@@ -337,7 +339,7 @@
       ],
       "principle": "Humans approve policy and high-impact changes; agents handle routine reports, digests, and reversible cleanup."
     },
-    "sharing_rule": "Share reviewed project knowledge and short summaries; keep raw private conversations, persona files, and high-sensitivity profile notes local unless the user explicitly approves wider sharing.",
+    "sharing_rule": "Share reviewed project knowledge and short sourced summaries; keep raw private interactions and application-owned model data outside shared Vault memory unless the user explicitly approves a specific governed write.",
     "obsidian_rule": "Preserve layer plus governance metadata in frontmatter; adding metadata is compatible with import/export.",
     "supabase_rule": "Use RLS with scope, sensitivity, owner_agent, allowed_agents, and status; do not use layer as a permission level."
   },

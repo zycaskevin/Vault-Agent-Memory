@@ -17,15 +17,17 @@ right to forget.
 Each person may eventually have an agent family:
 
 - work agents that code, write, plan, and operate tools
-- companion agents that understand communication style and care context
+- companion agents that consume application-owned context through bounded,
+  purpose-specific memory summaries
 - home agents that know household rules and daily preferences
 - car agents that continue a conversation while moving between places
 - robots and embodied agents that act in the physical world
 - cloud or workflow agents that operate services such as n8n, Coze, or internal APIs
 
-Those agents can have different personalities, capabilities, and permissions.
-They should not all see the same memory. But they should be able to share the
-same reviewed continuity when the user allows it.
+Those agents can have different capabilities and permissions. Their identity or
+human-model behavior belongs to their application runtime, not Vault. They
+should not all see the same memory, but they may share reviewed continuity when
+the user allows it.
 
 The question is not whether long-term agent memory will exist. It is who owns
 it.
@@ -43,8 +45,8 @@ Supabase or sync    = optional cross-host bridge, not the owner
 ```
 
 In this model, an agent runtime can be replaced without erasing the user's
-memory. A model can be swapped without losing project history, profile
-preferences, source records, or long-term context. A cloud sync layer can help
+memory. A model can be swapped without losing project history, reviewed rules,
+source records, or long-term context. A cloud sync layer can help
 devices share memory, but it should not become the user's only source of truth.
 
 ## Core Principles
@@ -105,7 +107,7 @@ capture
   -> review
   -> active memory
   -> retrieval / bounded read
-  -> dream report
+  -> lifecycle report
   -> consolidate
   -> archive / expire / cold storage
   -> recall when needed
@@ -128,33 +130,33 @@ Different agents should use different memory views:
 | Agent type | Typical memory view |
 |---|---|
 | Work/coding agent | project decisions, SOPs, fixes, repo context, user work preferences |
-| Companion agent | private relationship context, care summaries, communication boundaries |
+| Companion agent | purpose-bounded reviewed summaries supplied by its application |
 | Product/strategy agent | goals, roadmap, decisions, market notes, user values |
 | Home agent | household rules, device preferences, routine context |
 | Car agent | active threads, schedule, destination context, low-sensitivity preferences |
 | Robot/embodied agent | place context, action permissions, physical-world constraints |
 | Cloud workflow agent | only the reviewed data needed for its task |
 
-The memory core should support shared continuity without flattening every agent
-into the same identity. Personality, facts, user profile, permissions, and
-source records should remain separable.
+The memory core should support shared continuity without becoming the identity
+model. Application-owned models, governed memory, permissions, and source
+records remain separate layers with a one-way provider boundary.
 
-## Dedicated Memory Agents
+## Memory Maintenance Agents
 
 A mature Vault may include specialized memory-maintenance agents:
 
-- **Profile agent**: maintains stable user profile, preferences, collaboration
-  style, care summaries, and agent-specific boundaries.
-- **Dream agent**: periodically reviews memory clusters, finds stale or repeated
+- **Candidate curator**: proposes sourced bootstrap, rule, decision, and
+  knowledge candidates without writing active memory directly.
+- **Lifecycle reporter**: periodically reviews memory clusters, finds stale or repeated
   entries, discovers new themes, and produces report-first suggestions.
-- **Forgetting agent**: proposes expiry, archive, downgrade, or merge actions so
+- **Archive advisor**: proposes expiry, archive, downgrade, or merge actions so
   memory stays efficient without becoming unrecoverable.
-- **Graph agent**: finds useful links between project knowledge, user patterns,
+- **Graph agent**: finds useful links between project knowledge,
   Obsidian notes, and emerging ideas.
 
 These agents should default to report-only or candidate-only behavior. They
-should not silently publish private profile memory, delete active memory, or
-promote shared knowledge without user-approved policy.
+should not ingest application-owned model data, delete active memory, or promote
+shared knowledge without user-approved policy.
 
 ## Obsidian and Graph as the Human Review Layer
 
@@ -206,7 +208,7 @@ The local vault should remain usable without cloud infrastructure. Remote
 systems should receive only the view they need:
 
 - shared project knowledge
-- reviewed profile summaries
+- reviewed, sourced memory summaries
 - low-sensitivity active threads
 - device-appropriate context
 - never raw private memory by default
@@ -227,8 +229,8 @@ Near-term work should make the existing pieces more coherent:
 1. Keep L0-L3 stable as memory depth layers.
 2. Add governance metadata such as `scope`, `sensitivity`, `owner_agent`,
    `allowed_agents`, `status`, `memory_type`, and `expires_at`.
-3. Make setup-agent ask about profile memory privacy and optional memory agents.
-4. Improve dream reports so they propose merge, archive, expiry, and graph-link
+3. Make setup-agent generate neutral, candidate/report-first maintenance guidance.
+4. Improve lifecycle reports so they propose merge, archive, expiry, and graph-link
    actions instead of only reporting stale or duplicate entries.
 5. Let Obsidian carry governance frontmatter and review notes.
 6. Use Supabase/RLS only as an optional cross-host bridge for reviewed memory.
