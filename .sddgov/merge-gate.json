@@ -1,14 +1,15 @@
 {
   "schema_version": "1.0",
   "base_sha": "db1763482f0f603ccd63817f26c73308bc186697",
-  "head_sha": "1375b46b5a7b0a653302a703dffaa984ea80bc00",
+  "head_sha": "801ab3bee4a1bcbc9be3a34999c838191b5ef824",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "3b835ecccf89e1926b5830fcaf7169e1c53e1143e5ee9d770c258ecbec87a798",
+  "change_digest": "538d7b39af13a39412e33825ac9f5367f6099c80ec25119f5b4c739c4857e49b",
   "deps": [
     "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY",
     "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
-    "DEP-VAM-003-HOSTED-MODULE-SIZE-GATE"
+    "DEP-VAM-003-HOSTED-MODULE-SIZE-GATE",
+    "DEP-VAM-003-INDEPENDENT-REVIEW-REMEDIATION"
   ],
   "rollback_path": "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY/rollback.md",
   "protected_file_review": ".sddgov/reviews/REV-VAM-003.json"
