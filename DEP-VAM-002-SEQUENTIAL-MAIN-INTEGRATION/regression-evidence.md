@@ -20,6 +20,9 @@ metadata must pass unchanged on the new main base.
 - Module size gate: PASS, 159 modules scanned.
 - Both historical VAM-002 DEPs: strict PASS.
 - CI Cost Guard contract verification: PASS.
+- Exact committed Builder Local Green at `bee2543d02e3ad2c3436e6246703f31c743bdf72`:
+  PASS once; 446 isolated Subject nodes and 2958 repository tests passed, with
+  10 expected skips and one existing warning.
 
 ## Unaffected paths sampled
 
@@ -28,5 +31,5 @@ metadata must pass unchanged on the new main base.
   `tests/test_subject_contracts.py` diff against current main: empty.
 - No VAM-001/VAM-003 receipt, evidence, or runtime file was edited by the
   VAM-002 branch integration.
-- Exact committed private-checkout Local Green remains required before this DEP
-  advances from Green to Proof.
+- Post-Local-Green checkout remained detached at the exact tested head, clean,
+  with all physical tracked modes matching the Git index.
