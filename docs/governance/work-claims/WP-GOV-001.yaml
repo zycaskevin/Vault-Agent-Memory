@@ -1,0 +1,37 @@
+schema_version: 1
+work_package: WP-GOV-001
+issue: 427
+owner: Main Engineering Agent
+risk: risk:L0
+base_commit: cfee9429c64a1dfa86bc14b126666979a6ce2611
+state: CLAIMED
+capability_outcome: Repository can run auditable Human-on-the-loop delivery without per-step owner prompts
+owned_paths:
+  - .github/ISSUE_TEMPLATE/work_package.yml
+  - .github/PULL_REQUEST_TEMPLATE.md
+  - AGENTS.md
+  - AGENT_OPERATING_CONTRACT.md
+  - agent_manifest.json
+  - docs/adr/0000-template.md
+  - docs/adr/README.md
+  - docs/governance/BOOTSTRAP_REPORT_2026-08-03.md
+  - docs/governance/CAPABILITY_MAP.md
+  - docs/governance/CURRENT_STATE.md
+  - docs/governance/DECISION_LOG.md
+  - docs/governance/DEPENDENCY_GRAPH.md
+  - docs/governance/DEVIATION_LOG.md
+  - docs/governance/PROGRESS_LEDGER.md
+  - docs/governance/PROJECT_GOVERNANCE_PROFILE.yaml
+  - docs/governance/SDD_TRACEABILITY.md
+  - docs/governance/WORK_CLAIMS.md
+  - docs/governance/evidence/BOOTSTRAP-2026-08-03.md
+  - docs/governance/templates/checkpoint.md
+  - docs/governance/templates/decision-package.md
+  - docs/governance/templates/l3-approval.md
+  - docs/governance/templates/milestone-uat.md
+  - docs/governance/templates/operational-action-package.md
+  - docs/governance/templates/work-package.md
+  - docs/governance/work-claims/WP-GOV-001.yaml
+  - docs/plans/SUBJECT_DISTILLATION_PROGRESS.md
+  - scripts/validate_agent_governance.py
+  - tests/test_agent_governance_bootstrap.py

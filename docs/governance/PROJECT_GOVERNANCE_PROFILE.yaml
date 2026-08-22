@@ -1,0 +1,89 @@
+schema_version: 1
+profile: sdd-governed-autonomous-agent-development-v1.1
+repository: zycaskevin/Vault-Agent-Memory
+operating_mode: human-on-the-loop
+main_branch: main
+source_of_truth:
+  product:
+    - docs/vision.md
+    - docs/strategy/product-architecture.md
+    - docs/strategy/positioning.md
+  repository_governance:
+    - AGENTS.md
+    - AGENT_OPERATING_CONTRACT.md
+    - docs/repo_governance.md
+  active_sdd:
+    - specs/subject-distillation/requirements.md
+    - specs/subject-distillation/design.md
+    - specs/subject-distillation/tasks.md
+    - specs/subject-distillation/traceability.md
+    - specs/subject-distillation/schema.v15.sql
+    - specs/subject-distillation/baseline-manifest.json
+    - specs/subject-distillation/evidence-schemas/implementation-authorization.schema.json
+risk_authority:
+  "risk:L0": autonomous
+  "risk:L1": autonomous_within_approved_sdd_or_mission
+  "risk:L2": owner_decision_package_required
+  "risk:L3": operation_specific_owner_approval_required
+risk_namespace: "risk:"
+memory_namespace: "memory:"
+preauthorized_actions:
+  - issue_lifecycle
+  - feature_branch
+  - work_claim
+  - repo_code_test_docs_ci_changes
+  - reversible_dependency_updates
+  - targeted_and_regression_verification
+  - commit
+  - feature_branch_push
+  - pull_request
+  - review_and_ci_repair
+  - l0_l1_merge
+  - development_test_staging_deploy
+  - reversible_agent_change_rollback
+approval_budget_per_milestone:
+  "risk:L0": 0
+  "risk:L1": 0
+  "risk:L2_per_decision": 1
+  "risk:L3_per_operation": 1
+  milestone_uat: 1
+checkpoint:
+  default: informational
+  waiting_titles:
+    - ACTION REQUIRED — Decision Package
+    - ACTION REQUIRED — Operational Action Package
+    - ACTION REQUIRED — L3 Approval
+    - ACTION REQUIRED — Milestone UAT
+merge_gate:
+  require_exact_scope: true
+  require_required_ci: true
+  require_independent_review: true
+  require_sdd_traceability: true
+  require_rollback_readiness: true
+  require_post_merge_workflow_side_effect_review: true
+  forbid_acceptance_criteria_reduction: true
+  forbid_safety_check_removal: true
+production_boundary:
+  production_deploy: "risk:L3"
+  public_site_deploy: "risk:L3"
+  package_publish_or_release: "risk:L3"
+  store_publish: "risk:L3"
+  destructive_migration: "risk:L3"
+  production_data_mutation: "risk:L3"
+  production_secret_access_or_rotation: "risk:L3"
+  payment_or_subscription_activation: "risk:L3"
+  dns_or_public_domain_change: "risk:L3"
+  protected_branch_force_push: "risk:L3"
+  external_customer_communication: "risk:L3"
+staging_boundary:
+  environment: pre_existing_approved_non_production
+  data: synthetic_or_sanitized_only
+  live_private_customer_data: forbidden
+  new_login_mfa_account_or_credential: operational_action
+  new_spend_or_public_exposure: "risk:L2_or_risk:L3"
+  external_customer_communication: "risk:L3"
+  require_verified_rollback: true
+subject_authorization_boundary:
+  b001_owner_lane_and_exact_base: required_while_normative
+  t_task_owner_confirmed_exact_proposal_and_digest: required_while_normative
+  agent_hash_review_or_ci_is_authority: false

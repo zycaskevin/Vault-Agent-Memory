@@ -1,0 +1,79 @@
+name: Capability Work Package
+description: Deliver one independently verifiable product capability or coherent engineering outcome.
+title: "[WP]: "
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Why
+    validations:
+      required: true
+  - type: textarea
+    id: product-impact
+    attributes:
+      label: Product Impact
+    validations:
+      required: true
+  - type: textarea
+    id: sdd
+    attributes:
+      label: SDD References
+      description: Name exact contracts, sections, examples or ADRs.
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Capability Outcome
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+    validations:
+      required: true
+  - type: textarea
+    id: nonscope
+    attributes:
+      label: Non-scope
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      description: Use independently executable or observable outcomes.
+    validations:
+      required: true
+  - type: dropdown
+    id: risk
+    attributes:
+      label: Risk Level
+      options: ["risk:L0", "risk:L1", "risk:L2", "risk:L3"]
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification Plan
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+    validations:
+      required: true
+  - type: textarea
+    id: rollback
+    attributes:
+      label: Rollback
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of Done
+    validations:
+      required: true

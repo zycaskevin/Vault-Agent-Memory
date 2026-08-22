@@ -3,6 +3,13 @@
   "project": "vault-for-llm",
   "display_name": "Vault Agent Memory",
   "purpose": "Local-first memory governance for AI agents.",
+  "governance": {
+    "mode": "human-on-the-loop",
+    "operating_contract": "AGENT_OPERATING_CONTRACT.md",
+    "profile": "docs/governance/PROJECT_GOVERNANCE_PROFILE.yaml",
+    "risk_namespace": "risk:",
+    "memory_namespace": "memory:"
+  },
   "package": {
     "pip_name": "vault-for-llm",
     "cli": "vault",
@@ -11,6 +18,8 @@
   },
   "agent_sources_of_truth": [
     "AGENTS.md",
+    "AGENT_OPERATING_CONTRACT.md",
+    "docs/governance/PROJECT_GOVERNANCE_PROFILE.yaml",
     "docs/agent_install.md",
     "docs/agent_integrations.md",
     "docs/memory_governance.md",
