@@ -14,10 +14,17 @@
       "source_sha256": "3b188b6c72c4605435fd2e7c588e609dbf6bb17facda80d010f7faa6ec977a2f",
       "output_sha256": "3b188b6c72c4605435fd2e7c588e609dbf6bb17facda80d010f7faa6ec977a2f",
       "redactions": {}
+    },
+    {
+      "source": "terminal--local-green-path-proof.txt",
+      "output": "terminal--local-green-path-proof.txt",
+      "source_sha256": "1312557933c70b1a02133bdf341f3f95fa032e8034cbe4ba88d36fa151720159",
+      "output_sha256": "1312557933c70b1a02133bdf341f3f95fa032e8034cbe4ba88d36fa151720159",
+      "redactions": {}
     }
   ],
   "blocked": [],
   "totals": {},
   "dep_id": "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
-  "generated_at": "2026-08-22T19:03:41Z"
+  "generated_at": "2026-08-22T19:18:52Z"
 }

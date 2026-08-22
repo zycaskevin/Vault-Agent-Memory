@@ -1,7 +1,6 @@
 # Verification
 
-Current phase: Green for Builder runtime composition; full repository Proof is
-not claimed.
+Current phase: Proof.
 
 Verified read-only facts:
 
@@ -14,9 +13,10 @@ Verified read-only facts:
 - no push, receipt, trust mutation, merge, deployment, or live-data change
   occurred.
 
-The corrected ordering passed collection and all 446 identity-isolated nodes,
-then executed the repository suite. That suite exposed two independent
-compatibility findings governed by `DEP-VAM-002-FULL-SUITE-COMPATIBILITY`.
+The corrected ordering passed collection and all 446 identity-isolated nodes.
+After the separately governed compatibility repair, exact head
+`1a346913563f5437b7815f655393f0eee5a0da52` completed the repository suite
+with 2967 passed, 10 skipped, and one existing warning; the gate exited zero.
 
 ## Green command and result
 
@@ -32,5 +32,6 @@ bounded result. Both artifacts are hash-bound in the manifest.
 
 ## Remaining limitations
 
-Overall Local Green remains red until the separate compatibility DEP is fixed
-and a new exact committed candidate passes the complete gate.
+Proof is bound to the exact committed candidate. Any later implementation or
+evidence mutation requires rebinding and a new exact-head gate under the CI
+cost contract.

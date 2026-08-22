@@ -14,10 +14,17 @@
       "source_sha256": "84503084a8b04c9ed1ac01ffeac9245edd6b58a40f361653147e37b111f81172",
       "output_sha256": "84503084a8b04c9ed1ac01ffeac9245edd6b58a40f361653147e37b111f81172",
       "redactions": {}
+    },
+    {
+      "source": "terminal--full-suite-compatibility-proof.txt",
+      "output": "terminal--full-suite-compatibility-proof.txt",
+      "source_sha256": "0fea3bd7557613c8848f8c7ae9d1dbf616cf26973302efce14e81601215dfd41",
+      "output_sha256": "0fea3bd7557613c8848f8c7ae9d1dbf616cf26973302efce14e81601215dfd41",
+      "redactions": {}
     }
   ],
   "blocked": [],
   "totals": {},
   "dep_id": "DEP-VAM-002-FULL-SUITE-COMPATIBILITY",
-  "generated_at": "2026-08-22T19:08:04Z"
+  "generated_at": "2026-08-22T19:18:52Z"
 }

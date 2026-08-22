@@ -8,20 +8,21 @@
   ],
   "risk_level": "L1",
   "created_at": "2026-08-22T19:03:41Z",
-  "updated_at": "2026-08-22T19:08:04Z",
+  "updated_at": "2026-08-22T19:18:52Z",
   "workflow": {
-    "phase": "green",
+    "phase": "proof",
     "history": [
       {"phase": "red", "at": "2026-08-22T19:03:41Z"},
       {"phase": "evidence", "at": "2026-08-22T19:03:41Z"},
       {"phase": "fix", "at": "2026-08-22T19:03:41Z"},
-      {"phase": "green", "at": "2026-08-22T19:08:04Z"}
+      {"phase": "green", "at": "2026-08-22T19:08:04Z"},
+      {"phase": "proof", "at": "2026-08-22T19:18:52Z"}
     ]
   },
   "expected_behavior": "The full PR #500 suite preserves the number of active knowledge rows across candidate-first HTTP facade requests and returns precise, non-duplicative reason codes when stored governance labels are unknown.",
   "actual_behavior": "The HTTP facade regression asserted a stale fixed count of two after deliberately adding a third fixture row, and the fail-closed read guard appended generic unauthorized after already classifying unknown scope and sensitivity.",
   "environment": {
-    "commit": "7a64938bdc1e5aa483db013e4de4c8e78952fa20",
+    "commit": "1a346913563f5437b7815f655393f0eee5a0da52",
     "branch": "codex/vam-002-memory-change-envelope-ready",
     "runtime": "CPython 3.11; pytest 9.1.1; Agentic SDD Governance 0.2.0-experimental.9"
   },
@@ -34,6 +35,10 @@
     {
       "path": "shareable/artifacts/terminal--full-suite-compatibility-green.txt",
       "sha256": "84503084a8b04c9ed1ac01ffeac9245edd6b58a40f361653147e37b111f81172"
+    },
+    {
+      "path": "shareable/artifacts/terminal--full-suite-compatibility-proof.txt",
+      "sha256": "0fea3bd7557613c8848f8c7ae9d1dbf616cf26973302efce14e81601215dfd41"
     }
   ]
 }

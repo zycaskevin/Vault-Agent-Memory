@@ -9,8 +9,11 @@ Targeted Green passed after the minimal fix:
 - Ruff for the two changed Python files: PASS;
 - `git diff --check`: PASS.
 
-A later single authorized complete Local Green at the exact committed
-candidate is still required for Proof.
+The single authorized complete Local Green then passed at exact committed head
+`1a346913563f5437b7815f655393f0eee5a0da52`: 446 identity nodes passed and
+repository pytest returned 2967 passed, 10 skipped, and one existing warning.
+Post-run HEAD, clean worktree, 1429 physical modes, and frozen Subject diff all
+matched the declared candidate.
 
 ## Before/after evidence
 
@@ -20,6 +23,6 @@ both nodes and exact candidate head.
 
 ## Remaining limitations
 
-The HTTP node used a separately approved non-sandbox loopback execution after
-the sandbox denied socket creation. No complete gate rerun is authorized by
-this DEP itself, and no production or Hermes data was accessed.
+The HTTP node and complete gate used separately approved non-sandbox loopback
+execution after the sandbox denied socket creation. No production or Hermes
+data was accessed. Any later candidate mutation requires new proof.
