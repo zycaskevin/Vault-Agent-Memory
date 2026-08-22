@@ -1,0 +1,46 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-INDEPENDENT-REVIEW-REMEDIATION",
+  "issue": "VAM-001",
+  "sdd_references": [
+    "docs/specs/vam-001-subject-distillation-extraction.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-21T14:28:32Z",
+  "updated_at": "2026-08-21T14:42:10Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-21T14:28:32Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-21T14:30:56Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-21T14:30:56Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-21T14:42:10Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-21T14:42:10Z"
+      }
+    ]
+  },
+  "expected_behavior": "The independent review can prove each issue disposition inside its matching Markdown section and can execute one coherent rollback procedure without erasing the extraction ADR or evidence.",
+  "actual_behavior": "The test accepted globally misplaced dispositions, and the authoritative rollback both reverted the whole PR and forbade removing most of that PR.",
+  "environment": {
+    "commit": "f46325de069be3fc9c18983bb49f0664be1a32b2",
+    "branch": "codex/vam-001-subject-extraction-adr",
+    "runtime": "Independent clean-clone review plus local Python 3.11-compatible remediation"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

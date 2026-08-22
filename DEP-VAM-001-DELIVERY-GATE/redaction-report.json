@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--green-delivery-gate.txt",
+      "output": "terminal--green-delivery-gate.txt",
+      "source_sha256": "044a71b3aaffc48f463776652742d367c415e6c57f1e68688dcbc6fd3360c526",
+      "output_sha256": "1ad5dab7a6ac6474033017b5d899da21da4b51c54e812de1eb1977358d4f8d51",
+      "redactions": {
+        "manual_provenance_addition": 1
+      }
+    },
+    {
+      "source": "terminal--red-delivery-gate.txt",
+      "output": "terminal--red-delivery-gate.txt",
+      "source_sha256": "27d69a426b9e93417107f3c74e9477f555834a5070daa6775c78f4f48badcd6b",
+      "output_sha256": "27d69a426b9e93417107f3c74e9477f555834a5070daa6775c78f4f48badcd6b",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "manual_provenance_addition": 1
+  },
+  "dep_id": "DEP-VAM-001-DELIVERY-GATE",
+  "generated_at": "2026-08-21T09:38:46Z"
+}

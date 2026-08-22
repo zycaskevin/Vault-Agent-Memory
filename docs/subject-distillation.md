@@ -24,14 +24,24 @@ authorization, production readiness, or that any task checkbox was executed.
 ## Status and ownership
 
 Issue #417 historically introduced the earlier public semantic specification.
-Issue #410 owns the current canonical five-file product and physical contract.
+Issue #410 owns the frozen canonical five-file product and physical contract as
+historical origin. Subject Distillation is now a **preserved origin package**,
+not an active Vault runtime roadmap. The extraction decision is recorded in
+[`2026-08-21-extract-subject-distillation.md`](decision_records/2026-08-21-extract-subject-distillation.md).
+
+T-001 through T-004 remain completed and unchanged. T-005 through T-033 remain
+pending in the historical ledger, but Vault will not start or continue them.
+The separate Digital Life Identity Runtime owns future Subject, Person Model,
+Identity Claim, belief and relationship evolution, and Context Pack behavior.
+It may consume Vault only through a generic Memory API or provider protocol.
+
 The earlier public-safety validator remains a separate Phase 0 mechanism and
 does not implement the Subject domain.
 
-Runtime is not implemented. In particular, this package does not register the
-v15 migration or add Subject emission, retrieval, promotion, Context Pack,
-decision, relationship, deletion, evaluation, CLI, MCP, Gateway, Person, or
-Organization runtime behavior.
+Runtime is not implemented in Vault and will not be continued there. In
+particular, this package does not register the v15 migration or add Subject
+emission, retrieval, promotion, Context Pack, decision, relationship, deletion,
+evaluation, CLI, MCP, Gateway, Person, or Organization runtime behavior.
 
 ## Person v1 contract
 

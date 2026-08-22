@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--root-dep-schema-green.txt",
+      "output": "terminal--root-dep-schema-green.txt",
+      "source_sha256": "e43048263b43c1e0c17b216f9e790110700f8bbf717832e810683163fa6b3385",
+      "output_sha256": "e43048263b43c1e0c17b216f9e790110700f8bbf717832e810683163fa6b3385",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--root-dep-schema-red.txt",
+      "output": "terminal--root-dep-schema-red.txt",
+      "source_sha256": "acf977d8318cc49820df4b398ce334fdf5ae676b10afc33a4abcd704f7aaa7aa",
+      "output_sha256": "acf977d8318cc49820df4b398ce334fdf5ae676b10afc33a4abcd704f7aaa7aa",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-001-ROOT-DEP-SCHEMA-REFERENCE",
+  "generated_at": "2026-08-22T01:32:23Z"
+}

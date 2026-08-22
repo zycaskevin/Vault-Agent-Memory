@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--current-head-red.txt",
+      "output": "terminal--current-head-red.txt",
+      "source_sha256": "3fc2ac39905f838024fd59a41c70bef16d139076f2c07a68c819dbde9ca7f4ed",
+      "output_sha256": "3fc2ac39905f838024fd59a41c70bef16d139076f2c07a68c819dbde9ca7f4ed",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--local-green.txt",
+      "output": "terminal--local-green.txt",
+      "source_sha256": "196636b14ffe4e6165ad47038e561c01324fbc1521be07e40ed70bff3ac3b859",
+      "output_sha256": "196636b14ffe4e6165ad47038e561c01324fbc1521be07e40ed70bff3ac3b859",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-001-CURRENT-HEAD-REVIEW-REMEDIATION",
+  "generated_at": "2026-08-21T15:28:41Z"
+}

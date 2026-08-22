@@ -1,0 +1,11 @@
+source=Builder one authorized exact Local Green at audit head c52aee2e5dec50406209c1f4d3be69add5eb3c86
+checkout=/home/zycas/.codex/sddgov-review-checkouts/PR498-builder-20260822
+origin_url=https://github.com/zycaskevin/Vault-Agent-Memory.git
+command=umask 022; env PATH=[pinned test path] GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 sddgov ci local-gate .
+exit_status=2
+passed_before_failure=governance doctor; CI verify; README smoke; release parity; earlier identity-isolated nodes including the original private-lifecycle node
+failure_node=tests/test_subject_development_mission_v5.py::test_sdg012_current_main_transition_accepts_only_exact_delivery
+failure=fatal: ambiguous argument origin/main: unknown revision or path not in the working tree
+cause=local-source clone had formal origin URL but no refs/remotes/origin/main tracking ref
+post_failure_worktree=clean
+disposition=FAIL; no push; no retry; no signature

@@ -1,0 +1,7 @@
+source=Builder targeted Green after correcting all root-level VAM-001 DEP schema selectors
+command=env PYTHONPATH=. /tmp/vam-python-path-vam001/python -m pytest -q -p no:cacheprovider tests/test_subject_extraction_boundary_docs.py::test_vam001_root_dep_schema_references_resolve_exactly
+result=1 passed in 0.01s
+exit_status=0
+coverage=enumerated every DEP-VAM-001-*/summary.yaml; required exact Governance Root schema path; required resolved file existence
+corrected=DEP-VAM-001-REVIEWER-TMP-ANCESTOR-RACE/summary.yaml; DEP-VAM-001-PRIVATE-CHECKOUT-REMOTE-REF/summary.yaml; new DEP-VAM-001-ROOT-DEP-SCHEMA-REFERENCE/summary.yaml
+product_runtime_change=none

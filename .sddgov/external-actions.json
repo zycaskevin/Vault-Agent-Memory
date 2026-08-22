@@ -1,4 +1,14 @@
 {
   "schema_version": "1.0",
-  "actions": []
+  "actions": [
+    {
+      "action_id": "VAM-001-ISSUE-DISPOSITION",
+      "summary": "Post approved disposition comments and close Vault issues #495, #496, and #497; leave #410 open",
+      "risk_level": "L3",
+      "owner": "zycaskevin",
+      "status": "completed",
+      "created_at": "2026-08-21T05:09:42Z",
+      "authorization_scope": "one concrete action only"
+    }
+  ]
 }

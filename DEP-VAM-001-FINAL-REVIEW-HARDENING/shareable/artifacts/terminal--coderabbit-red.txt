@@ -1,0 +1,10 @@
+VAM-001 final review hardening
+source: CodeRabbit review [REDACTED_PHONE_OR_NUMBER]
+exact reviewed head: b2c8378db44079080d1d9bbd418febf93e527ec9
+verdict: FAIL
+finding 1: H2 extraction accepted prose or fenced heading decoys
+finding 2: approval evaluator nonzero status could be masked by its validation pipeline
+finding 3: prepared revert lacked an exact changed-path allowlist
+finding 4: cross-database foreign-key and identity-specific endpoint prohibitions were not asserted
+finding 5: remediation rollback lacked exact provenance anchors, strict DEP and fresh L3 requirements, and complete retained proof
+already stronger than suggestion: local HEAD must equal the resolved merge commit, not merely contain it
