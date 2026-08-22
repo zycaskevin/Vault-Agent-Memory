@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-1.txt",
+      "sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "collected_at": "2026-08-22T11:06:29Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-2.txt",
+      "sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "collected_at": "2026-08-22T11:09:10Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--artifact-1.txt",
+      "sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-2.txt",
+      "sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--sequential-red.txt",
+      "sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--targeted-green.txt",
+      "sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "shareable": true
+    }
+  ]
+}

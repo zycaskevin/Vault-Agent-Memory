@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--artifact-1.txt",
+      "output": "terminal--artifact-1.txt",
+      "source_sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "output_sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--artifact-2.txt",
+      "output": "terminal--artifact-2.txt",
+      "source_sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "output_sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--sequential-red.txt",
+      "output": "terminal--sequential-red.txt",
+      "source_sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "output_sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--targeted-green.txt",
+      "output": "terminal--targeted-green.txt",
+      "source_sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "output_sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION",
+  "generated_at": "2026-08-22T11:09:14Z"
+}
