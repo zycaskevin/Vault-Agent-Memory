@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "description": "Fake Taiwan privacy regression fixtures. All values are obviously synthetic and do not correspond to any real person, patient, or customer. Use to prove sensitive-looking content is detected and cannot silently auto-promote. This is NOT medical compliance.",
+  "cases": [
+    {
+      "id": "taiwan_mobile_domestic",
+      "content": "聯絡：0987-654-321，請回電。",
+      "expected_status": "warn",
+      "expected_finding_types": ["taiwan_mobile"]
+    },
+    {
+      "id": "taiwan_mobile_international_prefix",
+      "content": "Phone +886-0987-654-321 reached the clinic front desk.",
+      "expected_status": "warn",
+      "expected_finding_types": ["taiwan_mobile"],
+      "note": "The built-in taiwan_mobile regex requires the leading 0 even after the +886 international prefix. Real-world international format drops the leading 0 (e.g. +886-987-654-321) and is NOT matched by taiwan_mobile; it is only caught by the generic phone pattern. This is a known limitation of the built-in pattern; broader clinic privacy profiles require a separate design discussion per issue #394."
+    },
+    {
+      "id": "taiwan_id_fake_uppercase",
+      "content": "Patient fake ID C234567890 used only for testing the privacy gate.",
+      "expected_status": "warn",
+      "expected_finding_types": ["taiwan_id"]
+    },
+    {
+      "id": "taiwan_id_fake_second_letter",
+      "content": "ID Z256789012 is another fake test value for the privacy gate.",
+      "expected_status": "warn",
+      "expected_finding_types": ["taiwan_id"]
+    },
+    {
+      "id": "clinic_record_phone_like",
+      "content": "Clinic record 02-2345-6789 callback requested.",
+      "expected_status": "warn",
+      "expected_finding_types": ["phone"],
+      "note": "Phone-like clinic record numbers are caught by the generic phone pattern; non-phone-like clinic record numbers are NOT caught by built-in patterns and require project-specific VAULT_PRIVACY_TERMS configuration."
+    },
+    {
+      "id": "clinic_record_non_phone_like_limitation",
+      "content": "Clinic record CLINIC-REC-0001 is not detected by built-in patterns.",
+      "expected_status": "pass",
+      "expected_finding_types": [],
+      "note": "Documents the false-negative gap. Projects must add their own clinic record-number patterns via VAULT_PRIVACY_TERMS or a project-local entity_rules.yaml; broader clinic privacy profiles require a separate design discussion per issue #394."
+    }
+  ]
+}
