@@ -1,0 +1,46 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-22T11:05:32Z",
+  "updated_at": "2026-08-22T11:19:26Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-22T11:05:32Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-22T11:06:39Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-22T11:07:36Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-22T11:09:18Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-22T11:19:26Z"
+      }
+    ]
+  },
+  "expected_behavior": "PR #500 is based on the sequentially merged main branch and has a VAM-002-specific merge gate, rollback, evidence, and independent review binding.",
+  "actual_behavior": "The VAM-002 branch was still based on the pre-#498 main commit and inherited the merged VAM-003 gate and receipt after integrating current main.",
+  "environment": {
+    "commit": "bee2543d02e3ad2c3436e6246703f31c743bdf72",
+    "branch": "codex/vam-002-memory-change-envelope",
+    "runtime": "CPython 3.11 repository development virtual environment; Agentic SDD Governance 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

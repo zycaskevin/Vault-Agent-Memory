@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.107" timestamp="2026-08-21T18:08:20.783343+08:00" hostname="[HOST]"><testcase classname="" name="tests.test_gateway" time="0.000"><error message="collection failure">ImportError while importing test module '$WORKTREE/tests/test_gateway.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+$PYTHON_STDLIB/importlib/__init__.py:126: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_gateway.py:19: in &lt;module&gt;
+    from vault.gateway import (
+E   ImportError: cannot import name 'gateway_memory_changes' from 'vault.gateway' ($WORKTREE/vault/gateway.py)</error></testcase></testsuite></testsuites>

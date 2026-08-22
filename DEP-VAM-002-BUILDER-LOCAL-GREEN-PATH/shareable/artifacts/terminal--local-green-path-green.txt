@@ -1,0 +1,12 @@
+PR #500 corrected Local Green command-resolution evidence
+candidate_head=7a64938bdc1e5aa483db013e4de4c8e78952fa20
+python_provider=Vault locked test interpreter
+pytest_version=9.1.1
+sddgov_provider=Agentic-SDD-Governance 0.2.0-experimental.9
+doctor_ci_readme_release_parity=PASS
+identity_isolated_subject=446 passed
+repository_pytest_started=yes
+repository_pytest=2 failed, 2965 passed, 10 skipped, 1 warning
+path_failure_reproduced=no
+overall_gate=failed on separately governed product/test compatibility findings
+repo_mutation=none during gate

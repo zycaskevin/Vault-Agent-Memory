@@ -1,0 +1,25 @@
+PR: #500
+Reviewed head: 67e38bbce4f978a23453117a91d6b53bf1180948
+Phase: independent-review remediation RED
+Worktree: $BUILDER_WORKTREE
+Command: python -m pytest -q three new VAM-002 contract nodes
+Result: FAIL, 3 failed in 0.11s
+
+Failure 1: invalid max_sensitivity is normalized to an empty ceiling.
+Observed: provider.list_changes(max_sensitivity="typo") returned status=ok and exposed rows.
+Expected: status=error, error=max_sensitivity_invalid, no changes/content.
+
+Failure 2: the public SDD and ADR say revision_id digests every surfaced envelope field.
+Observed: audit_ref can change while revision_id remains stable; required canonical-row/advisory-audit wording is absent.
+Expected: documents state that revision_id binds canonical knowledge-row snapshot fields and audit_ref does not change revision_id.
+
+Failure 3: Gateway has no error-to-HTTP-status mapper for Memory API GET results.
+Observed: gateway_memory_http_status is absent and /memory/changes errors are sent as HTTP 200.
+Expected: invalid cursor, cursor-policy mismatch, and invalid sensitivity map to HTTP 400 with an OpenAPI error schema.
+
+Additional independent static findings:
+- the selected-row audit-query regression assertion is vacuous when no audit query runs;
+- PR #500 rollback contains prose only where an executable fail-closed guarded preparation is required.
+
+No production fix was present when this RED evidence was captured.
+Captured at: 2026-08-22T11:33:11Z

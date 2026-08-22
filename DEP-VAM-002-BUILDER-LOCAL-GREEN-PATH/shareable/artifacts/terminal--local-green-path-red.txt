@@ -1,0 +1,10 @@
+Evidence type: bounded terminal derivative
+Candidate head: 983c48036a585eaecced5a56b7dcbb98dacb67ed
+Command: umask 022; PATH=$SDDGOV_RUNTIME/bin:... sddgov ci local-gate .
+Outer exit: 3
+Passed before failure: governance Doctor; CI contract; README smoke; release parity
+Failure stage: identity-isolated Subject collection before any named node
+Runner result: identity-isolated subject tests failed; repository command exited 1
+Governance Python probe: ModuleNotFoundError: No module named 'pytest'
+Vault test Python probe: pytest 9.1.1
+Post-run: exact HEAD unchanged; tracked/untracked clean; no push or live mutation

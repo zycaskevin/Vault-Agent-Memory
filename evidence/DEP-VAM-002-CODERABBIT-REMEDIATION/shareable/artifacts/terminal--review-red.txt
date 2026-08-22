@@ -1,0 +1,6 @@
+F.FF                                                                     [100%]
+=========================== short test summary info ============================
+FAILED tests/test_memory_change_envelope.py::test_change_page_uses_bounded_policy_scans_and_selected_row_hydration
+FAILED tests/test_gateway.py::test_gateway_openapi_contract_documents_safe_adapter_boundary
+FAILED tests/test_gateway.py::test_gateway_preserves_opaque_memory_reference_for_provider_validation
+3 failed, 1 passed, 34 deselected in 0.11s

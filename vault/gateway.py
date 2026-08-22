@@ -2,20 +2,21 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler
 import hmac
 import json
 import os
-from pathlib import Path
 import secrets
 import signal
 import ssl
 import threading
+from datetime import datetime, timezone
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler
+from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from . import gateway_remote_semantic as remote_semantic
 from .access_policy import can_write_memory, normalize_write_policy
 from .central_candidate_store import central_candidate_inbox_status
 from .db import VaultDB
@@ -24,11 +25,20 @@ from .gateway_central_candidates import (
     gateway_submit_central_candidate,
 )
 from .gateway_errors import gateway_error_suggestions
-from .gateway_security import GatewaySecurityPolicy, GatewaySecurityState
-from .gateway_server import (
-    DEFAULT_GATEWAY_MAX_WORKERS,
-    DEFAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS,
-    BoundedThreadPoolHTTPServer,
+from .gateway_memory_api import (
+    gateway_memory_audit,  # noqa: F401 - public compatibility re-export
+    gateway_memory_changes,  # noqa: F401 - public compatibility re-export
+    gateway_memory_create,  # noqa: F401 - public compatibility re-export
+    gateway_memory_delete_request,  # noqa: F401 - public compatibility re-export
+    gateway_memory_get,  # noqa: F401 - public compatibility re-export
+    gateway_memory_http_delete,
+    gateway_memory_http_get,
+    gateway_memory_http_patch,
+    gateway_memory_http_post,
+    gateway_memory_http_status,
+    gateway_memory_search,  # noqa: F401 - public compatibility re-export
+    gateway_memory_timeline,  # noqa: F401 - public compatibility re-export
+    gateway_memory_update_request,  # noqa: F401 - public compatibility re-export
 )
 from .gateway_openapi import (
     DEFAULT_GATEWAY_AUDIT_BACKUPS,
@@ -39,21 +49,13 @@ from .gateway_openapi import (
     GATEWAY_ENDPOINTS,
     gateway_openapi,
 )
-from .gateway_memory_api import (
-    gateway_memory_audit,
-    gateway_memory_create,
-    gateway_memory_delete_request,
-    gateway_memory_get,
-    gateway_memory_http_delete,
-    gateway_memory_http_get,
-    gateway_memory_http_patch,
-    gateway_memory_http_post,
-    gateway_memory_search,
-    gateway_memory_timeline,
-    gateway_memory_update_request,
-)
-from . import gateway_remote_semantic as remote_semantic
 from .gateway_remote_server import mark_remote_server_payload, remote_server_metadata
+from .gateway_security import GatewaySecurityPolicy, GatewaySecurityState
+from .gateway_server import (
+    DEFAULT_GATEWAY_MAX_WORKERS,
+    DEFAULT_GATEWAY_SHUTDOWN_TIMEOUT_SECONDS,
+    BoundedThreadPoolHTTPServer,
+)
 from .governance_contract import governance_contract_payload
 from .gui_format import compact_knowledge
 from .mcp_read import _vault_read_range_payload
@@ -61,7 +63,6 @@ from .memory import create_candidate
 from .memory_provider import sqlite_memory_provider
 from .search import VaultSearch
 from .search_utils import normalize_search_limit, validate_search_query
-
 
 LOCALHOSTS = {"127.0.0.1", "localhost", "::1"}
 
@@ -403,7 +404,7 @@ def make_gateway_handler(
                 audit_context=self._audit_context(parsed),
             )
             if memory_payload is not None:
-                self._send_json(memory_payload)
+                self._send_json(memory_payload, status=gateway_memory_http_status(memory_payload))
                 return
             self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
 
@@ -445,7 +446,7 @@ def make_gateway_handler(
                 allow_restricted_candidates=allow_restricted_candidates,
             )
             if memory_payload is not None:
-                self._send_json(memory_payload)
+                self._send_json(memory_payload, status=gateway_memory_http_status(memory_payload))
                 return
             if parsed.path == "/read-range":
                 payload = gateway_read_range(

@@ -227,6 +227,90 @@ def test_vam003_rollback_exposes_merge_verifier_contract() -> None:
         )
 
 
+def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() -> None:
+    rollback = (
+        ROOT / "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION" / "rollback.md"
+    ).read_text(encoding="utf-8")
+    fields = dict(
+        re.findall(
+            r"^(rollback_version|target|command|verify):[ \t]*(.+)$",
+            rollback,
+            flags=re.MULTILINE,
+        )
+    )
+    assert fields["rollback_version"] == "1.0"
+    assert all(fields[name].strip() for name in ("target", "command", "verify"))
+
+    guarded_block = rollback.split("## Guarded preparation command", 1)[1].split(
+        "## Reversible steps", 1
+    )[0]
+    assert "assert " not in guarded_block
+    for required in (
+        "sddgov evidence verify \"$VAM002_ROLLBACK_DEP\" --strict",
+        "gh pr view 500",
+        "git rev-list --parents",
+        "git rev-parse origin/main",
+        "sddgov merge digest",
+        "sddgov merge gate-digest",
+        "approval_consumed",
+        "git revert --no-commit -m 1",
+        "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
+        "DEP-VAM-002-FULL-SUITE-COMPATIBILITY",
+        "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION",
+        "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
+        "vault/governance_read_guard.py",
+    ):
+        assert required in guarded_block
+    assert rollback.count("git status --porcelain=v1 --untracked-files=all") >= 3
+
+    snippets = re.findall(r"python -c '([^']+)'", guarded_block)
+    approval_snippet = next(
+        snippet for snippet in snippets if "approval_consumed" in snippet
+    )
+    invalid = subprocess.run(
+        [sys.executable, "-O", "-c", approval_snippet],
+        input='{"state":"CONTINUE","approval_consumed":false}\n',
+        text=True,
+        check=False,
+        capture_output=True,
+    )
+    valid = subprocess.run(
+        [sys.executable, "-O", "-c", approval_snippet],
+        input='{"state":"CONTINUE","approval_consumed":true}\n',
+        text=True,
+        check=False,
+        capture_output=True,
+    )
+    assert invalid.returncode != 0
+    assert valid.returncode == 0
+
+    allowlist_snippet = next(
+        snippet for snippet in snippets if "actual=set" in snippet
+    )
+    expected_match = re.search(
+        r'expected=set\("""(.*?)"""\.splitlines\(\)\)',
+        allowlist_snippet,
+        flags=re.DOTALL,
+    )
+    assert expected_match is not None
+    expected_paths = expected_match.group(1).splitlines()
+    assert all("VAM-001" not in path and "VAM-003" not in path for path in expected_paths)
+    invalid_paths = subprocess.run(
+        [sys.executable, "-O", "-c", allowlist_snippet],
+        input=b"docs/issues/VAM-003-l0-bootstrap-boundary.md\0",
+        check=False,
+        capture_output=True,
+    )
+    valid_paths = subprocess.run(
+        [sys.executable, "-O", "-c", allowlist_snippet],
+        input=("\0".join(expected_paths) + "\0").encode(),
+        check=False,
+        capture_output=True,
+    )
+    assert invalid_paths.returncode != 0
+    assert valid_paths.returncode == 0
+
+
 def test_exact_head_builder_proof_redacts_workstation_path_and_binds_hashes() -> None:
     dep = ROOT / "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK"
     relative = "shareable/artifacts/exact-head-builder-local-green.txt"

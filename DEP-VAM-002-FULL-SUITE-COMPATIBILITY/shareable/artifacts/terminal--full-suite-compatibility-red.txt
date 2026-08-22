@@ -1,0 +1,10 @@
+PR #500 Builder Local Green compatibility RED
+candidate_head=7a64938bdc1e5aa483db013e4de4c8e78952fa20
+governance_runtime=Agentic-SDD-Governance 0.2.0-experimental.9
+identity_isolated_subject=446 passed
+repository_pytest=2 failed, 2965 passed, 10 skipped, 1 warning
+failure_1=tests/test_gateway.py::test_gateway_http_memory_api_facade_routes expected knowledge count 2, actual 3
+failure_2=tests/test_memory_foundation_compare.py::test_strict_guard_fails_closed_for_unknown_scope_and_sensitivity expected unknown_scope+unknown_sensitivity, actual also included unauthorized
+focused_reproduction=tests/test_memory_foundation_compare.py::test_strict_guard_fails_closed_for_unknown_scope_and_sensitivity failed with the same extra unauthorized code
+repo_mutation=none during gate
+live_data_mutation=none

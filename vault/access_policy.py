@@ -12,6 +12,7 @@ SENSITIVITY_RANK = {
     "high": 2,
     "restricted": 3,
 }
+VALID_MEMORY_SCOPES = frozenset({"private", "project", "shared", "public"})
 
 
 def _normalize_agent(value: Any) -> str:
@@ -48,6 +49,10 @@ class ReadPolicy:
         return bool(self.agent_id or self.max_sensitivity or self.include_private or self.allowed_statuses)
 
 
+class InvalidMaxSensitivity(ValueError):
+    """Raised when a strict public read boundary receives an unknown ceiling."""
+
+
 def normalize_read_policy(
     *,
     agent_id: Any = "",
@@ -64,6 +69,30 @@ def normalize_read_policy(
         include_private=bool(include_private),
         max_sensitivity=sensitivity,
         allowed_statuses=statuses,
+    )
+
+
+def strict_read_policy(
+    *,
+    agent_id: Any = "",
+    include_private: Any = False,
+    max_sensitivity: Any = "",
+    allowed_statuses: Any = None,
+) -> ReadPolicy:
+    """Normalize a public read policy while rejecting unknown sensitivity labels.
+
+    Legacy local surfaces keep the permissive ``normalize_read_policy`` behavior.
+    New provider/API contracts use this helper so a typo can never remove a
+    caller-supplied sensitivity ceiling.
+    """
+    sensitivity = str(max_sensitivity or "").strip().lower()
+    if sensitivity and sensitivity not in SENSITIVITY_RANK:
+        raise InvalidMaxSensitivity(sensitivity)
+    return normalize_read_policy(
+        agent_id=agent_id,
+        include_private=include_private,
+        max_sensitivity=sensitivity,
+        allowed_statuses=allowed_statuses,
     )
 
 
@@ -107,13 +136,15 @@ def can_read_memory(row: dict[str, Any], policy: ReadPolicy) -> bool:
             return False
 
     sensitivity = str(row.get("sensitivity") or "low").strip().lower()
-    sensitivity_rank = SENSITIVITY_RANK.get(sensitivity, 0)
+    scope = str(row.get("scope") or "project").strip().lower()
+    if sensitivity not in SENSITIVITY_RANK or scope not in VALID_MEMORY_SCOPES:
+        return False
+    sensitivity_rank = SENSITIVITY_RANK[sensitivity]
     if policy.max_sensitivity:
         max_rank = SENSITIVITY_RANK[policy.max_sensitivity]
         if sensitivity_rank > max_rank:
             return False
 
-    scope = str(row.get("scope") or "project").strip().lower()
     owner_agent = _normalize_agent(row.get("owner_agent"))
     allowed_agents = _parse_allowed_agents(row.get("allowed_agents"))
     agent = policy.agent_id

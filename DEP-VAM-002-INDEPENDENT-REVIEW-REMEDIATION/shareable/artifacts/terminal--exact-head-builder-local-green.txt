@@ -1,0 +1,18 @@
+role=Builder
+checkout=$BUILDER_WORKTREE
+repository=zycaskevin/Vault-Agent-Memory
+branch=codex/vam-002-memory-change-envelope
+exact_head=f0a82733bc4854927f1877e31cac34fd1d415068
+command=umask 022; env PATH=/tmp/vam-python-path-vam001:/tmp/sddgov-dev6-system/bin:/usr/local/bin:/usr/bin:/bin GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 sddgov ci local-gate .
+exit_status=0
+governance_doctor=pass
+ci_contract=pass
+readme_smoke=pass
+release_parity=pass
+candidate_identity_isolation=446 nodes passed
+remaining_repository_suite=2962 passed, 10 skipped, 1 pre-dispositioned warning
+post_run_head=f0a82733bc4854927f1877e31cac34fd1d415068
+post_run_worktree=clean
+tracked_physical_mode_audit=1393 paths exact
+frozen_subject_diff=empty
+gate_rebind=pending audit-only commit after proof

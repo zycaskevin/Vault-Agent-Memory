@@ -1,0 +1,59 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-22T18:51:32Z",
+  "updated_at": "2026-08-22T19:18:52Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-22T18:51:32Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-22T18:52:05Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-22T18:52:05Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-22T19:03:41Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-22T19:18:52Z"
+      }
+    ]
+  },
+  "expected_behavior": "The exact PR #500 Builder Local Green uses Vault's locked test Python for repository commands while the newly merged Agentic SDD Governance runtime supplies only the sddgov executable and current-user serialization lock.",
+  "actual_behavior": "The first post-merge validation placed the governance virtual environment first on PATH; its Python lacked pytest. Corrected ordering selected both intended runtimes, completed 446 identity nodes, and reached repository pytest without reproducing the PATH failure.",
+  "environment": {
+    "commit": "1a346913563f5437b7815f655393f0eee5a0da52",
+    "branch": "codex/vam-002-memory-change-envelope-ready",
+    "runtime": "CPython 3.11; Vault locked test Python with pytest 9.1.1; Agentic SDD Governance main 92f4ba8 / 0.2.0-experimental.9"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--local-green-path-red.txt",
+      "sha256": "4fd3b97d840784c0bb37e2e862e050226ea50859fa5ebb369f7c93a771b1005d"
+    },
+    {
+      "path": "shareable/artifacts/terminal--local-green-path-green.txt",
+      "sha256": "3b188b6c72c4605435fd2e7c588e609dbf6bb17facda80d010f7faa6ec977a2f"
+    },
+    {
+      "path": "shareable/artifacts/terminal--local-green-path-proof.txt",
+      "sha256": "1312557933c70b1a02133bdf341f3f95fa032e8034cbe4ba88d36fa151720159"
+    }
+  ]
+}

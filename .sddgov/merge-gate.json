@@ -1,17 +1,19 @@
 {
   "schema_version": "1.0",
-  "base_sha": "db1763482f0f603ccd63817f26c73308bc186697",
-  "head_sha": "fcac3c1f82d2b58a61fb55488175a32e599d5f5b",
-  "risk_level": "L1",
+  "base_sha": "c284e1c7bedf288a10009b98e5f2da525c3ee4bc",
+  "head_sha": "899ad37dc61c87c9a475e47e9d1f2bc7bb9d32d7",
+  "risk_level": "L2",
   "builder_id": "codex",
-  "change_digest": "2ee9777d9b0a42365b29302a61a9b920c7dd9d508ecf9eaac5831c9efc4d3ae6",
+  "change_digest": "1b7c833b76428ec74b7eabf4dd7085010104ea5c99f3e6a4fec1aff24808d0dd",
   "deps": [
-    "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY",
-    "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
-    "DEP-VAM-003-HOSTED-MODULE-SIZE-GATE",
-    "DEP-VAM-003-INDEPENDENT-REVIEW-REMEDIATION",
-    "DEP-VAM-003-SHAREABLE-PATH-REDACTION"
+    "evidence/DEP-VAM-002-MEMORY-CHANGE-ENVELOPE",
+    "evidence/DEP-VAM-002-CODERABBIT-REMEDIATION",
+    "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION",
+    "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION",
+    "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
+    "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
+    "DEP-VAM-002-FULL-SUITE-COMPATIBILITY"
   ],
-  "rollback_path": "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY/rollback.md",
-  "protected_file_review": ".sddgov/reviews/REV-VAM-003.json"
+  "rollback_path": "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md",
+  "protected_file_review": ".sddgov/reviews/REV-VAM-002.json"
 }

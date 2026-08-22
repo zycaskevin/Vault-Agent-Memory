@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import http.client
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
-from pathlib import Path
 import socket
 import subprocess
 import sys
 import threading
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+from urllib.parse import urlparse
 
 import pytest
 
+import vault.gateway_memory_api as gateway_memory_api_module
+from vault.agent_setup_remote_server import write_remote_server_deploy_templates
 from vault.cli import main
 from vault.db import VaultDB
 from vault.docmap import build_document_map_for_entry
@@ -20,25 +23,28 @@ from vault.gateway import (
     BoundedThreadPoolHTTPServer,
     gateway_health,
     gateway_memory_audit,
+    gateway_memory_changes,
     gateway_memory_create,
     gateway_memory_delete_request,
     gateway_memory_get,
     gateway_memory_search,
     gateway_memory_timeline,
     gateway_memory_update_request,
-    gateway_read_range,
     gateway_openapi,
     gateway_pull_central_candidates,
+    gateway_read_range,
     gateway_search,
-    gateway_submit_central_candidate,
     gateway_submit_candidate,
+    gateway_submit_central_candidate,
     make_gateway_handler,
     run_gateway,
 )
-from vault.gateway_remote_semantic import gateway_remote_semantic_search, gateway_remote_snapshot_read
 from vault.gateway_audit import gateway_audit_report
+from vault.gateway_remote_semantic import (
+    gateway_remote_semantic_search,
+    gateway_remote_snapshot_read,
+)
 from vault.gateway_security import GatewaySecurityPolicy
-from vault.agent_setup_remote_server import write_remote_server_deploy_templates
 from vault.memory_provider_parity import provider_adapter_parity_report
 
 
@@ -220,6 +226,7 @@ def test_gateway_http_requires_token_and_serves_health(tmp_path):
         assert "/openapi.json" in payload["gateway"]["endpoints"]
         assert "/memory/search" in payload["gateway"]["endpoints"]
         assert "/memory/create" in payload["gateway"]["endpoints"]
+        assert "/memory/changes" in payload["gateway"]["endpoints"]
         assert "/memory/{id}" in payload["gateway"]["endpoints"]
         assert "/central-candidates/submit" in payload["gateway"]["endpoints"]
         assert "/remote-semantic-search" in payload["gateway"]["endpoints"]
@@ -507,6 +514,7 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
         "/submit-candidate",
         "/memory/search",
         "/memory/create",
+        "/memory/changes",
         "/memory/{id}",
         "/memory/audit",
         "/memory/timeline",
@@ -547,6 +555,239 @@ def test_gateway_openapi_contract_documents_safe_adapter_boundary():
     assert memory_api["legacy_gateway_endpoints_preserved"] is True
     assert memory_api["delete_semantics"] == "soft_delete_review_candidate_in_gateway_facade"
     assert "/memory/promote" in memory_api["planned_paths"]
+    assert "/memory/changes" in memory_api["implemented_paths"]
+    change_contract = memory_api["memory_change_envelope"]
+    assert change_contract["schema_version"] == "vault.memory-change.v1"
+    assert change_contract["cursor_policy_bound"] is True
+    assert change_contract["hidden_totals_exposed"] is False
+    assert change_contract["historical_content_guaranteed"] is False
+    change_schema = contract["components"]["schemas"]["MemoryChangeEnvelope"]
+    assert change_schema["properties"]["content_sha256"]["pattern"] == "^[a-f0-9]{64}$"
+    revision_parameter = next(
+        parameter
+        for parameter in contract["paths"]["/memory/{id}"]["get"]["parameters"]
+        if parameter["name"] == "revision_id"
+    )
+    assert revision_parameter.get("required", False) is False
+    memory_id_parameter = next(
+        parameter
+        for parameter in contract["paths"]["/memory/{id}"]["get"]["parameters"]
+        if parameter["name"] == "id"
+    )
+    assert memory_id_parameter["schema"]["type"] == "string"
+    assert memory_id_parameter["x-vault-opaque-memory-id"] is True
+    patch_memory_id_parameter = next(
+        parameter
+        for parameter in contract["paths"]["/memory/{id}"]["patch"]["parameters"]
+        if parameter["name"] == "id"
+    )
+    assert patch_memory_id_parameter == {
+        "name": "id",
+        "in": "path",
+        "required": True,
+        "schema": {"type": "integer", "minimum": 1},
+        "description": "Positive SQLite memory row id for a candidate update request.",
+    }
+
+
+def test_gateway_memory_changes_are_policy_filtered_and_revision_bound(tmp_path):
+    project, public_id, _private_id = _project(tmp_path)
+
+    page = gateway_memory_changes(
+        project,
+        agent_id="work-agent",
+        max_sensitivity="low",
+        limit=10,
+    )
+    assert page["status"] == "ok"
+    assert page["count"] == 1
+    assert page["changes"][0]["memory_id"] == str(public_id)
+    assert page["memory_api"]["endpoint"] == "/memory/changes"
+    assert page["safety"]["hidden_totals_exposed"] is False
+    assert "total" not in page
+
+    revision_id = page["changes"][0]["revision_id"]
+    evidence = gateway_memory_get(
+        project,
+        memory_id=public_id,
+        revision_id=revision_id,
+        agent_id="work-agent",
+        line_start=1,
+        line_end=2,
+    )
+    assert evidence["status"] == "ok"
+    assert evidence["revision_id"] == revision_id
+    assert evidence["memory_api"]["revision_bound"] is True
+    assert evidence["safety"]["bounded_read"] is True
+
+    stale = gateway_memory_get(
+        project,
+        memory_id=public_id,
+        revision_id="rev_" + "0" * 64,
+        agent_id="work-agent",
+        line_start=1,
+        line_end=1,
+    )
+    assert stale["status"] == "error"
+    assert stale["error"] == "revision_mismatch"
+    assert "content" not in stale
+
+
+def test_memory_change_http_errors_use_non_success_status_and_openapi_contract():
+    for error in (
+        "invalid_cursor",
+        "cursor_policy_mismatch",
+        "max_sensitivity_invalid",
+        "range_too_large",
+    ):
+        assert gateway_memory_api_module.gateway_memory_http_status(
+            {"status": "error", "error": error}
+        ) == 400
+    assert gateway_memory_api_module.gateway_memory_http_status({"status": "ok"}) == 200
+
+    contract = gateway_openapi()
+    error_schema = contract["components"]["schemas"]["MemoryAPIError"]
+    assert set(error_schema["required"]) == {"status", "error", "message"}
+    assert set(error_schema["properties"]["error"]["enum"]) == {
+        "invalid_cursor",
+        "cursor_policy_mismatch",
+        "max_sensitivity_invalid",
+        "range_too_large",
+    }
+    for path in ("/memory/changes", "/memory/{id}"):
+        operation = contract["paths"][path]["get"]
+        sensitivity = next(
+            parameter for parameter in operation["parameters"]
+            if parameter["name"] == "max_sensitivity"
+        )
+        assert sensitivity["schema"]["enum"] == ["low", "medium", "high", "restricted"]
+        assert operation["responses"]["400"]["content"]["application/json"]["schema"] == {
+            "$ref": "#/components/schemas/MemoryAPIError"
+        }
+
+
+def test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch(tmp_path):
+    project, _public_id, _private_id = _project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        high_id = db.add_knowledge(
+            "Shared high sensitivity probe",
+            "# Shared high sensitivity probe\n\nSECRET-HIGH",
+            scope="shared",
+            sensitivity="high",
+        )
+        build_document_map_for_entry(db, high_id)
+
+    for result_adapter in ("legacy", "provider"):
+        read = gateway_memory_get(
+            project,
+            memory_id=high_id,
+            agent_id="work-agent",
+            line_start=1,
+            line_end=3,
+            max_sensitivity="typo",
+            result_adapter=result_adapter,
+        )
+        assert read == {
+            "status": "error",
+            "error": "max_sensitivity_invalid",
+            "message": "max_sensitivity must be low, medium, high, or restricted",
+        }
+
+        search = gateway_memory_search(
+            project,
+            query="SECRET-HIGH",
+            agent_id="work-agent",
+            max_sensitivity="typo",
+            result_adapter=result_adapter,
+        )
+        assert search == {
+            "status": "error",
+            "error": "max_sensitivity_invalid",
+            "message": "max_sensitivity must be low, medium, high, or restricted",
+        }
+
+    timeline = gateway_memory_timeline(
+        project,
+        agent_id="work-agent",
+        memory_id=high_id,
+        max_sensitivity="typo",
+    )
+    assert timeline == {
+        "status": "error",
+        "error": "max_sensitivity_invalid",
+        "message": "max_sensitivity must be low, medium, high, or restricted",
+    }
+
+    contract = gateway_openapi()
+    memory_search = contract["paths"]["/memory/search"]["post"]
+    assert memory_search["requestBody"]["content"]["application/json"]["schema"] == {
+        "$ref": "#/components/schemas/MemorySearchRequest"
+    }
+    assert memory_search["responses"]["400"] == {
+        "description": "Invalid cursor, cursor policy, sensitivity ceiling, or bounded range",
+        "content": {
+            "application/json": {
+                "schema": {"$ref": "#/components/schemas/MemoryAPIError"}
+            }
+        },
+    }
+    memory_search_override = contract["components"]["schemas"]["MemorySearchRequest"][
+        "allOf"
+    ][1]
+    assert memory_search_override["properties"]["max_sensitivity"]["enum"] == [
+        "low",
+        "medium",
+        "high",
+        "restricted",
+    ]
+
+    timeline_get = contract["paths"]["/memory/timeline"]["get"]
+    timeline_sensitivity = next(
+        parameter
+        for parameter in timeline_get["parameters"]
+        if parameter["name"] == "max_sensitivity"
+    )
+    assert timeline_sensitivity["schema"]["enum"] == [
+        "low",
+        "medium",
+        "high",
+        "restricted",
+    ]
+    assert timeline_get["responses"]["400"]["content"]["application/json"][
+        "schema"
+    ] == {"$ref": "#/components/schemas/MemoryAPIError"}
+
+
+def test_gateway_preserves_opaque_memory_reference_for_provider_validation(tmp_path, monkeypatch):
+    project, _public_id, _private_id = _project(tmp_path)
+
+    class OpaqueReferenceProvider:
+        provider_id = "opaque-test"
+
+        def __init__(self):
+            self.received_memory_id = None
+
+        def read_bounded_evidence(self, memory_id, revision_id, **kwargs):
+            self.received_memory_id = memory_id
+            return {"status": "error", "error": "memory_id_invalid"}
+
+    provider = OpaqueReferenceProvider()
+    monkeypatch.setattr(gateway_memory_api_module, "sqlite_memory_provider", lambda _project: provider)
+
+    payload = gateway_memory_api_module.gateway_memory_http_get(
+        urlparse(
+            "/memory/00042?agent_id=work-agent&line_start=1&line_end=1&revision_id="
+            + "rev_"
+            + "0" * 64
+        ),
+        project,
+        append_audit=lambda *_args, **_kwargs: None,
+        audit_context={},
+    )
+
+    assert payload is not None
+    assert provider.received_memory_id == "00042"
+    assert payload["memory_api"]["memory_id"] == "00042"
 
 
 def test_provider_adapter_parity_report_is_metadata_only(tmp_path):
@@ -826,6 +1067,17 @@ def test_gateway_memory_api_facade_is_candidate_first_and_metadata_only(tmp_path
 
 def test_gateway_http_memory_api_facade_routes(tmp_path):
     project, public_id, _private_id = _project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        high_id = db.add_knowledge(
+            "Shared high sensitivity HTTP probe",
+            "# Shared high sensitivity HTTP probe\n\nSECRET-HIGH-HTTP",
+            scope="shared",
+            sensitivity="high",
+        )
+        build_document_map_for_entry(db, high_id)
+        knowledge_count_before = db.conn.execute(
+            "SELECT count(*) AS count FROM knowledge"
+        ).fetchone()["count"]
     handler = make_gateway_handler(project, auth_token="secret", allow_shared_candidates=True)
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -882,6 +1134,129 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
         assert status == 200
         assert read["status"] == "ok"
         assert read["entry_id"] == public_id
+
+        status, changes = _request_json(
+            "GET",
+            host,
+            port,
+            "/memory/changes?agent_id=work-agent&max_sensitivity=low&limit=10",
+            None,
+        )
+        assert status == 200
+        assert changes["status"] == "ok"
+        assert changes["count"] == 1
+        assert changes["changes"][0]["memory_id"] == str(public_id)
+
+        revision_id = changes["changes"][0]["revision_id"]
+        status, revision_read = _request_json(
+            "GET",
+            host,
+            port,
+            f"/memory/{public_id}?agent_id=work-agent&line_start=1&line_end=2&revision_id={revision_id}",
+            None,
+        )
+        assert status == 200
+        assert revision_read["status"] == "ok"
+        assert revision_read["revision_id"] == revision_id
+
+        status, invalid_sensitivity = _request_json(
+            "GET",
+            host,
+            port,
+            f"/memory/{public_id}?agent_id=work-agent&line_start=1&line_end=2"
+            f"&revision_id={revision_id}&max_sensitivity=typo",
+            None,
+        )
+        assert status == 400
+        assert invalid_sensitivity["error"] == "max_sensitivity_invalid"
+        assert "content" not in invalid_sensitivity
+
+        status, invalid_range = _request_json(
+            "GET",
+            host,
+            port,
+            f"/memory/{public_id}?agent_id=work-agent&line_start=1&line_end=81"
+            f"&revision_id={revision_id}",
+            None,
+        )
+        assert status == 400
+        assert invalid_range["error"] == "range_too_large"
+        assert invalid_range["max_lines"] == 80
+        assert "content" not in invalid_range
+
+        for result_adapter in ("legacy", "provider"):
+            status, invalid_default_read = _request_json(
+                "GET",
+                host,
+                port,
+                f"/memory/{high_id}?agent_id=work-agent&max_sensitivity=typo"
+                f"&result_adapter={result_adapter}",
+                None,
+            )
+            assert status == 400
+            assert invalid_default_read["error"] == "max_sensitivity_invalid"
+            assert "content" not in invalid_default_read
+
+            status, invalid_search = _post_json(
+                host,
+                port,
+                "/memory/search",
+                {
+                    "agent_id": "work-agent",
+                    "query": "SECRET-HIGH-HTTP",
+                    "max_sensitivity": "typo",
+                    "result_adapter": result_adapter,
+                },
+            )
+            assert status == 400
+            assert invalid_search["error"] == "max_sensitivity_invalid"
+            assert "results" not in invalid_search
+
+        status, invalid_timeline = _request_json(
+            "GET",
+            host,
+            port,
+            f"/memory/timeline?agent_id=work-agent&memory_id={high_id}"
+            "&max_sensitivity=typo",
+            None,
+        )
+        assert status == 400
+        assert invalid_timeline["error"] == "max_sensitivity_invalid"
+        assert "current" not in invalid_timeline
+
+        status, invalid_cursor = _request_json(
+            "GET",
+            host,
+            port,
+            "/memory/changes?agent_id=work-agent&max_sensitivity=low&cursor=invalid",
+            None,
+        )
+        assert status == 400
+        assert invalid_cursor["error"] == "invalid_cursor"
+        assert "changes" not in invalid_cursor
+
+        status, cursor_policy_mismatch = _request_json(
+            "GET",
+            host,
+            port,
+            "/memory/changes?agent_id=other-agent&max_sensitivity=low"
+            f"&cursor={changes['next_cursor']}",
+            None,
+        )
+        assert status == 400
+        assert cursor_policy_mismatch["error"] == "cursor_policy_mismatch"
+        assert "changes" not in cursor_policy_mismatch
+
+        status, invalid_change_sensitivity = _request_json(
+            "GET",
+            host,
+            port,
+            "/memory/changes?agent_id=work-agent&max_sensitivity=typo",
+            None,
+        )
+        assert status == 400
+        assert invalid_change_sensitivity["error"] == "max_sensitivity_invalid"
+        assert "changes" not in invalid_change_sensitivity
 
         status, provider_read = _request_json(
             "GET",
@@ -947,7 +1322,10 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
 
     with VaultDB(project / "vault.db") as db:
         assert db.get_knowledge(public_id)["status"] == "active"
-        assert db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"] == 2
+        assert (
+            db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
+            == knowledge_count_before
+        )
 
 
 def test_gateway_remote_semantic_helpers_use_safe_central_read_chain(monkeypatch):

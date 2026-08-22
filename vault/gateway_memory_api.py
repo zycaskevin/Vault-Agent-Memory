@@ -12,14 +12,43 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs
 
+from .access_policy import InvalidMaxSensitivity, strict_read_policy
 from .db import VaultDB
 from .gateway_errors import gateway_error_suggestions
 from .memory_provider import sqlite_memory_provider
 from .memory_provider_result_adapter import provider_memory_get, provider_memory_search
 from .multi_host import list_audit_log, record_audit_event
 
-
 AppendGatewayAudit = Callable[..., None]
+_MEMORY_API_BAD_REQUEST_ERRORS = frozenset(
+    {
+        "invalid_cursor",
+        "cursor_policy_mismatch",
+        "max_sensitivity_invalid",
+        "range_too_large",
+    }
+)
+
+
+def _strict_memory_api_sensitivity(value: Any) -> str:
+    return strict_read_policy(max_sensitivity=value or "low").max_sensitivity
+
+
+def _invalid_sensitivity() -> dict[str, Any]:
+    return _error(
+        "max_sensitivity_invalid",
+        "max_sensitivity must be low, medium, high, or restricted",
+    )
+
+
+def gateway_memory_http_status(payload: dict[str, Any]) -> int:
+    """Map the bounded VAM-002 client-error set to its HTTP contract."""
+    if (
+        str(payload.get("status") or "") == "error"
+        and str(payload.get("error") or "") in _MEMORY_API_BAD_REQUEST_ERRORS
+    ):
+        return 400
+    return 200
 
 
 def gateway_memory_search(
@@ -35,6 +64,10 @@ def gateway_memory_search(
     search_func: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Vault Memory API facade for governed active-memory search."""
+    try:
+        max_sensitivity = _strict_memory_api_sensitivity(max_sensitivity)
+    except InvalidMaxSensitivity:
+        return _invalid_sensitivity()
     if _result_adapter(result_adapter) == "provider":
         return provider_memory_search(
             project_dir,
@@ -130,7 +163,7 @@ def gateway_memory_create(
 def gateway_memory_get(
     project_dir: str | Path,
     *,
-    memory_id: int,
+    memory_id: int | str,
     agent_id: str,
     line_start: int = 1,
     line_end: int = 40,
@@ -138,15 +171,63 @@ def gateway_memory_get(
     include_private: bool = False,
     max_sensitivity: str = "low",
     result_adapter: str = "legacy",
+    revision_id: str = "",
     read_range_func: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Vault Memory API facade for bounded memory reads."""
-    if int(memory_id or 0) <= 0:
-        return _error("memory_id_invalid", "memory id must be a positive integer")
+    try:
+        max_sensitivity = _strict_memory_api_sensitivity(max_sensitivity)
+    except InvalidMaxSensitivity:
+        return _invalid_sensitivity()
+    memory_ref = str(memory_id or "").strip()
+    if not memory_ref:
+        return _error("memory_id_invalid", "memory id is required")
+    if revision_id:
+        project = Path(project_dir)
+        agent = _agent_id(agent_id)
+        if not (project / "vault.db").exists():
+            return _error("db_not_found", "vault.db missing", status="blocked")
+        if not agent:
+            return _error("agent_id_required", "Vault Memory API read requires agent_id")
+        payload = sqlite_memory_provider(project).read_bounded_evidence(
+            memory_ref,
+            str(revision_id),
+            line_start=line_start,
+            line_end=line_end,
+            max_lines=max_lines,
+            agent_id=agent,
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+        )
+        payload["agent_id"] = agent
+        payload["memory_api"] = {
+            "endpoint": "/memory/{id}",
+            "facade": True,
+            "bounded_read": True,
+            "memory_id": memory_ref,
+            "revision_bound": True,
+            "provider_id": "sqlite",
+            "read_policy_filtering": True,
+        }
+        payload.setdefault("safety", {}).update(
+            {
+                "bounded_read": True,
+                "revision_bound": True,
+                "read_policy_filtering": True,
+                "returns_full_raw_content": False,
+            }
+        )
+        return payload
+    try:
+        legacy_memory_id = int(memory_ref)
+    except (TypeError, ValueError):
+        return _error("memory_id_invalid", "legacy memory id must be a positive integer")
+    if legacy_memory_id <= 0:
+        return _error("memory_id_invalid", "legacy memory id must be a positive integer")
     if _result_adapter(result_adapter) == "provider":
         return provider_memory_get(
             project_dir,
-            memory_id=int(memory_id),
+            memory_id=legacy_memory_id,
             agent_id=agent_id,
             line_start=line_start,
             line_end=line_end,
@@ -159,7 +240,7 @@ def gateway_memory_get(
 
     payload = read_range_func(
         project_dir,
-        knowledge_id=int(memory_id),
+        knowledge_id=legacy_memory_id,
         agent_id=agent_id,
         line_start=line_start,
         line_end=line_end,
@@ -172,17 +253,64 @@ def gateway_memory_get(
         "facade": True,
         "legacy_equivalent": "/read-range",
         "bounded_read": True,
-        "memory_id": int(memory_id),
+        "memory_id": legacy_memory_id,
         "result_adapter": "legacy",
         "default_result_adapter": True,
     }
     _attach_provider_get_probe(
         payload,
         project_dir,
-        memory_id=int(memory_id),
+        memory_id=legacy_memory_id,
         agent_id=agent_id,
         include_private=include_private,
         max_sensitivity=max_sensitivity,
+    )
+    return payload
+
+
+def gateway_memory_changes(
+    project_dir: str | Path,
+    *,
+    agent_id: str,
+    cursor: str = "",
+    limit: int = 50,
+    include_private: bool = False,
+    max_sensitivity: str = "low",
+) -> dict[str, Any]:
+    """List policy-filtered current-memory changes without hidden-row totals."""
+    try:
+        max_sensitivity = _strict_memory_api_sensitivity(max_sensitivity)
+    except InvalidMaxSensitivity:
+        return _invalid_sensitivity()
+    project = Path(project_dir)
+    agent = _agent_id(agent_id)
+    if not (project / "vault.db").exists():
+        return _error("db_not_found", "vault.db missing", status="blocked")
+    if not agent:
+        return _error("agent_id_required", "Vault Memory API changes requires agent_id")
+    payload = sqlite_memory_provider(project).list_changes(
+        cursor=str(cursor or ""),
+        limit=limit,
+        agent_id=agent,
+        include_private=include_private,
+        max_sensitivity=max_sensitivity or "low",
+    )
+    payload["agent_id"] = agent
+    payload["memory_api"] = {
+        "endpoint": "/memory/changes",
+        "facade": True,
+        "provider_id": "sqlite",
+        "provider_independent_envelope": True,
+        "cursor_based": True,
+        "read_policy_filtering": True,
+    }
+    payload.setdefault("safety", {}).update(
+        {
+            "returns_raw_content": False,
+            "hidden_totals_exposed": False,
+            "cursor_advances_on_readable_changes_only": True,
+            "writes_active_knowledge": False,
+        }
     )
     return payload
 
@@ -390,6 +518,10 @@ def gateway_memory_timeline(
     read_range_func: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Return metadata-only timeline rows for one memory id."""
+    try:
+        max_sensitivity = _strict_memory_api_sensitivity(max_sensitivity)
+    except InvalidMaxSensitivity:
+        return _invalid_sensitivity()
     if read_range_func is None:
         from .gateway import gateway_read_range as read_range_func
 
@@ -468,6 +600,23 @@ def gateway_memory_http_get(
     audit_context: dict[str, Any],
 ) -> dict[str, Any] | None:
     agent = _request_agent({}, parsed)
+    if parsed.path == "/memory/changes":
+        payload = gateway_memory_changes(
+            project_dir,
+            agent_id=agent,
+            cursor=_str_query(parsed, "cursor", ""),
+            limit=_int_query(parsed, "limit", 50),
+            include_private=_bool_query(parsed, "include_private", False),
+            max_sensitivity=_str_query(parsed, "max_sensitivity", "low"),
+        )
+        append_audit(
+            Path(project_dir),
+            "memory_api_changes",
+            agent,
+            payload.get("status", "ok"),
+            **audit_context,
+        )
+        return payload
     if parsed.path == "/memory/audit":
         payload = gateway_memory_audit(
             project_dir,
@@ -496,7 +645,7 @@ def gateway_memory_http_get(
             **audit_context,
         )
         return payload
-    memory_id = _memory_id_from_path(parsed.path)
+    memory_id = _memory_reference_from_path(parsed.path)
     if memory_id is None:
         return None
     payload = gateway_memory_get(
@@ -509,6 +658,7 @@ def gateway_memory_http_get(
         include_private=_bool_query(parsed, "include_private", False),
         max_sensitivity=_str_query(parsed, "max_sensitivity", "low"),
         result_adapter=_str_query(parsed, "result_adapter", "legacy"),
+        revision_id=_str_query(parsed, "revision_id", ""),
     )
     append_audit(
         Path(project_dir),
@@ -670,15 +820,31 @@ def _request_agent(body: dict[str, Any], parsed: Any) -> str:
     return _agent_id(body.get("agent_id") or (query.get("agent_id") or [""])[0])
 
 
-def _memory_id_from_path(path: str) -> int | None:
+def _memory_reference_from_path(path: str) -> str | None:
     prefix = "/memory/"
     if not path.startswith(prefix):
         return None
     raw = path[len(prefix):].strip("/")
-    if not raw or "/" in raw or raw in {"search", "create", "audit", "timeline", "promote", "link", "sync"}:
+    if not raw or "/" in raw or raw in {
+        "search",
+        "create",
+        "changes",
+        "audit",
+        "timeline",
+        "promote",
+        "link",
+        "sync",
+    }:
+        return None
+    return raw
+
+
+def _memory_id_from_path(path: str) -> int | None:
+    memory_ref = _memory_reference_from_path(path)
+    if memory_ref is None:
         return None
     try:
-        return int(raw)
+        return int(memory_ref)
     except ValueError:
         return 0
 

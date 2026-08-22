@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--artifact-1.txt",
+      "output": "terminal--artifact-1.txt",
+      "source_sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "output_sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--artifact-2.txt",
+      "output": "terminal--artifact-2.txt",
+      "source_sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "output_sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--builder-local-green.txt",
+      "output": "terminal--builder-local-green.txt",
+      "source_sha256": "584b3be74d7f5f5d47feadf238d6b78b1c2d8e8d8b6a0352a704bae5c7e74347",
+      "output_sha256": "bc6b91f32b0f5e761e9679073b79bf42f4b3e25c6a3e35f20faddde90a1df395",
+      "redactions": {
+        "authorization": 1
+      }
+    },
+    {
+      "source": "terminal--sequential-red.txt",
+      "output": "terminal--sequential-red.txt",
+      "source_sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "output_sha256": "700e44cf3fc93572dbfcdafe1ef1b7bc05f9cadd0769dd048700e65f31f5c62d",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--targeted-green.txt",
+      "output": "terminal--targeted-green.txt",
+      "source_sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "output_sha256": "e44fdb95c0ed1711c031fa4bd08b8bea8d19c1aa03f5255299a80bb219dab8d7",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "authorization": 1
+  },
+  "dep_id": "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION",
+  "generated_at": "2026-08-22T11:18:50Z"
+}
