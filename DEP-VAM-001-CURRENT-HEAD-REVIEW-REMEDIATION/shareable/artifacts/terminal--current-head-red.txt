@@ -1,0 +1,8 @@
+VAM-001 current-head review findings
+exact reviewed head: b2c8378db44079080d1d9bbd418febf93e527ec9
+verdict: FAIL
+finding 1: compatibility target not exclusively bound to PR head parent
+finding 2: Green proof omitted exact branch, HEAD, and clean state
+finding 3: single warning lacked disposition in evidence summary
+finding 4: historical rollback lacked immutable 51ba82b implementation then b2c8378 audit identities in reverse rollback order
+finding 5: red risk wording described branch mutation instead of wrong checkout index and working-tree mutation

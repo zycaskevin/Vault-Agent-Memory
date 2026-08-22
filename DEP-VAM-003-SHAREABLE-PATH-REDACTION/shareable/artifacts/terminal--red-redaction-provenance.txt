@@ -1,0 +1,6 @@
+command=/tmp/vam-python-path-vam001/python -m pytest -q tests/test_vault_boundary_freeze.py -k redaction_reports_bind
+exit_status=1
+result=FAILED tests/test_vault_boundary_freeze.py::test_vam003_redaction_reports_bind_manifest_and_shareable_bytes
+failure=redaction report source_sha256 724aa5335f3510dc03a3694b280f9a6253e2cf6c51d2138fc4c61fddf6bff3be is absent from DEP-VAM-003-SHAREABLE-PATH-REDACTION manifest raw hashes
+head=5f914b8f87267cc41fa2bbcf81067a17c5e0bc07
+worktree_change=tests/test_vault_boundary_freeze.py regression only

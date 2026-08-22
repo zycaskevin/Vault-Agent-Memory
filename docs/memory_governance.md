@@ -7,7 +7,7 @@ The recommended model is:
 
 | Layer | Meaning | Typical sharing |
 |---|---|---|
-| `L0` | Minimal identity for the user, agent, project, or workspace. | Private by default. Share only small reviewed summaries. |
+| `L0` | Stable bootstrap context for the project or workspace; not an identity or profile model. | Private by default. Share only small reviewed summaries. |
 | `L1` | Stable core facts, contracts, preferences, and working rules. | Share with trusted work agents after review. |
 | `L2` | Recent context, current decisions, incidents, handoff notes, and short-term state. | Share reviewed summaries, usually with freshness or expiry metadata. |
 | `L3` | Deep searchable knowledge, SOPs, architecture notes, fixes, and lessons. | Best default layer for low-sensitivity shared project knowledge. |
@@ -18,10 +18,10 @@ Use side metadata to decide who may read, write, sync, or export a memory:
 layer: L2
 scope: shared
 sensitivity: medium
-owner_agent: profile-agent
-allowed_agents: ["profile-agent", "work-agent", "product-agent"]
+owner_agent: memory-curator
+allowed_agents: ["memory-curator", "work-agent", "product-agent"]
 status: reviewed
-memory_type: care_summary
+memory_type: project_context
 expires_at: 2026-07-01
 ```
 
@@ -159,54 +159,33 @@ Do not use Supabase service-role keys in hosted agents, mobile clients, browser
 clients, or public workflow endpoints. Those clients should use the guarded RPC
 for candidate submission or read-only memory access.
 
-## User Profile Guidance
+## Application-Owned Model Boundary
 
-Do not put a whole user personality profile into `L0`. `L0` is loaded often, so
-it should stay small and safe.
+`L0` is a stable bootstrap layer, not a person model. Keep it small and limited
+to project framing, operating rules, durable source references, and reviewed
+startup context. New projects use `L0-bootstrap`; existing `L0-identity` paths
+remain a read-compatible alias and are never renamed automatically.
 
-Split user profile memory like this:
+Identity, personality, relationship, life-phase, psychological, or other human
+models belong to an application above Vault. That application may submit a
+reviewed, purpose-bounded memory summary through the generic write contract,
+but Vault does not infer or maintain the model itself. Raw private interactions
+remain outside shared memory unless the user explicitly approves a specific
+governed memory write.
 
-| Profile content | Recommended layer | Recommended metadata |
-|---|---|---|
-| Minimal identity, roles, and long-term mission. | `L0` | `scope: private`, or a reviewed shared summary. |
-| Stable working preferences, language, collaboration style, and durable boundaries. | `L1` | `scope: project` or `shared`, `sensitivity: medium`. |
-| Recent emotional/workload state and current care instructions. | `L2` | `scope: shared`, `sensitivity: medium`, `expires_at` required. |
-| Deep personality analysis, psychological inference, raw private interaction history. | `L3` or a separate private table/vault. | `scope: private`, `sensitivity: high`, narrow `allowed_agents`. |
+## Memory Maintenance Agents
 
-For example, a companion agent may keep private raw conversations locally, then
-publish only a reviewed weekly summary:
-
-```yaml
----
-layer: L2
-memory_type: care_summary
-scope: shared
-sensitivity: medium
-owner_agent: care-agent
-allowed_agents: ["profile-agent", "work-agent", "product-agent"]
-status: reviewed
-expires_at: 2026-07-01
----
-
-the user seems under heavier workload this week. Prefer concise reassurance before
-task pressure, and avoid repeated follow-up questions unless the task is urgent.
-```
-
-The raw conversation that produced this summary should remain private.
-
-## Dedicated Memory Agents
-
-Advanced users can assign one or two agents to maintain memory quality:
+Advanced users can assign agents to maintain memory quality:
 
 | Agent role | Responsibility | Should not do |
 |---|---|---|
-| Profile agent | Maintains stable user profile, communication preferences, care summaries, and agent-specific boundaries. | Do not expose raw private chats or turn sensitive observations into shared active memory without review. |
-| Dream / forgetting agent | Runs dream reports, marks stale entries, finds duplicates, proposes promotion/archive actions, and suggests expiry for low-value context. | Do not delete or promote shared memory without explicit policy or user approval. |
+| Candidate curator | Proposes sourced bootstrap, rule, decision, and knowledge candidates. | Do not write active memory directly or invent application-owned model claims. |
+| Lifecycle reporter | Finds stale, duplicate, conflicting, or expired memories and produces review reports. | Do not delete, promote, or change access policy. |
+| Archive advisor | Suggests reversible archive, expiry, merge, or downgrade actions. | Do not hard-delete or bypass user-approved policy. |
 
-This keeps the vault useful as it grows. It also makes the data model more
-portable for future embodied agents, long-running assistants, or world-model
-workflows: user context, project state, source-grounded knowledge, and safe
-forgetting can live in the same inspectable governance layer.
+The legacy `memory_agents`, `personal-agent`, `profile`, `care`, and `dream`
+identifiers remain accepted for compatibility. They are access/setup labels,
+not Vault-owned identity or human-model domains.
 
 ## Usage And Forgetting Signals
 
@@ -261,11 +240,11 @@ For Hermes Agent, OpenClaw, Codex, Claude Code, n8n, Coze, or other runtimes:
 
 - Share the same project memory only when they use the same stable `vault.db` or
   the same reviewed Supabase sync view.
-- Keep each agent's persona, private profile notes, and raw private
-  conversations in that agent's private vault or local profile files.
+- Keep application-owned models and raw private conversations outside Vault,
+  in the owning application's private storage.
 - Let trusted work agents share `L1` and `L3` project knowledge after review.
-- Let care or companion agents publish short `L2` summaries instead of raw
-  private chats.
+- Let trusted applications submit short, purpose-bounded `L2` candidates
+  instead of raw private interactions.
 - Treat `status: candidate` as not active memory; use `vault candidates` to
   review the queue, then promote before shared use.
 
@@ -274,14 +253,14 @@ Recommended product setup:
 ```bash
 vault setup-agent \
   --non-interactive \
-  --agent profile-agent \
+  --agent memory-curator \
   --scope shared \
   --agent-project-dir ~/Vaults/project-memory \
   --features core,mcp,supabase,memory_agents \
   --supabase-setup advanced \
   --supabase-sync cron \
   --remote-reader all \
-  --agent-roster profile-agent:profile,work-agent:work,product-agent:work,remote-agent:remote,n8n:automation \
+  --agent-roster memory-curator:work,work-agent:work,product-agent:work,remote-agent:remote,n8n:automation \
   --validation-pack all \
   --json
 ```

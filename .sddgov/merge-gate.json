@@ -1,13 +1,17 @@
 {
   "schema_version": "1.0",
-  "base_sha": "327ebe1b557fc30cbc5482a1de87e1757b8873da",
-  "head_sha": "470cac8e7289ec013bfa2edb8082a305f4631fb8",
+  "base_sha": "db1763482f0f603ccd63817f26c73308bc186697",
+  "head_sha": "fcac3c1f82d2b58a61fb55488175a32e599d5f5b",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "06d19cc8dbfb1314c19a14a8c898766c4dc60ab623c8c378ca75549c1add5790",
+  "change_digest": "2ee9777d9b0a42365b29302a61a9b920c7dd9d508ecf9eaac5831c9efc4d3ae6",
   "deps": [
-    "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION"
+    "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY",
+    "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
+    "DEP-VAM-003-HOSTED-MODULE-SIZE-GATE",
+    "DEP-VAM-003-INDEPENDENT-REVIEW-REMEDIATION",
+    "DEP-VAM-003-SHAREABLE-PATH-REDACTION"
   ],
-  "rollback_path": "evidence/DEP-SDG-005-MISSION-V5-ACTIVATION/rollback.md",
-  "protected_file_review": ".sddgov/reviews/REV-SDG-005.json"
+  "rollback_path": "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY/rollback.md",
+  "protected_file_review": ".sddgov/reviews/REV-VAM-003.json"
 }

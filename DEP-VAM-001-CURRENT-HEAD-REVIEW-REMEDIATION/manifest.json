@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-CURRENT-HEAD-REVIEW-REMEDIATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--current-head-red.txt",
+      "sha256": "3fc2ac39905f838024fd59a41c70bef16d139076f2c07a68c819dbde9ca7f4ed",
+      "collected_at": "2026-08-21T15:22:46Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--local-green.txt",
+      "sha256": "196636b14ffe4e6165ad47038e561c01324fbc1521be07e40ed70bff3ac3b859",
+      "collected_at": "2026-08-21T15:28:41Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--current-head-red.txt",
+      "sha256": "3fc2ac39905f838024fd59a41c70bef16d139076f2c07a68c819dbde9ca7f4ed",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--local-green.txt",
+      "sha256": "196636b14ffe4e6165ad47038e561c01324fbc1521be07e40ed70bff3ac3b859",
+      "shareable": true
+    }
+  ]
+}

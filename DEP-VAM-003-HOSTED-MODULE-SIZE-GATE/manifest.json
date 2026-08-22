@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-003-HOSTED-MODULE-SIZE-GATE",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--hosted-module-size-red.txt",
+      "sha256": "c28a6f99e9226ed4e4821f48bb6523dd9c2dbb092d2a49ec53185222ae500df7",
+      "collected_at": "2026-08-21T10:49:08Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--green-verification.txt",
+      "sha256": "be634499be3d3401207734a457305fa850daced6e876e7e768d789cc3214cfac",
+      "collected_at": "2026-08-21T10:58:36Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--hosted-exact-head-green.txt",
+      "sha256": "a7bcde4c59b21b9ea77436f0d189c19ab1c28935fa7623d79b884028cc010a07",
+      "collected_at": "2026-08-21T11:44:24Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/green-verification.txt",
+      "sha256": "be634499be3d3401207734a457305fa850daced6e876e7e768d789cc3214cfac",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/hosted-module-size-failure.txt",
+      "sha256": "c28a6f99e9226ed4e4821f48bb6523dd9c2dbb092d2a49ec53185222ae500df7",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--green-verification.txt",
+      "sha256": "be634499be3d3401207734a457305fa850daced6e876e7e768d789cc3214cfac",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--hosted-exact-head-green.txt",
+      "sha256": "a7bcde4c59b21b9ea77436f0d189c19ab1c28935fa7623d79b884028cc010a07",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--hosted-module-size-red.txt",
+      "sha256": "c28a6f99e9226ed4e4821f48bb6523dd9c2dbb092d2a49ec53185222ae500df7",
+      "shareable": true
+    }
+  ]
+}

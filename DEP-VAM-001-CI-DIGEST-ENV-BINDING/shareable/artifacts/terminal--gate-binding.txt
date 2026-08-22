@@ -1,0 +1,15 @@
+VAM-001 CI digest exact gate binding
+result: PASS
+base: 291d5595c9cb2208a6b74206acbba35a883eb918
+implementation head: 4b4bef132eca531165ca6a5dad88d104e37e40d2
+audit-only head: d57edaec8e6e6339be3df4f4163a4c2531028c04
+CI environment: GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40
+change digest: 120dbb4c0d[REDACTED_CARD_OR_NUMBER]d44eac8ebbb9f0b19357799b30b68278d4866dd82
+declared gate digest match: PASS
+gate metadata digest: bbf9bf429d9a0a5245951a0b87e055eee0c88cb431e7f85737db84dbc7c97efa
+merge verify digest stage: PASS
+fresh clean clone audit head: d57edaec8e6e6339be3df4f4163a4c2531028c04
+fresh clean clone worktree: clean
+exact CI-pinned merge verify remaining error: this digest DEP is intentionally still in Fix
+cleanliness error: none
+digest mismatch error: none

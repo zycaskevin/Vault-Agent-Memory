@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-003-INDEPENDENT-REVIEW-REMEDIATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--red-independent-review.txt",
+      "sha256": "d6962f3d9a3a2239e9503132f759a1d4a42806b8f9f890588a7c236c9e02fe2a",
+      "collected_at": "2026-08-22T03:34:28Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--red-optimized-assert.txt",
+      "sha256": "812ecafe02998cafe731a1612414dec81ab472e12dee64edf13f9c684c4f1662",
+      "collected_at": "2026-08-22T03:36:36Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--green-independent-review.txt",
+      "sha256": "c111c31d90702a91e2aa6d3d563dc8d756657c014309ed303cee1ecc5f059b00",
+      "collected_at": "2026-08-22T03:37:48Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--exact-head-builder-local-green.txt",
+      "sha256": "738f8e8cc7ce70de0e9b08fa9c9131344f954b9b74c3b9e04a72e3f5481abfc2",
+      "collected_at": "2026-08-22T03:59:20Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--exact-head-builder-local-green.txt",
+      "sha256": "dbc8d6cae920e1b14fab54648b4c3857917d82f2b2383dafe15e0d078846f1fe",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--green-independent-review.txt",
+      "sha256": "c111c31d90702a91e2aa6d3d563dc8d756657c014309ed303cee1ecc5f059b00",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--red-independent-review.txt",
+      "sha256": "379d6179d6516bca694218a44e6c2d99c79b94f28aeffdbf9791ea783f9c5ae4",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--red-optimized-assert.txt",
+      "sha256": "812ecafe02998cafe731a1612414dec81ab472e12dee64edf13f9c684c4f1662",
+      "shareable": true
+    }
+  ]
+}

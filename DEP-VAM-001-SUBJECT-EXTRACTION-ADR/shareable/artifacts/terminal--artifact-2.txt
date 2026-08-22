@@ -1,0 +1,11 @@
+command=python -m pytest -q tests/test_subject_extraction_boundary_docs.py
+exit_status=1
+pytest 9.1.1
+ M .sddgov/decisions.json
+ M .sddgov/events.jsonl
+ M .sddgov/work-claims.json
+?? DEP-VAM-001-SUBJECT-EXTRACTION-ADR/
+?? docs/issues/
+?? docs/specs/vam-001-subject-distillation-extraction.md
+?? docs/work-packages/VAM-001-subject-distillation-extraction-adr.md
+?? tests/test_subject_extraction_boundary_docs.py

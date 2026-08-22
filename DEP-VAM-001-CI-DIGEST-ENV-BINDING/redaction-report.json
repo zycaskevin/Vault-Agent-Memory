@@ -1,0 +1,37 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--digest-red.txt",
+      "output": "terminal--digest-red.txt",
+      "source_sha256": "0dc33d2448d5c06dafa002b2cef23e669e669a1c0d1114ec11f456a2d44da468",
+      "output_sha256": "eebfb069f51afc68cd0a492cfad01464da5f6650b224a85eba37533d02b565c3",
+      "redactions": {
+        "phone": 1
+      }
+    },
+    {
+      "source": "terminal--gate-binding.txt",
+      "output": "terminal--gate-binding.txt",
+      "source_sha256": "5a3d4e5cad7a19f9083d0d02064df593d05c12c4711810d4bd39fdad683e76d8",
+      "output_sha256": "8e2cd8b4155c3aafb35ab3a357283a3d472f362e73f4fb6561fce8c4e5f67bb2",
+      "redactions": {
+        "card-like": 1
+      }
+    },
+    {
+      "source": "terminal--local-green.txt",
+      "output": "terminal--local-green.txt",
+      "source_sha256": "c88fa72d0147b8808df7d7c9f959ce8799da8b4c2fb04011e99771ff19e12e9c",
+      "output_sha256": "c88fa72d0147b8808df7d7c9f959ce8799da8b4c2fb04011e99771ff19e12e9c",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "phone": 1,
+    "card-like": 1
+  },
+  "dep_id": "DEP-VAM-001-CI-DIGEST-ENV-BINDING",
+  "generated_at": "2026-08-21T15:31:53Z"
+}

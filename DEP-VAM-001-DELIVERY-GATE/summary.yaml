@@ -1,0 +1,46 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-001-DELIVERY-GATE",
+  "issue": "VAM-001-DELIVERY",
+  "sdd_references": [
+    "docs/specs/vam-001-subject-distillation-extraction.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-21T09:29:11Z",
+  "updated_at": "2026-08-21T09:38:46Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-21T09:29:11Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-21T09:32:28Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-21T09:32:28Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-21T09:38:46Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-21T09:38:46Z"
+      }
+    ]
+  },
+  "expected_behavior": "The clean VAM-001 delivery branch passes the complete repository CI Cost Guard without frozen Subject or runtime drift.",
+  "actual_behavior": "The first complete gate exposed one case-sensitive historical documentation regression plus local PATH and directory-mode precondition drift.",
+  "environment": {
+    "commit": "11adfbff1de3ac92703ba14a9d8d2a85bc80c715",
+    "branch": "codex/vam-001-subject-extraction-adr",
+    "runtime": "CPython 3.11.15; pytest 9.1.1; isolated Git worktree"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

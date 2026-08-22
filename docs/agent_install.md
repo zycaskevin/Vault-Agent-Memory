@@ -57,7 +57,7 @@ only when they match the user's goal.
 | Semantic search | Keyword search is not enough, or the project has many paraphrased notes. |
 | Supabase sync | Agents run on different machines, or Coze/n8n/hosted tools need remote reads. |
 | Headroom | Tool output, logs, or retrieved context are too large for the model window. |
-| Memory agents | The user wants profile summaries, dream reports, forgetting, or periodic curation. |
+| Memory agents | The user wants memory curation, lifecycle reports, TTL review, or reversible archive previews. |
 | Dev/benchmark deps | The user is contributing to Vault or running release/benchmark checks. |
 
 ## Scope Choices
@@ -441,13 +441,13 @@ large logs or tool output. Keep final citations tied to original
 
 ### Memory Maintenance Agents
 
-Generate Profile / Dream / Forgetting guidance when the user wants the vault to
-stay useful over time:
+Generate generic candidate-curation, lifecycle-report, and archive-advice
+guidance when the user wants the vault to stay useful over time:
 
 ```bash
 vault setup-agent \
   --non-interactive \
-  --agent profile-agent \
+  --agent maintenance-agent \
   --scope shared \
   --agent-project-dir ~/Vaults/project-memory \
   --features core,mcp,memory_agents \
@@ -456,8 +456,10 @@ vault setup-agent \
 ```
 
 This writes `agent-install/README-memory-agents.md`. It does not install a
-model, schedule jobs, promote memories, or delete anything. Treat memory agents
-as report-only or candidate-only until the user approves a stronger policy.
+model, schedule jobs, promote memories, or delete anything. It does not model
+identity, personality, relationships, life phases, or people. Treat maintenance
+agents as report-only or candidate-only until the user approves a stronger
+policy. The `memory_agents` feature ID is retained for CLI compatibility.
 
 To generate scheduled report-first maintenance templates:
 
@@ -529,8 +531,9 @@ vault setup-agent \
 `--agent-roster` writes `agent-roster.json`, `AGENT_ACCESS_MATRIX.md`,
 `AGENT_ACCESS_PRESETS.md`, `agent-env/*.env.example`, and
 `agent-setup-commands.sh`.
-Roster roles are intentionally fixed so access defaults stay reviewable:
-`work`, `profile`, `care`, `dream`, `remote`, `automation`, and `observer`.
+Roster roles are intentionally fixed so access defaults stay reviewable. The
+legacy `profile`, `care`, and `dream` values remain compatibility access labels;
+they do not assign Vault responsibility for human modeling.
 
 ### Agent Access Presets
 
@@ -539,7 +542,7 @@ flags:
 
 | Preset | Use for | Default shape |
 |---|---|---|
-| `personal-agent` | profile/care assistants | private or hybrid memory, candidate-first writes |
+| `personal-agent` | legacy private-memory integrations | private or hybrid memory, candidate-first writes |
 | `work-agent` | coding/project agents | shared project memory, candidate-first writes |
 | `review-agent` | reviewers and auditors | shared read/review, no writes |
 | `automation-agent` | scheduled maintenance | low-sensitivity reports and candidates |
@@ -692,8 +695,9 @@ vault_memory_candidates -> candidate review queue visible in review profile
   explicitly approves.
 - Do not expose local MCP over a public network.
 - Do not paste secrets into memory; use the privacy gate and candidate workflow.
-- Keep raw private conversations, persona files, and high-sensitivity profile
-  notes local unless the user explicitly approves sharing reviewed summaries.
+- Keep raw private interactions and application-owned model files outside
+  shared Vault memory unless the user explicitly approves a specific reviewed,
+  sourced summary.
 
 ## Related Docs
 

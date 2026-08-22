@@ -1,0 +1,52 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "local-green-identity-failure.txt",
+      "output": "local-green-identity-failure.txt",
+      "source_sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "output_sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "redactions": {}
+    },
+    {
+      "source": "stable-root-green.txt",
+      "output": "stable-root-green.txt",
+      "source_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "output_sha256": "cd80a31658239d7f2a27584265c5c8002351f56e5c9c24cb44011a3bd643aba1",
+      "redactions": {
+        "workstation_path": 1
+      }
+    },
+    {
+      "source": "terminal--local-green-identity-red.txt",
+      "output": "terminal--local-green-identity-red.txt",
+      "source_sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "output_sha256": "60d5461e1b0b399b366377bbddb7b3d6cd88bcdd9e6859c1c261e0b24a40f1f0",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--stable-root-green.txt",
+      "output": "terminal--stable-root-green.txt",
+      "source_sha256": "1b27decbbbe2ddc5ca2e863442f198005b095d02813eee91a1081e9d1cc56dc5",
+      "output_sha256": "cd80a31658239d7f2a27584265c5c8002351f56e5c9c24cb44011a3bd643aba1",
+      "redactions": {
+        "workstation_path": 1
+      }
+    },
+    {
+      "source": "exact-head-builder-local-green.txt",
+      "output": "exact-head-builder-local-green.txt",
+      "source_sha256": "8078c2cca9c7449ef50e17631d6041829866c01e26cf270c08b9d9c1c778b6a8",
+      "output_sha256": "c21e45f1acf0abdc52bab64b36f5acdb8020d761624a882967b119eaffb822b0",
+      "redactions": {
+        "workstation_path": 1
+      }
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "workstation_path": 3
+  },
+  "dep_id": "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
+  "generated_at": "2026-08-22T03:54:58Z"
+}

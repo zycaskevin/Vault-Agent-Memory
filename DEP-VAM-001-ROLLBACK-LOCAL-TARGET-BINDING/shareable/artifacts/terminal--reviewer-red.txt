@@ -1,0 +1,6 @@
+VAM-001 independent review finding
+exact reviewed head: 92bd0d28f36b9da401c57d08cd7ebd57d972c36e
+verdict: FAIL
+finding: authoritative rollback resolves the remote PR merge and compatibility ancestry but does not bind the local branch or HEAD before approval consumption and git revert
+risk: the command can mutate the PR branch or another descendant instead of main at the exact resolved merge commit
+required fix: assert local branch main and local HEAD equal merge_oid before autonomy evaluation and revert

@@ -1,0 +1,5 @@
+worktree=$STABLE_WORKTREE
+candidate_identity_isolation=446 nodes passed
+remaining_repository_suite=2935 passed, 10 skipped
+local_green_exit_status=0
+frozen_subject_source_changes=none

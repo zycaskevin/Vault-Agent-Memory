@@ -1,0 +1,21 @@
+command: /tmp/vam-python-path-vam001/python -m pytest -q tests/test_vault_boundary_freeze.py tests/test_agent_setup.py tests/test_cli_extended.py
+workdir: /tmp/vam-pr499-builder-oI8F3s/repo
+pre-remediation head: 8eec35c3b228efbdfc8707a11e2d31e885002562
+result: exit 0
+summary: 230 passed in 5.70s
+
+focused rollback probes:
+- guarded command contains no Python assert
+- invalid approval exits nonzero under python -O
+- valid approval exits zero under python -O
+- mismatched staged path set exits nonzero under python -O
+- exact staged path set exits zero under python -O
+- pre-mutation and post-mutation untracked-path inspection present
+- rollback_version is exactly 1.0
+- target, command, and verify are nonempty and placeholder-free
+
+focused public-boundary probes:
+- docs/memory_governance.md uses neutral bootstrap/project wording
+- docs/agent_install.md describes memory curation and lifecycle work
+- docs/vision.md describes reviewed, sourced memory summaries
+- legacy identifiers remain accepted only as compatibility labels

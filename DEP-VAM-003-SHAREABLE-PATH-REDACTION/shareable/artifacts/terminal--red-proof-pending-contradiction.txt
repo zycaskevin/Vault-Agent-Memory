@@ -1,0 +1,13 @@
+command: /tmp/vam-python-path-vam001/python -m pytest -q tests/test_vault_boundary_freeze.py::test_shareable_redaction_proof_does_not_claim_its_green_is_pending
+workdir: /tmp/vam-pr499-builder-oI8F3s/repo
+result: exit 1
+summary: 1 failed in 0.03s
+
+actual:
+The new DEP is in proof phase while verification still says the committed and
+gate-bound head requires complete Builder Local Green before push.
+
+expected:
+The DEP records its completed focused Red/Green/Proof evidence and states that
+repository Local Green is enforced separately by the merge gate, without
+claiming the DEP's own Green remains pending.

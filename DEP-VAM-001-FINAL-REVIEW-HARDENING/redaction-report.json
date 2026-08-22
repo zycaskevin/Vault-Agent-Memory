@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--coderabbit-red.txt",
+      "output": "terminal--coderabbit-red.txt",
+      "source_sha256": "6b7e869d43eac7056718909464861ac95a154a6fecb966d9d0b3e43df2834742",
+      "output_sha256": "ee71e9ceec61fefea821a826a93426bec1424f9b09886f0eaf5ff9261b77a28a",
+      "redactions": {
+        "phone": 1
+      }
+    },
+    {
+      "source": "terminal--local-green.txt",
+      "output": "terminal--local-green.txt",
+      "source_sha256": "fa1b97cb9c4907a60fb566a4dbbe90e0e152d68f0d656e11bfc25d722df832fc",
+      "output_sha256": "fa1b97cb9c4907a60fb566a4dbbe90e0e152d68f0d656e11bfc25d722df832fc",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "phone": 1
+  },
+  "dep_id": "DEP-VAM-001-FINAL-REVIEW-HARDENING",
+  "generated_at": "2026-08-21T15:15:24Z"
+}

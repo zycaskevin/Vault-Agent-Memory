@@ -15,6 +15,7 @@ from pathlib import Path
 
 from .cli_context import _arg_value, _enforce_cli_privacy, _json_print, find_project_dir
 from .cli_search import temporal_search_kwargs
+from .memory_layers import CANONICAL_MEMORY_DIRECTORIES
 from .search_utils import validate_search_query
 
 
@@ -23,7 +24,7 @@ def cmd_init(args):
     project_dir = Path(args.project_dir or ".")
     pretty_output = _arg_value(args, "pretty", False) is True
     json_output = _arg_value(args, "json", False) is True or pretty_output
-    dirs = ["raw", "compiled", "L0-identity", "L1-core-facts", "L2-context", "L3-knowledge"]
+    dirs = ["raw", "compiled", *CANONICAL_MEMORY_DIRECTORIES]
     dir_payloads: list[dict[str, object]] = []
 
     for d in dirs:

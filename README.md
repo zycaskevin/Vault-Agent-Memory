@@ -95,7 +95,7 @@ flowchart TB
         Pipeline["Review Pipeline<br/>Privacy · Duplicates · Quality · Source"]
         Report["Daily Report<br/>Auto-promote low-risk · Review high-risk"]
         subgraph Layers["Memory Layers"]
-            L0["L0 Identity"]
+            L0["L0 Bootstrap"]
             L1["L1 Rules"]
             L2["L2 Context"]
             L3["L3 Knowledge"]
@@ -442,10 +442,14 @@ Vault uses L0-L3 for memory depth:
 
 | Layer | Purpose |
 |---|---|
-| `L0` | identity and project framing |
+| `L0` | stable bootstrap and project framing (`L0-bootstrap`) |
 | `L1` | stable facts, rules, preferences |
 | `L2` | reviewed recent context and summaries |
 | `L3` | detailed knowledge, SOPs, bugs, decisions, source notes |
+
+New projects create `L0-bootstrap`. Existing `L0-identity` paths remain
+read-compatible and are never renamed automatically. L0 is startup/project
+context, not a Vault-owned identity or human model.
 
 Task Ledger is not L2. It is the live workbench for blockers, next actions,
 evidence links, due dates, and handoff notes. Only durable lessons, decisions,
@@ -696,7 +700,7 @@ More detail:
 | Obsidian import/export/conflict inbox | usable, sync UX still improving |
 | Supabase sync and Gateway / Remote Server | advanced optional |
 | semantic search, embedding providers, rerank, benchmark adapters | evolving |
-| Profile / Dream / Forgetting agents | guidance-first, not autonomous deletion |
+| Memory maintenance agents | candidate/report-first, not autonomous deletion |
 
 Vault Agent Memory is pre-1.0. The core local path is intentionally conservative.
 Advanced remote and automation paths are powerful, but should be enabled

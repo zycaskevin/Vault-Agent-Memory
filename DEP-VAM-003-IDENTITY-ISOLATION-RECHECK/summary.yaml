@@ -1,0 +1,46 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
+  "issue": "SDG-007",
+  "sdd_references": [
+    "SDG-007-mission-v5-local-green-isolation"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-21T10:51:03Z",
+  "updated_at": "2026-08-22T03:37:48Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-21T10:51:03Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-21T10:51:23Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-21T10:52:13Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-21T10:58:36Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-21T10:59:21Z"
+      }
+    ]
+  },
+  "expected_behavior": "All 446 frozen Subject identity nodes pass under per-node isolation.",
+  "actual_behavior": "One authorization-runner node received a fixed deny while constructing its test proposal.",
+  "environment": {
+    "commit": "8eec35c3b228efbdfc8707a11e2d31e885002562",
+    "branch": "codex/vam-003-l0-bootstrap-boundary",
+    "runtime": "Local Linux; owner-private Builder checkout; hosted-equivalent Local Green environment"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

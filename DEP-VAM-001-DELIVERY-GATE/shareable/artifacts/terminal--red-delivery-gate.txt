@@ -1,0 +1,5 @@
+command=sddgov ci local-gate .
+result=FAIL after identity-isolated subject tests passed: 446 nodes
+repository_failure=tests/test_subject_baseline.py historical status phrase compatibility
+environment_failures=agent setup executable PATH rendering; source directory mode audit
+worktree=clean before reproduction

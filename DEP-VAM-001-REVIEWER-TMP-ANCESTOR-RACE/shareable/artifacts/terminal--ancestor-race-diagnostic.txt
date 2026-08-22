@@ -1,0 +1,6 @@
+source=Builder deterministic diagnostic at exact PR head d355d32e442e388598b1ee502527839050d63559
+command=env PYTHONPATH=. /tmp/vam-python-path-vam001/python /tmp/vam-pr498-builder-fix-V5E9os/diagnose_tmp_ancestor.py
+diagnostic_behavior=call pinned _repo_inputs once unchanged, then call it while creating and removing one unrelated sibling directory directly under shared /tmp immediately before verifier _audit
+control=PASS baseline_id=0dc10cfc4a429662
+shared_tmp_sibling_change=DENIED
+conclusion=an unrelated shared-ancestor directory entry change is sufficient to make the fail-closed repo-input audit reject unchanged pinned repository inputs

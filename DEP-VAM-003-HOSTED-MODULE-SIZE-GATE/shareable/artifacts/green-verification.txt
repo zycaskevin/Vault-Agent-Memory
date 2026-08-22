@@ -1,0 +1,5 @@
+module_size_gate=PASS; scanned_modules=158; vault/agent_setup.py=1231; allowed=1231
+focused_boundary_agent_setup=58 passed
+stable_root_identity_isolation=446 nodes passed
+stable_root_remaining_suite=2935 passed, 10 skipped, 1 pre-existing warning
+local_green_exit_status=0

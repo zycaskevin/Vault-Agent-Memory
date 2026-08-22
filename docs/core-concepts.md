@@ -17,7 +17,7 @@ When a candidate memory passes review (human or automated low-risk check), it ge
 ## L0-L3 Memory Layers
 Vault organizes memory like a closet, not a junk drawer:
 
-- **L0 — Identity:** Who you are, project framing. Always loaded first. Like your driver's license — always on you.
+- **L0 — Bootstrap:** Stable project framing and startup rules. New projects use `L0-bootstrap`; legacy `L0-identity` paths remain readable but are not created or migrated automatically.
 - **L1 — Rules & Preferences:** Stable facts, how you like things done. Like the top drawer — you reach for it every day.
 - **L2 — Recent Context & Summaries:** Reviewed recent context, current project status. Like your desk surface — what you're working on right now.
 - **L3 — Deep Knowledge:** Detailed knowledge, SOPs, bug fixes, decisions, source notes. Like the storage room — vast, searchable, but not in your face.
@@ -54,6 +54,14 @@ The main human interface. You don't dig through the database — Vault summarize
 Not memory — it's the live workbench: blockers, next actions, evidence links, due dates, handoff notes. Durable lessons get promoted to memory layers after review.
 
 **Analogy:** Your whiteboard vs. your filing cabinet.
+
+## Memory / Identity Boundary
+
+Vault stores governed memory objects, events, experiences, decisions,
+knowledge, and interactions. It provides storage, retrieval, provenance,
+confidence, lifecycle, and governance. Identity, personality, relationship,
+life-phase, and human modeling belong to an application above Vault; Vault may
+serve that application only through a generic memory-provider contract.
 
 ---
 

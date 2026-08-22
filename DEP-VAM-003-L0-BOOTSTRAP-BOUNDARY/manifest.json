@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--red-boundary.txt",
+      "sha256": "cafd3f053054e8f94c4b48296d0c338ba65a63948793f2ec48642b69529ae0a3",
+      "collected_at": "2026-08-21T09:44:18Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--green-boundary.txt",
+      "sha256": "c0fa2bd2b217211af79c7d14c92732114ccfabb7b8454c37dfcdf0b82db2f25b",
+      "collected_at": "2026-08-21T09:56:34Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--green-boundary.txt",
+      "sha256": "c0fa2bd2b217211af79c7d14c92732114ccfabb7b8454c37dfcdf0b82db2f25b",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--red-boundary.txt",
+      "sha256": "cafd3f053054e8f94c4b48296d0c338ba65a63948793f2ec48642b69529ae0a3",
+      "shareable": true
+    }
+  ]
+}

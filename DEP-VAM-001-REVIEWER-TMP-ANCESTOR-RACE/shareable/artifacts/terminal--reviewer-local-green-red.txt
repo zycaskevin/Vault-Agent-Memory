@@ -1,0 +1,16 @@
+source=independent Reviewer exact Local Green transcript and read-only handoff
+pr=498
+base=291d5595c9cb2208a6b74206acbba35a883eb918
+head=d355d32e442e388598b1ee502527839050d63559
+checkout=/tmp/vam-pr498-independent-review-3hKEbI
+checkout_state=clean detached exact head
+command=umask 022; env PATH=[pinned test path] GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 sddgov ci local-gate .
+exit_status=2
+passed_before_failure=governance doctor; CI verify; README smoke; release parity; focused 58 tests; canonical progress baseline 0dc10cfc4a429662 sequence 8; seven strict DEPs
+failure_node=tests/test_subject_development_mission_v5.py::test_mission_private_lifecycle_denies_private_file_replacement
+trace=tests/test_subject_development_mission_v5.py:49 -> validate_mission_proof_value -> _repo_inputs -> subject_authorization_v1_pinned.Denied
+repo_root=/tmp/vam-pr498-independent-review-3hKEbI
+gate_result=[ERROR] local Green Gate failed: python exited 1
+post_failure_worktree=tracked and untracked clean; staged and unstaged diffs empty
+content_integrity=verifier and all five manifest-bound files matched pinned hashes and sizes
+reviewer_disposition=FAIL; no receipt; no signing; no push

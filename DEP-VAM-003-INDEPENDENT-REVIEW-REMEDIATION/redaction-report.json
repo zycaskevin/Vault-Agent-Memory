@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--exact-head-builder-local-green.txt",
+      "output": "terminal--exact-head-builder-local-green.txt",
+      "source_sha256": "738f8e8cc7ce70de0e9b08fa9c9131344f954b9b74c3b9e04a72e3f5481abfc2",
+      "output_sha256": "dbc8d6cae920e1b14fab54648b4c3857917d82f2b2383dafe15e0d078846f1fe",
+      "redactions": {
+        "workstation_path": 1
+      }
+    },
+    {
+      "source": "terminal--green-independent-review.txt",
+      "output": "terminal--green-independent-review.txt",
+      "source_sha256": "c111c31d90702a91e2aa6d3d563dc8d756657c014309ed303cee1ecc5f059b00",
+      "output_sha256": "c111c31d90702a91e2aa6d3d563dc8d756657c014309ed303cee1ecc5f059b00",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--red-independent-review.txt",
+      "output": "terminal--red-independent-review.txt",
+      "source_sha256": "d6962f3d9a3a2239e9503132f759a1d4a42806b8f9f890588a7c236c9e02fe2a",
+      "output_sha256": "379d6179d6516bca694218a44e6c2d99c79b94f28aeffdbf9791ea783f9c5ae4",
+      "redactions": {
+        "phone": 2
+      }
+    },
+    {
+      "source": "terminal--red-optimized-assert.txt",
+      "output": "terminal--red-optimized-assert.txt",
+      "source_sha256": "812ecafe02998cafe731a1612414dec81ab472e12dee64edf13f9c684c4f1662",
+      "output_sha256": "812ecafe02998cafe731a1612414dec81ab472e12dee64edf13f9c684c4f1662",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "phone": 2,
+    "workstation_path": 1
+  },
+  "dep_id": "DEP-VAM-003-INDEPENDENT-REVIEW-REMEDIATION",
+  "generated_at": "2026-08-22T03:59:20Z"
+}

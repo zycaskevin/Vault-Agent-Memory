@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "git--artifact-4.txt",
+      "output": "git--artifact-4.txt",
+      "source_sha256": "c512b5ea9861a555827f73abe6bec53a89e83626a3e365f72347e87073d3f219",
+      "output_sha256": "c512b5ea9861a555827f73abe6bec53a89e83626a3e365f72347e87073d3f219",
+      "redactions": {}
+    },
+    {
+      "source": "green-context.txt",
+      "output": "green-context.txt",
+      "source_sha256": "c512b5ea9861a555827f73abe6bec53a89e83626a3e365f72347e87073d3f219",
+      "output_sha256": "c512b5ea9861a555827f73abe6bec53a89e83626a3e365f72347e87073d3f219",
+      "redactions": {}
+    },
+    {
+      "source": "green-verification.txt",
+      "output": "green-verification.txt",
+      "source_sha256": "c64387847c1921c963204c81e0bbbcddc607008b9b30777f7dabe0dd6db5cd33",
+      "output_sha256": "ccd859a05ffc644829142691a7da26c4baa4a995ba68f0b2e45791791e6ba6ac",
+      "redactions": {
+        "local_path": 3
+      }
+    },
+    {
+      "source": "red-context.txt",
+      "output": "red-context.txt",
+      "source_sha256": "48ef93f99db754c4595f874632f65ecc46104f15718f5219777c125d595a4b16",
+      "output_sha256": "af688e77f01d8719a25c4fa6b321ed0f400fd6aff3dc4f292ff884b2f486c407",
+      "redactions": {
+        "local_path": 1
+      }
+    },
+    {
+      "source": "red-test.txt",
+      "output": "red-test.txt",
+      "source_sha256": "c2184b7c22d0173c94ee51e6bcf68e2e16d63b01c0ba0d50b4b3d0004a2f0bac",
+      "output_sha256": "a112515bb4a85b5035cc9529c209c57ec79a8925fceade7f1f25133fb6a5e12c",
+      "redactions": {
+        "local_path": 8,
+        "false_positive_restored": 2,
+        "trailing_whitespace": 6
+      }
+    },
+    {
+      "source": "terminal--artifact-1.txt",
+      "output": "terminal--artifact-1.txt",
+      "source_sha256": "c2184b7c22d0173c94ee51e6bcf68e2e16d63b01c0ba0d50b4b3d0004a2f0bac",
+      "output_sha256": "a112515bb4a85b5035cc9529c209c57ec79a8925fceade7f1f25133fb6a5e12c",
+      "redactions": {
+        "local_path": 8,
+        "false_positive_restored": 2,
+        "trailing_whitespace": 6
+      }
+    },
+    {
+      "source": "terminal--artifact-2.txt",
+      "output": "terminal--artifact-2.txt",
+      "source_sha256": "48ef93f99db754c4595f874632f65ecc46104f15718f5219777c125d595a4b16",
+      "output_sha256": "af688e77f01d8719a25c4fa6b321ed0f400fd6aff3dc4f292ff884b2f486c407",
+      "redactions": {
+        "local_path": 1
+      }
+    },
+    {
+      "source": "terminal--artifact-3.txt",
+      "output": "terminal--artifact-3.txt",
+      "source_sha256": "c64387847c1921c963204c81e0bbbcddc607008b9b30777f7dabe0dd6db5cd33",
+      "output_sha256": "ccd859a05ffc644829142691a7da26c4baa4a995ba68f0b2e45791791e6ba6ac",
+      "redactions": {
+        "local_path": 3
+      }
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "local_path": 24,
+    "false_positive_restored": 4,
+    "trailing_whitespace": 12
+  },
+  "dep_id": "DEP-VAM-001-SUBJECT-EXTRACTION-ADR",
+  "generated_at": "2026-08-21T04:01:47Z"
+}

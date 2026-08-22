@@ -1,0 +1,12 @@
+VAM-001 rollback local-target Green evidence supplement
+references: terminal--local-green.txt
+tested_branch: codex/vam-001-subject-extraction-adr
+tested_head: b2c8378db44079080d1d9bbd418febf93e527ec9
+tracked_worktree_clean: true
+all_files_clean: false
+known_untracked_path: DEP-VAM-001-DELIVERY-GATE/attach-pr.md
+result: PASS
+identity-isolated Subject tests: 446 nodes passed
+repository suite: 2927 passed, 10 skipped, 1 warning
+warning: pre-existing DeprecationWarning for invalid escape sequence in tests/test_semantic_chunk_coverage.py
+warning_disposition: non-blocking and unrelated to VAM-001 documentation boundary; retained visibly
