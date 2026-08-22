@@ -1,0 +1,8 @@
+VAM-005 focused RED test (sanitized summary)
+Command: env PYTHONPATH=. $REPO_VENV/bin/pytest -q tests/test_memory_object_contract.py
+Result: 3 failed, 2 passed
+Failures:
+- SQLiteMemoryProvider lacked create_memory_object_candidate.
+- Gateway create response lacked memory_kind.
+- Provider contract lacked memory_layer.
+Local temporary paths, username, and hostname are omitted.

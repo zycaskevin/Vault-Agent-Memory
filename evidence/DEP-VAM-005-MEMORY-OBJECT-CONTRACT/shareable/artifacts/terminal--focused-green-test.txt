@@ -1,0 +1,5 @@
+VAM-005 focused GREEN test (sanitized summary)
+Implementation commit: e0265999697424e977be9e4e9c8e4d62a8edd852
+Command: env PYTHONPATH=. $REPO_VENV/bin/pytest -q tests/test_memory_object_contract.py tests/test_memory_change_envelope.py tests/test_memory_provider.py tests/test_gateway.py
+Result at implementation commit: 45 passed in 9.31s
+Local temporary paths, username, and hostname are omitted.

@@ -10,6 +10,7 @@ import re
 from typing import Any
 
 from .access_policy import ReadPolicy
+from .memory_object import legacy_memory_type_metadata, memory_kind_from_record
 
 
 MEMORY_CHANGE_SCHEMA_VERSION = "vault.memory-change.v1"
@@ -47,10 +48,13 @@ def memory_change_envelope(
     valid_until = str(row.get("valid_until") or "")
     occurred_at = valid_from or created_at
     status = str(row.get("status") or "active")
+    stored_type = str(row.get("memory_type") or "knowledge")
+    application_metadata = legacy_memory_type_metadata(stored_type)
     revision_material = {
         "memory_id": memory_id,
         "title": str(row.get("title") or ""),
-        "kind": str(row.get("memory_type") or "knowledge"),
+        "kind": memory_kind_from_record(stored_type),
+        "application_metadata": application_metadata,
         "content_sha256": content_sha256,
         "occurred_at": occurred_at,
         "recorded_at": recorded_at,
@@ -77,6 +81,7 @@ def memory_change_envelope(
         "change_type": "delete" if status == "deleted" else "upsert",
         "title": revision_material["title"],
         "kind": revision_material["kind"],
+        "application_metadata": application_metadata,
         "content_sha256": content_sha256,
         "occurred_at": occurred_at,
         "recorded_at": recorded_at,

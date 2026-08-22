@@ -31,6 +31,7 @@ from .memory_change_envelope import (
     normalize_change_limit,
     read_policy_fingerprint,
 )
+from .memory_object import MemoryObject, memory_layer_contract_payload, validate_memory_kind
 from .multi_host import list_audit_log, record_audit_event
 from .search_utils import normalize_search_limit
 
@@ -89,6 +90,9 @@ def _validate_update_fields(before: dict[str, Any], fields: dict[str, Any]) -> t
     return True, ""
 
 MEMORY_PROVIDER_OPERATIONS = [
+    "create_memory_object_candidate",
+    "search_memory_objects",
+    "get_memory_object",
     "list_changes",
     "get_metadata",
     "get_revision",
@@ -117,6 +121,21 @@ class MemoryProvider(Protocol):
 
     def create_candidate(self, **kwargs: Any) -> dict[str, Any]:
         """Create a review candidate; never write active memory directly."""
+
+    def create_memory_object_candidate(
+        self,
+        memory: dict[str, Any],
+        *,
+        reason: str,
+        actor_agent: str = "",
+    ) -> dict[str, Any]:
+        """Create a review candidate from the stable Memory Object envelope."""
+
+    def search_memory_objects(self, query: str, **kwargs: Any) -> list[dict[str, Any]]:
+        """Search readable active memory and return Memory Object envelopes."""
+
+    def get_memory_object(self, memory_id: int, **kwargs: Any) -> dict[str, Any] | None:
+        """Return one readable active row as a Memory Object envelope."""
 
     def list_changes(
         self,
@@ -228,6 +247,7 @@ def memory_provider_contract_payload(*, provider_id: str = "sqlite") -> dict[str
             "vault_cloud_is_future_managed_backend": True,
             "qdrant_is_semantic_index_provider_not_source_of_truth": True,
         },
+        "memory_layer": memory_layer_contract_payload(),
     }
 
 
@@ -273,6 +293,11 @@ class SQLiteMemoryProvider:
                 "memory_change_envelope": True,
                 "cursor_change_listing": True,
                 "revision_bound_bounded_evidence": True,
+                "memory_object_envelope": True,
+                "provenance": True,
+                "confidence": True,
+                "lifecycle": True,
+                "governance": True,
                 "sync": False,
             },
         }
@@ -557,6 +582,50 @@ class SQLiteMemoryProvider:
                 "hard_delete": False,
             },
         }
+
+    def create_memory_object_candidate(
+        self,
+        memory: dict[str, Any],
+        *,
+        reason: str,
+        actor_agent: str = "",
+    ) -> dict[str, Any]:
+        """Map the stable envelope onto current candidate storage additively."""
+        provenance = memory.get("provenance") if isinstance(memory.get("provenance"), dict) else {}
+        governance = memory.get("governance") if isinstance(memory.get("governance"), dict) else {}
+        lifecycle = memory.get("lifecycle") if isinstance(memory.get("lifecycle"), dict) else {}
+        kind = validate_memory_kind(memory.get("kind") or "knowledge")
+        result = self.create_candidate(
+            title=str(memory.get("title") or ""),
+            content=str(memory.get("content") or ""),
+            reason=str(reason or ""),
+            source=str(provenance.get("source") or "memory-provider"),
+            source_ref=str(provenance.get("source_ref") or ""),
+            trust=memory.get("confidence", 0.5),
+            scope=str(governance.get("scope") or "project"),
+            sensitivity=str(governance.get("sensitivity") or "low"),
+            owner_agent=str(governance.get("owner_agent") or actor_agent or ""),
+            allowed_agents=governance.get("allowed_agents") or [],
+            memory_type=kind,
+            expires_at=str(lifecycle.get("expires_at") or ""),
+            valid_from=str(lifecycle.get("valid_from") or ""),
+            valid_until=str(lifecycle.get("valid_until") or ""),
+        )
+        candidate = result.get("candidate") if isinstance(result.get("candidate"), dict) else {}
+        result["memory_object"] = MemoryObject.from_record(candidate).as_dict() if candidate else None
+        result["memory_layer"] = {
+            "version": memory_layer_contract_payload()["version"],
+            "vault_role": "memory_provider",
+            "application_semantics_are_opaque": True,
+        }
+        return result
+
+    def search_memory_objects(self, query: str, **kwargs: Any) -> list[dict[str, Any]]:
+        return [MemoryObject.from_record(row).as_dict() for row in self.search_active(query, **kwargs)]
+
+    def get_memory_object(self, memory_id: int, **kwargs: Any) -> dict[str, Any] | None:
+        row = self.get_memory(memory_id, **kwargs)
+        return MemoryObject.from_record(row).as_dict() if row else None
 
     def search_active(
         self,
