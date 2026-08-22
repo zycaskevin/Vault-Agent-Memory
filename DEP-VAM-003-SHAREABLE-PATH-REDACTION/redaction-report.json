@@ -16,6 +16,13 @@
       "redactions": {}
     },
     {
+      "source": "terminal--green-redaction-provenance.txt",
+      "output": "terminal--green-redaction-provenance.txt",
+      "source_sha256": "f9139e68fb6a893dc48a8ffdb2c23c206e65ef43626c70b224c35ee563c2c8ea",
+      "output_sha256": "f9139e68fb6a893dc48a8ffdb2c23c206e65ef43626c70b224c35ee563c2c8ea",
+      "redactions": {}
+    },
+    {
       "source": "terminal--green-shareable-final.txt",
       "output": "terminal--green-shareable-final.txt",
       "source_sha256": "9d59d89cf7d69d117008468151931b4f08985ab1b6a675bb98c49de635448616",
@@ -44,6 +51,13 @@
       "redactions": {}
     },
     {
+      "source": "terminal--red-redaction-provenance.txt",
+      "output": "terminal--red-redaction-provenance.txt",
+      "source_sha256": "91c86288145e51bc196d00bb66b90231f03240e459b27afac13dcc087583da95",
+      "output_sha256": "91c86288145e51bc196d00bb66b90231f03240e459b27afac13dcc087583da95",
+      "redactions": {}
+    },
+    {
       "source": "terminal--red-shareable-path.txt",
       "output": "terminal--red-shareable-path.txt",
       "source_sha256": "3218fe4309c450d643cb1f2911e99c8ed22ee7e8cddf876251dd06677c5d30aa",
@@ -54,5 +68,5 @@
   "blocked": [],
   "totals": {},
   "dep_id": "DEP-VAM-003-SHAREABLE-PATH-REDACTION",
-  "generated_at": "2026-08-22T04:16:07Z"
+  "generated_at": "2026-08-22T04:22:15Z"
 }

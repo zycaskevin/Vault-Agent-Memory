@@ -275,6 +275,30 @@ def test_all_vam003_shareable_evidence_omits_owner_home_paths() -> None:
             assert b"/home/" not in artifact.read_bytes(), artifact
 
 
+def test_vam003_redaction_reports_bind_manifest_and_shareable_bytes() -> None:
+    reports = sorted(ROOT.glob("DEP-VAM-003-*/redaction-report.json"))
+
+    assert reports
+    for report_path in reports:
+        dep = report_path.parent
+        manifest = json.loads((dep / "manifest.json").read_text(encoding="utf-8"))
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        raw_hashes = {record["sha256"] for record in manifest["raw"]}
+        shareable_by_name = {
+            Path(record["path"]).name: record for record in manifest["shareable"]
+        }
+
+        for record in report["files"]:
+            output = shareable_by_name[record["output"]]
+            artifact = dep / output["path"]
+
+            assert record["source_sha256"] in raw_hashes, report_path
+            assert record["output_sha256"] == output["sha256"], report_path
+            assert record["output_sha256"] == hashlib.sha256(
+                artifact.read_bytes()
+            ).hexdigest(), artifact
+
+
 def test_shareable_redaction_proof_does_not_claim_its_green_is_pending() -> None:
     dep = ROOT / "DEP-VAM-003-SHAREABLE-PATH-REDACTION"
     summary = json.loads((dep / "summary.yaml").read_text(encoding="utf-8"))

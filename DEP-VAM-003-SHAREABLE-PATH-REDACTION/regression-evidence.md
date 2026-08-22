@@ -14,6 +14,11 @@ redaction report's exact source/output hashes and `workstation_path` count.
 - New-DEP rollback preservation probe: Red failure, then 1 passed after fix.
 - Proof-state wording probe: Red failure on the pending-Green contradiction,
   then Green after separating DEP Proof from the repository merge gate.
+- Cross-file provenance probe: Red failure when the report source hash did not
+  occur in the manifest raw set, then Green after rebinding the manifest to the
+  actual private raw bytes. The probe also verifies every report output against
+  both its manifest record and the tracked shareable bytes. The final focused
+  boundary/setup/CLI suite passes with 234 tests.
 - Updated identity-isolation DEP strict verification: pass.
 
 ## Unaffected paths sampled

@@ -12,7 +12,7 @@
     {
       "collector": "terminal",
       "path": "private/raw/terminal--green-shareable-path.txt",
-      "sha256": "faf39b2f264421a6501b5b0a05fcbce49f6bb29204ba44a763bade6d75697f33",
+      "sha256": "724aa5335f3510dc03a3694b280f9a6253e2cf6c51d2138fc4c61fddf6bff3be",
       "collected_at": "2026-08-22T03:56:47Z",
       "shareable": false
     },
@@ -50,6 +50,20 @@
       "sha256": "14fe792d09bada3d4a5300e8d34ba7c6d73ec98bcd3be68e3727cbb4000f7d07",
       "collected_at": "2026-08-22T04:16:07Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--red-redaction-provenance.txt",
+      "sha256": "91c86288145e51bc196d00bb66b90231f03240e459b27afac13dcc087583da95",
+      "collected_at": "2026-08-22T04:21:34Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--green-redaction-provenance.txt",
+      "sha256": "f9139e68fb6a893dc48a8ffdb2c23c206e65ef43626c70b224c35ee563c2c8ea",
+      "collected_at": "2026-08-22T04:22:15Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -61,6 +75,11 @@
     {
       "path": "shareable/artifacts/terminal--green-proof-pending-contradiction.txt",
       "sha256": "14fe792d09bada3d4a5300e8d34ba7c6d73ec98bcd3be68e3727cbb4000f7d07",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--green-redaction-provenance.txt",
+      "sha256": "f9139e68fb6a893dc48a8ffdb2c23c206e65ef43626c70b224c35ee563c2c8ea",
       "shareable": true
     },
     {
@@ -81,6 +100,11 @@
     {
       "path": "shareable/artifacts/terminal--red-proof-pending-contradiction.txt",
       "sha256": "481e5c0280d64589ffe028ef8a351000223716bbbb4f07e9f8be3f7920259e5e",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--red-redaction-provenance.txt",
+      "sha256": "91c86288145e51bc196d00bb66b90231f03240e459b27afac13dcc087583da95",
       "shareable": true
     },
     {
