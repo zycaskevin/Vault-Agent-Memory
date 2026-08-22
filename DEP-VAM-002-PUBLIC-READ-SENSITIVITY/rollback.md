@@ -13,7 +13,10 @@ DEP and the earlier VAM-002 evidence packages.
 
 ## Data compatibility
 
-No schema, stored data, cursor, or revision material changes.
+No schema or stored-data rewrite. Valid trusted updates are canonicalized;
+unknown scope/sensitivity updates are newly rejected; active VAM-002 reads of
+legacy/corrupt unknown governance labels are newly denied; canonical revision
+material lowercases scope, sensitivity, and status.
 
 ## Post-rollback verification
 

@@ -41,6 +41,11 @@ credentials. Authorization is reevaluated on every call and requires a
 non-empty agent identity. Cursor progress, counts, and `has_more` are calculated
 only from readable rows.
 
+The SDD's canonical scope and sensitivity sets are also authorization
+boundaries. Trusted provider updates reject unknown labels, canonicalize valid
+governance labels to lowercase, and active reads fail closed on malformed
+stored labels rather than interpreting them as public or low sensitivity.
+
 The Gateway preserves revision-bound memory ids as provider-owned opaque
 strings. The SQLite adapter uses bounded keyset policy scans and hydrates raw
 content plus audit references only for selected readable rows.
@@ -63,7 +68,8 @@ content plus audit references only for selected readable rows.
   deduplication.
 - A consumer cannot retrieve an older revision's content unless Vault preserves
   that snapshot through a future separately governed feature.
-- No data migration or write-path change is required.
+- No data migration is required; trusted provider updates gain bounded
+  validation and canonicalization for governance labels.
 - The API/privacy contract is L2 and cannot merge without a focused
   architecture review. Draft-PR publication is allowed; merge is not.
 

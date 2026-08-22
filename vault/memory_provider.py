@@ -13,6 +13,8 @@ from typing import Any, Protocol, runtime_checkable
 
 from .access_policy import (
     InvalidMaxSensitivity,
+    SENSITIVITY_RANK,
+    VALID_MEMORY_SCOPES,
     can_read_memory,
     filter_readable_memories,
     normalize_read_policy,
@@ -80,6 +82,16 @@ def _validate_update_fields(before: dict[str, Any], fields: dict[str, Any]) -> t
     for field in _PROTECTED_UPDATE_FIELDS:
         if field in fields:
             return False, f"protected_field:{field}"
+
+    if "scope" in fields:
+        scope = str(fields["scope"] or "").strip().lower()
+        if scope not in VALID_MEMORY_SCOPES:
+            return False, f"invalid_scope:{scope or 'empty'}"
+
+    if "sensitivity" in fields:
+        sensitivity = str(fields["sensitivity"] or "").strip().lower()
+        if sensitivity not in SENSITIVITY_RANK:
+            return False, f"invalid_sensitivity:{sensitivity or 'empty'}"
 
     # Validate status transition
     if "status" in fields:
@@ -629,6 +641,9 @@ class SQLiteMemoryProvider:
             ok, err = _validate_update_fields(before, fields)
             if not ok:
                 return {"status": "blocked", "error": err, "memory_id": int(memory_id)}
+            for field in ("scope", "sensitivity", "status"):
+                if field in fields:
+                    fields[field] = str(fields[field] or "").strip().lower()
             changed = db.update_knowledge(int(memory_id), **fields)
             if changed:
                 record_audit_event(

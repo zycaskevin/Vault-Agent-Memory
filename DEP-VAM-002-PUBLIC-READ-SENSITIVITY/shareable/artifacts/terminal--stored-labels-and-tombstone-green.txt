@@ -1,0 +1,11 @@
+pytest_command=$PYTHON -m pytest -q tests/test_memory_change_envelope.py tests/test_memory_provider.py tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract tests/test_gateway.py::test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch tests/test_gateway.py::test_gateway_memory_api_facade_is_candidate_first_and_metadata_only tests/test_gateway.py::test_gateway_preserves_opaque_memory_reference_for_provider_validation tests/test_vault_boundary_freeze.py::test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python
+pytest_result=PASS; 21 passed in 1.04s
+ruff_command=$PROJECT_VENV/ruff check tests/test_gateway.py tests/test_memory_change_envelope.py tests/test_vault_boundary_freeze.py vault/access_policy.py vault/gateway.py vault/gateway_memory_api.py vault/gateway_openapi.py vault/memory_change_envelope.py vault/memory_provider.py
+ruff_version=0.15.20
+ruff_result=All checks passed
+module_command=$PYTHON scripts/module_size_gate.py
+module_result=PASS; 159 modules
+ci_contract_result=PASS
+diff_check_result=PASS
+frozen_subject_diff=empty
+redaction=replaced local Python and locked-Ruff executable paths with stable placeholders

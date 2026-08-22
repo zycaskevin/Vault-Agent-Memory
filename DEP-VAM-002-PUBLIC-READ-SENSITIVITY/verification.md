@@ -3,8 +3,8 @@
 ## Green command and result
 
 The exact repo-relative focused pytest command recorded in
-`shareable/artifacts/terminal--public-read-auth-green.txt` passed 19 nodes in
-0.82 seconds. The exact all-PR-changed-Python Ruff command passed with the
+`shareable/artifacts/terminal--stored-labels-and-tombstone-green.txt` passed 21
+nodes in 1.04 seconds. The exact all-PR-changed-Python Ruff command passed with the
 project-locked Ruff 0.15.20, and the module-size gate passed 159 modules.
 
 ## Before/after evidence
@@ -14,6 +14,9 @@ was returned instead of bounded authorization errors. Green: all four provider
 reads reject missing identity; Memory API get/search/timeline validate before
 both adapters; range overflow is HTTP 400; and SDD/ADR now normatively bind
 revision material and tombstones.
+Malformed stored governance labels are denied under active policy, accepted
+governance updates are canonical lowercase, and mixed-case delete becomes a
+delete tombstone.
 
 ## Remaining limitations
 

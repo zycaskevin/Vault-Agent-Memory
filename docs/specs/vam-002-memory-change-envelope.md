@@ -59,9 +59,9 @@ these canonical knowledge-row snapshot fields and normalizations:
 - `source`: `str(source or "")`;
 - `confidence`: `float(trust)`, falling back to `0.5` on conversion failure,
   then clamped with `max(0.0, min(value, 1.0))`;
-- `status`: `str(status or "active")`;
-- `scope`: `str(scope or "project")`;
-- `sensitivity`: `str(sensitivity or "low")`.
+- `status`: `str(status or "active").strip().lower()`;
+- `scope`: `str(scope or "project").strip().lower()`;
+- `sensitivity`: `str(sensitivity or "low").strip().lower()`.
 
 Vault serializes that object as JSON with `ensure_ascii=False`,
 `sort_keys=True`, and `separators=(",", ":")`, encodes the JSON as UTF-8,
@@ -94,6 +94,14 @@ authorization token. Every page independently applies Vault policy.
 
 Unknown non-empty `max_sensitivity` values fail closed and never remove the
 caller's ceiling.
+
+The canonical stored scope set is `private`, `project`, `shared`, and `public`;
+the canonical stored sensitivity set is `low`, `medium`, `high`, and
+`restricted`. Trusted provider updates reject unknown values and store valid
+scope, sensitivity, and lifecycle status labels in lowercase. When a read
+policy is active, legacy or corrupted rows containing an unknown stored scope
+or sensitivity fail closed for page, metadata, revision, and bounded-evidence
+reads. They are never coerced to public scope or low sensitivity.
 
 All four provider operations in this SDD require a normalized, non-empty
 `agent_id`. `list_changes` and `read_bounded_evidence` return the bounded
@@ -168,6 +176,7 @@ Existing Memory API routes and their default authorities remain unchanged.
 ## Compatibility and migration
 
 This change adds provider methods, one read-only Gateway route, optional read
-parameters, and OpenAPI metadata. It does not alter tables or write paths.
-Rollback is removal of the new route/methods and documentation; stored data is
-unchanged.
+parameters, OpenAPI metadata, and fail-closed validation for trusted provider
+updates to scope, sensitivity, and lifecycle status. It does not alter tables
+or rewrite stored data. Rollback is removal of the new route/methods and
+documentation; stored data is unchanged.

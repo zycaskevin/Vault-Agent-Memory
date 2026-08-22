@@ -46,7 +46,9 @@ def memory_change_envelope(
     valid_from = str(row.get("valid_from") or "")
     valid_until = str(row.get("valid_until") or "")
     occurred_at = valid_from or created_at
-    status = str(row.get("status") or "active")
+    status = str(row.get("status") or "active").strip().lower()
+    scope = str(row.get("scope") or "project").strip().lower()
+    sensitivity = str(row.get("sensitivity") or "low").strip().lower()
     revision_material = {
         "memory_id": memory_id,
         "title": str(row.get("title") or ""),
@@ -59,8 +61,8 @@ def memory_change_envelope(
         "source": str(row.get("source") or ""),
         "confidence": _confidence(row.get("trust")),
         "status": status,
-        "scope": str(row.get("scope") or "project"),
-        "sensitivity": str(row.get("sensitivity") or "low"),
+        "scope": scope,
+        "sensitivity": sensitivity,
     }
     revision_id = "rev_" + hashlib.sha256(
         json.dumps(

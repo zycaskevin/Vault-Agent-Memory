@@ -333,6 +333,77 @@ def test_provider_authorized_reads_require_nonempty_agent_identity(tmp_path):
     assert "content" not in missing_agent_read
 
 
+def test_invalid_governance_updates_and_malformed_rows_fail_closed(tmp_path):
+    project, first_id, _second_id, private_id = _change_project(tmp_path)
+    provider = sqlite_memory_provider(project)
+    invalid_sensitivity = provider.update_memory(
+        first_id,
+        actor_agent="review-agent",
+        sensitivity="top-secret",
+    )
+    assert invalid_sensitivity["status"] == "blocked"
+    assert invalid_sensitivity["error"] == "invalid_sensitivity:top-secret"
+    invalid_scope = provider.update_memory(
+        private_id,
+        actor_agent="review-agent",
+        scope="private-ish",
+    )
+    assert invalid_scope["status"] == "blocked"
+    assert invalid_scope["error"] == "invalid_scope:private-ish"
+
+    with VaultDB(project / "vault.db") as db:
+        db.conn.execute(
+            "UPDATE knowledge SET sensitivity=? WHERE id=?",
+            ("top-secret", first_id),
+        )
+        db.conn.execute(
+            "UPDATE knowledge SET scope=?, sensitivity=? WHERE id=?",
+            ("private-ish", "low", private_id),
+        )
+        db.conn.commit()
+        malformed_rows = {
+            memory_id: db.get_knowledge(memory_id)
+            for memory_id in (first_id, private_id)
+        }
+    malformed_revisions = {
+        memory_id: memory_change_envelope(row)["revision_id"]
+        for memory_id, row in malformed_rows.items()
+        if row is not None
+    }
+
+    page = provider.list_changes(
+        agent_id="work-agent",
+        max_sensitivity="low",
+        limit=100,
+    )
+    assert page["status"] == "ok"
+    visible_ids = {change["memory_id"] for change in page["changes"]}
+    for memory_id in (first_id, private_id):
+        assert str(memory_id) not in visible_ids
+        assert provider.get_metadata(
+            memory_id,
+            agent_id="work-agent",
+            max_sensitivity="low",
+        ) is None
+        assert provider.get_revision(
+            memory_id,
+            malformed_revisions[memory_id],
+            agent_id="work-agent",
+            max_sensitivity="low",
+        ) is None
+
+        bounded = provider.read_bounded_evidence(
+            memory_id,
+            malformed_revisions[memory_id],
+            line_start=1,
+            line_end=1,
+            agent_id="work-agent",
+            max_sensitivity="low",
+        )
+        assert bounded == {"status": "error", "error": "not_found_or_not_readable"}
+        assert "content" not in bounded
+
+
 def test_audit_reference_is_advisory_and_not_part_of_the_row_revision_contract():
     row = {
         "id": 42,
@@ -517,3 +588,34 @@ def test_deleted_memory_is_a_tombstone_change_without_readable_evidence(tmp_path
     assert denied["status"] == "error"
     assert denied["error"] == "not_found_or_not_readable"
     assert "content" not in denied
+
+
+def test_mixed_case_deleted_status_is_stored_and_emitted_canonically(tmp_path):
+    project, first_id, _second_id, _private_id = _change_project(tmp_path)
+    provider = sqlite_memory_provider(project)
+
+    updated = provider.update_memory(
+        first_id,
+        actor_agent="review-agent",
+        status="Deleted",
+        scope="Shared",
+        sensitivity="Low",
+    )
+    assert updated["status"] == "ok"
+    with VaultDB(project / "vault.db") as db:
+        stored = db.get_knowledge(first_id)
+        assert stored["status"] == "deleted"
+        assert stored["scope"] == "shared"
+        assert stored["sensitivity"] == "low"
+
+    page = provider.list_changes(
+        agent_id="work-agent",
+        max_sensitivity="low",
+        limit=10,
+    )
+    tombstone = next(
+        change for change in page["changes"] if change["memory_id"] == str(first_id)
+    )
+    assert tombstone["change_type"] == "delete"
+    assert tombstone["lifecycle"]["status"] == "deleted"
+    assert tombstone["governance"] == {"scope": "shared", "sensitivity": "low"}

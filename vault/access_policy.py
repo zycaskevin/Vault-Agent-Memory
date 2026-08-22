@@ -12,6 +12,7 @@ SENSITIVITY_RANK = {
     "high": 2,
     "restricted": 3,
 }
+VALID_MEMORY_SCOPES = frozenset({"private", "project", "shared", "public"})
 
 
 def _normalize_agent(value: Any) -> str:
@@ -135,13 +136,15 @@ def can_read_memory(row: dict[str, Any], policy: ReadPolicy) -> bool:
             return False
 
     sensitivity = str(row.get("sensitivity") or "low").strip().lower()
-    sensitivity_rank = SENSITIVITY_RANK.get(sensitivity, 0)
+    scope = str(row.get("scope") or "project").strip().lower()
+    if sensitivity not in SENSITIVITY_RANK or scope not in VALID_MEMORY_SCOPES:
+        return False
+    sensitivity_rank = SENSITIVITY_RANK[sensitivity]
     if policy.max_sensitivity:
         max_rank = SENSITIVITY_RANK[policy.max_sensitivity]
         if sensitivity_rank > max_rank:
             return False
 
-    scope = str(row.get("scope") or "project").strip().lower()
     owner_agent = _normalize_agent(row.get("owner_agent"))
     allowed_agents = _parse_allowed_agents(row.get("allowed_agents"))
     agent = policy.agent_id

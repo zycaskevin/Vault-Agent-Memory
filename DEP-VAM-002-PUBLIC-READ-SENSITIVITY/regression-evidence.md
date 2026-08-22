@@ -5,13 +5,16 @@
 Tests cover both no-revision get adapters, both Memory API search adapters,
 timeline, range overflow, OpenAPI/HTTP 400, all four provider reads without
 identity, exact revision material, tombstones, and rollback preservation.
+They also cover rejected unknown provider updates, defensive denial of unknown
+stored scope/sensitivity across all four provider reads, and canonical
+mixed-case tombstone emission.
 
 ## Related tests executed
 
-Two focused RED nodes failed deterministically at exact pre-fix head. The exact
-Green command passed 19 nodes; the exact all-changed-Python Ruff command and
-159-module size gate also passed. Both exact commands and outputs are retained
-in the shareable Green artifact.
+Two initial and two follow-up RED nodes failed deterministically. The final
+exact Green command passed 21 nodes; the exact all-changed-Python Ruff command
+and 159-module size gate also passed. Exact commands and bounded outputs are
+retained in the shareable artifacts.
 
 ## Unaffected paths sampled
 
