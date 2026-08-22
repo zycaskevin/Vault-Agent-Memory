@@ -26,6 +26,8 @@ the final Green completion time while these artifacts retain both cycles.
 
 ## Remaining limitations
 
-The real-loopback HTTP assertions and complete suite remain assigned to one
-owner-authorized exact committed private-checkout Builder Local Green. A new
-gate binding and independent Reviewer re-review are required afterward.
+The owner-authorized exact committed private-checkout Builder Local Green
+passed at `1a346913563f5437b7815f655393f0eee5a0da52`: 446 isolated Subject nodes
+and 2967 repository tests passed, with 10 skips and one existing warning.
+Post-run HEAD/worktree, physical modes, and frozen Subject diff remained exact.
+A new gate binding and independent Reviewer re-review are still required.

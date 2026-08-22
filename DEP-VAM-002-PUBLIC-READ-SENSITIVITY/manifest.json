@@ -29,6 +29,13 @@
       "sha256": "cf2ce491853e62195b90c345a6bae9d398df7e68b5ce65203ad0bc5d74c33bb3",
       "collected_at": "2026-08-22T13:57:46Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--public-read-sensitivity-proof.txt",
+      "sha256": "d17d5de88294be14242d72bb5ce156a0ea8b6d9edd2edff0ddfb3d9db4ff671f",
+      "collected_at": "2026-08-22T19:18:52Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -50,6 +57,11 @@
     {
       "path": "shareable/artifacts/terminal--stored-labels-and-tombstone-red.txt",
       "sha256": "5bbb09a00d415903c2e81345e2c84e6acb4497f50ce632e7a05b6576a8420362",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--public-read-sensitivity-proof.txt",
+      "sha256": "d17d5de88294be14242d72bb5ce156a0ea8b6d9edd2edff0ddfb3d9db4ff671f",
       "shareable": true
     }
   ]
