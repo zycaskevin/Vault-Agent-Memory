@@ -8,9 +8,9 @@
   ],
   "risk_level": "L1",
   "created_at": "2026-08-22T18:51:32Z",
-  "updated_at": "2026-08-22T18:52:05Z",
+  "updated_at": "2026-08-22T19:03:41Z",
   "workflow": {
-    "phase": "fix",
+    "phase": "green",
     "history": [
       {
         "phase": "red",
@@ -23,13 +23,17 @@
       {
         "phase": "fix",
         "at": "2026-08-22T18:52:05Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-22T19:03:41Z"
       }
     ]
   },
   "expected_behavior": "The exact PR #500 Builder Local Green uses Vault's locked test Python for repository commands while the newly merged Agentic SDD Governance runtime supplies only the sddgov executable and current-user serialization lock.",
-  "actual_behavior": "The first post-merge validation placed the governance virtual environment first on PATH; its Python lacked pytest, so identity-isolated collection failed before any named Subject node or repository-wide pytest executed.",
+  "actual_behavior": "The first post-merge validation placed the governance virtual environment first on PATH; its Python lacked pytest. Corrected ordering selected both intended runtimes, completed 446 identity nodes, and reached repository pytest without reproducing the PATH failure.",
   "environment": {
-    "commit": "983c48036a585eaecced5a56b7dcbb98dacb67ed",
+    "commit": "7a64938bdc1e5aa483db013e4de4c8e78952fa20",
     "branch": "codex/vam-002-memory-change-envelope-ready",
     "runtime": "CPython 3.11; Vault locked test Python with pytest 9.1.1; Agentic SDD Governance main 92f4ba8 / 0.2.0-experimental.9"
   },
@@ -38,6 +42,10 @@
     {
       "path": "shareable/artifacts/terminal--local-green-path-red.txt",
       "sha256": "4fd3b97d840784c0bb37e2e862e050226ea50859fa5ebb369f7c93a771b1005d"
+    },
+    {
+      "path": "shareable/artifacts/terminal--local-green-path-green.txt",
+      "sha256": "3b188b6c72c4605435fd2e7c588e609dbf6bb17facda80d010f7faa6ec977a2f"
     }
   ]
 }

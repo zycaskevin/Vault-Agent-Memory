@@ -13,22 +13,23 @@ runtime second, `python -c 'import pytest'` must resolve pytest `9.1.1`,
 Green must advance beyond identity collection. If it fails at the same stage,
 this hypothesis is incomplete and no Green may be claimed.
 
-## Hypothesis
-
-TODO
-
 ## Supporting evidence
 
-TODO
+The first run selected a Python without pytest and stopped during collection.
+The corrected run selected pytest `9.1.1`, passed all 446 identity nodes, and
+entered repository-wide pytest.
 
 ## Contradicting evidence
 
-TODO
+The corrected run later found two separately governed compatibility failures.
+Those failures occurred after collection and do not contradict the PATH cause.
 
 ## Falsification test
 
-TODO
+Resolve both executable providers, import pytest, and require the identity
+runner to proceed through node execution into the repository suite.
 
 ## Conclusion
 
-TODO
+Confirmed and Green for command composition. Overall repository Green remains
+separately blocked by `DEP-VAM-002-FULL-SUITE-COMPATIBILITY`.

@@ -21,12 +21,16 @@ clean worktree, unchanged exact head, and no retry.
 
 ## Regression test added or strengthened
 
-TODO
+No repository test was needed because the defect was outside repository bytes.
+The executable-provider preflight is the regression guard.
 
 ## Related tests executed
 
-TODO
+Doctor, CI contract, README smoke, release parity, and all 446 identity-isolated
+Subject nodes passed. Repository pytest started and reported its own two
+separately governed findings.
 
 ## Unaffected paths sampled
 
-TODO
+The exact head stayed clean, tracked physical modes remained index-consistent,
+and the frozen Subject contract was unchanged.

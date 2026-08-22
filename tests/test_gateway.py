@@ -1075,6 +1075,9 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
             sensitivity="high",
         )
         build_document_map_for_entry(db, high_id)
+        knowledge_count_before = db.conn.execute(
+            "SELECT count(*) AS count FROM knowledge"
+        ).fetchone()["count"]
     handler = make_gateway_handler(project, auth_token="secret", allow_shared_candidates=True)
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -1319,7 +1322,10 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
 
     with VaultDB(project / "vault.db") as db:
         assert db.get_knowledge(public_id)["status"] == "active"
-        assert db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"] == 2
+        assert (
+            db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
+            == knowledge_count_before
+        )
 
 
 def test_gateway_remote_semantic_helpers_use_safe_central_read_chain(monkeypatch):

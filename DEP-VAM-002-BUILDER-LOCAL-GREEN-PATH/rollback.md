@@ -16,18 +16,11 @@ No product commit, database, schema, installation, or live runtime is changed.
 Confirm `git status --porcelain=v1 --untracked-files=all` is empty, HEAD remains
 the exact candidate, and no Local Green process remains active.
 
-## Trigger
-
-TODO
-
-## Reversible steps
-
-TODO
-
 ## Data compatibility
 
-TODO
+No data, schema, or product byte was changed.
 
 ## Post-rollback verification
 
-TODO
+Re-resolve the selected Python and governance executables and confirm the
+private checkout remains clean without untracked gate output.

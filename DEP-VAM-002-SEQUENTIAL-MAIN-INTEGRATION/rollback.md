@@ -62,6 +62,8 @@ printf '%s\n' "$approval_json" | python -c 'import json,sys; value=json.load(sys
 git revert --no-commit -m 1 "$merge_oid"
 git restore --source=HEAD --staged --worktree -- \
   .sddgov \
+  DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH \
+  DEP-VAM-002-FULL-SUITE-COMPATIBILITY \
   DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION \
   DEP-VAM-002-PUBLIC-READ-SENSITIVITY \
   DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION \
@@ -78,6 +80,7 @@ vault/access_policy.py
 vault/gateway.py
 vault/gateway_memory_api.py
 vault/gateway_openapi.py
+vault/governance_read_guard.py
 vault/memory_change_envelope.py
 vault/memory_provider.py""".splitlines()); raise SystemExit(0 if actual == expected else 1)'
 test -z "$(git diff --name-only)"
@@ -108,7 +111,7 @@ must exit 0 and be captured in the new rollback DEP:
 ```bash
 python -m pytest -q tests/test_memory_provider.py -k 'not change'
 python -m pytest -q tests/test_gateway.py -k 'not memory_changes and not revision_bound and not memory_change_http'
-ruff check vault/access_policy.py vault/gateway.py vault/gateway_memory_api.py vault/gateway_openapi.py vault/memory_provider.py
+ruff check vault/access_policy.py vault/gateway.py vault/gateway_memory_api.py vault/gateway_openapi.py vault/governance_read_guard.py vault/memory_provider.py
 python scripts/readme_command_smoke.py
 python scripts/check_release_parity.py
 sddgov ci verify .

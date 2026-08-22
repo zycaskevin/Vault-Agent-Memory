@@ -22,16 +22,18 @@ preflight. Repository bytes and runtime product behavior are unchanged.
 
 ## Smallest sufficient change
 
-TODO
+Place the established Vault test-python shim before the merged governance
+runtime on PATH and assert both selected executables before the gate.
 
 ## Files or components in scope
 
-TODO
+Builder-only command environment and this DEP.
 
 ## Explicit non-scope
 
-TODO
+Vault production bytes, tests, HOME/TMP policy, retries, Hermes/live data,
+push, merge, reviewer identity, signing, or repository trust.
 
 ## Blast radius
 
-TODO
+Only executable resolution for this Builder preflight changed.

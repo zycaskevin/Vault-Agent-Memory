@@ -26,18 +26,20 @@ This is a Builder runtime-composition failure. It is not evidence that a Vault
 product test failed. The failed non-sandbox run is not retried without a fresh
 explicit authorization.
 
-## Expected
-
-TODO
-
-## Actual
-
-TODO
-
 ## Deterministic steps
 
-TODO
+The preflight resolves both providers from the same bounded PATH, then the
+unchanged complete gate is invoked:
+
+```text
+python -c 'import pytest; print(pytest.__version__)'
+sddgov --version
+sddgov ci local-gate .
+```
 
 ## Environment and preconditions
 
-TODO
+- private clean checkout at exact committed candidate
+- Vault test-python shim first; merged governance runtime second
+- current-user home read/write and local loopback only under explicit approval
+- no push, sign, trust, merge, deployment, or live-data permission

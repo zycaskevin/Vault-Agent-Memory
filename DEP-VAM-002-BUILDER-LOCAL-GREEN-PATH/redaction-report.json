@@ -7,10 +7,17 @@
       "source_sha256": "4fd3b97d840784c0bb37e2e862e050226ea50859fa5ebb369f7c93a771b1005d",
       "output_sha256": "4fd3b97d840784c0bb37e2e862e050226ea50859fa5ebb369f7c93a771b1005d",
       "redactions": {}
+    },
+    {
+      "source": "terminal--local-green-path-green.txt",
+      "output": "terminal--local-green-path-green.txt",
+      "source_sha256": "3b188b6c72c4605435fd2e7c588e609dbf6bb17facda80d010f7faa6ec977a2f",
+      "output_sha256": "3b188b6c72c4605435fd2e7c588e609dbf6bb17facda80d010f7faa6ec977a2f",
+      "redactions": {}
     }
   ],
   "blocked": [],
   "totals": {},
   "dep_id": "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
-  "generated_at": "2026-08-22T18:52:05Z"
+  "generated_at": "2026-08-22T19:03:41Z"
 }

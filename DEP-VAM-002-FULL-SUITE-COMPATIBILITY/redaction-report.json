@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--full-suite-compatibility-red.txt",
+      "output": "terminal--full-suite-compatibility-red.txt",
+      "source_sha256": "427c5fe36ac3a4b894b1b6f41c382ca33ad0e4822d1ab2b82b3369c13ae1bd67",
+      "output_sha256": "427c5fe36ac3a4b894b1b6f41c382ca33ad0e4822d1ab2b82b3369c13ae1bd67",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--full-suite-compatibility-green.txt",
+      "output": "terminal--full-suite-compatibility-green.txt",
+      "source_sha256": "84503084a8b04c9ed1ac01ffeac9245edd6b58a40f361653147e37b111f81172",
+      "output_sha256": "84503084a8b04c9ed1ac01ffeac9245edd6b58a40f361653147e37b111f81172",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-002-FULL-SUITE-COMPATIBILITY",
+  "generated_at": "2026-08-22T19:08:04Z"
+}

@@ -146,7 +146,11 @@ def evaluate_governed_read(
     if not can_read_memory(access_row, read_policy):
         sensitivity_rank = SENSITIVITY_RANK.get(sensitivity, 0)
         cap = read_policy.max_sensitivity
-        if cap and sensitivity_rank > SENSITIVITY_RANK[cap]:
+        if scope not in KNOWN_SCOPES or sensitivity not in SENSITIVITY_RANK:
+            # The precise fail-closed label diagnostics were recorded above.
+            # Do not obscure them with a redundant generic authorization code.
+            pass
+        elif cap and sensitivity_rank > SENSITIVITY_RANK[cap]:
             reasons.append("sensitivity_capped")
         elif sensitivity == "restricted":
             reasons.append("restricted")
