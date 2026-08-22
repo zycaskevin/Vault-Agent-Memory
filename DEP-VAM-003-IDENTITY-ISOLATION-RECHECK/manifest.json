@@ -37,6 +37,11 @@
       "path": "shareable/artifacts/terminal--stable-root-green.txt",
       "sha256": "cd80a31658239d7f2a27584265c5c8002351f56e5c9c24cb44011a3bd643aba1",
       "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/exact-head-builder-local-green.txt",
+      "sha256": "8078c2cca9c7449ef50e17631d6041829866c01e26cf270c08b9d9c1c778b6a8",
+      "shareable": true
     }
   ]
 }

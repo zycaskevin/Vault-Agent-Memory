@@ -57,7 +57,7 @@ only when they match the user's goal.
 | Semantic search | Keyword search is not enough, or the project has many paraphrased notes. |
 | Supabase sync | Agents run on different machines, or Coze/n8n/hosted tools need remote reads. |
 | Headroom | Tool output, logs, or retrieved context are too large for the model window. |
-| Memory agents | The user wants profile summaries, dream reports, forgetting, or periodic curation. |
+| Memory agents | The user wants memory curation, lifecycle reports, TTL review, or reversible archive previews. |
 | Dev/benchmark deps | The user is contributing to Vault or running release/benchmark checks. |
 
 ## Scope Choices

@@ -1,7 +1,9 @@
 # Rollback
 
-rollback_version: 1.1
+rollback_version: 1.0
 target: exact behavioral and active-public-documentation delta merged by Pull Request 499; preserve all VAM-003 decision, SDD, Work Package, DEP, review, and governance provenance
+command: Run the guarded preparation command below from the exact merged main checkout after consuming the required approval.
+verify: Run every post-rollback verification below and record the results in the new strictly verified rollback DEP.
 
 ## Trigger
 
@@ -40,12 +42,13 @@ git merge-base --is-ancestor 441db54118aa3157703727d2168e15d174f44af0 "$merge_oi
 test "$(git branch --show-current)" = main
 test "$(git rev-parse HEAD)" = "$merge_oid"
 approval_json="$(sddgov autonomy evaluate "$VAM003_ROLLBACK_REQUEST" --path .)"
-printf '%s\n' "$approval_json" | python -c 'import json,sys; value=json.load(sys.stdin); assert value.get("state")=="CONTINUE" and value.get("approval_consumed") is True'
+printf '%s\n' "$approval_json" | python -c 'import json,sys; value=json.load(sys.stdin); raise SystemExit(0 if value.get("state")=="CONTINUE" and value.get("approval_consumed") is True else 1)'
 git revert --no-commit -m 1 "$merge_oid"
 git restore --source=HEAD --staged --worktree -- \
   .sddgov \
   DEP-VAM-003-HOSTED-MODULE-SIZE-GATE \
   DEP-VAM-003-IDENTITY-ISOLATION-RECHECK \
+  DEP-VAM-003-INDEPENDENT-REVIEW-REMEDIATION \
   DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY \
   docs/issues/VAM-003-l0-bootstrap-boundary.md \
   docs/specs/vam-003-l0-bootstrap-boundary.md \
@@ -72,8 +75,9 @@ vault/agent_setup_startup.py
 vault/agent_setup_supabase.py
 vault/cli_core.py
 vault/compiler.py
-vault/memory_layers.py""".splitlines()); assert actual == expected, (sorted(actual - expected), sorted(expected - actual))'
+vault/memory_layers.py""".splitlines()); raise SystemExit(0 if actual == expected else 1)'
 test -z "$(git diff --name-only)"
+test -z "$(git status --porcelain=v1 --untracked-files=all | awk 'substr($0,1,2) == "??" { print }')"
 ```
 
 ## Reversible steps

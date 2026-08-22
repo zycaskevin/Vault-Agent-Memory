@@ -13,6 +13,8 @@ race.
 - Shared-`/tmp` complete recheck: failed closed on a different node.
 - Stable dedicated root complete isolation: 446 nodes passed.
 - Stable-root disjoint repository suite: 2,935 passed, 10 skipped.
+- Exact committed audit head `8eec35c3`: 446 isolated nodes passed, then 2,941
+  passed and 10 skipped with one already dispositioned warning.
 
 ## Unaffected paths sampled
 

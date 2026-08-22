@@ -208,7 +208,7 @@ The local vault should remain usable without cloud infrastructure. Remote
 systems should receive only the view they need:
 
 - shared project knowledge
-- reviewed profile summaries
+- reviewed, sourced memory summaries
 - low-sensitivity active threads
 - device-appropriate context
 - never raw private memory by default

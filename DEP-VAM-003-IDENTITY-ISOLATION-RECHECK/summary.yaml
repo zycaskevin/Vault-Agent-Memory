@@ -8,7 +8,7 @@
   ],
   "risk_level": "L1",
   "created_at": "2026-08-21T10:51:03Z",
-  "updated_at": "2026-08-21T10:59:21Z",
+  "updated_at": "2026-08-22T03:37:48Z",
   "workflow": {
     "phase": "proof",
     "history": [
@@ -37,9 +37,9 @@
   "expected_behavior": "All 446 frozen Subject identity nodes pass under per-node isolation.",
   "actual_behavior": "One authorization-runner node received a fixed deny while constructing its test proposal.",
   "environment": {
-    "commit": "0539ae33f36a290a4e853630bacbe6ef7749382b plus uncommitted formatting-only module-size fix",
+    "commit": "8eec35c3b228efbdfc8707a11e2d31e885002562",
     "branch": "codex/vam-003-l0-bootstrap-boundary",
-    "runtime": "Local Linux; candidate identity isolation; Python 3.12-compatible suite"
+    "runtime": "Local Linux; owner-private Builder checkout; hosted-equivalent Local Green environment"
   },
   "root_cause_status": "confirmed",
   "attachments": []

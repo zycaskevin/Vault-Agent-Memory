@@ -7,7 +7,7 @@ The recommended model is:
 
 | Layer | Meaning | Typical sharing |
 |---|---|---|
-| `L0` | Minimal identity for the user, agent, project, or workspace. | Private by default. Share only small reviewed summaries. |
+| `L0` | Stable bootstrap context for the project or workspace; not an identity or profile model. | Private by default. Share only small reviewed summaries. |
 | `L1` | Stable core facts, contracts, preferences, and working rules. | Share with trusted work agents after review. |
 | `L2` | Recent context, current decisions, incidents, handoff notes, and short-term state. | Share reviewed summaries, usually with freshness or expiry metadata. |
 | `L3` | Deep searchable knowledge, SOPs, architecture notes, fixes, and lessons. | Best default layer for low-sensitivity shared project knowledge. |
@@ -18,10 +18,10 @@ Use side metadata to decide who may read, write, sync, or export a memory:
 layer: L2
 scope: shared
 sensitivity: medium
-owner_agent: profile-agent
-allowed_agents: ["profile-agent", "work-agent", "product-agent"]
+owner_agent: memory-curator
+allowed_agents: ["memory-curator", "work-agent", "product-agent"]
 status: reviewed
-memory_type: care_summary
+memory_type: project_context
 expires_at: 2026-07-01
 ```
 
@@ -240,11 +240,11 @@ For Hermes Agent, OpenClaw, Codex, Claude Code, n8n, Coze, or other runtimes:
 
 - Share the same project memory only when they use the same stable `vault.db` or
   the same reviewed Supabase sync view.
-- Keep each agent's persona, private profile notes, and raw private
-  conversations in that agent's private vault or local profile files.
+- Keep application-owned models and raw private conversations outside Vault,
+  in the owning application's private storage.
 - Let trusted work agents share `L1` and `L3` project knowledge after review.
-- Let care or companion agents publish short `L2` summaries instead of raw
-  private chats.
+- Let trusted applications submit short, purpose-bounded `L2` candidates
+  instead of raw private interactions.
 - Treat `status: candidate` as not active memory; use `vault candidates` to
   review the queue, then promote before shared use.
 
@@ -253,14 +253,14 @@ Recommended product setup:
 ```bash
 vault setup-agent \
   --non-interactive \
-  --agent profile-agent \
+  --agent memory-curator \
   --scope shared \
   --agent-project-dir ~/Vaults/project-memory \
   --features core,mcp,supabase,memory_agents \
   --supabase-setup advanced \
   --supabase-sync cron \
   --remote-reader all \
-  --agent-roster profile-agent:profile,work-agent:work,product-agent:work,remote-agent:remote,n8n:automation \
+  --agent-roster memory-curator:work,work-agent:work,product-agent:work,remote-agent:remote,n8n:automation \
   --validation-pack all \
   --json
 ```

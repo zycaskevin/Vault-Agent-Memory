@@ -1,0 +1,28 @@
+command: /tmp/vam-python-path-vam001/python -m pytest -q tests/test_vault_boundary_freeze.py
+workdir: /tmp/vam-pr499-builder-oI8F3s/repo
+commit: 8eec35c3b228efbdfc8707a11e2d31e885002562
+result: exit 1
+summary: 5 failed, 12 passed in 0.11s
+
+failed:
+- test_active_public_guidance_respects_frozen_memory_boundary[docs/memory_governance.md]
+  stale: Minimal identity for the user, agent, project, or workspace.
+- test_active_public_guidance_respects_frozen_memory_boundary[docs/agent_install.md]
+  stale: The user wants profile summaries, dream reports, forgetting, or periodic curation.
+- test_active_public_guidance_respects_frozen_memory_boundary[docs/vision.md]
+  stale: reviewed profile summaries
+- test_vam003_rollback_approval_and_cleanliness_guards_fail_closed
+  stale: assert value.get("state")=="CONTINUE" and value.get("approval_consumed") is True
+  missing: second git status --porcelain=v1 --untracked-files=all guard
+- test_vam003_rollback_exposes_merge_verifier_contract
+  actual rollback_version: 1.1
+  missing top-level fields: command, verify
+
+hosted governance corroboration:
+- run: [REDACTED_PHONE_OR_NUMBER]
+- job: [REDACTED_PHONE_OR_NUMBER]
+- result: rollback record is missing or incomplete
+
+review findings:
+- https://github.com/zycaskevin/Vault-Agent-Memory/pull/499#discussion_r3834963710
+- https://github.com/zycaskevin/Vault-Agent-Memory/pull/499#discussion_r3834963711

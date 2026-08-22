@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import pytest
@@ -95,3 +98,127 @@ def test_primary_public_docs_name_l0_bootstrap_not_l0_identity(relative: str) ->
     assert "L0-bootstrap" in text
     assert "L0 Identity" not in text
     assert "L0 身份" not in text
+
+
+@pytest.mark.parametrize(
+    ("relative", "stale_phrases", "required_phrase"),
+    [
+        (
+            "docs/memory_governance.md",
+            (
+                "Minimal identity for the user, agent, project, or workspace.",
+                "owner_agent: profile-agent",
+                "memory_type: care_summary",
+                "Keep each agent's persona, private profile notes",
+                "Let care or companion agents publish short `L2` summaries",
+            ),
+            "Stable bootstrap context for the project or workspace",
+        ),
+        (
+            "docs/agent_install.md",
+            (
+                "The user wants profile summaries, dream reports, forgetting, or periodic curation.",
+            ),
+            "memory curation, lifecycle reports, TTL review, or reversible archive previews",
+        ),
+        (
+            "docs/vision.md",
+            ("reviewed profile summaries",),
+            "reviewed, sourced memory summaries",
+        ),
+    ],
+)
+def test_active_public_guidance_respects_frozen_memory_boundary(
+    relative: str,
+    stale_phrases: tuple[str, ...],
+    required_phrase: str,
+) -> None:
+    text = (ROOT / relative).read_text(encoding="utf-8")
+
+    for stale_phrase in stale_phrases:
+        assert stale_phrase not in text
+    assert required_phrase in text
+
+
+def test_vam003_rollback_approval_and_cleanliness_guards_fail_closed() -> None:
+    rollback = (
+        ROOT / "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY" / "rollback.md"
+    ).read_text(encoding="utf-8")
+
+    guarded_block = rollback.split("## Guarded preparation command", 1)[1].split(
+        "## Reversible steps", 1
+    )[0]
+    assert "assert " not in guarded_block
+    assert "raise SystemExit" in rollback
+    assert rollback.count("git status --porcelain=v1 --untracked-files=all") >= 2
+
+    snippets = re.findall(r"python -c '([^']+)'", rollback)
+    approval_snippet = next(
+        snippet for snippet in snippets if "approval_consumed" in snippet
+    )
+    invalid = subprocess.run(
+        [sys.executable, "-O", "-c", approval_snippet],
+        input='{"state":"CONTINUE","approval_consumed":false}\n',
+        text=True,
+        check=False,
+        capture_output=True,
+    )
+    valid = subprocess.run(
+        [sys.executable, "-O", "-c", approval_snippet],
+        input='{"state":"CONTINUE","approval_consumed":true}\n',
+        text=True,
+        check=False,
+        capture_output=True,
+    )
+
+    assert invalid.returncode != 0
+    assert valid.returncode == 0
+
+    allowlist_snippet = next(
+        snippet for snippet in snippets if "actual=set" in snippet
+    )
+    expected_match = re.search(
+        r'expected=set\("""(.*?)"""\.splitlines\(\)\)',
+        allowlist_snippet,
+        flags=re.DOTALL,
+    )
+    assert expected_match is not None
+    expected_paths = expected_match.group(1).splitlines()
+    invalid_allowlist = subprocess.run(
+        [sys.executable, "-O", "-c", allowlist_snippet],
+        input=b"unexpected-path\0",
+        check=False,
+        capture_output=True,
+    )
+    valid_allowlist = subprocess.run(
+        [sys.executable, "-O", "-c", allowlist_snippet],
+        input=("\0".join(expected_paths) + "\0").encode(),
+        check=False,
+        capture_output=True,
+    )
+
+    assert invalid_allowlist.returncode != 0
+    assert valid_allowlist.returncode == 0
+
+
+def test_vam003_rollback_exposes_merge_verifier_contract() -> None:
+    rollback = (
+        ROOT / "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY" / "rollback.md"
+    ).read_text(encoding="utf-8")
+    fields = dict(
+        re.findall(
+            r"^(rollback_version|target|command|verify):[ \t]*(.+)$",
+            rollback,
+            flags=re.MULTILINE,
+        )
+    )
+
+    assert fields["rollback_version"] == "1.0"
+    for name in ("target", "command", "verify"):
+        value = fields[name].strip()
+        assert value
+        lowered = value.casefold()
+        assert not any(
+            placeholder in lowered
+            for placeholder in ("todo", "replace", "unavailable", "<", ">")
+        )
