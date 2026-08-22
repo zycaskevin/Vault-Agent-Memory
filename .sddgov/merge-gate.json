@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "base_sha": "db1763482f0f603ccd63817f26c73308bc186697",
-  "head_sha": "d9f0960e85366cf9e2b9b3c1f27f74193cc5b516",
+  "head_sha": "fcac3c1f82d2b58a61fb55488175a32e599d5f5b",
   "risk_level": "L1",
   "builder_id": "codex",
-  "change_digest": "f2a848850d87b2ee83635a97ceba2f64e4542141ef56c4f9933c3311c665cbe0",
+  "change_digest": "2ee9777d9b0a42365b29302a61a9b920c7dd9d508ecf9eaac5831c9efc4d3ae6",
   "deps": [
     "DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY",
     "DEP-VAM-003-IDENTITY-ISOLATION-RECHECK",
