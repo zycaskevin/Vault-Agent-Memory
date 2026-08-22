@@ -12,6 +12,8 @@ redaction report's exact source/output hashes and `workstation_path` count.
 - Initial Green: 18 passed.
 - Final Green after the all-VAM-003 shareable scan: 19 passed.
 - New-DEP rollback preservation probe: Red failure, then 1 passed after fix.
+- Proof-state wording probe: Red failure on the pending-Green contradiction,
+  then Green after separating DEP Proof from the repository merge gate.
 - Updated identity-isolation DEP strict verification: pass.
 
 ## Unaffected paths sampled

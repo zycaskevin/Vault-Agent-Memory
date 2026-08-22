@@ -17,5 +17,7 @@ and both manifest and redaction provenance bind that output.
 
 ## Remaining limitations
 
-The new committed/gate-bound head still requires complete Builder Local Green
-before push and a fresh independent review before receipt signing.
+Local Green is enforced separately by the merge gate; this DEP's Proof is the
+completed focused Red/Green evidence above and does not treat a pending
+repository gate as Proof. Independent review and receipt signing remain
+separate protected-file gates.

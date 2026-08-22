@@ -273,3 +273,13 @@ def test_all_vam003_shareable_evidence_omits_owner_home_paths() -> None:
     for artifact in artifacts:
         if artifact.is_file():
             assert b"/home/" not in artifact.read_bytes(), artifact
+
+
+def test_shareable_redaction_proof_does_not_claim_its_green_is_pending() -> None:
+    dep = ROOT / "DEP-VAM-003-SHAREABLE-PATH-REDACTION"
+    summary = json.loads((dep / "summary.yaml").read_text(encoding="utf-8"))
+    verification = (dep / "verification.md").read_text(encoding="utf-8")
+
+    assert summary["workflow"]["phase"] == "proof"
+    assert "still requires complete Builder Local Green" not in verification
+    assert "Local Green is enforced separately by the merge gate" in verification
