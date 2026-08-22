@@ -17,7 +17,7 @@ DEFAULT_GATEWAY_AUDIT_BACKUPS = 5
 GATEWAY_CONTRACT_VERSION = "2026-08-21"
 MEMORY_API_SENSITIVITY_LEVELS = ["low", "medium", "high", "restricted"]
 _MEMORY_API_BAD_REQUEST = {
-    "description": "Invalid cursor, cursor policy, or sensitivity ceiling",
+    "description": "Invalid cursor, cursor policy, sensitivity ceiling, or bounded range",
     "content": {
         "application/json": {"schema": {"$ref": "#/components/schemas/MemoryAPIError"}}
     },
@@ -107,10 +107,15 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                     "summary": "Vault Memory API facade for governed active-memory search.",
                     "requestBody": {
                         "content": {
-                            "application/json": {"schema": {"$ref": "#/components/schemas/SearchRequest"}}
+                            "application/json": {
+                                "schema": {"$ref": "#/components/schemas/MemorySearchRequest"}
+                            }
                         }
                     },
-                    "responses": {"200": {"description": "Compact active-memory search results"}},
+                    "responses": {
+                        "200": {"description": "Compact active-memory search results"},
+                        "400": _MEMORY_API_BAD_REQUEST,
+                    },
                 }
             },
             "/memory/create": {
@@ -253,8 +258,21 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
                         {"name": "memory_id", "in": "query", "required": True, "schema": {"type": "integer"}},
                         {"name": "limit", "in": "query", "schema": {"type": "integer", "default": 20}},
+                        {"name": "include_private", "in": "query", "schema": {"type": "boolean", "default": False}},
+                        {
+                            "name": "max_sensitivity",
+                            "in": "query",
+                            "schema": {
+                                "type": "string",
+                                "enum": MEMORY_API_SENSITIVITY_LEVELS,
+                                "default": "low",
+                            },
+                        },
                     ],
-                    "responses": {"200": {"description": "Metadata-only memory timeline"}},
+                    "responses": {
+                        "200": {"description": "Metadata-only memory timeline"},
+                        "400": _MEMORY_API_BAD_REQUEST,
+                    },
                 }
             },
             "/central-candidates/status": {
@@ -381,6 +399,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                                 "invalid_cursor",
                                 "cursor_policy_mismatch",
                                 "max_sensitivity_invalid",
+                                "range_too_large",
                             ],
                         },
                         "message": {"type": "string"},
@@ -410,6 +429,21 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                             ),
                         },
                     },
+                },
+                "MemorySearchRequest": {
+                    "allOf": [
+                        {"$ref": "#/components/schemas/SearchRequest"},
+                        {
+                            "type": "object",
+                            "properties": {
+                                "max_sensitivity": {
+                                    "type": "string",
+                                    "enum": MEMORY_API_SENSITIVITY_LEVELS,
+                                    "default": "low",
+                                }
+                            },
+                        },
+                    ]
                 },
                 "ReadRangeRequest": {
                     "type": "object",

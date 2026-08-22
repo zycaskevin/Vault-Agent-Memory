@@ -1,0 +1,27 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--public-read-auth-green.txt",
+      "output": "terminal--public-read-auth-green.txt",
+      "source_sha256": "dcc6ed1de654377ca6cef27f0fb100364f80d8448a5363a80a4e3603d09358b1",
+      "output_sha256": "d011cdcfbc91dbcb6ce6aca602af60205bcb87b1057a9f74b83eb197440b9967",
+      "redactions": {
+        "workstation_path": 1
+      }
+    },
+    {
+      "source": "terminal--public-read-auth-red.txt",
+      "output": "terminal--public-read-auth-red.txt",
+      "source_sha256": "c15ec2e508f101398e587de5e27bbee93bdf282fc47a1facec6e2c83c093bb9b",
+      "output_sha256": "c15ec2e508f101398e587de5e27bbee93bdf282fc47a1facec6e2c83c093bb9b",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "workstation_path": 1
+  },
+  "dep_id": "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
+  "generated_at": "2026-08-22T13:47:49Z"
+}

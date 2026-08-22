@@ -158,11 +158,18 @@ adapter cannot infer how many private or higher-sensitivity rows were filtered.
 Cursors are bound to the agent/private/sensitivity policy that created them and
 fail closed when reused under another policy.
 
-The public change and revision-bound read surfaces accept only `low`, `medium`,
-`high`, or `restricted` as `max_sensitivity`. Unknown non-empty values return
-`max_sensitivity_invalid` without rows or content. Invalid cursors, cursor
-policy mismatches, and invalid sensitivity ceilings are HTTP 400 client errors,
-not successful page/read responses.
+The public Memory API read surfaces (`/memory/search`, `/memory/changes`,
+`/memory/{id}`, and `/memory/timeline`) accept only `low`, `medium`, `high`, or
+`restricted` as `max_sensitivity`. Unknown non-empty values return
+`max_sensitivity_invalid` before legacy/provider dispatch and without rows,
+metadata, or content. Invalid cursors, cursor policy mismatches, invalid
+sensitivity ceilings, and `range_too_large` are HTTP 400 client errors, not
+successful search/page/read responses.
+
+The four VAM-002 provider change/revision operations require a non-empty
+`agent_id` on every call. Missing identity returns `agent_id_required` for page
+and evidence operations and no envelope for metadata/revision operations; an
+anonymous inactive policy is never treated as authorization.
 
 The SQLite implementation scans bounded keyset batches containing only the
 ordering and policy columns. Raw content and latest audit ids are fetched only
@@ -171,9 +178,10 @@ for readable rows selected into the response page.
 The existing bounded `GET /memory/{id}` accepts an optional `revision_id`. When
 provided, Vault returns content only if it still matches the current envelope
 revision and the normal read policy permits access. The provider enforces a
-maximum of 80 lines and rechecks the revision after the read. This first
-contract does not promise historical content reconstruction for revisions that
-Vault did not store as snapshots.
+maximum of 80 lines and rechecks the revision after the read. An oversized
+range returns HTTP 400 `range_too_large`, reports `max_lines=80`, and returns no
+content. This first contract does not promise historical content reconstruction
+for revisions that Vault did not store as snapshots.
 
 For revision-bound reads, `{id}` is an opaque provider reference. The Gateway
 passes its string form unchanged to the provider; the SQLite adapter, not the

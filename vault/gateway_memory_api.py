@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Callable
 from urllib.parse import parse_qs
 
+from .access_policy import InvalidMaxSensitivity, strict_read_policy
 from .db import VaultDB
 from .gateway_errors import gateway_error_suggestions
 from .memory_provider import sqlite_memory_provider
@@ -20,8 +21,24 @@ from .multi_host import list_audit_log, record_audit_event
 
 AppendGatewayAudit = Callable[..., None]
 _MEMORY_API_BAD_REQUEST_ERRORS = frozenset(
-    {"invalid_cursor", "cursor_policy_mismatch", "max_sensitivity_invalid"}
+    {
+        "invalid_cursor",
+        "cursor_policy_mismatch",
+        "max_sensitivity_invalid",
+        "range_too_large",
+    }
 )
+
+
+def _strict_memory_api_sensitivity(value: Any) -> str:
+    return strict_read_policy(max_sensitivity=value or "low").max_sensitivity
+
+
+def _invalid_sensitivity() -> dict[str, Any]:
+    return _error(
+        "max_sensitivity_invalid",
+        "max_sensitivity must be low, medium, high, or restricted",
+    )
 
 
 def gateway_memory_http_status(payload: dict[str, Any]) -> int:
@@ -47,6 +64,10 @@ def gateway_memory_search(
     search_func: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Vault Memory API facade for governed active-memory search."""
+    try:
+        max_sensitivity = _strict_memory_api_sensitivity(max_sensitivity)
+    except InvalidMaxSensitivity:
+        return _invalid_sensitivity()
     if _result_adapter(result_adapter) == "provider":
         return provider_memory_search(
             project_dir,
@@ -154,6 +175,10 @@ def gateway_memory_get(
     read_range_func: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Vault Memory API facade for bounded memory reads."""
+    try:
+        max_sensitivity = _strict_memory_api_sensitivity(max_sensitivity)
+    except InvalidMaxSensitivity:
+        return _invalid_sensitivity()
     memory_ref = str(memory_id or "").strip()
     if not memory_ref:
         return _error("memory_id_invalid", "memory id is required")
@@ -253,6 +278,10 @@ def gateway_memory_changes(
     max_sensitivity: str = "low",
 ) -> dict[str, Any]:
     """List policy-filtered current-memory changes without hidden-row totals."""
+    try:
+        max_sensitivity = _strict_memory_api_sensitivity(max_sensitivity)
+    except InvalidMaxSensitivity:
+        return _invalid_sensitivity()
     project = Path(project_dir)
     agent = _agent_id(agent_id)
     if not (project / "vault.db").exists():
@@ -489,6 +518,10 @@ def gateway_memory_timeline(
     read_range_func: Callable[..., dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Return metadata-only timeline rows for one memory id."""
+    try:
+        max_sensitivity = _strict_memory_api_sensitivity(max_sensitivity)
+    except InvalidMaxSensitivity:
+        return _invalid_sensitivity()
     if read_range_func is None:
         from .gateway import gateway_read_range as read_range_func
 

@@ -41,14 +41,39 @@ count.
 
 For the SQLite provider, `memory_id` is the decimal knowledge-row id serialized
 as an opaque string. Consumers must not parse it or assume another provider
-uses the same format. `revision_id` is a deterministic digest of the canonical
-knowledge-row snapshot fields surfaced by the current envelope. Repeating a
-read of unchanged row state therefore returns the same revision id; a surfaced
-content, lifecycle, provenance, confidence, status, or governance change
-returns a different revision id. `audit_ref` is advisory metadata hydrated from
-the latest audit event, not a canonical row field; an audit-only event does not
-change revision_id or advance row-based change ordering. Consumers use
-`/memory/audit` when they need audit-event progression.
+uses the same format.
+
+### Normative revision material
+
+This section is the single normative revision-material definition for
+`vault.memory-change.v1`. The SQLite provider constructs an object with exactly
+these canonical knowledge-row snapshot fields and normalizations:
+
+- `memory_id`: `str(int(id or 0))`;
+- `title`: `str(title or "")`;
+- `kind`: `str(memory_type or "knowledge")`;
+- `content_sha256`: SHA-256 of `str(content_raw or "")` encoded as UTF-8;
+- `occurred_at`: `str(valid_from or "")`, otherwise `str(created_at or "")`;
+- `recorded_at`: `str(updated_at or "")`, otherwise `str(created_at or "")`;
+- `valid_from` and `valid_until`: `str(value or "")`;
+- `source`: `str(source or "")`;
+- `confidence`: `float(trust)`, falling back to `0.5` on conversion failure,
+  then clamped with `max(0.0, min(value, 1.0))`;
+- `status`: `str(status or "active")`;
+- `scope`: `str(scope or "project")`;
+- `sensitivity`: `str(sensitivity or "low")`.
+
+Vault serializes that object as JSON with `ensure_ascii=False`,
+`sort_keys=True`, and `separators=(",", ":")`, encodes the JSON as UTF-8,
+computes SHA-256, and prefixes the lowercase hexadecimal digest with `rev_`.
+No other envelope field participates. Repeating a read of unchanged row state
+therefore returns the same revision id; a change to any field above returns a
+different revision id. `schema_version`, `change_type`, the nested presentation
+objects, `audit_ref`, and `evidence_ref` are excluded. In particular,
+`audit_ref` is advisory metadata hydrated from the latest audit event, not a
+canonical row field; an audit-only event does not change revision_id or advance
+row-based change ordering. Consumers use `/memory/audit` when they need
+audit-event progression.
 
 `content_sha256` is the full SHA-256 of the exact current `content_raw` bytes
 encoded as UTF-8. It is separate from legacy short hashes and document-node
@@ -69,6 +94,12 @@ authorization token. Every page independently applies Vault policy.
 
 Unknown non-empty `max_sensitivity` values fail closed and never remove the
 caller's ceiling.
+
+All four provider operations in this SDD require a normalized, non-empty
+`agent_id`. `list_changes` and `read_bounded_evidence` return the bounded
+`agent_id_required` error without rows or content when it is absent;
+`get_metadata` and `get_revision` return no envelope. Authorization is never
+represented by an inactive/anonymous policy.
 
 Ordering is ascending by `(recorded_at, memory row id)`. The cursor advances
 only to the last change actually returned to the caller. Hidden rows do not
@@ -103,6 +134,20 @@ The first version intentionally reads only the current revision. Vault does
 not claim historical evidence availability when no historical content snapshot
 exists.
 
+Requests exceeding the provider maximum return `range_too_large`, include the
+effective `max_lines` value of 80, and contain no content.
+
+## Tombstone semantics
+
+When the canonical row `status` is `deleted`, the envelope has
+`change_type=delete` and `lifecycle.status=deleted`. It remains a metadata-only
+envelope: `content_sha256` is still the full SHA-256 of the retained stored
+content, while raw content and snippets remain absent. `evidence_ref` continues
+to bind the tombstone's current revision for stable consumer bookkeeping, but
+`read_bounded_evidence` returns `not_found_or_not_readable` with no content.
+The tombstone uses the same `recorded_at` ordering and cursor rules as an
+upsert; deletion does not expose hidden-row counts or historical content.
+
 ## HTTP mapping
 
 - `GET /memory/changes`: list readable changes using `agent_id`, `cursor`,
@@ -112,9 +157,11 @@ exists.
   Gateway preserves `{id}` as an opaque string and the selected provider alone
   validates or decodes it. The SQLite provider currently accepts its decimal
   row-id representation.
-- `invalid_cursor`, `cursor_policy_mismatch`, and `max_sensitivity_invalid`
-  return HTTP 400 with the documented Memory API error schema; they are never
-  encoded as a successful change page or bounded read.
+- `invalid_cursor`, `cursor_policy_mismatch`, `max_sensitivity_invalid`, and
+  `range_too_large` return HTTP 400 with the documented Memory API error
+  schema; they are never encoded as a successful change page or bounded read.
+- `/memory/search`, `/memory/changes`, `/memory/{id}`, and `/memory/timeline`
+  validate sensitivity before any legacy/provider adapter dispatch.
 
 Existing Memory API routes and their default authorities remain unchanged.
 

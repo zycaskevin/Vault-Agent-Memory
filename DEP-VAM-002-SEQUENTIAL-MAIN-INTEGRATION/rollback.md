@@ -2,12 +2,12 @@
 
 rollback_version: 1.0
 target: exact behavioral and public-contract delta merged by Pull Request 500; preserve all VAM-002 evidence, review, issue, Work Package, and governance provenance
-command: Run the guarded preparation command below from the exact PR #500 merge commit after preparing a new strict rollback DEP and fresh exact L3 approval.
+command: Run the guarded preparation command below from the exact `PR #500` merge commit after preparing a new strict rollback DEP and fresh exact L3 approval.
 verify: Run every post-rollback verification below and record approval consumption, staged allowlist, and Green results in the new rollback DEP.
 
 ## Trigger
 
-Use this rollback only after PR #500 is merged and a verified policy leak,
+Use this rollback only after `PR #500` is merged and a verified policy leak,
 stale-revision disclosure, cursor-authority defect, client-contract regression,
 or required merge-proof failure requires removing the VAM-002 runtime/API
 delivery. A design change requires a new Decision Package, not this rollback.
@@ -23,7 +23,7 @@ deployment authorization is reusable.
 
 ## Guarded preparation command
 
-Run from an up-to-date, clean local `main` whose HEAD is exactly PR #500's
+Run from an up-to-date, clean local `main` whose HEAD is exactly `PR #500`'s
 merge commit. This prepares an uncommitted rollback candidate and fails closed
 before any commit or push:
 
@@ -63,6 +63,7 @@ git revert --no-commit -m 1 "$merge_oid"
 git restore --source=HEAD --staged --worktree -- \
   .sddgov \
   DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION \
+  DEP-VAM-002-PUBLIC-READ-SENSITIVITY \
   DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION \
   evidence/DEP-VAM-002-CODERABBIT-REMEDIATION \
   evidence/DEP-VAM-002-MEMORY-CHANGE-ENVELOPE \

@@ -2,11 +2,15 @@
 
 ## Green command and result
 
-The focused remediation command passed 16 nodes in 0.61 seconds. It proves
-strict provider-boundary sensitivity, exact HTTP/OpenAPI mapping, row/audit
-revision semantics, non-vacuous query evidence, and optimized-Python rollback
-guards. Redacted evidence:
-`shareable/artifacts/terminal--independent-review-green.txt`.
+The historical focused-Green artifact records a 16-node PASS summary but did
+not retain the exact pytest node list, so that count is supporting evidence and
+not independently reproducible proof. The exact committed private-checkout
+Local Green below is the authoritative proof for those changes. The historical
+artifact also used “Changed core modules Ruff” too broadly: its actual scoped
+Ruff PASS covered `vault/access_policy.py`, `vault/memory_provider.py`,
+`vault/gateway_openapi.py`, and `tests/test_memory_change_envelope.py`; the
+later public-reexport cleanup and exact all-changed-Python Ruff command are
+captured in `DEP-VAM-002-PUBLIC-READ-SENSITIVITY`.
 
 ## Before/after evidence
 

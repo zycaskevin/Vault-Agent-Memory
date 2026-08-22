@@ -46,6 +46,11 @@ _INVALID_MAX_SENSITIVITY = {
     "error": "max_sensitivity_invalid",
     "message": "max_sensitivity must be low, medium, high, or restricted",
 }
+_AGENT_ID_REQUIRED = {
+    "status": "error",
+    "error": "agent_id_required",
+    "message": "agent_id is required for memory provider reads",
+}
 
 # Fields that must never be directly modified through update_memory
 _PROTECTED_UPDATE_FIELDS = frozenset({
@@ -286,6 +291,8 @@ class SQLiteMemoryProvider:
         include_private: bool = False,
         max_sensitivity: str = "",
     ) -> dict[str, Any]:
+        if not str(agent_id or "").strip():
+            return dict(_AGENT_ID_REQUIRED)
         try:
             read_policy = strict_read_policy(
                 agent_id=agent_id,
@@ -407,6 +414,8 @@ class SQLiteMemoryProvider:
         include_private: bool = False,
         max_sensitivity: str = "",
     ) -> dict[str, Any] | None:
+        if not str(agent_id or "").strip():
+            return None
         memory_id_i = _positive_memory_id(memory_id)
         if memory_id_i is None:
             return None
@@ -454,6 +463,8 @@ class SQLiteMemoryProvider:
         include_private: bool = False,
         max_sensitivity: str = "",
     ) -> dict[str, Any]:
+        if not str(agent_id or "").strip():
+            return dict(_AGENT_ID_REQUIRED)
         try:
             read_policy = strict_read_policy(
                 agent_id=agent_id,

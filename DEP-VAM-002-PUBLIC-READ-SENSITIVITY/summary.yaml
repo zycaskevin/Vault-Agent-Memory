@@ -1,0 +1,42 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-22T13:35:46Z",
+  "updated_at": "2026-08-22T13:48:55Z",
+  "workflow": {
+    "phase": "green",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-22T13:35:46Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-22T13:39:57Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-22T13:39:57Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-22T13:48:55Z"
+      }
+    ]
+  },
+  "expected_behavior": "Every VAM-002 provider read requires a non-empty agent identity; every public Memory API read facade rejects an unknown sensitivity ceiling before adapter dispatch; HTTP client errors, revision material, and tombstones have one executable normative contract.",
+  "actual_behavior": "Missing provider identity and invalid facade sensitivity expose high-sensitivity data; range overflow is HTTP 200; revision material and delete-envelope semantics are underspecified; and the prior focused/Ruff evidence scope is not reproducible as written.",
+  "environment": {
+    "commit": "d2bed8a66895691e6765498490902b123129724a plus uncommitted Red/Fix/Green remediation",
+    "branch": "codex/vam-002-memory-change-envelope",
+    "runtime": "CPython 3.11 repository development environment; Agentic SDD Governance 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

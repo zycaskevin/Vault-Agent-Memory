@@ -26,19 +26,19 @@ from .gateway_central_candidates import (
 )
 from .gateway_errors import gateway_error_suggestions
 from .gateway_memory_api import (
-    gateway_memory_audit,
+    gateway_memory_audit,  # noqa: F401 - public compatibility re-export
     gateway_memory_changes,  # noqa: F401 - public compatibility re-export
-    gateway_memory_create,
-    gateway_memory_delete_request,
-    gateway_memory_get,
+    gateway_memory_create,  # noqa: F401 - public compatibility re-export
+    gateway_memory_delete_request,  # noqa: F401 - public compatibility re-export
+    gateway_memory_get,  # noqa: F401 - public compatibility re-export
     gateway_memory_http_delete,
     gateway_memory_http_get,
     gateway_memory_http_patch,
     gateway_memory_http_post,
     gateway_memory_http_status,
-    gateway_memory_search,
-    gateway_memory_timeline,
-    gateway_memory_update_request,
+    gateway_memory_search,  # noqa: F401 - public compatibility re-export
+    gateway_memory_timeline,  # noqa: F401 - public compatibility re-export
+    gateway_memory_update_request,  # noqa: F401 - public compatibility re-export
 )
 from .gateway_openapi import (
     DEFAULT_GATEWAY_AUDIT_BACKUPS,
@@ -446,7 +446,7 @@ def make_gateway_handler(
                 allow_restricted_candidates=allow_restricted_candidates,
             )
             if memory_payload is not None:
-                self._send_json(memory_payload)
+                self._send_json(memory_payload, status=gateway_memory_http_status(memory_payload))
                 return
             if parsed.path == "/read-range":
                 payload = gateway_read_range(

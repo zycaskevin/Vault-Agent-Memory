@@ -14,12 +14,14 @@
 
 ## Related tests executed
 
-Focused sandbox-safe Green: 16 passed. This includes the complete change
-envelope/provider files, three direct Gateway contract nodes, and the rollback
-fail-closed node. Changed core modules pass Ruff. The exact committed private
-Local Green then exercised the real loopback node and complete suite: 446
-identity-isolated Subject nodes passed, followed by 2,962 passed, 10 skipped,
-and one already dispositioned warning.
+The historical focused summary reported 16 passed but omitted its exact node
+list; it is therefore not used as a reproducible proof count. Its scoped Ruff
+PASS covered `vault/access_policy.py`, `vault/memory_provider.py`,
+`vault/gateway_openapi.py`, and `tests/test_memory_change_envelope.py`, not
+every changed Python file. The exact committed private Local Green is the
+authoritative proof: 446 identity-isolated Subject nodes passed, followed by
+2,962 passed, 10 skipped, and one already dispositioned warning. The follow-up
+DEP records exact repo-relative Green and all-changed-Python Ruff commands.
 
 ## Unaffected paths sampled
 

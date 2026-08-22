@@ -283,6 +283,56 @@ def test_invalid_max_sensitivity_fails_closed_for_changes_and_revision_reads(tmp
     assert "content" not in invalid_read
 
 
+def test_provider_authorized_reads_require_nonempty_agent_identity(tmp_path):
+    project, _first_id, _second_id, private_id = _change_project(tmp_path)
+    provider = sqlite_memory_provider(project)
+    authorized = provider.get_metadata(
+        private_id,
+        agent_id="private-agent",
+        include_private=True,
+        max_sensitivity="high",
+    )
+    assert authorized is not None
+
+    missing_agent_page = provider.list_changes(
+        include_private=True,
+        max_sensitivity="high",
+        limit=100,
+    )
+    assert missing_agent_page == {
+        "status": "error",
+        "error": "agent_id_required",
+        "message": "agent_id is required for memory provider reads",
+    }
+    assert "changes" not in missing_agent_page
+    assert provider.get_metadata(
+        private_id,
+        include_private=True,
+        max_sensitivity="high",
+    ) is None
+    assert provider.get_revision(
+        private_id,
+        authorized["revision_id"],
+        include_private=True,
+        max_sensitivity="high",
+    ) is None
+
+    missing_agent_read = provider.read_bounded_evidence(
+        private_id,
+        authorized["revision_id"],
+        line_start=1,
+        line_end=1,
+        include_private=True,
+        max_sensitivity="high",
+    )
+    assert missing_agent_read == {
+        "status": "error",
+        "error": "agent_id_required",
+        "message": "agent_id is required for memory provider reads",
+    }
+    assert "content" not in missing_agent_read
+
+
 def test_audit_reference_is_advisory_and_not_part_of_the_row_revision_contract():
     row = {
         "id": 42,
@@ -311,6 +361,43 @@ def test_audit_reference_is_advisory_and_not_part_of_the_row_revision_contract()
         assert "canonical knowledge-row snapshot fields" in normalized_contract
         assert "audit_ref" in normalized_contract
         assert "does not change revision_id" in normalized_contract
+
+
+def test_spec_normatively_defines_revision_material_and_tombstone_semantics():
+    root = Path(__file__).resolve().parents[1]
+    spec = (root / "docs/specs/vam-002-memory-change-envelope.md").read_text(
+        encoding="utf-8"
+    )
+    decision = (root / "docs/decision_records/2026-08-21-memory-change-envelope.md").read_text(
+        encoding="utf-8"
+    )
+    normalized_spec = " ".join(spec.split())
+    for field in (
+        "memory_id",
+        "title",
+        "kind",
+        "content_sha256",
+        "occurred_at",
+        "recorded_at",
+        "valid_from",
+        "valid_until",
+        "source",
+        "confidence",
+        "status",
+        "scope",
+        "sensitivity",
+    ):
+        assert f"`{field}`" in spec
+    for phrase in (
+        "UTF-8",
+        "sort_keys=True",
+        'separators=(\",\", \":\")',
+        "change_type=delete",
+        "retained stored content",
+        "not_found_or_not_readable",
+    ):
+        assert phrase in normalized_spec
+    assert "normative revision-material definition" in decision
 
 
 def test_revision_bound_bounded_evidence_fails_closed_when_stale(tmp_path):
@@ -414,6 +501,11 @@ def test_deleted_memory_is_a_tombstone_change_without_readable_evidence(tmp_path
 
     assert tombstone["change_type"] == "delete"
     assert tombstone["lifecycle"]["status"] == "deleted"
+    assert tombstone["content_sha256"] == hashlib.sha256(
+        b"line one\nline two\nline three\nline four"
+    ).hexdigest()
+    assert tombstone["evidence_ref"]["operation"] == "read_bounded_evidence"
+    assert "content" not in tombstone
     denied = provider.read_bounded_evidence(
         first_id,
         tombstone["revision_id"],
