@@ -8,10 +8,11 @@ widens, or the full repository gate regresses.
 
 ## Reversible steps
 
-Before push, bind this record to the immutable implementation commit. Revert
-only that bounded commit, preserve all earlier VAM-002 evidence and reviewed
-heads, and verify the staged path set contains only this DEP, the named source
-and test files, and the five corrected historical evidence documents.
+Revert immutable implementation commit
+`cbbf2d1c174e432313654e0260450af37a766f71`, preserve all earlier VAM-002
+evidence and reviewed heads, and verify the staged path set contains only this
+DEP, the named source and test files, the authoritative rollback regression,
+and the corrected historical evidence documents.
 
 ## Data compatibility
 

@@ -33,7 +33,7 @@
   "expected_behavior": "Every public Memory API read treats an omitted or whitespace-only sensitivity ceiling as low, change pagination obtains at most limit plus one policy-readable rows in one bounded query, candidate-first HTTP checks prove the active knowledge snapshot is unchanged, and protected evidence remains reproducible and historically truthful.",
   "actual_behavior": "At exact public head 15eb5583d7fdf02358c4978cd22ab28ebd796ee4, whitespace bypassed the low default and exposed high-sensitivity reads, list_changes could execute an unbounded Python batch loop over hidden rows, the HTTP oracle checked only row count, and four evidence documents contained stale or incomplete verification claims.",
   "environment": {
-    "commit": "15eb5583d7fdf02358c4978cd22ab28ebd796ee4 plus uncommitted test-only RED changes",
+    "commit": "cbbf2d1c174e432313654e0260450af37a766f71",
     "branch": "codex/vam-002-memory-change-envelope-ready",
     "runtime": "CPython 3.11.15; pytest 9.1.1; Agentic SDD Governance 0.2.0-experimental.3"
   },

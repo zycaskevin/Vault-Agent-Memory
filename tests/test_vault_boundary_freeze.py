@@ -255,6 +255,7 @@ def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() 
         "approval_consumed",
         "git revert --no-commit -m 1",
         "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
+        "DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION",
         "DEP-VAM-002-FULL-SUITE-COMPATIBILITY",
         "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION",
         "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
