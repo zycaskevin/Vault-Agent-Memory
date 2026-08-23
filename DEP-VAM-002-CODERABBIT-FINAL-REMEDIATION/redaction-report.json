@@ -2,6 +2,13 @@
   "schema_version": "1.0",
   "files": [
     {
+      "source": "terminal--final-local-green-remote-fail.txt",
+      "output": "terminal--final-local-green-remote-fail.txt",
+      "source_sha256": "3669dd8ec14f22ec50c038ef858f1857918646a7183654fcf44e1ef542236fe1",
+      "output_sha256": "3669dd8ec14f22ec50c038ef858f1857918646a7183654fcf44e1ef542236fe1",
+      "redactions": {}
+    },
+    {
       "source": "terminal--final-review-green.txt",
       "output": "terminal--final-review-green.txt",
       "source_sha256": "1bde3dc1154ec178a45cb5b1ef106e295eff9aae18bdfe98ce154323a8a593e5",
@@ -19,5 +26,5 @@
   "blocked": [],
   "totals": {},
   "dep_id": "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION",
-  "generated_at": "2026-08-23T04:02:13Z"
+  "generated_at": "2026-08-23T04:08:49Z"
 }

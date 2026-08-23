@@ -8,11 +8,12 @@ authoritative rollback preservation/allowlist additions are incorrect.
 
 ## Reversible steps
 
-Revert only the immutable implementation commit identified in the final
-verification record, without committing. Restore this DEP from current HEAD so
-the Red/Evidence/Fix/Green/Proof audit trail remains. Fail closed unless the
-staged path set is limited to the five corrected existing files plus the
-authoritative rollback and boundary regression changes recorded in Fix Scope.
+Revert only immutable implementation commit
+`c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a`, without committing. Restore this
+DEP from current HEAD so the Red/Evidence/Fix/Green/Proof audit trail remains.
+Fail closed unless the staged path set is limited to the corrected existing
+files plus the authoritative rollback and boundary regression changes recorded
+in Fix Scope.
 
 ## Data compatibility
 
