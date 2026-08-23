@@ -27,8 +27,9 @@ implementation remains unchanged by the proposed fix.
 
 The second checkout defect is now mechanically resolved: the formal
 `origin/main` ref exists at the exact PR base and the private clone remains
-clean. No additional gate was run, so this preparation does not change the
-proof state.
+clean. The subsequently authorized exact-head Local Green passed, confirming
+that both prior failures were preparation faults rather than product or test
+regressions.
 
 ## Falsification test
 

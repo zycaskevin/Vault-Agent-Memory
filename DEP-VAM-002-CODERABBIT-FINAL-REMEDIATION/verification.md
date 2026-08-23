@@ -50,11 +50,21 @@ private boundaries remain `0700`; the worktree is detached and clean; all 1,455
 tracked physical modes match the Git index. This preparation resolves the known
 checkout precondition but is not Local Green proof.
 
+## Final exact-head Local Green proof
+
+With all checkout preconditions fixed and independently rechecked before
+process start, the owner-authorized non-sandbox Local Green ran once at exact
+implementation commit `c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a` and exited
+`0`. Doctor, CI contract, README smoke, and release parity passed; all 446
+identity-isolated Subject nodes passed; repository-wide pytest reported `2970
+passed, 10 skipped, 1 warning`. The warning is the existing invalid-escape
+deprecation at `tests/test_semantic_chunk_coverage.py:101`. Post-run exact HEAD,
+formal origin, exact `origin/main`, clean status, diff checks, Frozen Subject
+diff, and all 1,455 tracked physical modes remained Green.
+
 ## Remaining limitations
 
-No runtime behavior or stored data changed. The Builder checkout is now ready,
-but exact committed-head Local Green remains incomplete because the authorized
-run allowance was consumed before `origin/main` was fetched. Another test run
-requires separate authorization. Strict proof verification, merge-gate rebind,
-public push, CodeRabbit re-review, independent Reviewer receipt, merge, and
-deployment remain separate gates; this record authorizes none of them.
+No runtime behavior or stored data changed. Exact committed-head Builder Local
+Green is complete. Merge-gate rebind, public push, CodeRabbit re-review,
+independent Reviewer receipt, merge, and deployment remain separate gates; this
+proof authorizes none of them.

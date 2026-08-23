@@ -22,3 +22,8 @@ No production Python module changed. The focused selection sampled the complete
 memory-change envelope and provider suites plus invalid sensitivity, opaque
 identifier, candidate-first metadata, HTTP error, rollback, and boundary-freeze
 contracts. Exact committed-head Local Green remains the proof-stage gate.
+
+That proof-stage gate is now complete at exact implementation commit
+`c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a`: 446 identity-isolated Subject
+nodes passed, followed by 2,970 repository tests passing with 10 skips and one
+pre-existing deprecation warning.

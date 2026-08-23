@@ -36,9 +36,21 @@
       "sha256": "be0e0a762989e013531bb093dfdfe7a91cc60498ccc0c667149edc4014731042",
       "collected_at": "2026-08-23T11:59:39Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final-exact-head-local-green.txt",
+      "sha256": "4b9a844c6633bb55b3384703345bc0e58fa8a084ce560e06e68c18c06f54481c",
+      "collected_at": "2026-08-23T12:08:57Z",
+      "shareable": false
     }
   ],
   "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--final-exact-head-local-green.txt",
+      "sha256": "4b9a844c6633bb55b3384703345bc0e58fa8a084ce560e06e68c18c06f54481c",
+      "shareable": true
+    },
     {
       "path": "shareable/artifacts/terminal--final-local-green-origin-main-fail.txt",
       "sha256": "b1abfccf06a55554cf14b2fdcfbdee95bca615b964847835472d715223e834cc",
