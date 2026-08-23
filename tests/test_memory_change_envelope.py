@@ -535,6 +535,7 @@ def test_spec_normatively_defines_revision_material_and_tombstone_semantics():
         encoding="utf-8"
     )
     normalized_spec = " ".join(spec.split())
+    normalized_decision = " ".join(decision.split())
     for field in (
         "memory_id",
         "title",
@@ -550,7 +551,7 @@ def test_spec_normatively_defines_revision_material_and_tombstone_semantics():
         "scope",
         "sensitivity",
     ):
-        assert f"`{field}`" in spec
+        assert f"`{field}`" in normalized_spec
     for phrase in (
         "UTF-8",
         "sort_keys=True",
@@ -560,7 +561,7 @@ def test_spec_normatively_defines_revision_material_and_tombstone_semantics():
         "not_found_or_not_readable",
     ):
         assert phrase in normalized_spec
-    assert "normative revision-material definition" in decision
+    assert "normative revision-material definition" in normalized_decision
 
 
 def test_revision_bound_bounded_evidence_fails_closed_when_stale(tmp_path):

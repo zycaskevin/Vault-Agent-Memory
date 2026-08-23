@@ -2,9 +2,10 @@
 
 ## Regression test added or strengthened
 
-The HTTP facade test now compares the final active-row count with the count
-captured after fixture setup instead of a stale literal. The existing strict
-read-guard test remains the exact reason-code regression.
+The HTTP facade test now captures a full column-projected snapshot of all
+knowledge rows after fixture setup and compares the complete snapshot after the
+HTTP operations. The existing strict read-guard test remains the exact
+reason-code regression.
 
 ## Related tests executed
 

@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -256,6 +255,7 @@ def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() 
         "git revert --no-commit -m 1",
         "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
         "DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION",
+        "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION",
         "DEP-VAM-002-FULL-SUITE-COMPATIBILITY",
         "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION",
         "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
@@ -296,6 +296,7 @@ def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() 
     assert expected_match is not None
     expected_paths = expected_match.group(1).splitlines()
     assert all("VAM-001" not in path and "VAM-003" not in path for path in expected_paths)
+    assert "tests/test_vault_boundary_freeze.py" in expected_paths
     invalid_paths = subprocess.run(
         [sys.executable, "-O", "-c", allowlist_snippet],
         input=b"docs/issues/VAM-003-l0-bootstrap-boundary.md\0",
@@ -310,6 +311,26 @@ def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() 
     )
     assert invalid_paths.returncode != 0
     assert valid_paths.returncode == 0
+
+
+def test_vam002_final_review_records_keep_red_and_green_semantics_distinct() -> None:
+    current_head_dep = ROOT / "DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION"
+    fix_scope = (current_head_dep / "fix-scope.md").read_text(encoding="utf-8")
+    rollback = (current_head_dep / "rollback.md").read_text(encoding="utf-8")
+    compatibility = (
+        ROOT / "DEP-VAM-002-FULL-SUITE-COMPATIBILITY" / "regression-evidence.md"
+    ).read_text(encoding="utf-8")
+    normalized_fix_scope = " ".join(fix_scope.split())
+    normalized_rollback = " ".join(rollback.split())
+    normalized_compatibility = " ".join(compatibility.split())
+
+    assert "two implementation defects" in normalized_fix_scope
+    assert "six test, evidence, or documentation defects" in normalized_fix_scope
+    assert "expected RED" in normalized_rollback
+    assert "expected to exit nonzero" in normalized_rollback
+    assert "Every Green command must exit zero" in normalized_rollback
+    assert "full column-projected snapshot" in normalized_compatibility
+    assert "final active-row count" not in normalized_compatibility
 
 
 def test_exact_head_builder_proof_redacts_workstation_path_and_binds_hashes() -> None:

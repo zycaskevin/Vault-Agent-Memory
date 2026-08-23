@@ -64,6 +64,7 @@ git restore --source=HEAD --staged --worktree -- \
   .sddgov \
   DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH \
   DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION \
+  DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION \
   DEP-VAM-002-FULL-SUITE-COMPATIBILITY \
   DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION \
   DEP-VAM-002-PUBLIC-READ-SENSITIVITY \
@@ -77,6 +78,7 @@ docs/specs/vam-002-memory-change-envelope.md
 docs/specs/vault_memory_api.md
 tests/test_gateway.py
 tests/test_memory_change_envelope.py
+tests/test_vault_boundary_freeze.py
 vault/access_policy.py
 vault/gateway.py
 vault/gateway_memory_api.py

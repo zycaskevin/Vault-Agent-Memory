@@ -1,0 +1,12 @@
+collector=terminal
+source_head=36ff168a8c8ffffcc93d12107add2d5ecac0fbd1 plus bounded remediation worktree
+static_contract_probe=scope_categories PASS; rollback_red_semantics PASS; snapshot_evidence PASS; normalized_contract_assertions PASS; exit 0
+focused_command=env PYTHONPATH=. $VAULT_TEST_PYTHON -m pytest -q tests/test_memory_change_envelope.py tests/test_memory_provider.py plus four VAM-002 Gateway nodes and two VAM-002 boundary nodes
+focused_result=24 passed in 0.93s; exit 0
+ruff_command=$RUFF check tests/test_memory_change_envelope.py tests/test_vault_boundary_freeze.py
+ruff_result=All checks passed; exit 0
+doctor=PASS
+ci_contract=PASS
+git_diff_check=PASS
+runtime_data=not read or changed
+live_hermes=not accessed

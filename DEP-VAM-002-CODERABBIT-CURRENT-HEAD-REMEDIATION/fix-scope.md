@@ -5,8 +5,9 @@
 Trim the Gateway sensitivity input before applying the low default. Translate
 the existing active read policy into a single SQLite predicate and fetch only
 `limit + 1` readable metadata rows. Strengthen the candidate-first regression
-to compare stable active-row fields, and repair only the eight verified
-evidence/documentation defects.
+to compare stable active-row fields. The eight verified defects comprise two implementation defects
+(whitespace sensitivity and the unbounded Python scan loop) plus six test,
+evidence, or documentation defects.
 
 ## Files or components in scope
 

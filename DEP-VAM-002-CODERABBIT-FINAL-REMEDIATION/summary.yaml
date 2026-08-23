@@ -1,0 +1,42 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-23T03:55:03Z",
+  "updated_at": "2026-08-23T04:03:27Z",
+  "workflow": {
+    "phase": "green",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-23T03:55:03Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-23T03:57:19Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-23T03:57:20Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-23T04:03:27Z"
+      }
+    ]
+  },
+  "expected_behavior": "Rollback verification distinguishes expected RED reproduction from commands that must stay Green, evidence descriptions match the implemented full-row snapshot oracle, remediation scope classifies implementation versus non-production defects truthfully, and Markdown contract tests remain stable under line reflow.",
+  "actual_behavior": "At exact head 36ff168a8c8ffffcc93d12107add2d5ecac0fbd1, rollback.md requires a known RED command to exit zero after rollback, two remediation records misdescribe the implemented scope/oracle, and the normative contract test inconsistently checks raw rather than normalized Markdown strings.",
+  "environment": {
+    "commit": "36ff168a8c8ffffcc93d12107add2d5ecac0fbd1",
+    "branch": "codex/vam-002-memory-change-envelope-ready",
+    "runtime": "CPython 3.11; Agentic SDD Governance 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

@@ -1,0 +1,6 @@
+command=bounded static contract probe at exact head 36ff168a8c8ffffcc93d12107add2d5ecac0fbd1
+scope_categories=FAIL
+rollback_red_semantics=FAIL
+snapshot_evidence=FAIL
+normalized_contract_assertions=FAIL
+exit_status=1

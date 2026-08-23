@@ -46,7 +46,24 @@ live data is changed. Rollback is code/test/document only.
 Run `git revert --no-commit cbbf2d1c174e432313654e0260450af37a766f71`,
 restore the VAM-002 DEP/evidence paths, and mechanically compare
 `git diff --cached --name-only` with the exact seven behavior paths described
-above. Then run the exact targeted command from `reproduction.md`, the complete
-VAM-002 focused selection recorded in `verification.md`, Ruff over every
-changed Python file, `git diff --check`, strict DEP verification, and the
-repository Local Green. Every command must exit zero at the rollback candidate.
+above. The exact targeted command from `reproduction.md` is the expected RED
+probe: after rollback it must reproduce its documented failures and is
+therefore expected to exit nonzero; it is not a Green acceptance command.
+
+Separately run these rollback-safe Green commands:
+
+```bash
+env PYTHONPATH=. "$VAULT_TEST_PYTHON" -m pytest -q \
+  tests/test_gateway.py::test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch
+"$RUFF" check \
+  tests/test_gateway.py \
+  tests/test_memory_change_envelope.py \
+  vault/gateway_memory_api.py \
+  vault/memory_provider.py
+git diff --check
+sddgov evidence verify DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION --strict
+sddgov ci local-gate .
+```
+
+Every Green command must exit zero at the rollback candidate; only commands in
+this separate Green set are Green acceptance commands.
