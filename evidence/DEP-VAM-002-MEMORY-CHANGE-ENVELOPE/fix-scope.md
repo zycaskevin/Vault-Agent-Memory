@@ -22,6 +22,8 @@ release, deployment, merge, or private/live data.
 
 ## Blast radius
 
-Read-only and additive. Existing endpoints and default adapters remain intact.
-The only runtime additions are envelope derivation, one GET route, optional
-revision validation, and contract metadata.
+Primarily read-side and additive. Existing endpoint authorities and default
+adapters remain intact, but the completed review remediation also tightened
+Gateway id coercion, bounded-evidence rejection, trusted provider label
+validation/canonicalization, and PATCH/OpenAPI compatibility metadata. No
+database schema or live-row rewrite is involved.

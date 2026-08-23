@@ -4,7 +4,7 @@
 
 Preserve opaque memory references on revision-bound Gateway reads, safely
 decode them only inside the SQLite provider, replace list-all pagination with
-bounded keyset policy scans and selected-row hydration, and strengthen the
+bounded policy selection and selected-row hydration, and strengthen the
 range/OpenAPI/query regression tests.
 
 ## Files or components in scope

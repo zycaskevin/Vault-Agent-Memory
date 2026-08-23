@@ -9,9 +9,12 @@ read-guard test remains the exact reason-code regression.
 ## Related tests executed
 
 RED is captured for the strict read-guard node and both failures are bound to
-the exact-head full Local Green artifact. Targeted Green passed: the real HTTP
+the compatibility implementation. Targeted Green passed: the real HTTP
 loopback node passed 1/1, and the governance/provider selection passed 30/30.
-A complete exact-head Local Green remains pending after this fix is committed.
+The subsequently authorized Builder Local Green at exact implementation head
+`1a346913563f5437b7815f655393f0eee5a0da52` completed with 446 isolated
+Subject nodes passing and repository pytest reporting 2967 passed, 10 skipped,
+and one previously dispositioned warning.
 
 ## Unaffected paths sampled
 

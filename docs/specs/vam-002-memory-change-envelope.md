@@ -114,10 +114,13 @@ only to the last change actually returned to the caller. Hidden rows do not
 change the visible cursor, count, or `has_more` value. Reusing a cursor under a
 different agent or sensitivity/private policy fails closed.
 
-The SQLite adapter implements this with bounded keyset batches containing only
-ordering and read-policy columns. It fetches `content_raw` and latest audit ids
-only for the readable rows selected for the response page; it does not load the
-entire knowledge or audit table before filtering.
+The SQLite adapter translates the active read policy into one ordered SQLite
+selection over policy columns and limits the result set to `limit + 1`
+readable rows. This removes an application-side batch loop whose work could
+scale with hidden rows while preserving the rule that hidden rows never advance
+the visible cursor. It fetches `content_raw` and latest audit ids only for the
+readable rows selected for the response page; it does not load the entire
+knowledge or audit table into application memory before filtering.
 
 The policy scan, selected-row hydration, and latest-audit lookup run inside one
 explicit SQLite read transaction. They therefore observe one WAL snapshot.

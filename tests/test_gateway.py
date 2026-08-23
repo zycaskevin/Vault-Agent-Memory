@@ -706,6 +706,46 @@ def test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch(
             "message": "max_sensitivity must be low, medium, high, or restricted",
         }
 
+        blank_read = gateway_memory_get(
+            project,
+            memory_id=high_id,
+            agent_id="work-agent",
+            line_start=1,
+            line_end=3,
+            max_sensitivity=" \t ",
+            result_adapter=result_adapter,
+        )
+        assert blank_read.get("status") != "ok"
+        assert "SECRET-HIGH" not in json.dumps(blank_read, ensure_ascii=False)
+
+        blank_search = gateway_memory_search(
+            project,
+            query="SECRET-HIGH",
+            agent_id="work-agent",
+            max_sensitivity=" \t ",
+            result_adapter=result_adapter,
+        )
+        assert all(result.get("id") != high_id for result in blank_search.get("results", []))
+
+    assert gateway_memory_api_module._strict_memory_api_sensitivity(" \t ") == "low"
+
+    blank_changes = gateway_memory_changes(
+        project,
+        agent_id="work-agent",
+        max_sensitivity=" \t ",
+        limit=100,
+    )
+    assert all(change["memory_id"] != str(high_id) for change in blank_changes["changes"])
+
+    blank_timeline = gateway_memory_timeline(
+        project,
+        agent_id="work-agent",
+        memory_id=high_id,
+        max_sensitivity=" \t ",
+    )
+    assert blank_timeline.get("status") != "ok"
+    assert "SECRET-HIGH" not in json.dumps(blank_timeline, ensure_ascii=False)
+
     timeline = gateway_memory_timeline(
         project,
         agent_id="work-agent",
@@ -1075,9 +1115,18 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
             sensitivity="high",
         )
         build_document_map_for_entry(db, high_id)
-        knowledge_count_before = db.conn.execute(
-            "SELECT count(*) AS count FROM knowledge"
-        ).fetchone()["count"]
+        stable_knowledge_fields = (
+            "id, title, layer, category, tags, trust, content_raw, content_aaak, "
+            "content_hash, source, created_at, updated_at, scope, sensitivity, "
+            "owner_agent, allowed_agents, memory_type, expires_at, valid_from, "
+            "valid_until, supersedes_id, status, archived_at"
+        )
+        knowledge_snapshot_before = [
+            dict(row)
+            for row in db.conn.execute(
+                f"SELECT {stable_knowledge_fields} FROM knowledge ORDER BY id"
+            ).fetchall()
+        ]
     handler = make_gateway_handler(project, auth_token="secret", allow_shared_candidates=True)
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -1322,10 +1371,13 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
 
     with VaultDB(project / "vault.db") as db:
         assert db.get_knowledge(public_id)["status"] == "active"
-        assert (
-            db.conn.execute("SELECT count(*) AS count FROM knowledge").fetchone()["count"]
-            == knowledge_count_before
-        )
+        knowledge_snapshot_after = [
+            dict(row)
+            for row in db.conn.execute(
+                f"SELECT {stable_knowledge_fields} FROM knowledge ORDER BY id"
+            ).fetchall()
+        ]
+        assert knowledge_snapshot_after == knowledge_snapshot_before
 
 
 def test_gateway_remote_semantic_helpers_use_safe_central_read_chain(monkeypatch):

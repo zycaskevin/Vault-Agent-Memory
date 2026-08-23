@@ -171,9 +171,10 @@ The four VAM-002 provider change/revision operations require a non-empty
 and evidence operations and no envelope for metadata/revision operations; an
 anonymous inactive policy is never treated as authorization.
 
-The SQLite implementation scans bounded keyset batches containing only the
-ordering and policy columns. Raw content and latest audit ids are fetched only
-for readable rows selected into the response page.
+The SQLite implementation applies the read policy in one ordered query over
+policy columns and limits its result set to `limit + 1` readable rows. Raw
+content and latest audit ids are fetched only for rows selected into the
+response page; hidden rows do not advance its cursor.
 
 The existing bounded `GET /memory/{id}` accepts an optional `revision_id`. When
 provided, Vault returns content only if it still matches the current envelope

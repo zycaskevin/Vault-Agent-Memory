@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import vault.memory_provider as memory_provider_module
+from vault.access_policy import can_read_memory, strict_read_policy
 from vault.db import VaultDB
 from vault.memory_change_envelope import MEMORY_CHANGE_SCHEMA_VERSION, memory_change_envelope
 from vault.memory_provider import MemoryProvider, sqlite_memory_provider
@@ -102,7 +103,10 @@ def test_provider_change_page_is_stable_policy_filtered_and_cursor_based(tmp_pat
     assert repeated["next_cursor"] == second_page["next_cursor"]
 
 
-def test_change_page_uses_bounded_policy_scans_and_selected_row_hydration(tmp_path, monkeypatch):
+def test_change_page_uses_one_bounded_policy_query_and_selected_row_hydration(
+    tmp_path,
+    monkeypatch,
+):
     project, _first_id, _second_id, _private_id = _change_project(tmp_path)
     with VaultDB(project / "vault.db") as db:
         db.conn.executemany(
@@ -131,16 +135,104 @@ def test_change_page_uses_bounded_policy_scans_and_selected_row_hydration(tmp_pa
     assert page["count"] == 1
     selects = [statement.lower() for statement in statements if statement.lstrip().lower().startswith("select")]
     policy_scans = [statement for statement in selects if "from knowledge" in statement and "order by coalesce" in statement]
-    assert len(policy_scans) >= 2
+    assert len(policy_scans) == 1
     assert all("select *" not in statement for statement in policy_scans)
     assert all("content_raw" not in statement for statement in policy_scans)
-    assert all(" limit " in statement for statement in policy_scans)
+    assert " limit 2" in policy_scans[0]
     hydrated_rows = [statement for statement in selects if "select * from knowledge" in statement]
     assert hydrated_rows
     assert all("where id in" in statement for statement in hydrated_rows)
     audit_queries = [statement for statement in selects if "from memory_audit_log" in statement]
     assert audit_queries
     assert all("target_id in" in statement for statement in audit_queries)
+
+
+def test_change_page_sql_policy_matches_private_and_restricted_authorization(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    with VaultDB(project / "vault.db") as db:
+        private_owned = db.add_knowledge(
+            title="Owned private",
+            content_raw="owned",
+            scope="private",
+            sensitivity="high",
+            owner_agent="work-agent",
+        )
+        restricted_allowed = db.add_knowledge(
+            title="Allowed restricted",
+            content_raw="allowed",
+            scope="shared",
+            sensitivity="restricted",
+            owner_agent="other-agent",
+            allowed_agents=["work-agent"],
+        )
+        restricted_hidden = db.add_knowledge(
+            title="Hidden restricted",
+            content_raw="hidden",
+            scope="shared",
+            sensitivity="restricted",
+            owner_agent="other-agent",
+        )
+
+    page = sqlite_memory_provider(project).list_changes(
+        agent_id="work-agent",
+        include_private=True,
+        max_sensitivity="restricted",
+        limit=10,
+    )
+
+    visible_ids = {change["memory_id"] for change in page["changes"]}
+    assert str(private_owned) in visible_ids
+    assert str(restricted_allowed) in visible_ids
+    assert str(restricted_hidden) not in visible_ids
+
+
+def test_change_page_sql_policy_stays_equivalent_to_canonical_read_policy(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    fixtures = (
+        ("Public low", "public", "low", "", []),
+        ("Shared high", "shared", "high", "", []),
+        ("Owned private", "private", "medium", "work-agent", []),
+        ("Allowed private", "private", "low", "other-agent", ["work-agent"]),
+        ("Denied private", "private", "low", "other-agent", []),
+        ("Allowed restricted", "shared", "restricted", "other-agent", ["work-agent"]),
+        ("Denied restricted", "project", "restricted", "other-agent", []),
+    )
+    with VaultDB(project / "vault.db") as db:
+        for title, scope, sensitivity, owner_agent, allowed_agents in fixtures:
+            db.add_knowledge(
+                title=title,
+                content_raw=title,
+                scope=scope,
+                sensitivity=sensitivity,
+                owner_agent=owner_agent,
+                allowed_agents=allowed_agents,
+            )
+        rows = [dict(row) for row in db.conn.execute("SELECT * FROM knowledge")]
+
+    provider = sqlite_memory_provider(project)
+    for include_private, max_sensitivity in (
+        (False, "low"),
+        (False, "high"),
+        (True, "high"),
+        (True, "restricted"),
+    ):
+        policy = strict_read_policy(
+            agent_id="work-agent",
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+        )
+        expected_ids = {
+            str(row["id"]) for row in rows if can_read_memory(row, policy)
+        }
+        page = provider.list_changes(
+            agent_id="work-agent",
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+            limit=100,
+        )
+        assert {change["memory_id"] for change in page["changes"]} == expected_ids
 
 
 def test_change_page_scan_and_hydration_share_one_read_snapshot(tmp_path, monkeypatch):

@@ -13,6 +13,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from .access_policy import (
     InvalidMaxSensitivity,
+    ReadPolicy,
     SENSITIVITY_RANK,
     VALID_MEMORY_SCOPES,
     can_read_memory,
@@ -37,12 +38,69 @@ from .multi_host import list_audit_log, record_audit_event
 from .search_utils import normalize_search_limit
 
 MEMORY_PROVIDER_INTERFACE_VERSION = "2026-08-21"
-_MEMORY_CHANGE_SCAN_BATCH_SIZE = 100
 _MEMORY_CHANGE_RECORDED_AT_SQL = "COALESCE(NULLIF(updated_at, ''), created_at, '')"
 _MEMORY_CHANGE_POLICY_COLUMNS = (
     "id, scope, sensitivity, owner_agent, allowed_agents, status, "
     "updated_at, created_at"
 )
+
+
+def _memory_change_agent_authorization_sql(agent_id: str) -> tuple[str, list[Any]]:
+    """Return a SQLite predicate matching Vault's owner/allowlist policy."""
+    canonical_json = (
+        "CASE WHEN json_valid(COALESCE(allowed_agents, '')) "
+        "THEN CASE WHEN json_type(allowed_agents)='array' "
+        "THEN allowed_agents ELSE '[]' END ELSE '[]' END"
+    )
+    csv_agents = (
+        "LOWER(REPLACE(REPLACE(COALESCE(allowed_agents, ''), ', ', ','), ' ,', ','))"
+    )
+    return (
+        "(LOWER(TRIM(COALESCE(owner_agent, ''))) = ? OR "
+        f"EXISTS (SELECT 1 FROM json_each({canonical_json}) "
+        "WHERE LOWER(TRIM(CAST(value AS TEXT))) = ?) OR "
+        f"(NOT json_valid(COALESCE(allowed_agents, '')) AND "
+        f"INSTR(',' || {csv_agents} || ',', ',' || ? || ',') > 0))",
+        [agent_id, agent_id, agent_id],
+    )
+
+
+def _memory_change_visibility_sql(read_policy: ReadPolicy) -> tuple[str, list[Any]]:
+    """Translate the active read policy into one bounded SQLite query."""
+    sensitivity_sql = "LOWER(TRIM(COALESCE(NULLIF(sensitivity, ''), 'low')))"
+    scope_sql = "LOWER(TRIM(COALESCE(NULLIF(scope, ''), 'project')))"
+    max_rank = (
+        SENSITIVITY_RANK[read_policy.max_sensitivity]
+        if read_policy.max_sensitivity
+        else max(SENSITIVITY_RANK.values())
+    )
+    sensitivities = [
+        label for label, rank in SENSITIVITY_RANK.items() if rank <= max_rank
+    ]
+    sensitivity_placeholders = ",".join("?" for _ in sensitivities)
+    scope_placeholders = ",".join("?" for _ in VALID_MEMORY_SCOPES)
+    restricted_access_sql, restricted_parameters = (
+        _memory_change_agent_authorization_sql(read_policy.agent_id)
+    )
+    private_access_sql, private_parameters = _memory_change_agent_authorization_sql(
+        read_policy.agent_id
+    )
+    predicate = (
+        f"{sensitivity_sql} IN ({sensitivity_placeholders}) AND "
+        f"{scope_sql} IN ({scope_placeholders}) AND "
+        f"({sensitivity_sql} != 'restricted' OR {restricted_access_sql}) AND "
+        f"({scope_sql} != 'private' OR (? = 1 AND {private_access_sql}))"
+    )
+    return (
+        predicate,
+        [
+            *sensitivities,
+            *sorted(VALID_MEMORY_SCOPES),
+            *restricted_parameters,
+            int(read_policy.include_private),
+            *private_parameters,
+        ],
+    )
 _INVALID_MAX_SENSITIVITY = {
     "status": "error",
     "error": "max_sensitivity_invalid",
@@ -326,44 +384,33 @@ class SQLiteMemoryProvider:
                 }
 
         limit_i = normalize_change_limit(limit)
-        visible: list[dict[str, Any]] = []
-        scan_key = cursor_key
+        visibility_sql, visibility_parameters = _memory_change_visibility_sql(read_policy)
         with VaultDB(self.resolved_db_path) as db:
             # Keep policy scanning, selected-row hydration, and audit lookup on
             # one WAL snapshot so a concurrent writer cannot change the page
             # after its visible rows and cursor have already been chosen.
             db.conn.execute("BEGIN")
-            while len(visible) <= limit_i:
-                where_sql = ""
-                parameters: list[Any] = []
-                if scan_key is not None:
-                    where_sql = (
-                        f"WHERE ({_MEMORY_CHANGE_RECORDED_AT_SQL} > ? OR "
-                        f"({_MEMORY_CHANGE_RECORDED_AT_SQL} = ? AND id > ?))"
-                    )
-                    parameters.extend((scan_key[0], scan_key[0], scan_key[1]))
-                parameters.append(_MEMORY_CHANGE_SCAN_BATCH_SIZE)
-                batch = [
-                    dict(row)
-                    for row in db.conn.execute(
-                        f"""SELECT {_MEMORY_CHANGE_POLICY_COLUMNS}
-                            FROM knowledge
-                            {where_sql}
-                            ORDER BY {_MEMORY_CHANGE_RECORDED_AT_SQL}, id
-                            LIMIT ?""",
-                        parameters,
-                    ).fetchall()
-                ]
-                if not batch:
-                    break
-                for row in batch:
-                    scan_key = change_order_key(row)
-                    if can_read_memory(row, read_policy):
-                        visible.append(row)
-                        if len(visible) > limit_i:
-                            break
-                if len(visible) > limit_i or len(batch) < _MEMORY_CHANGE_SCAN_BATCH_SIZE:
-                    break
+            cursor_sql = ""
+            parameters: list[Any] = []
+            if cursor_key is not None:
+                cursor_sql = (
+                    f"({_MEMORY_CHANGE_RECORDED_AT_SQL} > ? OR "
+                    f"({_MEMORY_CHANGE_RECORDED_AT_SQL} = ? AND id > ?)) AND "
+                )
+                parameters.extend((cursor_key[0], cursor_key[0], cursor_key[1]))
+            parameters.extend(visibility_parameters)
+            parameters.append(limit_i + 1)
+            visible = [
+                dict(row)
+                for row in db.conn.execute(
+                    f"""SELECT {_MEMORY_CHANGE_POLICY_COLUMNS}
+                        FROM knowledge
+                        WHERE {cursor_sql}({visibility_sql})
+                        ORDER BY {_MEMORY_CHANGE_RECORDED_AT_SQL}, id
+                        LIMIT ?""",
+                    parameters,
+                ).fetchall()
+            ]
 
             selected_metadata = visible[:limit_i]
             selected_ids = [int(row["id"]) for row in selected_metadata]

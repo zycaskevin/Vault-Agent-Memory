@@ -1,0 +1,8 @@
+collector=terminal
+source_head=15eb5583d7fdf02358c4978cd22ab28ebd796ee4 plus test-only RED changes
+command=env PYTHONPATH=. $VAULT_TEST_PYTHON -m pytest -q tests/test_memory_change_envelope.py::test_change_page_uses_one_bounded_policy_query_and_selected_row_hydration tests/test_gateway.py::test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch
+exit_status=1
+result=2 failed in 0.44s
+failure_1=expected one bounded policy query but observed two queries, each LIMIT 100
+failure_2=whitespace max_sensitivity returned status ok and exposed the synthetic high-sensitivity fixture
+privacy=synthetic temporary fixture only; no live database or Hermes data

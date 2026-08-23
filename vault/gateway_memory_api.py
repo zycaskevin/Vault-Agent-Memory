@@ -31,7 +31,8 @@ _MEMORY_API_BAD_REQUEST_ERRORS = frozenset(
 
 
 def _strict_memory_api_sensitivity(value: Any) -> str:
-    return strict_read_policy(max_sensitivity=value or "low").max_sensitivity
+    normalized = str(value or "").strip()
+    return strict_read_policy(max_sensitivity=normalized or "low").max_sensitivity
 
 
 def _invalid_sensitivity() -> dict[str, Any]:

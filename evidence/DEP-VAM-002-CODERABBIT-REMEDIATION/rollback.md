@@ -26,7 +26,7 @@ Run these exact checks from the rollback candidate:
 ```bash
 python -m pytest -q tests/test_memory_change_envelope.py tests/test_memory_provider.py
 python -m pytest -q tests/test_gateway.py -k 'memory_changes or revision_bound or openapi_contract'
-ruff check vault/memory_change_envelope.py vault/memory_provider.py vault/gateway_memory_api.py vault/gateway_openapi.py tests/test_memory_change_envelope.py
+ruff check vault/memory_change_envelope.py vault/memory_provider.py vault/gateway_memory_api.py vault/gateway_openapi.py tests/test_memory_change_envelope.py tests/test_gateway.py
 sddgov evidence verify evidence/DEP-VAM-002-MEMORY-CHANGE-ENVELOPE --strict
 sddgov evidence verify evidence/DEP-VAM-002-CODERABBIT-REMEDIATION --strict
 sddgov ci local-gate .

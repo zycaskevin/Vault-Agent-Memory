@@ -47,8 +47,9 @@ governance labels to lowercase, and active reads fail closed on malformed
 stored labels rather than interpreting them as public or low sensitivity.
 
 The Gateway preserves revision-bound memory ids as provider-owned opaque
-strings. The SQLite adapter uses bounded keyset policy scans and hydrates raw
-content plus audit references only for selected readable rows.
+strings. The SQLite adapter uses one policy-filtered ordered query capped at
+`limit + 1` readable metadata rows and hydrates raw content plus audit
+references only for selected readable rows.
 
 ## Alternatives considered
 

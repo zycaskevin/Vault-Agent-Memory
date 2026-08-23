@@ -29,12 +29,17 @@ explicit authorization.
 ## Deterministic steps
 
 The preflight resolves both providers from the same bounded PATH, then the
-unchanged complete gate is invoked:
+unchanged complete gate is invoked. `$VAULT_PYTHON_SHIM` is the private shim
+directory containing the Vault test interpreter, and `$SDDGOV_RUNTIME` is the
+private governance virtual environment root:
 
 ```text
-python -c 'import pytest; print(pytest.__version__)'
-sddgov --version
-sddgov ci local-gate .
+PATH=$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:/usr/local/bin:/usr/bin:/bin \
+  python -c 'import pytest; print(pytest.__version__)'
+PATH=$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:/usr/local/bin:/usr/bin:/bin \
+  sddgov --version
+PATH=$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:/usr/local/bin:/usr/bin:/bin \
+  sddgov ci local-gate .
 ```
 
 ## Environment and preconditions

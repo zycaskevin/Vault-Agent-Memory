@@ -37,7 +37,7 @@
   "expected_behavior": "The Gateway preserves opaque memory references for provider validation, evidence reads reject spans above 80 lines, and change pagination uses bounded policy scans with content and audit fetches limited to selected readable rows.",
   "actual_behavior": "The reviewed head coerces Gateway memory references to integers, its test does not exercise the 80-line ceiling, and list_changes loads all knowledge content plus all audit groups before filtering.",
   "environment": {
-    "commit": "48cea2cb60c1d90dc6e4eeef92e2d1f604623cb7",
+    "commit": "a3be45e272f126a96d519cffc6ea59027055a3e5",
     "branch": "codex/vam-002-memory-change-envelope",
     "runtime": "CPython 3.11.15; pytest 9.1.1; stable isolated worktree"
   },
