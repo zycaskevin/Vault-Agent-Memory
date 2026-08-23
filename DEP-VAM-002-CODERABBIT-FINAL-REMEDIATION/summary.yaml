@@ -8,7 +8,7 @@
   ],
   "risk_level": "L1",
   "created_at": "2026-08-23T03:55:03Z",
-  "updated_at": "2026-08-23T04:18:08Z",
+  "updated_at": "2026-08-23T11:59:39Z",
   "workflow": {
     "phase": "green",
     "history": [
@@ -31,7 +31,7 @@
     ]
   },
   "expected_behavior": "Rollback verification distinguishes expected RED reproduction from commands that must stay Green, evidence descriptions match the implemented full-row snapshot oracle, remediation scope classifies implementation versus non-production defects truthfully, and Markdown contract tests remain stable under line reflow.",
-  "actual_behavior": "At exact head 36ff168a8c8ffffcc93d12107add2d5ecac0fbd1, rollback.md required a known RED command to exit zero after rollback, two remediation records misdescribed the implemented scope/oracle, and the normative contract test inconsistently checked raw rather than normalized Markdown strings. At exact remediation head c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a, the first proof attempt was blocked by a local-filesystem origin; after the explicitly authorized origin correction, the single additional proof attempt was blocked because that pre-existing clone had no refs/remotes/origin/main. Both are Builder checkout-preparation failures, and repository-wide pytest did not start.",
+  "actual_behavior": "At exact head 36ff168a8c8ffffcc93d12107add2d5ecac0fbd1, rollback.md required a known RED command to exit zero after rollback, two remediation records misdescribed the implemented scope/oracle, and the normative contract test inconsistently checked raw rather than normalized Markdown strings. At exact remediation head c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a, the first proof attempt was blocked by a local-filesystem origin; after the explicitly authorized origin correction, the single additional proof attempt was blocked because that pre-existing clone had no refs/remotes/origin/main. Both are Builder checkout-preparation failures, and repository-wide pytest did not start. The missing origin/main ref has since been fetched and verified against exact base c284e1c7bedf288a10009b98e5f2da525c3ee4bc without running another Local Green.",
   "environment": {
     "commit": "c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a",
     "branch": "codex/vam-002-memory-change-envelope-ready",
@@ -54,6 +54,10 @@
     {
       "path": "shareable/artifacts/terminal--final-local-green-origin-main-fail.txt",
       "sha256": "b1abfccf06a55554cf14b2fdcfbdee95bca615b964847835472d715223e834cc"
+    },
+    {
+      "path": "shareable/artifacts/terminal--origin-main-preparation-green.txt",
+      "sha256": "be0e0a762989e013531bb093dfdfe7a91cc60498ccc0c667149edc4014731042"
     }
   ]
 }

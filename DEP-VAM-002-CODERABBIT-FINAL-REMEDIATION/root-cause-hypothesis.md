@@ -25,6 +25,11 @@ failed on private-clone identity setup before repository-wide pytest. This is
 not evidence of a Memory API runtime regression, and the affected production
 implementation remains unchanged by the proposed fix.
 
+The second checkout defect is now mechanically resolved: the formal
+`origin/main` ref exists at the exact PR base and the private clone remains
+clean. No additional gate was run, so this preparation does not change the
+proof state.
+
 ## Falsification test
 
 Apply only the four bounded corrections and rerun the same static probe. The

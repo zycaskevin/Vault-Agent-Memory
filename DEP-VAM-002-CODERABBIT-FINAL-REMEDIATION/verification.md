@@ -40,11 +40,21 @@ clone did not contain `refs/remotes/origin/main`, so `git rev-parse origin/main`
 exited `128`. Repository-wide pytest again did not start. Post-run HEAD, clean
 status, origin, and diff checks passed. Per authorization, no retry was made.
 
+## Checkout preparation after the failed run
+
+Without running another test gate, Builder fetched only the formal GitHub
+`main` branch into `refs/remotes/origin/main`. It resolves to exact PR base
+`c284e1c7bedf288a10009b98e5f2da525c3ee4bc`, and the merge-base with exact
+candidate `c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a` is the same commit. All three
+private boundaries remain `0700`; the worktree is detached and clean; all 1,455
+tracked physical modes match the Git index. This preparation resolves the known
+checkout precondition but is not Local Green proof.
+
 ## Remaining limitations
 
-No runtime behavior or stored data changed. Exact committed-head Local Green is
-still incomplete because the authorized Builder checkout lacked its
-`origin/main` remote-tracking ref. Any newly prepared checkout or another test
-run requires separate authorization. Strict proof verification, merge-gate
-rebind, public push, CodeRabbit re-review, independent Reviewer receipt, merge,
-and deployment remain separate gates; this record authorizes none of them.
+No runtime behavior or stored data changed. The Builder checkout is now ready,
+but exact committed-head Local Green remains incomplete because the authorized
+run allowance was consumed before `origin/main` was fetched. Another test run
+requires separate authorization. Strict proof verification, merge-gate rebind,
+public push, CodeRabbit re-review, independent Reviewer receipt, merge, and
+deployment remain separate gates; this record authorizes none of them.
