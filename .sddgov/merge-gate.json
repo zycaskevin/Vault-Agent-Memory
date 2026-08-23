@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "base_sha": "c284e1c7bedf288a10009b98e5f2da525c3ee4bc",
-  "head_sha": "baeee428402430fc22338a48e753fff5ffbfbb72",
+  "head_sha": "91c49724950aeb369be6639f5f3b1c67c9ba9816",
   "risk_level": "L2",
   "builder_id": "codex",
-  "change_digest": "6583f86db5e24064ae8d582f0a6b5549af8c3283f387a6fa2775afa21aa0f905",
+  "change_digest": "a71bf1af45af40fc815c67c6c74d73cdc7b3b2c8ef5f6db5e753f399e334d335",
   "deps": [
     "evidence/DEP-VAM-002-MEMORY-CHANGE-ENVELOPE",
     "evidence/DEP-VAM-002-CODERABBIT-REMEDIATION",
@@ -14,7 +14,8 @@
     "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH",
     "DEP-VAM-002-FULL-SUITE-COMPATIBILITY",
     "DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION",
-    "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION"
+    "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION",
+    "evidence/DEP-VAM-002-CODERABBIT-THREAD-CLOSURE"
   ],
   "rollback_path": "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md",
   "protected_file_review": ".sddgov/reviews/REV-VAM-002.json"
