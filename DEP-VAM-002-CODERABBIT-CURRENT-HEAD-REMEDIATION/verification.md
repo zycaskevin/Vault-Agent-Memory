@@ -7,6 +7,13 @@ The exact repo-relative VAM-002 focused command recorded in
 real HTTP loopback candidate-first snapshot node passed 1 test. Ruff over all
 ten PR-changed Python files and `git diff --check` both returned zero.
 
+The single authorized non-sandbox Builder Local Green then passed at exact
+committed head `5efde41f1a1846439f81a10c928687388b0f15fd`: Doctor, CI contract,
+README smoke, and release parity returned zero; 446 identity-isolated Subject
+nodes passed; repository pytest reported 2969 passed, 10 skipped, and one
+existing warning. Post-run HEAD, clean worktree, 1443 tracked physical modes,
+Frozen Subject diff, and `git diff --check` were exact.
+
 ## Before/after evidence
 
 RED: the two-node command failed because whitespace returned the synthetic high
@@ -19,6 +26,6 @@ for public/shared/private/restricted and owner/allowlist cases.
 
 The SQL result set is bounded to `limit + 1`; as with any ordered database
 query, SQLite may inspect index/table pages internally. No public cursor or
-error contract is changed. A new exact-committed-head Builder Local Green is
-still required before Proof, followed by gate rebind and current-head
-CodeRabbit review.
+error contract is changed. Gate rebind, public branch push, current-head
+CodeRabbit review, and independent Reviewer receipt remain separate steps; this
+proof authorizes none of them.
