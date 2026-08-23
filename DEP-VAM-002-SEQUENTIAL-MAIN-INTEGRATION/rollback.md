@@ -70,6 +70,7 @@ git restore --source=HEAD --staged --worktree -- \
   DEP-VAM-002-PUBLIC-READ-SENSITIVITY \
   DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION \
   evidence/DEP-VAM-002-CODERABBIT-REMEDIATION \
+  evidence/DEP-VAM-002-CODERABBIT-THREAD-CLOSURE \
   evidence/DEP-VAM-002-MEMORY-CHANGE-ENVELOPE \
   docs/issues/VAM-002-memory-change-envelope.md \
   docs/work-packages/VAM-002-memory-change-envelope.md

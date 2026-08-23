@@ -9,8 +9,8 @@ row revision becomes unstable under audit-only events.
 ## Reversible steps
 
 Before merge, revert the bounded remediation and its gate together, then return
-the DEP to a non-proof state. After merge, use only the executable guarded PR
-#500 procedure in
+the DEP to a non-proof state. After merge, use only the executable guarded
+PR #500 procedure in
 `DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md`; it preserves this DEP
 and all governance provenance.
 
