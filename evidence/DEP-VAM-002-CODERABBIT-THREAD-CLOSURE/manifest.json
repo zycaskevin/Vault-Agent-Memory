@@ -15,6 +15,13 @@
       "sha256": "2c6823fd7514af41dea70a0dfba758969ed05bd00cacb60267924e7d51667a75",
       "collected_at": "2026-08-23T13:06:47Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--global-lock-local-green-proof.txt",
+      "sha256": "63c1cc0252111fca64380e529c1e6f1cb33abeb161e01b16b1fd3ca7277a407b",
+      "collected_at": "2026-08-23T16:51:11Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -26,6 +33,11 @@
     {
       "path": "shareable/artifacts/terminal--coderabbit-thread-red.txt",
       "sha256": "ef501becdc61559427ebf94f34de3d486ac2be2498419499385d5dc326a48096",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--global-lock-local-green-proof.txt",
+      "sha256": "f1787ac84f5a40a45093bbfe66686b47942d9897800009fc47fc19ae9155b048",
       "shareable": true
     }
   ]

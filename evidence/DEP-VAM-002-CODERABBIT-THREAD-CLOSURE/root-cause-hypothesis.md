@@ -16,6 +16,10 @@ column one where Markdown treats it as heading syntax.
 The document renders acceptably in viewers that do not enforce MD018, which
 explains why functional and governance tests remained Green.
 
+The exact implementation commit also passed the repository's complete Local
+Green under the merged PR #50 global-lock runtime. This narrows the defect to
+Markdown rendering and rollback provenance rather than runtime behavior.
+
 ## Falsification test
 
 Move `PR` and `#500` onto the same physical line and add a regression that

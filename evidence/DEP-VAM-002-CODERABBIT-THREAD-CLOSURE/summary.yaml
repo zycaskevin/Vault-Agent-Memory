@@ -8,9 +8,9 @@
   ],
   "risk_level": "L1",
   "created_at": "2026-08-23T13:04:08Z",
-  "updated_at": "2026-08-23T13:07:11Z",
+  "updated_at": "2026-08-23T16:53:19Z",
   "workflow": {
-    "phase": "green",
+    "phase": "proof",
     "history": [
       {
         "phase": "red",
@@ -27,15 +27,19 @@
       {
         "phase": "green",
         "at": "2026-08-23T13:07:11Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-23T16:53:19Z"
       }
     ]
   },
   "expected_behavior": "The VAM-002 independent-review rollback keeps the PR number as ordinary prose and no line beginning with #500 is parsed as a malformed Markdown heading; the authoritative rollback preserves this closure DEP.",
-  "actual_behavior": "At exact audit head 077fc5355703e4ba10fe61d7556c6c8368a8830c, line 13 of the independent-review rollback began with #500 and triggered CodeRabbit's MD018 finding; the authoritative rollback did not yet preserve this successor DEP.",
+  "actual_behavior": "At exact audit head 077fc5355703e4ba10fe61d7556c6c8368a8830c, line 13 of the independent-review rollback began with #500 and triggered CodeRabbit's MD018 finding; the authoritative rollback did not yet preserve this successor DEP. Exact implementation commit 8847f94a58acc81a5e1b18357a6cbf50d00a35a7 fixes both conditions, passes the focused regression, and passes one owner-authorized full Local Green under the merged Agentic-SDD-Governance PR #50 current-user global lock.",
   "environment": {
     "commit": "8847f94a58acc81a5e1b18357a6cbf50d00a35a7",
-    "branch": "codex/vam-002-memory-change-envelope-ready",
-    "runtime": "CPython 3.11; Agentic SDD Governance 0.2.0-experimental.6"
+    "branch": "detached Builder checkout; target codex/vam-002-memory-change-envelope",
+    "runtime": "CPython 3.11.15; Agentic SDD Governance 0.2.0-experimental.9 from merged PR #50 commit 92f4ba8388ecf1ef1f3407db6c49cef62f6ee196"
   },
   "root_cause_status": "confirmed",
   "attachments": [
@@ -46,6 +50,10 @@
     {
       "path": "shareable/artifacts/terminal--coderabbit-thread-green.txt",
       "sha256": "2c6823fd7514af41dea70a0dfba758969ed05bd00cacb60267924e7d51667a75"
+    },
+    {
+      "path": "shareable/artifacts/terminal--global-lock-local-green-proof.txt",
+      "sha256": "f1787ac84f5a40a45093bbfe66686b47942d9897800009fc47fc19ae9155b048"
     }
   ]
 }
