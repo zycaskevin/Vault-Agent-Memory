@@ -1,0 +1,13 @@
+collector=terminal
+implementation_commit=8847f94a58acc81a5e1b18357a6cbf50d00a35a7
+command=python -m pytest -q tests/test_vault_boundary_freeze.py -k 'vam002_review_rollback_keeps_pr_number_as_plain_text or vam002_rollback_is_executable'
+result=PASS passed=2 deselected=22
+command=scan rollback Markdown for lines beginning with #500
+result=PASS bad_lines=[]
+command=$RUFF_BIN check tests/test_vault_boundary_freeze.py
+ruff_version=0.16.4
+result=PASS
+git_diff_check=PASS
+implementation_paths=DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION/rollback.md,DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md,tests/test_vault_boundary_freeze.py
+product_runtime_change=none
+live_hermes_or_production_data=not accessed

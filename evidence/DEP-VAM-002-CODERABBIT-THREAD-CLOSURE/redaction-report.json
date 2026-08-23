@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--coderabbit-thread-green.txt",
+      "output": "terminal--coderabbit-thread-green.txt",
+      "source_sha256": "2c6823fd7514af41dea70a0dfba758969ed05bd00cacb60267924e7d51667a75",
+      "output_sha256": "2c6823fd7514af41dea70a0dfba758969ed05bd00cacb60267924e7d51667a75",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--coderabbit-thread-red.txt",
+      "output": "terminal--coderabbit-thread-red.txt",
+      "source_sha256": "ef501becdc61559427ebf94f34de3d486ac2be2498419499385d5dc326a48096",
+      "output_sha256": "ef501becdc61559427ebf94f34de3d486ac2be2498419499385d5dc326a48096",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-002-CODERABBIT-THREAD-CLOSURE",
+  "generated_at": "2026-08-23T13:06:47Z"
+}

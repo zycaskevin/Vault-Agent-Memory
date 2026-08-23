@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-THREAD-CLOSURE",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--coderabbit-thread-red.txt",
+      "sha256": "ef501becdc61559427ebf94f34de3d486ac2be2498419499385d5dc326a48096",
+      "collected_at": "2026-08-23T13:04:23Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--coderabbit-thread-green.txt",
+      "sha256": "2c6823fd7514af41dea70a0dfba758969ed05bd00cacb60267924e7d51667a75",
+      "collected_at": "2026-08-23T13:06:47Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--coderabbit-thread-green.txt",
+      "sha256": "2c6823fd7514af41dea70a0dfba758969ed05bd00cacb60267924e7d51667a75",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--coderabbit-thread-red.txt",
+      "sha256": "ef501becdc61559427ebf94f34de3d486ac2be2498419499385d5dc326a48096",
+      "shareable": true
+    }
+  ]
+}
