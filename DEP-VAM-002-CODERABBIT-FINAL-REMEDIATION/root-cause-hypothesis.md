@@ -19,8 +19,10 @@ categories, snapshot-oracle wording, and normalized Markdown assertions.
 
 ## Contradicting evidence
 
-All hosted functional jobs and the exact Builder Local Green are Green, so this
-is not evidence of a Memory API runtime regression. The affected production
+All hosted functional jobs and the bounded remediation checks are Green. The
+exact committed-head Builder Local Green has not completed because two attempts
+failed on private-clone identity setup before repository-wide pytest. This is
+not evidence of a Memory API runtime regression, and the affected production
 implementation remains unchanged by the proposed fix.
 
 ## Falsification test

@@ -21,8 +21,8 @@ contract test uses raw `spec` and `decision` text for some assertions.
 ## Deterministic steps
 
 Run the bounded static contract probe recorded in
-`shareable/artifacts/terminal--final-review-red.txt`. It checks four independent
-conditions:
+`shareable/artifacts/terminal--final-review-red-source.txt`. It checks four
+independent conditions:
 
 1. truthful defect categories in the current-head remediation fix scope;
 2. explicit expected-RED versus required-Green rollback semantics;

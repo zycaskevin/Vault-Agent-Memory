@@ -28,10 +28,23 @@ had a local filesystem `origin`, while the Mission V5 repository-identity guard
 accepts only the formal GitHub SSH or HTTPS remote. Repository-wide pytest did
 not start. The checkout remained exact and clean; no retry was made.
 
+## Additional authorized Local Green attempt
+
+The owner explicitly authorized correcting that same private clone's `origin`
+to the formal GitHub HTTPS URL and running one additional non-sandbox gate at
+the same exact implementation commit. The origin correction, private boundary,
+tracked physical mode, Doctor, CI-contract, README-smoke, and release-parity
+checks all passed. Identity-isolated nodes then stopped at
+`test_sdg012_current_main_transition_accepts_only_exact_delivery`: the existing
+clone did not contain `refs/remotes/origin/main`, so `git rev-parse origin/main`
+exited `128`. Repository-wide pytest again did not start. Post-run HEAD, clean
+status, origin, and diff checks passed. Per authorization, no retry was made.
+
 ## Remaining limitations
 
-No runtime behavior or stored data changed. A fresh exact committed-head Local
-Green with a preverified formal GitHub `origin`, strict proof verification,
-merge-gate rebind, public push, CodeRabbit re-review, independent Reviewer
-receipt, merge, and deployment remain separate gates; this bounded Green record
-authorizes none of them.
+No runtime behavior or stored data changed. Exact committed-head Local Green is
+still incomplete because the authorized Builder checkout lacked its
+`origin/main` remote-tracking ref. Any newly prepared checkout or another test
+run requires separate authorization. Strict proof verification, merge-gate
+rebind, public push, CodeRabbit re-review, independent Reviewer receipt, merge,
+and deployment remain separate gates; this record authorizes none of them.

@@ -22,9 +22,21 @@
       "sha256": "3669dd8ec14f22ec50c038ef858f1857918646a7183654fcf44e1ef542236fe1",
       "collected_at": "2026-08-23T04:08:49Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final-local-green-origin-main-fail.txt",
+      "sha256": "b1abfccf06a55554cf14b2fdcfbdee95bca615b964847835472d715223e834cc",
+      "collected_at": "2026-08-23T04:18:08Z",
+      "shareable": false
     }
   ],
   "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--final-local-green-origin-main-fail.txt",
+      "sha256": "b1abfccf06a55554cf14b2fdcfbdee95bca615b964847835472d715223e834cc",
+      "shareable": true
+    },
     {
       "path": "shareable/artifacts/terminal--final-local-green-remote-fail.txt",
       "sha256": "3669dd8ec14f22ec50c038ef858f1857918646a7183654fcf44e1ef542236fe1",
