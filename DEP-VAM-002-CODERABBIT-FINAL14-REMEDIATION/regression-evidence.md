@@ -19,5 +19,9 @@ contract verification passed. The bounded derivative is
 
 The real loopback PATCH/DELETE assertions are committed in
 `test_gateway_http_memory_api_facade_routes` but are not claimed as locally
-executed in this sandboxed focused result. They remain part of the required
-repository-controlled Local Green proof.
+executed in the earlier sandboxed focused result. They subsequently passed as
+part of the single exact-head non-sandbox repository-controlled Local Green at
+`f81fff6b129515917f3f8c2d6a59b69ac107a3ab`: 446 identity nodes passed and
+repository pytest reported `2975 passed, 10 skipped, 1 warning`. The bounded,
+redacted proof is
+`shareable/artifacts/terminal--final14-local-green-proof.txt`.
