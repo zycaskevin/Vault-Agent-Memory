@@ -259,6 +259,7 @@ def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() 
         "DEP-VAM-002-FULL-SUITE-COMPATIBILITY",
         "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION",
         "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
+        "DEP-VAM-002-AUDIT-DESCENDANT-ROLLBACK-GUARD",
         "DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION",
         "evidence/DEP-VAM-002-CODERABBIT-THREAD-CLOSURE",
         "vault/governance_read_guard.py",
