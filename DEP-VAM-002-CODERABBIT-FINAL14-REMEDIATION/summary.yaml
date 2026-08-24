@@ -1,0 +1,52 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md",
+    "docs/decision_records/2026-08-21-memory-change-envelope.md"
+  ],
+  "risk_level": "L2",
+  "created_at": "2026-08-24T16:43:55Z",
+  "updated_at": "2026-08-24T16:44:10Z",
+  "workflow": {
+    "phase": "green",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-24T16:43:55Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-24T16:44:00Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-24T16:44:05Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-24T16:44:10Z"
+      }
+    ]
+  },
+  "expected_behavior": "Every Memory API method maps bounded client errors consistently; present empty or null stored governance labels fail closed; all 14 current-head review findings have an executable fix or truthful stale-finding disposition; rollback resolves current remote main before mutation.",
+  "actual_behavior": "At exact public head acb6de412587d614086d4ae824abc2c2db277153, PATCH and DELETE sent missing-agent errors as HTTP 200, present invalid governance labels defaulted to project/low, and historical evidence/rollback records left twelve valid review findings ambiguous or incomplete. Implementation commit 9308751b8616e5cccd51f2f1d0c00ca35f01b558 closes those findings and records two outdated comments without reintroducing obsolete behavior.",
+  "environment": {
+    "commit": "9308751b8616e5cccd51f2f1d0c00ca35f01b558",
+    "branch": "codex/vam-002-memory-change-envelope",
+    "runtime": "CPython 3.11; repository-pinned pytest 9.1.1; Ruff 0.15.20; Agentic SDD Governance 0.2.0-experimental.9 CLI"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--final14-red.txt",
+      "sha256": "1c201c8ff5cc7bc8827ea6b83b7b668d69b34ea63bdcfe7b4f9be99c048f238c"
+    },
+    {
+      "path": "shareable/artifacts/terminal--final14-green.txt",
+      "sha256": "8b0d0ed14b092f72540b88d28f9747c1be4326a88a5bdc4b0d2ec71903de267c"
+    }
+  ]
+}
