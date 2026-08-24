@@ -168,9 +168,12 @@ upsert; deletion does not expose hidden-row counts or historical content.
   Gateway preserves `{id}` as an opaque string and the selected provider alone
   validates or decodes it. The SQLite provider currently accepts its decimal
   row-id representation.
-- `invalid_cursor`, `cursor_policy_mismatch`, `max_sensitivity_invalid`, and
-  `range_too_large` return HTTP 400 with the documented Memory API error
-  schema; they are never encoded as a successful change page or bounded read.
+- `invalid_cursor`, `cursor_policy_mismatch`, `max_sensitivity_invalid`,
+  `range_too_large`, and `agent_id_required` return HTTP 400 with the
+  documented Memory API error schema; they are never encoded as a successful
+  change page or bounded read. In particular, missing or empty `agent_id` on
+  `/memory/changes` or a revision-bound `GET /memory/{id}` returns
+  `status=error`, `error=agent_id_required`, and no rows or content.
 - `/memory/search`, `/memory/changes`, `/memory/{id}`, and `/memory/timeline`
   validate sensitivity before any legacy/provider adapter dispatch.
 

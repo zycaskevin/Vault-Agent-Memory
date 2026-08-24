@@ -7,9 +7,15 @@ new validation changes legacy non-Memory-API surfaces.
 
 ## Reversible steps
 
-Before merge, revert the bounded implementation and its gate together. After
-merge, use only the executable guarded PR #500 rollback while preserving this
-DEP and the earlier VAM-002 evidence packages.
+Before merge, discard only the unmerged candidate revision under the branch
+and CI cost contracts; do not execute a data or production rollback. After
+merge, the sole executable implementation rollback is the fail-closed
+`## Guarded preparation command` in
+`DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md`. It resolves exact PR
+#500 merge/base/reviewed-head state, consumes the fresh L3 approval immediately
+before `git revert --no-commit`, verifies the staged allowlist, and preserves
+this DEP plus the earlier VAM-002 evidence packages. This DEP does not define a
+second implementation rollback command.
 
 ## Data compatibility
 

@@ -26,8 +26,10 @@
       "source": "terminal--final-review-green.txt",
       "output": "terminal--final-review-green.txt",
       "source_sha256": "1bde3dc1154ec178a45cb5b1ef106e295eff9aae18bdfe98ce154323a8a593e5",
-      "output_sha256": "1bde3dc1154ec178a45cb5b1ef106e295eff9aae18bdfe98ce154323a8a593e5",
-      "redactions": {}
+      "output_sha256": "16a4f9af56f464030f8ce9b3a9a47b0a34ff41a84466046a5579ea4bac48c962",
+      "redactions": {
+        "evidence_clarification": 1
+      }
     },
     {
       "source": "terminal--final-review-red-source.txt",
@@ -45,7 +47,9 @@
     }
   ],
   "blocked": [],
-  "totals": {},
+  "totals": {
+    "evidence_clarification": 1
+  },
   "dep_id": "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION",
   "generated_at": "2026-08-23T12:08:57Z"
 }

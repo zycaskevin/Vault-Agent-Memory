@@ -8,12 +8,15 @@ authoritative rollback preservation/allowlist additions are incorrect.
 
 ## Reversible steps
 
-Revert only immutable implementation commit
-`c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a`, without committing. Restore this
-DEP from current HEAD so the Red/Evidence/Fix/Green/Proof audit trail remains.
-Fail closed unless the staged path set is limited to the corrected existing
-files plus the authoritative rollback and boundary regression changes recorded
-in Fix Scope.
+Revert only remediation-only commit
+`c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a`, without committing. That commit
+contains the Fix Scope semantic-proof and test corrections; reverting it does
+not remove the VAM-002 implementation. Restore this DEP from current HEAD so
+the Red/Evidence/Fix/Green/Proof audit trail remains. Fail closed unless the
+staged path set is limited to the corrected existing files plus the
+authoritative rollback and boundary regression changes recorded in Fix Scope.
+Any post-merge implementation rollback is a separate L3 procedure governed by
+`DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md`.
 
 ## Data compatibility
 

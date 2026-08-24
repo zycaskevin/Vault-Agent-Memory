@@ -26,6 +26,7 @@ _MEMORY_API_BAD_REQUEST_ERRORS = frozenset(
         "cursor_policy_mismatch",
         "max_sensitivity_invalid",
         "range_too_large",
+        "agent_id_required",
     }
 )
 

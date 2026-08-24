@@ -7,9 +7,11 @@ policy-filtered cursor pagination plus revision-bound bounded evidence.
 
 ## Actual
 
-Pytest stops during collection with `ModuleNotFoundError` because the change
-envelope module and provider contract do not exist on the `origin/main`
-baseline.
+Pytest stops during collection with `ModuleNotFoundError`. The collection
+failure proves only that `vault.memory_change_envelope` was absent on the
+`origin/main` baseline; it does not independently prove the provider contract
+was absent. Provider-interface behavior requires a separate deterministic
+contract check.
 
 ## Deterministic steps
 

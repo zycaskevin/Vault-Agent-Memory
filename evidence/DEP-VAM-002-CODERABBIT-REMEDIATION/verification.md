@@ -46,3 +46,23 @@ The new snapshot test commits a concurrent update after the policy scan begins
 and proves hydration still returns the earlier snapshot. A fresh provider call
 observes the committed update. The OpenAPI assertion proves PATCH declares its
 required `{id}` as an integer with `minimum: 1`.
+
+## Manifest-bound follow-up revalidation
+
+The immutable follow-up implementation commit
+`a3be45e272f126a96d519cffc6ea59027055a3e5` was revalidated in a clean detached
+worktree. The exact focused command named above passed `43 passed in 9.12s`.
+The initial sandbox probe passed 28 non-network nodes and was denied only for
+15 loopback socket tests; one authorized loopback-capable execution of the
+same command then passed all 43. The successor artifact is
+`shareable/artifacts/terminal--follow-up-green.txt`, hash-bound by the manifest
+and redaction report.
+
+The final repository-record validation ran:
+
+```text
+sddgov evidence verify evidence/DEP-VAM-002-CODERABBIT-REMEDIATION --strict
+```
+
+Strict result: PASS with Agentic SDD Governance `0.2.0-experimental.6`; the
+verifier returned `[OK] Debug Evidence Package verified`.

@@ -19,17 +19,15 @@ categories, snapshot-oracle wording, and normalized Markdown assertions.
 
 ## Contradicting evidence
 
-All hosted functional jobs and the bounded remediation checks are Green. The
-exact committed-head Builder Local Green has not completed because two attempts
-failed on private-clone identity setup before repository-wide pytest. This is
-not evidence of a Memory API runtime regression, and the affected production
-implementation remains unchanged by the proposed fix.
-
-The second checkout defect is now mechanically resolved: the formal
-`origin/main` ref exists at the exact PR base and the private clone remains
-clean. The subsequently authorized exact-head Local Green passed, confirming
-that both prior failures were preparation faults rather than product or test
-regressions.
+All hosted functional jobs and the bounded remediation checks are Green. Two
+historical attempts at exact implementation commit
+`c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a` failed during private-checkout
+identity setup before repository-wide pytest; neither failure was a Memory API
+runtime regression. After the formal GitHub origin and exact `origin/main` ref
+were prepared, the separately authorized run at the same exact commit passed:
+446 identity-isolated Subject nodes, then 2970 passed, 10 skipped, 1 warning.
+This successful exact-head proof supersedes the earlier pending statement while
+retaining both failed setup attempts as historical evidence.
 
 ## Falsification test
 

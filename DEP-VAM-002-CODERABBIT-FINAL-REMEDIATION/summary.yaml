@@ -49,7 +49,7 @@
     },
     {
       "path": "shareable/artifacts/terminal--final-review-green.txt",
-      "sha256": "1bde3dc1154ec178a45cb5b1ef106e295eff9aae18bdfe98ce154323a8a593e5"
+      "sha256": "16a4f9af56f464030f8ce9b3a9a47b0a34ff41a84466046a5579ea4bac48c962"
     },
     {
       "path": "shareable/artifacts/terminal--final-local-green-remote-fail.txt",

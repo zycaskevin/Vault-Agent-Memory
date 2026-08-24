@@ -2,21 +2,20 @@
 
 Current phase: Proof.
 
-Verified read-only facts:
+Historical preflight at exact head
+`983c48036a585eaecced5a56b7dcbb98dacb67ed` remained clean and established
+the interpreter-selection failure: the governance Python could not import
+pytest, the Vault test Python imported pytest `9.1.1`, and the failed run
+emitted no named Subject node or repository pytest result. That preflight is
+not the final proof candidate.
 
-- exact head `983c48036a585eaecced5a56b7dcbb98dacb67ed` remained clean;
-- all 1,407 tracked physical modes matched the Git index;
-- Doctor and CI-contract validation passed under the merged governance CLI;
-- the governance Python cannot import pytest;
-- the Vault test Python imports pytest `9.1.1`;
-- the failed run emitted no named Subject node or repository pytest result;
-- no push, receipt, trust mutation, merge, deployment, or live-data change
-  occurred.
-
-The corrected ordering passed collection and all 446 identity-isolated nodes.
-After the separately governed compatibility repair, exact head
-`1a346913563f5437b7815f655393f0eee5a0da52` completed the repository suite
-with 2967 passed, 10 skipped, and one existing warning; the gate exited zero.
+Authoritative final proof candidate
+`1a346913563f5437b7815f655393f0eee5a0da52` is the single manifest-bound
+success record: 1429 tracked physical modes matched the Git index, Doctor and
+CI contract passed, all 446 identity-isolated nodes passed, and repository
+pytest completed with 2967 passed, 10 skipped, and one existing warning. The
+gate exited zero and no push, receipt, trust mutation, merge, deployment, or
+live-data change occurred.
 
 ## Green command and result
 

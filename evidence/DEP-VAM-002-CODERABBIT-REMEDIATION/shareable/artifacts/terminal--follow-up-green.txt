@@ -1,0 +1,12 @@
+collector=terminal
+source_commit=a3be45e272f126a96d519cffc6ea59027055a3e5
+source_branch=detached immutable worktree
+focused_command=env PYTHONPATH=. $VAULT_TEST_PYTHON -m pytest -q tests/test_memory_change_envelope.py tests/test_memory_provider.py tests/test_gateway.py
+focused_result=43 passed in 9.12s; exit 0
+sandbox_probe=28 passed and 15 loopback PermissionError failures; environment-only and not counted as product failures
+strict_command=sddgov evidence verify evidence/DEP-VAM-002-CODERABBIT-REMEDIATION --strict
+strict_verifier=Agentic SDD Governance 0.2.0-experimental.6
+strict_result=PASS; [OK] Debug Evidence Package verified; exit 0
+revalidated_at=2026-08-24T12:10:00Z
+runtime_data=synthetic fixtures only
+live_hermes=not accessed

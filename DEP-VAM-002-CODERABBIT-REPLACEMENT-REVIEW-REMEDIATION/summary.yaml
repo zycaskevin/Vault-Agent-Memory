@@ -1,0 +1,42 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-24T12:00:11Z",
+  "updated_at": "2026-08-24T12:14:02Z",
+  "workflow": {
+    "phase": "green",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-24T12:00:11Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-24T12:03:29Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-24T12:04:34Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-24T12:14:02Z"
+      }
+    ]
+  },
+  "expected_behavior": "PR #500 evidence and rollback records remain reproducible and internally consistent, and missing agent identity on the two VAM-002 HTTP read endpoints returns the documented non-success error without rows or content.",
+  "actual_behavior": "The replacement CodeRabbit review identified 12 evidence, rollback, or documentation gaps and one HTTP mapping defect; the bounded RED regression confirmed agent_id_required was mapped to HTTP 200 and enumerated every unclosed record finding.",
+  "environment": {
+    "commit": "26df3c8693900ac4b734b342293a892df6560cb2 plus test-only RED changes",
+    "branch": "codex/vam-002-memory-change-envelope",
+    "runtime": "CPython 3.11; pytest 9.1.1; Agentic SDD Governance 0.2.0-experimental.9"
+  },
+  "root_cause_status": "unknown",
+  "attachments": []
+}

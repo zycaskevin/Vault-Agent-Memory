@@ -17,7 +17,10 @@ DEFAULT_GATEWAY_AUDIT_BACKUPS = 5
 GATEWAY_CONTRACT_VERSION = "2026-08-21"
 MEMORY_API_SENSITIVITY_LEVELS = ["low", "medium", "high", "restricted"]
 _MEMORY_API_BAD_REQUEST = {
-    "description": "Invalid cursor, cursor policy, sensitivity ceiling, or bounded range",
+    "description": (
+        "Missing agent identity or invalid cursor, cursor policy, "
+        "sensitivity ceiling, or bounded range"
+    ),
     "content": {
         "application/json": {"schema": {"$ref": "#/components/schemas/MemoryAPIError"}}
     },
@@ -400,6 +403,7 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                                 "cursor_policy_mismatch",
                                 "max_sensitivity_invalid",
                                 "range_too_large",
+                                "agent_id_required",
                             ],
                         },
                         "message": {"type": "string"},

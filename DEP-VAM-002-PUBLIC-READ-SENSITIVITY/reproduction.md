@@ -21,9 +21,13 @@ stored verbatim and emitted as an upsert.
 
 ## Deterministic steps
 
-Run `/tmp/vam-python-path-vam001/python -m pytest -q
-tests/test_gateway.py::test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch
-tests/test_memory_change_envelope.py::test_provider_authorized_reads_require_nonempty_agent_identity`.
+From the repository development environment with pytest installed, run:
+
+```text
+python -m pytest -q \
+  tests/test_gateway.py::test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch \
+  tests/test_memory_change_envelope.py::test_provider_authorized_reads_require_nonempty_agent_identity
+```
 
 The follow-up RED command and bounded results are retained in
 `shareable/artifacts/terminal--stored-labels-and-tombstone-red.txt`. The

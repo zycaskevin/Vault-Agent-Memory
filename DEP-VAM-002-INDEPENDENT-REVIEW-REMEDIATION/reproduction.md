@@ -17,12 +17,21 @@ only prose.
 
 ## Deterministic steps
 
-At exact reviewed head `67e38bbce4f978a23453117a91d6b53bf1180948`, add the
-three independent-review regression nodes in `tests/test_memory_change_envelope.py`
-and `tests/test_gateway.py`, then run them together. The result is `3 failed`:
-an OK invalid-sensitivity page, missing revision-contract wording, and a missing
-Gateway error/status mapper. The redacted proof is
-`shareable/artifacts/terminal--independent-review-red.txt`.
+At exact reviewed head `67e38bbce4f978a23453117a91d6b53bf1180948`, apply the
+Minimal RED patch: add provider assertions that invalid non-empty sensitivity
+returns no row/content, add the audit-only revision wording assertion, and add
+the Gateway HTTP error/status/OpenAPI assertion. The exact nodes are:
+
+```text
+tests/test_memory_change_envelope.py::test_invalid_max_sensitivity_fails_closed_for_changes_and_revision_reads
+tests/test_memory_change_envelope.py::test_audit_reference_is_advisory_and_not_part_of_the_row_revision_contract
+tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract
+```
+
+Run them together with `python -m pytest -q` followed by those three selectors.
+The result is `3 failed`: an OK invalid-sensitivity page, missing
+revision-contract wording, and a missing Gateway error/status mapper. The
+redacted proof is `shareable/artifacts/terminal--independent-review-red.txt`.
 
 ## Environment and preconditions
 

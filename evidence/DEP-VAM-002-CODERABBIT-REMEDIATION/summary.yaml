@@ -8,7 +8,7 @@
   ],
   "risk_level": "L1",
   "created_at": "2026-08-21T11:27:32Z",
-  "updated_at": "2026-08-21T12:15:06Z",
+  "updated_at": "2026-08-24T12:08:32Z",
   "workflow": {
     "phase": "proof",
     "history": [
@@ -42,5 +42,10 @@
     "runtime": "CPython 3.11.15; pytest 9.1.1; stable isolated worktree"
   },
   "root_cause_status": "confirmed",
-  "attachments": []
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--follow-up-green.txt",
+      "sha256": "097241228e7bf398ae1415506d60832ef1d33bf358f531472b7f6b66b66de4b2"
+    }
+  ]
 }

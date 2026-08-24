@@ -639,6 +639,7 @@ def test_memory_change_http_errors_use_non_success_status_and_openapi_contract()
         "cursor_policy_mismatch",
         "max_sensitivity_invalid",
         "range_too_large",
+        "agent_id_required",
     ):
         assert gateway_memory_api_module.gateway_memory_http_status(
             {"status": "error", "error": error}
@@ -653,6 +654,7 @@ def test_memory_change_http_errors_use_non_success_status_and_openapi_contract()
         "cursor_policy_mismatch",
         "max_sensitivity_invalid",
         "range_too_large",
+        "agent_id_required",
     }
     for path in ("/memory/changes", "/memory/{id}"):
         operation = contract["paths"][path]["get"]
@@ -764,7 +766,10 @@ def test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch(
         "$ref": "#/components/schemas/MemorySearchRequest"
     }
     assert memory_search["responses"]["400"] == {
-        "description": "Invalid cursor, cursor policy, sensitivity ceiling, or bounded range",
+        "description": (
+            "Missing agent identity or invalid cursor, cursor policy, "
+            "sensitivity ceiling, or bounded range"
+        ),
         "content": {
             "application/json": {
                 "schema": {"$ref": "#/components/schemas/MemoryAPIError"}
@@ -1196,6 +1201,17 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
         assert changes["count"] == 1
         assert changes["changes"][0]["memory_id"] == str(public_id)
 
+        status, missing_change_agent = _request_json(
+            "GET",
+            host,
+            port,
+            "/memory/changes?max_sensitivity=low&limit=10",
+            None,
+        )
+        assert status == 400
+        assert missing_change_agent["error"] == "agent_id_required"
+        assert "changes" not in missing_change_agent
+
         revision_id = changes["changes"][0]["revision_id"]
         status, revision_read = _request_json(
             "GET",
@@ -1207,6 +1223,17 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
         assert status == 200
         assert revision_read["status"] == "ok"
         assert revision_read["revision_id"] == revision_id
+
+        status, missing_revision_agent = _request_json(
+            "GET",
+            host,
+            port,
+            f"/memory/{public_id}?line_start=1&line_end=2&revision_id={revision_id}",
+            None,
+        )
+        assert status == 400
+        assert missing_revision_agent["error"] == "agent_id_required"
+        assert "content" not in missing_revision_agent
 
         status, invalid_sensitivity = _request_json(
             "GET",

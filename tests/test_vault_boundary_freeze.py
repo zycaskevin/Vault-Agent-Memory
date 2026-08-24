@@ -259,6 +259,7 @@ def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() 
         "DEP-VAM-002-FULL-SUITE-COMPATIBILITY",
         "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION",
         "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
+        "DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION",
         "evidence/DEP-VAM-002-CODERABBIT-THREAD-CLOSURE",
         "vault/governance_read_guard.py",
     ):
@@ -320,6 +321,150 @@ def test_vam002_review_rollback_keeps_pr_number_as_plain_text() -> None:
     ).read_text(encoding="utf-8")
     assert not any(line.startswith("#500") for line in rollback.splitlines())
     assert "PR #500 procedure" in " ".join(rollback.split())
+
+
+def test_vam002_replacement_review_findings_have_current_reproducible_records() -> None:
+    initial_reproduction = (
+        ROOT / "evidence/DEP-VAM-002-MEMORY-CHANGE-ENVELOPE/reproduction.md"
+    ).read_text(encoding="utf-8")
+    final_dep = ROOT / "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION"
+    final_root_cause = (final_dep / "root-cause-hypothesis.md").read_text(
+        encoding="utf-8"
+    )
+    final_green = (
+        final_dep / "shareable/artifacts/terminal--final-review-green.txt"
+    ).read_text(encoding="utf-8")
+    final_rollback = (final_dep / "rollback.md").read_text(encoding="utf-8")
+    normalized_final_rollback = " ".join(final_rollback.split())
+    public_dep = ROOT / "DEP-VAM-002-PUBLIC-READ-SENSITIVITY"
+    public_reproduction = (public_dep / "reproduction.md").read_text(encoding="utf-8")
+    public_rollback = (public_dep / "rollback.md").read_text(encoding="utf-8")
+    independent_reproduction = (
+        ROOT / "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION/reproduction.md"
+    ).read_text(encoding="utf-8")
+    builder_verification = (
+        ROOT / "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH/verification.md"
+    ).read_text(encoding="utf-8")
+    historical_dep = ROOT / "evidence/DEP-VAM-002-CODERABBIT-REMEDIATION"
+    historical_manifest = json.loads(
+        (historical_dep / "manifest.json").read_text(encoding="utf-8")
+    )
+    historical_report = json.loads(
+        (historical_dep / "redaction-report.json").read_text(encoding="utf-8")
+    )
+    historical_verification = (historical_dep / "verification.md").read_text(
+        encoding="utf-8"
+    )
+    sequential_rollback = (
+        ROOT / "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md"
+    ).read_text(encoding="utf-8")
+    closure_rollback = (
+        ROOT / "evidence/DEP-VAM-002-CODERABBIT-THREAD-CLOSURE/rollback.md"
+    ).read_text(encoding="utf-8")
+    normalized_closure_rollback = " ".join(closure_rollback.split())
+    spec = (ROOT / "docs/specs/vam-002-memory-change-envelope.md").read_text(
+        encoding="utf-8"
+    )
+
+    failures: list[str] = []
+    if "proves only that `vault.memory_change_envelope` was absent" not in initial_reproduction:
+        failures.append("F01_initial_red_scope")
+    if "does not independently prove the provider contract" not in initial_reproduction:
+        failures.append("F01_provider_claim_disposition")
+    if "has not completed" in final_root_cause:
+        failures.append("F02_stale_local_green_claim")
+    for required in (
+        "c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a",
+        "446 identity-isolated Subject nodes",
+        "2970 passed, 10 skipped, 1 warning",
+    ):
+        if required not in final_root_cause:
+            failures.append(f"F02_missing_{required[:12]}")
+
+    focused_line = next(
+        (line for line in final_green.splitlines() if line.startswith("focused_command=")),
+        "",
+    )
+    if not focused_line or " plus " in focused_line:
+        failures.append("F03_non_executable_focused_command")
+    for node in (
+        "test_memory_change_http_errors_use_non_success_status_and_openapi_contract",
+        "test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch",
+        "test_gateway_preserves_opaque_memory_reference_for_provider_validation",
+        "test_gateway_memory_api_facade_is_candidate_first_and_metadata_only",
+        "test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python",
+        "test_vam002_final_review_records_keep_red_and_green_semantics_distinct",
+    ):
+        if node not in focused_line:
+            failures.append(f"F03_missing_{node}")
+
+    if "remediation-only commit" not in normalized_final_rollback:
+        failures.append("F04_remediation_rollback_scope")
+    if "does not remove the VAM-002 implementation" not in normalized_final_rollback:
+        failures.append("F04_product_preservation")
+    if "/tmp/" in public_reproduction or "python -m pytest -q" not in public_reproduction:
+        failures.append("F05_nonportable_python")
+    if "sole executable implementation rollback" not in public_rollback:
+        failures.append("F06_rollback_authority")
+    if "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md" not in public_rollback:
+        failures.append("F06_rollback_link")
+
+    for node in (
+        "test_invalid_max_sensitivity_fails_closed_for_changes_and_revision_reads",
+        "test_audit_reference_is_advisory_and_not_part_of_the_row_revision_contract",
+        "test_memory_change_http_errors_use_non_success_status_and_openapi_contract",
+    ):
+        if node not in independent_reproduction:
+            failures.append(f"F07_missing_{node}")
+    if "Minimal RED patch" not in independent_reproduction:
+        failures.append("F07_missing_patch_description")
+
+    for required in (
+        "Authoritative final proof candidate",
+        "1a346913563f5437b7815f655393f0eee5a0da52",
+        "1429",
+        "2967 passed, 10 skipped, and one existing warning",
+    ):
+        if required not in builder_verification:
+            failures.append(f"F08_missing_{required[:12]}")
+    if "1,407" in builder_verification:
+        failures.append("F08_stale_mode_count")
+
+    follow_up_path = "shareable/artifacts/terminal--follow-up-green.txt"
+    follow_up_entries = [
+        item for item in historical_manifest["shareable"]
+        if item["path"] == follow_up_path
+    ]
+    if len(follow_up_entries) != 1:
+        failures.append("F09_follow_up_manifest")
+    else:
+        artifact = historical_dep / follow_up_path
+        if not artifact.is_file():
+            failures.append("F09_follow_up_artifact")
+        elif hashlib.sha256(artifact.read_bytes()).hexdigest() != follow_up_entries[0]["sha256"]:
+            failures.append("F09_follow_up_hash")
+    if not any(item.get("output") == "terminal--follow-up-green.txt" for item in historical_report["files"]):
+        failures.append("F09_follow_up_redaction_provenance")
+    if (
+        "sddgov evidence verify evidence/DEP-VAM-002-CODERABBIT-REMEDIATION --strict"
+        not in historical_verification
+        or "Strict result: PASS" not in historical_verification
+    ):
+        failures.append("F10_strict_final_head_proof")
+
+    equality_guard = 'test "$reviewed_head" = "$(git rev-parse "$merge_oid^2")"'
+    if equality_guard not in sequential_rollback:
+        failures.append("F11_exact_second_parent")
+    if 'git merge-base --is-ancestor "$reviewed_head" "$merge_oid^2"' in sequential_rollback:
+        failures.append("F11_ancestor_guard_remains")
+    if "fresh exact owner authorization" not in normalized_closure_rollback:
+        failures.append("F12_missing_rerun_authorization")
+    if "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md" not in closure_rollback:
+        failures.append("F12_missing_authoritative_rollback")
+    if "`agent_id_required`" not in spec.split("## HTTP mapping", 1)[1]:
+        failures.append("F13_agent_http_mapping")
+
+    assert not failures, "unclosed replacement-review findings: " + ", ".join(failures)
 
 
 def test_vam002_final_review_records_keep_red_and_green_semantics_distinct() -> None:
