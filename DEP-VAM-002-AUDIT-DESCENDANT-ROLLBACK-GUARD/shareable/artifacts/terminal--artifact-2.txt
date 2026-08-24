@@ -1,0 +1,19 @@
+proof_kind=exact-head-builder-local-green
+worktree=$BUILDER_WORKTREE
+head=18ef12446c638d3c59db728a48c66924ae8a1836
+base=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+origin=https://github.com/zycaskevin/Vault-Agent-Memory.git
+command=umask 022; env PATH=$VAM002_PINNED_PYTHON_PATH:$SDDGOV_MERGED_GLOBAL_LOCK_RUNTIME:$PATH GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 sddgov ci local-gate .
+result=PASS
+doctor=PASS
+ci_contract=PASS
+readme_smoke=PASS
+release_parity=PASS
+identity_isolated_subject_nodes=446 PASS
+repository_pytest=2972 passed, 10 skipped, 1 existing invalid-escape warning
+tracked_physical_modes=1494 checked, 0 mismatches
+post_run_head=exact
+post_run_worktree=clean
+frozen_subject_diff=empty
+git_diff_check=PASS
+authority=no push, signing, trust mutation, merge, deployment, or live Hermes/production-data change

@@ -3,7 +3,7 @@
 rollback_version: 3.0
 target: exact VAM-002 audit-descendant rollback-guard correction; preserve this DEP and all prior VAM-002 provenance
 rollback_action: git_revert
-rollback_ref: REPLACE_WITH_FULL_CANDIDATE_SHA
+rollback_ref: 18ef12446c638d3c59db728a48c66924ae8a1836
 reconcile_action: setup_agent_from_reverted_source
 reconcile_agent: codex
 reconcile_profile: team-standard
@@ -17,8 +17,9 @@ the exact legitimate gate/receipt descendant shape.
 
 ## Reversible steps
 
-Before merge, prepare an uncommitted revert of the exact implementation commit
-bound above and compare the staged paths to Fix Scope. After merge, use only
+Before merge, prepare an uncommitted revert of exact implementation commit
+`18ef12446c638d3c59db728a48c66924ae8a1836` and compare the staged paths to
+Fix Scope. After merge, use only
 the fresh-approval procedure in
 `DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md` and preserve this DEP.
 

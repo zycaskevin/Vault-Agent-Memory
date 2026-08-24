@@ -11,7 +11,10 @@ and rejects exact-parent equality.
 The targeted RED failed with all five finding-11 markers. After the bounded
 fix, the same test and the executable rollback contract test passed together:
 2 passed in 0.09 seconds. Ruff on the changed test file and `git diff --check`
-also passed.
+also passed. Exact-head full Local Green at `18ef124...` then passed 446
+identity-isolated Subject nodes and repository pytest with 2972 passed, 10
+skipped, and one existing warning; the manifest-bound transcript is
+`shareable/artifacts/terminal--artifact-2.txt`.
 
 ## Unaffected paths sampled
 
