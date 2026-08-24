@@ -27,4 +27,23 @@ Execution still requires the fresh L3 authorization and every other guard in
 the authoritative rollback. This DEP does not authorize rollback execution.
 It also does not authorize push, Reviewer trust/signing, merge, deployment, or
 live Hermes/production-data changes.
+
+## Final candidate gate disposition
+
+The subsequent candidate `962ebf8b4d8c6a1b74a488ca4b8da2e77c09ee34`
+adds only the required preservation of this DEP to the authoritative rollback
+and its regression. Its single authorized Local Green was consumed and failed
+closed before repository pytest at
+`test_mission_activation_requires_exact_two_parent_merge_before_active` while
+reading the unchanged, hash-valid, mode-0644 Frozen Subject `design.md`.
+
+Post-run HEAD, worktree, Frozen Subject diff, and file identity remained exact.
+Read-only evidence showed the identity verifier audits every absolute checkout
+ancestor by device, inode, mode, size, and mtime, while a direct Codex state
+file changed the `$CODEX_STATE_ROOT` ancestor during the failing-node window.
+The runner erases the exact `Denied` subcondition, so the evidence is
+time-aligned and strongly explanatory but not a retried reproduction. The
+manifest-bound failure record is `shareable/artifacts/terminal--artifact-3.txt`.
+Per the explicit no-retry condition, no second run, merge-gate rebind, or push
+was performed at this candidate.
 TODO

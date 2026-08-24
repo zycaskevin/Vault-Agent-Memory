@@ -21,6 +21,16 @@
       "size": 848,
       "collected_at": "2026-08-24T12:39:24Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-3.txt",
+      "source_suffix": ".txt",
+      "media_type": "text/plain; charset=utf-8",
+      "sha256": "bf85bd06396f9cbbaf1b717d2c86f06297f27d04addfe8bb23192215dd3624bd",
+      "size": 1444,
+      "collected_at": "2026-08-24T12:46:17Z",
+      "shareable": false
     }
   ],
   "shareable": [
@@ -34,6 +44,12 @@
       "path": "shareable/artifacts/terminal--artifact-2.txt",
       "sha256": "c973a4655adc63e357951fb60da8e4d64010c70537e31ad8df7fb8e3329ac91a",
       "size": 848,
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-3.txt",
+      "sha256": "f6bf001483d4d5d32d36f852046420814b7c66d4117f6bfe2c70e10ce2082d01",
+      "size": 1486,
       "shareable": true
     }
   ]

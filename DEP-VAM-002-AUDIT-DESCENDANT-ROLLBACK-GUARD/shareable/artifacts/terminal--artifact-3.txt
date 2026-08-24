@@ -1,0 +1,17 @@
+proof_kind=final-candidate-local-green-red
+worktree=$BUILDER_WORKTREE
+head=962ebf8b4d8c6a1b74a488ca4b8da2e77c09ee34
+base=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+result=FAIL exit 3; no retry
+passed_before_failure=Doctor, CI contract, README smoke, release parity, and preceding identity-isolated nodes
+failing_node=tests/test_subject_development_mission_v5.py::test_mission_activation_requires_exact_two_parent_merge_before_active
+failure_path=validate_mission_proof_value -> load_contract -> _snapshot_read(specs/subject-distillation/design.md) -> _read_repo_file
+exception=scripts.run_subject_task_authorization_v3.Denied
+post_run_head=exact
+post_run_worktree=clean
+frozen_subject_diff=empty
+design_sha256=3127c8323bb43f09fef1fb70d036c4efc786887431de8256e9783bee484b20fa
+design_mode=0644; nlink=1
+static_environment_evidence=$CODEX_STATE_ROOT directory mtime advanced at 20:43:[REDACTED_PHONE_OR_NUMBER] +0800; identity-nodes directory mtime was 20:43:[REDACTED_PHONE_OR_NUMBER] +0800; direct child .codex-global-state.json.bak was written at 20:43:[REDACTED_PHONE_OR_NUMBER] +0800
+diagnosis=the verifier audits every absolute checkout ancestor by dev/inode/mode/size/mtime; a direct child state-file mutation can fail closed while the file snapshot is read. The exact Denied subcondition is erased, so this is strong time-aligned static evidence, not a retried reproduction.
+authority=no retry, push, signing, trust mutation, merge, deployment, or live Hermes/production-data change
