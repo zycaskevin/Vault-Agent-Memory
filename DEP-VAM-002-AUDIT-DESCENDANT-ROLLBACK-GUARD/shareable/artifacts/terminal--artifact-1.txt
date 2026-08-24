@@ -1,0 +1,7 @@
+command=python -m pytest -q tests/test_vault_boundary_freeze.py::test_vam002_replacement_review_findings_have_current_reproducible_records
+exit_status=1
+result=1 failed
+failure=unclosed replacement-review findings: F11_reviewed_head_ancestry, F11_missing_audit_only_diff, F11_missing_merge-gate.json, F11_missing_REV-VAM-002.json, F11_exact_parent_rejects_audit_descendants
+candidate_head=26d3d03712c7008d0a7dda7eb749612cb5cdc0d3
+precondition=clean tracked and untracked worktree before test-only RED edit
+scope=no network, live data, trust, receipt, merge, or deployment mutation

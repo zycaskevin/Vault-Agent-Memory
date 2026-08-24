@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--artifact-1.txt",
+      "output": "terminal--artifact-1.txt",
+      "source_sha256": "f8a3e8c98cbffc85a8098e1d3e8d0060fa3b33506a20b5e807c6b0ee17097a7b",
+      "output_sha256": "f8a3e8c98cbffc85a8098e1d3e8d0060fa3b33506a20b5e807c6b0ee17097a7b",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-002-AUDIT-DESCENDANT-ROLLBACK-GUARD",
+  "generated_at": "2026-08-24T12:31:44Z"
+}

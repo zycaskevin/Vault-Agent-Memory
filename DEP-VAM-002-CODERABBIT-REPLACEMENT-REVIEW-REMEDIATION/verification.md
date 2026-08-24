@@ -13,9 +13,11 @@ strictly verifies.
 
 Before: `agent_id_required` produced HTTP 200 and the record oracle enumerated
 every unclosed finding. After: both targeted RED tests pass, missing identity
-is HTTP 400 with no rows/content, rollback requires the exact reviewed second
-parent, historical source hashes remain intact, and every cited evidence
-correction is reproducible or explicitly dispositioned.
+is HTTP 400 with no rows/content, rollback proves the reviewed head is an
+ancestor of the PR second parent and permits only the exact merge gate and
+VAM-002 receipt in that descendant range, historical source hashes remain
+intact, and every cited evidence correction is reproducible or explicitly
+dispositioned.
 
 ## Remaining limitations
 

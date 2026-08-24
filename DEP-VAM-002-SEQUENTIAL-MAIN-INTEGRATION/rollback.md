@@ -50,7 +50,10 @@ receipt_change="$(python -c 'import json; print(json.load(open(".sddgov/reviews/
 receipt_meta="$(python -c 'import json; print(json.load(open(".sddgov/reviews/REV-VAM-002.json", encoding="utf-8"))["review"]["gate_metadata_digest"])')"
 test "$gate_base" = c284e1c7bedf288a10009b98e5f2da525c3ee4bc
 python -c 'import json,sys; r=json.load(open(".sddgov/reviews/REV-VAM-002.json", encoding="utf-8"))["review"]; raise SystemExit(0 if r.get("review_id")=="REV-VAM-002" and r.get("builder_id")=="codex" and r.get("verdict")=="approved" else 1)'
-test "$reviewed_head" = "$(git rev-parse "$merge_oid^2")"
+git merge-base --is-ancestor "$reviewed_head" "$merge_oid^2"
+test -z "$(git diff --name-only "$reviewed_head" "$merge_oid^2" -- . \
+  ':(exclude).sddgov/merge-gate.json' \
+  ':(exclude).sddgov/reviews/REV-VAM-002.json')"
 ! git merge-base --is-ancestor "$reviewed_head" "$merge_oid^1"
 test "$gate_change" = "$receipt_change"
 actual_change="$(sddgov merge digest . --base-ref "$gate_base" | python -c 'import json,sys; print(json.load(sys.stdin)["change_digest"])')"

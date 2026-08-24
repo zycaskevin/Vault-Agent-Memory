@@ -452,11 +452,18 @@ def test_vam002_replacement_review_findings_have_current_reproducible_records() 
     ):
         failures.append("F10_strict_final_head_proof")
 
-    equality_guard = 'test "$reviewed_head" = "$(git rev-parse "$merge_oid^2")"'
-    if equality_guard not in sequential_rollback:
-        failures.append("F11_exact_second_parent")
-    if 'git merge-base --is-ancestor "$reviewed_head" "$merge_oid^2"' in sequential_rollback:
-        failures.append("F11_ancestor_guard_remains")
+    if 'git merge-base --is-ancestor "$reviewed_head" "$merge_oid^2"' not in sequential_rollback:
+        failures.append("F11_reviewed_head_ancestry")
+    if 'git diff --name-only "$reviewed_head" "$merge_oid^2"' not in sequential_rollback:
+        failures.append("F11_missing_audit_only_diff")
+    for audit_path in (
+        ":(exclude).sddgov/merge-gate.json",
+        ":(exclude).sddgov/reviews/REV-VAM-002.json",
+    ):
+        if audit_path not in sequential_rollback:
+            failures.append(f"F11_missing_{audit_path.rsplit('/', 1)[-1]}")
+    if 'test "$reviewed_head" = "$(git rev-parse "$merge_oid^2")"' in sequential_rollback:
+        failures.append("F11_exact_parent_rejects_audit_descendants")
     if "fresh exact owner authorization" not in normalized_closure_rollback:
         failures.append("F12_missing_rerun_authorization")
     if "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md" not in closure_rollback:

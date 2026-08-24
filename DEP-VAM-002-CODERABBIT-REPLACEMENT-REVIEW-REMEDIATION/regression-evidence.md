@@ -9,7 +9,8 @@
   rows or content.
 - `test_vam002_replacement_review_findings_have_current_reproducible_records`
   binds every evidence, rollback, command, manifest, redaction, strict-proof,
-  exact-parent, authorization, and SDD disposition from the 13-item review.
+  audit-descendant, authorization, and SDD disposition from the 13-item
+  review.
 - The existing rollback contract test now requires the successor DEP to remain
   preserved by the guarded PR rollback.
 

@@ -14,8 +14,8 @@ verify_module: unittest
 
 Rollback this remediation only if valid identity-bearing callers regress, the
 HTTP contract returns content or rows on missing identity, a historical source
-hash is no longer preserved, or an exact-parent rollback guard rejects the
-actual protected receipt head.
+hash is no longer preserved, or the audit-descendant rollback guard either
+accepts a non-audit path or rejects the legitimate gate/receipt descendants.
 
 ## Reversible steps
 
