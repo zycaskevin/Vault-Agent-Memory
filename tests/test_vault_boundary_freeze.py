@@ -248,6 +248,8 @@ def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() 
         "sddgov evidence verify \"$VAM002_ROLLBACK_DEP\" --strict",
         "gh pr view 500",
         "git rev-list --parents",
+        "git ls-remote --exit-code origin refs/heads/main",
+        "git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main",
         "git rev-parse origin/main",
         "sddgov merge digest",
         "sddgov merge gate-digest",
@@ -261,7 +263,9 @@ def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() 
         "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
         "DEP-VAM-002-AUDIT-DESCENDANT-ROLLBACK-GUARD",
         "DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION",
+        "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION",
         "evidence/DEP-VAM-002-CODERABBIT-THREAD-CLOSURE",
+        "tests/test_access_policy.py",
         "vault/governance_read_guard.py",
     ):
         assert required in guarded_block
@@ -493,6 +497,95 @@ def test_vam002_final_review_records_keep_red_and_green_semantics_distinct() -> 
     assert "Every Green command must exit zero" in normalized_rollback
     assert "full column-projected snapshot" in normalized_compatibility
     assert "final active-row count" not in normalized_compatibility
+
+
+def test_vam002_final14_review_dispositions_are_executable_and_truthful() -> None:
+    independent = ROOT / "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION"
+    historical = ROOT / "evidence/DEP-VAM-002-CODERABBIT-REMEDIATION"
+    replacement = ROOT / "DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION"
+    compatibility = ROOT / "DEP-VAM-002-FULL-SUITE-COMPATIBILITY"
+    builder_path = ROOT / "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH"
+    final = ROOT / "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION"
+    sequential = ROOT / "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION"
+    closure = ROOT / "evidence/DEP-VAM-002-CODERABBIT-THREAD-CLOSURE"
+
+    closure_verification = (closure / "verification.md").read_text(encoding="utf-8")
+    assert "preflight subset" in closure_verification
+    assert "must not be added to the full-suite total" in closure_verification
+
+    independent_verification = (independent / "verification.md").read_text(
+        encoding="utf-8"
+    )
+    assert "not an instruction to bind today's gate back" in " ".join(
+        independent_verification.split()
+    )
+    independent_reproduction = (independent / "reproduction.md").read_text(
+        encoding="utf-8"
+    )
+    assert 'env PYTHONPATH=. "$VAULT_TEST_PYTHON" -m pytest -q' in independent_reproduction
+    assert "focused three-node RED selection" in independent_reproduction
+
+    historical_verification = (historical / "verification.md").read_text(
+        encoding="utf-8"
+    )
+    normalized_historical = " ".join(historical_verification.split())
+    assert "not authoritative chronological evidence" in normalized_historical
+    assert "no timestamp is retroactively invented" in normalized_historical
+
+    replacement_rollback = (replacement / "rollback.md").read_text(encoding="utf-8")
+    normalized_replacement = " ".join(replacement_rollback.split())
+    assert "run the two successor regressions" in normalized_replacement
+    assert "do not name or execute removed nodes afterward" in normalized_replacement
+
+    compatibility_rollback = (compatibility / "rollback.md").read_text(
+        encoding="utf-8"
+    )
+    assert "rollback_ref: 1a346913563f5437b7815f655393f0eee5a0da52" in (
+        compatibility_rollback
+    )
+    assert "git revert --no-commit 1a346913563f5437b7815f655393f0eee5a0da52" in (
+        compatibility_rollback
+    )
+    compatibility_reproduction = (compatibility / "reproduction.md").read_text(
+        encoding="utf-8"
+    )
+    assert 'env PYTHONPATH=. "$VAULT_TEST_PYTHON" -m pytest -q' in (
+        compatibility_reproduction
+    )
+
+    builder_verification = (builder_path / "verification.md").read_text(
+        encoding="utf-8"
+    )
+    for stage in ("983c4803", "7a64938b", "1a346913"):
+        assert stage in builder_verification
+    assert "not to an overall Local Green PASS" in " ".join(
+        builder_verification.split()
+    )
+    builder_regression = (builder_path / "regression-evidence.md").read_text(
+        encoding="utf-8"
+    )
+    assert 'VAM002_PINNED_PATH="$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:' in (
+        builder_regression
+    )
+    assert "..." not in builder_regression
+
+    current_rollback = (
+        ROOT / "DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION/rollback.md"
+    ).read_text(encoding="utf-8")
+    assert "expected RED" in current_rollback
+    assert "Separately run these rollback-safe Green commands" in current_rollback
+
+    final_verification = (final / "verification.md").read_text(encoding="utf-8")
+    normalized_final = " ".join(final_verification.split())
+    assert "missing or empty `agent_id`" in normalized_final
+    assert "HTTP 400 rather than HTTP 200" in normalized_final
+
+    sequential_rollback = (sequential / "rollback.md").read_text(encoding="utf-8")
+    assert "git ls-remote --exit-code origin refs/heads/main" in sequential_rollback
+    assert (
+        "git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main"
+        in sequential_rollback
+    )
 
 
 def test_exact_head_builder_proof_redacts_workstation_path_and_binds_hashes() -> None:

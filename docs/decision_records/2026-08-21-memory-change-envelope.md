@@ -43,8 +43,10 @@ only from readable rows.
 
 The SDD's canonical scope and sensitivity sets are also authorization
 boundaries. Trusted provider updates reject unknown labels, canonicalize valid
-governance labels to lowercase, and active reads fail closed on malformed
-stored labels rather than interpreting them as public or low sensitivity.
+governance labels to lowercase, and active reads fail closed on unknown,
+empty, or null stored labels. Legacy defaults apply only when a field is
+absent; a present invalid value is not interpreted as public/project or low
+sensitivity.
 
 The Gateway preserves revision-bound memory ids as provider-owned opaque
 strings. The SQLite adapter uses one policy-filtered ordered query capped at

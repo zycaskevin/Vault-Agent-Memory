@@ -28,10 +28,21 @@ tests/test_memory_change_envelope.py::test_audit_reference_is_advisory_and_not_p
 tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract
 ```
 
-Run them together with `python -m pytest -q` followed by those three selectors.
-The result is `3 failed`: an OK invalid-sensitivity page, missing
-revision-contract wording, and a missing Gateway error/status mapper. The
-redacted proof is `shareable/artifacts/terminal--independent-review-red.txt`.
+With `VAULT_TEST_PYTHON` bound to the repository-pinned interpreter, run the
+exact command:
+
+```bash
+env PYTHONPATH=. "$VAULT_TEST_PYTHON" -m pytest -q \
+  tests/test_memory_change_envelope.py::test_invalid_max_sensitivity_fails_closed_for_changes_and_revision_reads \
+  tests/test_memory_change_envelope.py::test_audit_reference_is_advisory_and_not_part_of_the_row_revision_contract \
+  tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract
+```
+
+The full command is the focused three-node RED selection, not a complete
+repository Local Green. It returned `3 failed`: an OK invalid-sensitivity page,
+missing revision-contract wording, and a missing Gateway error/status mapper.
+The redacted proof is
+`shareable/artifacts/terminal--independent-review-red.txt`.
 
 ## Environment and preconditions
 

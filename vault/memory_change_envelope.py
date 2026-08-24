@@ -9,7 +9,7 @@ import json
 import re
 from typing import Any
 
-from .access_policy import ReadPolicy
+from .access_policy import ReadPolicy, canonical_stored_governance_label
 
 
 MEMORY_CHANGE_SCHEMA_VERSION = "vault.memory-change.v1"
@@ -47,8 +47,16 @@ def memory_change_envelope(
     valid_until = str(row.get("valid_until") or "")
     occurred_at = valid_from or created_at
     status = str(row.get("status") or "active").strip().lower()
-    scope = str(row.get("scope") or "project").strip().lower()
-    sensitivity = str(row.get("sensitivity") or "low").strip().lower()
+    scope = canonical_stored_governance_label(
+        row,
+        "scope",
+        absent_default="project",
+    )
+    sensitivity = canonical_stored_governance_label(
+        row,
+        "sensitivity",
+        absent_default="low",
+    )
     revision_material = {
         "memory_id": memory_id,
         "title": str(row.get("title") or ""),

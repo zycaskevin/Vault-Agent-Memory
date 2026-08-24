@@ -67,8 +67,8 @@ def _memory_change_agent_authorization_sql(agent_id: str) -> tuple[str, list[Any
 
 def _memory_change_visibility_sql(read_policy: ReadPolicy) -> tuple[str, list[Any]]:
     """Translate the active read policy into one bounded SQLite query."""
-    sensitivity_sql = "LOWER(TRIM(COALESCE(NULLIF(sensitivity, ''), 'low')))"
-    scope_sql = "LOWER(TRIM(COALESCE(NULLIF(scope, ''), 'project')))"
+    sensitivity_sql = "LOWER(TRIM(COALESCE(sensitivity, '')))"
+    scope_sql = "LOWER(TRIM(COALESCE(scope, '')))"
     max_rank = (
         SENSITIVITY_RANK[read_policy.max_sensitivity]
         if read_policy.max_sensitivity

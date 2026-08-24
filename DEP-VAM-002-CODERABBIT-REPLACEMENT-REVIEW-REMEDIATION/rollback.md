@@ -35,9 +35,12 @@ payloads and stored rows remain byte-compatible.
 
 ## Post-rollback verification
 
-Require an exact staged-path allowlist, no untracked files, the expected RED
-for the two targeted regressions, Green valid-caller/provider tests, strict
-verification of every preserved DEP, Ruff, module-size, `git diff --check`,
-Doctor, the declared unittest module, and repository Local Green. Any
-post-merge commit or push remains governed by the authoritative
-approval-consuming rollback, not this local preparation.
+Before preparing the revert, run the two successor regressions and require
+Green. At exact implementation head `6fcfece541a34e5498432b0772a6dea6c7a46be3`,
+an uncommitted revert removes those successor test definitions, so do not name
+or execute removed nodes afterward. Instead, require the exact staged-path
+allowlist, no untracked files, Green pre-existing valid-caller/provider tests,
+strict verification of every preserved DEP, Ruff, module-size,
+`git diff --check`, Doctor, the declared unittest module, and repository Local
+Green. Any post-merge commit or push remains governed by the authoritative
+approval-consuming rollback, not this historical local preparation.

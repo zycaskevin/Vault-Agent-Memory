@@ -19,6 +19,21 @@ def _normalize_agent(value: Any) -> str:
     return str(value or "").strip().lower()
 
 
+def canonical_stored_governance_label(
+    row: dict[str, Any],
+    field: str,
+    *,
+    absent_default: str,
+) -> str:
+    """Normalize a stored label while distinguishing absence from invalid emptiness."""
+    if field not in row:
+        return absent_default
+    value = row[field]
+    if value is None:
+        return ""
+    return str(value).strip().lower()
+
+
 def _parse_allowed_agents(value: Any) -> set[str]:
     if value is None or value == "":
         return set()
@@ -135,8 +150,16 @@ def can_read_memory(row: dict[str, Any], policy: ReadPolicy) -> bool:
         if status not in policy.allowed_statuses:
             return False
 
-    sensitivity = str(row.get("sensitivity") or "low").strip().lower()
-    scope = str(row.get("scope") or "project").strip().lower()
+    sensitivity = canonical_stored_governance_label(
+        row,
+        "sensitivity",
+        absent_default="low",
+    )
+    scope = canonical_stored_governance_label(
+        row,
+        "scope",
+        absent_default="project",
+    )
     if sensitivity not in SENSITIVITY_RANK or scope not in VALID_MEMORY_SCOPES:
         return False
     sensitivity_rank = SENSITIVITY_RANK[sensitivity]

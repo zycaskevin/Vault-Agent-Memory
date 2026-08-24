@@ -60,8 +60,12 @@ these canonical knowledge-row snapshot fields and normalizations:
 - `confidence`: `float(trust)`, falling back to `0.5` on conversion failure,
   then clamped with `max(0.0, min(value, 1.0))`;
 - `status`: `str(status or "active").strip().lower()`;
-- `scope`: `str(scope or "project").strip().lower()`;
-- `sensitivity`: `str(sensitivity or "low").strip().lower()`.
+- `scope`: use `"project"` only when the field is absent; otherwise normalize
+  the stored value with `str(value).strip().lower()`, while a present `null` is
+  the invalid empty label;
+- `sensitivity`: use `"low"` only when the field is absent; otherwise normalize
+  the stored value with `str(value).strip().lower()`, while a present `null` is
+  the invalid empty label.
 
 Vault serializes that object as JSON with `ensure_ascii=False`,
 `sort_keys=True`, and `separators=(",", ":")`, encodes the JSON as UTF-8,
@@ -99,9 +103,11 @@ The canonical stored scope set is `private`, `project`, `shared`, and `public`;
 the canonical stored sensitivity set is `low`, `medium`, `high`, and
 `restricted`. Trusted provider updates reject unknown values and store valid
 scope, sensitivity, and lifecycle status labels in lowercase. When a read
-policy is active, legacy or corrupted rows containing an unknown stored scope
-or sensitivity fail closed for page, metadata, revision, and bounded-evidence
-reads. They are never coerced to public scope or low sensitivity.
+policy is active, legacy or corrupted rows containing an unknown, empty, or
+null stored scope or sensitivity fail closed for page, metadata, revision, and
+bounded-evidence reads. Defaults apply only to an absent field; a field that is
+present but empty or null is never coerced to public/project scope or low
+sensitivity.
 
 All four provider operations in this SDD require a normalized, non-empty
 `agent_id`. `list_changes` and `read_bounded_evidence` return the bounded

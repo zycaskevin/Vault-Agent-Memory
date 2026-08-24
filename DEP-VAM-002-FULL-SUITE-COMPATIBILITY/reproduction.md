@@ -20,7 +20,8 @@ its setup now contained three active rows. The strict read-guard test received
 The focused read-guard node reproduces the exact extra reason code:
 
 ```text
-python -m pytest -q tests/test_memory_foundation_compare.py::test_strict_guard_fails_closed_for_unknown_scope_and_sensitivity
+env PYTHONPATH=. "$VAULT_TEST_PYTHON" -m pytest -q \
+  tests/test_memory_foundation_compare.py::test_strict_guard_fails_closed_for_unknown_scope_and_sensitivity
 ```
 
 The real HTTP node requires local loopback and was reproduced by the complete

@@ -37,9 +37,13 @@ merge_oid="$(gh pr view 500 --repo zycaskevin/Vault-Agent-Memory --json state,ba
 test -n "$merge_oid"
 test "$(git rev-list --parents -n 1 "$merge_oid" | awk '{print NF - 1}')" -eq 2
 test "$(git rev-parse "$merge_oid^1")" = c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+remote_main_oid="$(git ls-remote --exit-code origin refs/heads/main | awk '{print $1}')"
+test -n "$remote_main_oid"
+git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
 test "$(git branch --show-current)" = main
 test "$(git rev-parse HEAD)" = "$merge_oid"
 test "$(git rev-parse origin/main)" = "$merge_oid"
+test "$remote_main_oid" = "$merge_oid"
 test -z "$(git status --porcelain=v1 --untracked-files=all)"
 test -f .sddgov/merge-gate.json
 test -f .sddgov/reviews/REV-VAM-002.json
@@ -73,6 +77,7 @@ git restore --source=HEAD --staged --worktree -- \
   DEP-VAM-002-PUBLIC-READ-SENSITIVITY \
   DEP-VAM-002-AUDIT-DESCENDANT-ROLLBACK-GUARD \
   DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION \
+  DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION \
   DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION \
   evidence/DEP-VAM-002-CODERABBIT-REMEDIATION \
   evidence/DEP-VAM-002-CODERABBIT-THREAD-CLOSURE \
@@ -82,6 +87,7 @@ git restore --source=HEAD --staged --worktree -- \
 git diff --cached --name-only -z | python -c 'import sys; actual=set(filter(None,sys.stdin.buffer.read().decode().split("\0"))); expected=set("""docs/decision_records/2026-08-21-memory-change-envelope.md
 docs/specs/vam-002-memory-change-envelope.md
 docs/specs/vault_memory_api.md
+tests/test_access_policy.py
 tests/test_gateway.py
 tests/test_memory_change_envelope.py
 tests/test_vault_boundary_freeze.py

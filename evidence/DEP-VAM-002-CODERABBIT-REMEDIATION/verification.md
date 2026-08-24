@@ -58,6 +58,14 @@ same command then passed all 43. The successor artifact is
 `shareable/artifacts/terminal--follow-up-green.txt`, hash-bound by the manifest
 and redaction report.
 
+The artifact's embedded `revalidated_at=2026-08-24T12:10:00Z` is later than
+the manifest's `collected_at=2026-08-24T12:08:27Z` and redaction report's
+`generated_at=2026-08-24T12:08:32Z`. Because the original collector transcript
+cannot prove which historical timestamp was mistyped, this artifact is retained
+byte-for-byte for audit continuity but is not authoritative chronological
+evidence. Later exact-head Local Green proofs supersede it for merge readiness;
+no timestamp is retroactively invented here.
+
 The final repository-record validation ran:
 
 ```text

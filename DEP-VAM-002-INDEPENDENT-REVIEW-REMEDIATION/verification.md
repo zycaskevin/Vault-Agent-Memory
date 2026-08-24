@@ -32,6 +32,9 @@ modes matching the Git index, and an empty Frozen Subject diff. Redacted proof:
 
 ## Remaining limitations
 
-The merge gate must now be rebound in an audit-only commit to the proof head.
-Independent Reviewer re-review, `REV-VAM-002`, and hosted exact-head merge
-verification remain separate protected-file gates.
+At historical proof head `f0a82733bc4854927f1877e31cac34fd1d415068`,
+the next phase was an audit-only gate rebind. That timestamped statement is not
+an instruction to bind today's gate back to `f0a8273`; successor remediation
+must bind the final reviewed head and complete candidate digest. Independent
+Reviewer re-review, `REV-VAM-002`, and hosted exact-head merge verification
+remain separate protected-file gates.

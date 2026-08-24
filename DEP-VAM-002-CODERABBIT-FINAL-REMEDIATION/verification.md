@@ -64,7 +64,10 @@ diff, and all 1,455 tracked physical modes remained Green.
 
 ## Remaining limitations
 
-No runtime behavior or stored data changed. Exact committed-head Builder Local
-Green is complete. Merge-gate rebind, public push, CodeRabbit re-review,
-independent Reviewer receipt, merge, and deployment remain separate gates; this
-proof authorizes none of them.
+Valid identity-bearing runtime behavior and stored data did not change in this
+final documentation/test remediation. The earlier intentional contract fix for
+malformed requests remains: missing or empty `agent_id` returns
+`agent_id_required` with HTTP 400 rather than HTTP 200. Exact committed-head
+Builder Local Green is complete. Merge-gate rebind, public push, CodeRabbit
+re-review, independent Reviewer receipt, merge, and deployment remain separate
+gates; this proof authorizes none of them.

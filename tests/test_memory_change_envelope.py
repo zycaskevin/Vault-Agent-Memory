@@ -496,6 +496,65 @@ def test_invalid_governance_updates_and_malformed_rows_fail_closed(tmp_path):
         assert "content" not in bounded
 
 
+def test_present_empty_governance_labels_fail_closed_across_provider_reads(tmp_path):
+    project, first_id, _second_id, private_id = _change_project(tmp_path)
+    provider = sqlite_memory_provider(project)
+
+    with VaultDB(project / "vault.db") as db:
+        db.conn.execute(
+            "UPDATE knowledge SET sensitivity=? WHERE id=?",
+            ("", first_id),
+        )
+        db.conn.execute(
+            "UPDATE knowledge SET scope=?, sensitivity=? WHERE id=?",
+            ("", "low", private_id),
+        )
+        db.conn.commit()
+        malformed_rows = {
+            memory_id: db.get_knowledge(memory_id)
+            for memory_id in (first_id, private_id)
+        }
+
+    malformed_revisions = {
+        memory_id: memory_change_envelope(row)["revision_id"]
+        for memory_id, row in malformed_rows.items()
+        if row is not None
+    }
+    assert malformed_rows[first_id]["sensitivity"] == ""
+    assert malformed_rows[private_id]["scope"] == ""
+
+    page = provider.list_changes(
+        agent_id="work-agent",
+        max_sensitivity="low",
+        limit=100,
+    )
+    assert page["status"] == "ok"
+    visible_ids = {change["memory_id"] for change in page["changes"]}
+    for memory_id in (first_id, private_id):
+        assert str(memory_id) not in visible_ids
+        assert provider.get_metadata(
+            memory_id,
+            agent_id="work-agent",
+            max_sensitivity="low",
+        ) is None
+        assert provider.get_revision(
+            memory_id,
+            malformed_revisions[memory_id],
+            agent_id="work-agent",
+            max_sensitivity="low",
+        ) is None
+        bounded = provider.read_bounded_evidence(
+            memory_id,
+            malformed_revisions[memory_id],
+            line_start=1,
+            line_end=1,
+            agent_id="work-agent",
+            max_sensitivity="low",
+        )
+        assert bounded == {"status": "error", "error": "not_found_or_not_readable"}
+        assert "content" not in bounded
+
+
 def test_audit_reference_is_advisory_and_not_part_of_the_row_revision_contract():
     row = {
         "id": 42,

@@ -666,6 +666,10 @@ def test_memory_change_http_errors_use_non_success_status_and_openapi_contract()
         assert operation["responses"]["400"]["content"]["application/json"]["schema"] == {
             "$ref": "#/components/schemas/MemoryAPIError"
         }
+    for method in ("patch", "delete"):
+        assert contract["paths"]["/memory/{id}"][method]["responses"]["400"] == (
+            contract["paths"]["/memory/{id}"]["get"]["responses"]["400"]
+        )
 
 
 def test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch(tmp_path):
@@ -1360,6 +1364,17 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
         assert updated["candidate"]["status"] == "candidate_created"
         assert updated["safety"]["update_request"] is True
 
+        status, missing_update_agent = _request_json(
+            "PATCH",
+            host,
+            port,
+            f"/memory/{public_id}",
+            {"patch": {"summary": "must fail without agent identity"}},
+        )
+        assert status == 400
+        assert missing_update_agent["error"] == "agent_id_required"
+        assert "candidate" not in missing_update_agent
+
         status, deleted = _request_json(
             "DELETE",
             host,
@@ -1370,6 +1385,18 @@ def test_gateway_http_memory_api_facade_routes(tmp_path):
         assert status == 200
         assert deleted["candidate"]["status"] == "candidate_created"
         assert deleted["safety"]["soft_delete_request"] is True
+
+
+        status, missing_delete_agent = _request_json(
+            "DELETE",
+            host,
+            port,
+            f"/memory/{public_id}",
+            None,
+        )
+        assert status == 400
+        assert missing_delete_agent["error"] == "agent_id_required"
+        assert "candidate" not in missing_delete_agent
 
         status, audit = _request_json(
             "GET",

@@ -595,7 +595,10 @@ def make_gateway_handler(
             if payload is None:
                 self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
                 return
-            self._send_json(payload)
+            self._send_json(
+                payload,
+                status=HTTPStatus(gateway_memory_http_status(payload)),
+            )
 
         def do_DELETE(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
             parsed = urlparse(self.path)
@@ -624,7 +627,10 @@ def make_gateway_handler(
             if payload is None:
                 self._send_json(_error("not_found", "unknown endpoint"), status=HTTPStatus.NOT_FOUND)
                 return
-            self._send_json(payload)
+            self._send_json(
+                payload,
+                status=HTTPStatus(gateway_memory_http_status(payload)),
+            )
 
         def log_message(self, format: str, *args: Any) -> None:
             return

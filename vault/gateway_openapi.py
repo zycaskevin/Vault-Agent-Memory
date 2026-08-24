@@ -232,7 +232,10 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                             }
                         }
                     },
-                    "responses": {"200": {"description": "Update candidate creation or gate rejection"}},
+                    "responses": {
+                        "200": {"description": "Update candidate creation or gate rejection"},
+                        "400": _MEMORY_API_BAD_REQUEST,
+                    },
                 },
                 "delete": {
                     "summary": "Submit a soft-delete request as a review candidate; never hard-deletes memory.",
@@ -240,7 +243,10 @@ def gateway_openapi(*, title: str = "Vault Gateway") -> dict[str, Any]:
                         {"name": "id", "in": "path", "required": True, "schema": {"type": "integer"}},
                         {"name": "agent_id", "in": "query", "required": True, "schema": {"type": "string"}},
                     ],
-                    "responses": {"200": {"description": "Soft-delete candidate request"}},
+                    "responses": {
+                        "200": {"description": "Soft-delete candidate request"},
+                        "400": _MEMORY_API_BAD_REQUEST,
+                    },
                 },
             },
             "/memory/audit": {

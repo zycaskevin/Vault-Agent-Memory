@@ -10,9 +10,11 @@ reported pytest `9.1.1`.
 
 Before a second full gate, assert both command providers independently:
 
-```text
-PATH=$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:... python -c 'import pytest'
-PATH=$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:... sddgov --version
+```bash
+VAM002_PINNED_PATH="$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:/usr/local/bin:/usr/bin:/bin"
+env PATH="$VAM002_PINNED_PATH" python -c 'import pytest'
+env PATH="$VAM002_PINNED_PATH" sddgov --version
+env PATH="$VAM002_PINNED_PATH" sddgov ci local-gate .
 ```
 
 Then run the unchanged repository `sddgov ci local-gate .` exactly once. Green

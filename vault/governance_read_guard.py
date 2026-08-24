@@ -14,6 +14,7 @@ from typing import Any, Iterable
 from .access_policy import (
     ReadPolicy,
     SENSITIVITY_RANK,
+    canonical_stored_governance_label,
     can_read_memory,
     normalize_read_policy,
 )
@@ -135,8 +136,16 @@ def evaluate_governed_read(
     # Status is classified above.  Evaluate ACL/sensitivity with a status-only
     # copy so a tombstone is not mislabeled as authorization failure, while the
     # strict policy remains active even when the caller omitted agent identity.
-    scope = str(row.get("scope") or "project").strip().lower()
-    sensitivity = str(row.get("sensitivity") or "low").strip().lower()
+    scope = canonical_stored_governance_label(
+        row,
+        "scope",
+        absent_default="project",
+    )
+    sensitivity = canonical_stored_governance_label(
+        row,
+        "sensitivity",
+        absent_default="low",
+    )
     if scope not in KNOWN_SCOPES:
         reasons.append("unknown_scope")
     if sensitivity not in SENSITIVITY_RANK:
