@@ -16,6 +16,12 @@ identity-isolated Subject nodes and repository pytest with 2972 passed, 10
 skipped, and one existing warning; the manifest-bound transcript is
 `shareable/artifacts/terminal--artifact-2.txt`.
 
+The final stable exact-head run at
+`f28843b1777f002b342d35449e9ce7aaf4bfc83c` passed the same 446 isolated
+nodes and repository pytest with 2972 passed, 10 skipped, and one existing
+warning. It checked 1496 tracked physical modes with zero mismatches. The
+manifest-bound transcript is `shareable/artifacts/terminal--artifact-4.txt`.
+
 ## Unaffected paths sampled
 
 Frozen Subject contracts, memory runtime/API implementation, stored data,

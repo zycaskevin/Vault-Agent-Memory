@@ -1,0 +1,20 @@
+proof_kind=final-stable-exact-head-builder-local-green
+worktree=$STABLE_BUILDER_WORKTREE
+head=f28843b1777f002b342d35449e9ce7aaf4bfc83c
+base=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+origin=https://github.com/zycaskevin/Vault-Agent-Memory.git
+command=umask 022; env PATH=$VAM002_PINNED_PYTHON_PATH:$SDDGOV_MERGED_GLOBAL_LOCK_RUNTIME:$PATH GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 sddgov ci local-gate .
+result=PASS
+doctor=PASS
+ci_contract=PASS
+readme_smoke=PASS
+release_parity=PASS
+identity_isolated_subject_nodes=446 PASS
+repository_pytest=2972 passed, 10 skipped, 1 existing invalid-escape warning
+tracked_physical_modes=1496 checked, 0 mismatches
+post_run_head=exact
+post_run_worktree=clean
+frozen_subject_diff=empty
+git_diff_check=PASS
+prior_denial_disposition=the same candidate passed outside the volatile $CODEX_STATE_ROOT ancestor; prior fail-closed Denied was checkout-environment volatility, not a product or Frozen Subject content defect
+authority=no push, signing, trust mutation, merge, deployment, or live Hermes/production-data change

@@ -44,6 +44,25 @@ file changed the `$CODEX_STATE_ROOT` ancestor during the failing-node window.
 The runner erases the exact `Denied` subcondition, so the evidence is
 time-aligned and strongly explanatory but not a retried reproduction. The
 manifest-bound failure record is `shareable/artifacts/terminal--artifact-3.txt`.
-Per the explicit no-retry condition, no second run, merge-gate rebind, or push
-was performed at this candidate.
-TODO
+Per that run's explicit no-retry condition, no second run was performed under
+the exhausted authorization.
+
+## Final stable exact-head proof
+
+Under a later, separate owner authorization, a fresh 0700 clone outside the
+volatile `$CODEX_STATE_ROOT` ancestor was prepared with formal GitHub origin,
+exact `origin/main` base
+`c284e1c7bedf288a10009b98e5f2da525c3ee4bc`, exact candidate
+`f28843b1777f002b342d35449e9ce7aaf4bfc83c`, clean status, and 1496 tracked
+physical modes with zero mismatches.
+
+Its single non-sandbox repository-controlled Local Green passed Doctor, CI
+contract, README smoke, release parity, all 446 identity-isolated Subject
+nodes, and repository pytest with 2972 passed, 10 skipped, and one existing
+warning. Post-run HEAD, clean worktree, physical modes, Frozen Subject diff,
+and `git diff --check` remained exact. This closes the prior environment-only
+ancestor-volatility limitation. The manifest-bound proof is
+`shareable/artifacts/terminal--artifact-4.txt`.
+
+No push, Reviewer signing, trust mutation, merge, deployment, live Hermes, or
+production-data action was performed by this proof run.

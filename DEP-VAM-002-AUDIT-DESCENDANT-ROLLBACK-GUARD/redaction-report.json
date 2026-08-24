@@ -29,6 +29,15 @@
       "redactions": {
         "phone": 3
       }
+    },
+    {
+      "source": "terminal--artifact-4.txt",
+      "output": "terminal--artifact-4.txt",
+      "source_sha256": "d79dccc73787eb42468bb8404164f75b17966ef0d9c52f6270f69d3d328fe94a",
+      "source_size": 1077,
+      "output_sha256": "d79dccc73787eb42468bb8404164f75b17966ef0d9c52f6270f69d3d328fe94a",
+      "output_size": 1077,
+      "redactions": {}
     }
   ],
   "blocked": [],
@@ -36,5 +45,5 @@
     "phone": 3
   },
   "dep_id": "DEP-VAM-002-AUDIT-DESCENDANT-ROLLBACK-GUARD",
-  "generated_at": "2026-08-24T12:46:17Z"
+  "generated_at": "2026-08-24T15:24:08Z"
 }
