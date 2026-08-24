@@ -8,9 +8,9 @@
   ],
   "risk_level": "L1",
   "created_at": "2026-08-24T12:00:11Z",
-  "updated_at": "2026-08-24T12:14:02Z",
+  "updated_at": "2026-08-24T12:24:03Z",
   "workflow": {
-    "phase": "green",
+    "phase": "proof",
     "history": [
       {
         "phase": "red",
@@ -27,16 +27,33 @@
       {
         "phase": "green",
         "at": "2026-08-24T12:14:02Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-24T12:24:03Z"
       }
     ]
   },
   "expected_behavior": "PR #500 evidence and rollback records remain reproducible and internally consistent, and missing agent identity on the two VAM-002 HTTP read endpoints returns the documented non-success error without rows or content.",
   "actual_behavior": "The replacement CodeRabbit review identified 12 evidence, rollback, or documentation gaps and one HTTP mapping defect; the bounded RED regression confirmed agent_id_required was mapped to HTTP 200 and enumerated every unclosed record finding.",
   "environment": {
-    "commit": "26df3c8693900ac4b734b342293a892df6560cb2 plus test-only RED changes",
+    "commit": "6fcfece541a34e5498432b0772a6dea6c7a46be3",
     "branch": "codex/vam-002-memory-change-envelope",
     "runtime": "CPython 3.11; pytest 9.1.1; Agentic SDD Governance 0.2.0-experimental.9"
   },
-  "root_cause_status": "unknown",
-  "attachments": []
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--replacement-review-red.txt",
+      "sha256": "9520c37150361cb3dbfa6cbbfb88cfbdb85e7a5eef68d6c4fbc14feffa69be78"
+    },
+    {
+      "path": "shareable/artifacts/terminal--replacement-review-green.txt",
+      "sha256": "380099c8c0ebf4a39c9b635e0ffefa1be72e28916804c80f89ec01eefc421727"
+    },
+    {
+      "path": "shareable/artifacts/terminal--exact-head-local-green.txt",
+      "sha256": "12c4050d39b25b7f8c24faee382e70414073f0e1d1cd2c08e91713f156b5720e"
+    }
+  ]
 }

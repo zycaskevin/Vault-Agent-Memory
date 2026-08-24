@@ -1,9 +1,9 @@
 # Rollback
 
 rollback_version: 3.0
-target: exact remediation implementation commit recorded before Proof; preserve this DEP and every prior VAM-002 evidence package
+target: exact PR 500 replacement-review remediation implementation commit; preserve this DEP and every prior VAM-002 evidence package
 rollback_action: git_revert
-rollback_ref: REPLACE_WITH_FULL_CANDIDATE_SHA
+rollback_ref: 6fcfece541a34e5498432b0772a6dea6c7a46be3
 reconcile_action: setup_agent_from_reverted_source
 reconcile_agent: codex
 reconcile_profile: team-standard
@@ -19,11 +19,10 @@ actual protected receipt head.
 
 ## Reversible steps
 
-Before Proof, no rollback command is authorized from this record. The exact
-remediation implementation commit replaces `REPLACE_WITH_FULL_CANDIDATE_SHA`
-after it exists. Before merge, an uncommitted local revert of only that commit
-may be prepared and mechanically checked against Fix Scope. After merge, use
-only the fresh-L3-approval guarded PR procedure in
+The bounded rollback reference is exact implementation commit
+`6fcfece541a34e5498432b0772a6dea6c7a46be3`. Before merge, an uncommitted local
+revert of only that commit may be prepared and mechanically checked against
+Fix Scope. After merge, use only the fresh-L3-approval guarded PR procedure in
 `DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md`; restore this successor
 DEP so its audit trail remains available.
 

@@ -21,9 +21,25 @@
       "size": 1799,
       "collected_at": "2026-08-24T12:11:25Z",
       "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--exact-head-local-green.txt",
+      "source_suffix": ".txt",
+      "media_type": "text/plain; charset=utf-8",
+      "sha256": "12c4050d39b25b7f8c24faee382e70414073f0e1d1cd2c08e91713f156b5720e",
+      "size": 1019,
+      "collected_at": "2026-08-24T12:23:10Z",
+      "shareable": false
     }
   ],
   "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--exact-head-local-green.txt",
+      "sha256": "12c4050d39b25b7f8c24faee382e70414073f0e1d1cd2c08e91713f156b5720e",
+      "size": 1019,
+      "shareable": true
+    },
     {
       "path": "shareable/artifacts/terminal--replacement-review-green.txt",
       "sha256": "380099c8c0ebf4a39c9b635e0ffefa1be72e28916804c80f89ec01eefc421727",

@@ -1,0 +1,22 @@
+collector=terminal
+candidate_head=6fcfece541a34e5498432b0772a6dea6c7a46be3
+candidate_base=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+checkout_boundary=owner-private 0700 parent and repo
+origin=https://github.com/zycaskevin/Vault-Agent-Memory.git
+origin_main=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+command=umask 022; env PATH=$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:/usr/local/bin:/usr/bin:/bin GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 PYTHONDONTWRITEBYTECODE=1 sddgov ci local-gate .
+governance_doctor=PASS; installed 0.2.0-experimental.6 with known CLI 0.2.0-experimental.9 version warning
+ci_contract=PASS
+readme_smoke=PASS
+release_parity=PASS
+identity_isolated_subject=446 passed
+repository_pytest=2972 passed, 10 skipped, 1 existing warning
+local_green_exit=0
+post_run_head_exact=yes
+post_run_worktree_clean=yes
+tracked_physical_modes=1483 exact, 0 mismatch
+frozen_subject_diff=empty
+git_diff_check=PASS
+runtime_data=synthetic fixtures only
+live_hermes=not accessed
+remote_mutation=none

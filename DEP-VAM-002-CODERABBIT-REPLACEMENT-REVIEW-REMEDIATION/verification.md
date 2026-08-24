@@ -19,7 +19,19 @@ correction is reproducible or explicitly dispositioned.
 
 ## Remaining limitations
 
-Repository-wide Local Green and exact committed-head binding remain Proof-stage
-gates. Independent Reviewer receipt, trust mutation, merge, release,
-deployment, and live Hermes or production-data changes are not authorized by
-this DEP.
+Exact implementation commit
+`6fcfece541a34e5498432b0772a6dea6c7a46be3` completed one owner-approved full
+Local Green in the owner-private 0700 checkout. Doctor, CI contract, README
+smoke, release parity, and 446 identity-isolated Subject nodes passed;
+repository pytest reported 2972 passed, 10 skipped, and one existing
+invalid-escape warning. Post-run HEAD, clean worktree, all 1483 tracked
+physical modes, Frozen Subject diff, and `git diff --check` remained exact.
+The manifest-bound proof is
+`shareable/artifacts/terminal--exact-head-local-green.txt`.
+
+Strict DEP verification passed with both the repository-hosted verifier
+`0.2.0-experimental.6` and the merged Local Green runtime
+`0.2.0-experimental.9`.
+
+Independent Reviewer receipt, trust mutation, merge, release, deployment, and
+live Hermes or production-data changes are not authorized by this DEP.
