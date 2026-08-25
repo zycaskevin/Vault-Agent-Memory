@@ -12,14 +12,15 @@ Before a second full gate, assert both command providers independently:
 
 ```bash
 VAM002_PINNED_PATH="$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:/usr/local/bin:/usr/bin:/bin"
-env PATH="$VAM002_PINNED_PATH" python -c 'import pytest'
-env PATH="$VAM002_PINNED_PATH" sddgov --version
-env PATH="$VAM002_PINNED_PATH" sddgov ci local-gate .
+test -x "$VAULT_PYTHON_SHIM"
+test -x "$SDDGOV_RUNTIME/bin/sddgov"
+"$VAULT_PYTHON_SHIM" -c 'import pytest; assert pytest.__version__ == "9.1.1"'
+"$SDDGOV_RUNTIME/bin/sddgov" --version | grep -F '0.2.0-experimental.9'
+env PATH="$VAM002_PINNED_PATH" "$SDDGOV_RUNTIME/bin/sddgov" ci local-gate .
 ```
 
-Then run the unchanged repository `sddgov ci local-gate .` exactly once. Green
-requires identity-isolated nodes and repository-wide pytest to complete, a
-clean worktree, unchanged exact head, and no retry.
+Green requires identity-isolated nodes and repository-wide pytest to complete,
+a clean worktree, unchanged exact head, and no retry.
 
 ## Regression test added or strengthened
 

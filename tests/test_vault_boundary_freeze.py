@@ -479,6 +479,63 @@ def test_vam002_replacement_review_findings_have_current_reproducible_records() 
     assert not failures, "unclosed replacement-review findings: " + ", ".join(failures)
 
 
+def test_vam002_current_head_coderabbit_findings_have_current_records() -> None:
+    """Keep current-head review corrections executable without rewriting raw evidence."""
+    remediation = ROOT / "DEP-VAM-002-CODERABBIT-2026-08-26-REMEDIATION"
+    canonical = (
+        ROOT / "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION/finding-dispositions.md"
+    ).read_text(encoding="utf-8")
+    final_summary = json.loads(
+        (
+            ROOT / "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION/summary.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    final_scope = (
+        ROOT / "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION/fix-scope.md"
+    ).read_text(encoding="utf-8")
+    final_rollback = (
+        ROOT / "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION/rollback.md"
+    ).read_text(encoding="utf-8")
+    compatibility_rollback = (
+        ROOT / "DEP-VAM-002-FULL-SUITE-COMPATIBILITY/rollback.md"
+    ).read_text(encoding="utf-8")
+    compatibility_reproduction = (
+        ROOT / "DEP-VAM-002-FULL-SUITE-COMPATIBILITY/reproduction.md"
+    ).read_text(encoding="utf-8")
+    replacement_reproduction = (
+        ROOT / "DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION/reproduction.md"
+    ).read_text(encoding="utf-8")
+    builder_regression = (
+        ROOT / "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH/regression-evidence.md"
+    ).read_text(encoding="utf-8")
+    sequential_rollback = (
+        ROOT / "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md"
+    ).read_text(encoding="utf-8")
+    remediation_scope = (remediation / "fix-scope.md").read_text(encoding="utf-8")
+
+    for item in range(1, 15):
+        assert f"{item}." in canonical
+    assert "finding-dispositions.md" in final_summary["actual_behavior"]
+    assert "f0a8273`" not in final_scope
+    assert "1a346913..." not in final_scope
+    assert "git diff --cached --check" in final_rollback
+    assert "git status --ignored=matching --porcelain=v1" in final_rollback
+    for node in (
+        "test_strict_guard_fails_closed_for_unknown_scope_and_sensitivity",
+        "test_gateway_memory_api_facade_is_candidate_first_and_metadata_only",
+    ):
+        assert node in compatibility_rollback
+    assert "7a64938bdc1e5aa483db013e4de4c8e78952fa20" in compatibility_reproduction
+    assert "1a346913563f5437b7815f655393f0eee5a0da52" in compatibility_reproduction
+    assert "$PROJECT_VENV/bin/python" in replacement_reproduction
+    assert 'pytest.__version__ == "9.1.1"' in builder_regression
+    assert '"$SDDGOV_RUNTIME/bin/sddgov" ci local-gate .' in builder_regression
+    assert builder_regression.count("ci local-gate .") == 1
+    assert "git diff --cached --check" in sequential_rollback
+    assert "git status --ignored=matching --porcelain=v1" in sequential_rollback
+    assert "Historical evidence must not be rewritten without its raw source." in remediation_scope
+
+
 def test_vam002_final_review_records_keep_red_and_green_semantics_distinct() -> None:
     current_head_dep = ROOT / "DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION"
     fix_scope = (current_head_dep / "fix-scope.md").read_text(encoding="utf-8")

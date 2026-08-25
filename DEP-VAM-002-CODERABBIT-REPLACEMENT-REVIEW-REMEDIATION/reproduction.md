@@ -25,7 +25,10 @@ the two RED regression changes in `tests/test_gateway.py` and
 `tests/test_vault_boundary_freeze.py`, then run:
 
 ```text
-env PYTHONPATH=. $VAULT_TEST_PYTHON -m pytest -q \
+test -n "$PROJECT_VENV" && test -x "$PROJECT_VENV/bin/python"
+VAULT_TEST_PYTHON="$PROJECT_VENV/bin/python"
+"$VAULT_TEST_PYTHON" -m pytest --version
+env PYTHONPATH=. "$VAULT_TEST_PYTHON" -m pytest -q \
   tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract \
   tests/test_vault_boundary_freeze.py::test_vam002_replacement_review_findings_have_current_reproducible_records
 ```
@@ -40,6 +43,7 @@ IDs. The bounded transcript is collected as
 - Branch: `codex/vam-002-memory-change-envelope`
 - Exact baseline: `c284e1c7bedf288a10009b98e5f2da525c3ee4bc`
 - Exact candidate: `26df3c8693900ac4b734b342293a892df6560cb2`
-- Runtime: CPython 3.11, pytest 9.1.1, repository source via `PYTHONPATH=.`
+- Runtime: CPython 3.11, pytest 9.1.1 from `$PROJECT_VENV/bin/python`,
+  repository source via `PYTHONPATH=.`
 - Synthetic fixtures only; no live Hermes, production database, secrets,
   signing, trust mutation, merge, or deployment

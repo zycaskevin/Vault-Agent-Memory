@@ -99,7 +99,9 @@ vault/governance_read_guard.py
 vault/memory_change_envelope.py
 vault/memory_provider.py""".splitlines()); raise SystemExit(0 if actual == expected else 1)'
 test -z "$(git diff --name-only)"
-test -z "$(git status --porcelain=v1 --untracked-files=all | awk 'substr($0,1,2) == "??" { print }')"
+git diff --cached --check
+test -z "$(git status --porcelain=v1 --untracked-files=all)"
+test -z "$(git status --ignored=matching --porcelain=v1 | awk 'substr($0,1,2) == "??" || substr($0,1,2) == "!!" { print }')"
 ```
 
 ## Reversible steps

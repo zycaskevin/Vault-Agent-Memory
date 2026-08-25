@@ -14,14 +14,14 @@
 1. **Valid, fixed:** PATCH/DELETE error status and OpenAPI 400.
 2. **Valid, clarified:** focused tests are a subset of repository pytest, not
    additive counts.
-3. **Outdated, dispositioned:** historical `f0a8273` proof records its then-next
+3. **Outdated, dispositioned:** historical `f0a82733bc4854927f1877e31cac34fd1d415068` proof records its then-next
    gate rebind; it must not overwrite the final successor gate.
 4. **Valid, fail-closed disposition:** the impossible follow-up artifact
    chronology is preserved byte-for-byte but excluded as authoritative time
    evidence; later exact-head proofs supersede it.
 5. **Valid, fixed:** replacement rollback runs successor tests before removing
    them and uses remaining baseline tests afterward.
-6. **Valid, fixed:** compatibility rollback names exact commit `1a346913...`
+6. **Valid, fixed:** compatibility rollback names exact commit `1a346913563f5437b7815f655393f0eee5a0da52`
    and an executable historical preparation, while successor rollback delegates
    to the authoritative PR procedure.
 7. **Valid, fixed:** compatibility reproduction uses the pinned Python variable

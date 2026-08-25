@@ -1,0 +1,59 @@
+{
+  "$schema": "../../schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-2026-08-26-REMEDIATION",
+  "issue": "VAM-002",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-25T16:08:09Z",
+  "updated_at": "2026-08-25T16:13:00Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-25T16:08:09Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-25T16:12:21Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-25T16:12:21Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-25T16:12:21Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-25T16:13:00Z"
+      }
+    ]
+  },
+  "expected_behavior": "Every current-head CodeRabbit finding has either an executable correction or a clearly bounded immutable-history disposition; corrected rollback and reproduction instructions are deterministic and do not change VAM-002 runtime behavior.",
+  "actual_behavior": "The review found fourteen documentation, rollback, and evidence-chain gaps across the exact PR range c284e1c7bedf288a10009b98e5f2da525c3ee4bc..cbdd5e14b72beafcc772590cbac123b0eebd433f. This L1 remediation adds a canonical disposition list, pins executable commands, and preserves historical artifact provenance while recording a fresh binding-test proof.",
+  "environment": {
+    "commit": "cbdd5e14b72beafcc772590cbac123b0eebd433f",
+    "branch": "codex/vam-002-coderabbit-current-head-remediation-20260826",
+    "runtime": "CPython 3.11; pytest 9.1.1; Ruff 0.15.20; Agentic SDD Governance CLI 0.2.0-experimental.3"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--artifact-1.txt",
+      "sha256": "4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342"
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-2.txt",
+      "sha256": "f838ad69afc526744a4f6b77faf9e46a71b605c184fa479a1db880a24b6270c3"
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-3.txt",
+      "sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d"
+    }
+  ]
+}

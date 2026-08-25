@@ -24,8 +24,12 @@ env PYTHONPATH=. "$VAULT_TEST_PYTHON" -m pytest -q \
   tests/test_memory_foundation_compare.py::test_strict_guard_fails_closed_for_unknown_scope_and_sensitivity
 ```
 
-The real HTTP node requires local loopback and was reproduced by the complete
-repository-controlled Local Green captured in the attached RED evidence.
+The real HTTP node is
+`tests/test_gateway.py::test_gateway_memory_api_facade_is_candidate_first_and_metadata_only`.
+It requires local loopback and belongs to the later Green proof, not this RED
+reproduction. The attached RED evidence is from candidate
+`7a64938bdc1e5aa483db013e4de4c8e78952fa20`; the separate Green proof uses
+`1a346913563f5437b7815f655393f0eee5a0da52` after the compatibility fix.
 
 ## Environment and preconditions
 
