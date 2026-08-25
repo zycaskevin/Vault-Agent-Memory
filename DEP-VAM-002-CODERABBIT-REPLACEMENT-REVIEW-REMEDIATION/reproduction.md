@@ -27,7 +27,8 @@ the two RED regression changes in `tests/test_gateway.py` and
 ```text
 test -n "$PROJECT_VENV" && test -x "$PROJECT_VENV/bin/python"
 VAULT_TEST_PYTHON="$PROJECT_VENV/bin/python"
-"$VAULT_TEST_PYTHON" -m pytest --version
+"$VAULT_TEST_PYTHON" -c 'import sys; assert sys.version_info[:2] == (3, 11)'
+"$VAULT_TEST_PYTHON" -c 'import pytest; assert pytest.__version__ == "9.1.1"'
 env PYTHONPATH=. "$VAULT_TEST_PYTHON" -m pytest -q \
   tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract \
   tests/test_vault_boundary_freeze.py::test_vam002_replacement_review_findings_have_current_reproducible_records

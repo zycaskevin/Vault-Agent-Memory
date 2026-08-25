@@ -20,4 +20,4 @@ source referenced by the DEP summary, regression evidence, and binding test.
 12. Independent review reproduction: fixed with an explicit focused command.
 13. Missing identity HTTP status: fixed as documented HTTP 400 behavior.
 14. Current-head evidence provenance: fixed by the successor L1 package
-    `DEP-VAM-002-CODERABBIT-2026-08-26-REMEDIATION`.
+    `DEP-VAM-002-CODERABBIT-2026-08-25-REMEDIATION`.

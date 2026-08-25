@@ -269,7 +269,8 @@ def test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python() 
         "vault/governance_read_guard.py",
     ):
         assert required in guarded_block
-    assert rollback.count("git status --porcelain=v1 --untracked-files=all") >= 3
+    assert rollback.count("git status --porcelain=v1 --untracked-files=all") >= 2
+    assert 'substr($0,1,2) == "??" { print }' in rollback
 
     snippets = re.findall(r"python -c '([^']+)'", guarded_block)
     approval_snippet = next(
@@ -481,7 +482,7 @@ def test_vam002_replacement_review_findings_have_current_reproducible_records() 
 
 def test_vam002_current_head_coderabbit_findings_have_current_records() -> None:
     """Keep current-head review corrections executable without rewriting raw evidence."""
-    remediation = ROOT / "DEP-VAM-002-CODERABBIT-2026-08-26-REMEDIATION"
+    remediation = ROOT / "DEP-VAM-002-CODERABBIT-2026-08-25-REMEDIATION"
     canonical = (
         ROOT / "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION/finding-dispositions.md"
     ).read_text(encoding="utf-8")
@@ -534,6 +535,69 @@ def test_vam002_current_head_coderabbit_findings_have_current_records() -> None:
     assert "git diff --cached --check" in sequential_rollback
     assert "git status --ignored=matching --porcelain=v1" in sequential_rollback
     assert "Historical evidence must not be rewritten without its raw source." in remediation_scope
+
+
+def test_vam002_second_coderabbit_review_findings_are_closed() -> None:
+    """Bind every second-review correction to a concrete executable record."""
+    remediation = ROOT / "DEP-VAM-002-CODERABBIT-2026-08-25-REMEDIATION"
+    canonical = (
+        ROOT / "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION/finding-dispositions.md"
+    ).read_text(encoding="utf-8")
+    builder = (
+        ROOT / "DEP-VAM-002-BUILDER-LOCAL-GREEN-PATH/regression-evidence.md"
+    ).read_text(encoding="utf-8")
+    remediation_rollback = (remediation / "rollback.md").read_text(encoding="utf-8")
+    full_suite_rollback = (
+        ROOT / "DEP-VAM-002-FULL-SUITE-COMPATIBILITY/rollback.md"
+    ).read_text(encoding="utf-8")
+    replacement = (
+        ROOT / "DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION/reproduction.md"
+    ).read_text(encoding="utf-8")
+    sequential = (
+        ROOT / "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md"
+    ).read_text(encoding="utf-8")
+    summary = json.loads((remediation / "summary.yaml").read_text(encoding="utf-8"))
+
+    expected_dispositions = {
+        1: "HTTP PATCH/DELETE error status: fixed",
+        2: "Focused test counts: clarified",
+        3: "Historical gate successor reference: dispositioned",
+        4: "Follow-up artifact chronology: historical artifact retained",
+        5: "Replacement rollback: fixed",
+        6: "Compatibility rollback: fixed",
+        7: "Compatibility reproduction: fixed",
+        8: "Builder-path evidence: fixed",
+        9: "Current-head rollback: fixed",
+        10: "Present empty/null labels: fixed",
+        11: "Sequential rollback: fixed",
+        12: "Independent review reproduction: fixed",
+        13: "Missing identity HTTP status: fixed",
+        14: "Current-head evidence provenance: fixed",
+    }
+    for number, disposition in expected_dispositions.items():
+        assert f"{number}. {disposition}" in canonical
+
+    assert "set -euo pipefail" in builder
+    assert "$(dirname \"$VAULT_PYTHON_SHIM\")" in builder
+    assert 'test "$(command -v python)" = "$VAULT_PYTHON_SHIM"' in builder
+    assert 'test "$(\"$SDDGOV_RUNTIME/bin/sddgov\" --version)" = "0.2.0-experimental.9"' in builder
+    assert "4456c1ceabdce4bcfd24c33fa958990984172ff9" in remediation_rollback
+    assert "git diff --cached --name-only -z" in remediation_rollback
+    assert "git revert --abort" in remediation_rollback
+    assert 'test -x "$VAULT_TEST_PYTHON"' in remediation_rollback
+    for node in (
+        "test_strict_guard_fails_closed_for_unknown_scope_and_sensitivity",
+        "test_memory_change_http_errors_use_non_success_status_and_openapi_contract",
+        "test_gateway_memory_api_facade_is_candidate_first_and_metadata_only",
+    ):
+        assert node in full_suite_rollback
+    assert 'sys.version_info[:2] == (3, 11)' in replacement
+    assert 'pytest.__version__ == "9.1.1"' in replacement
+    post_staging = sequential.rsplit("git diff --cached --check", 1)[1]
+    assert 'substr($0,1,2) == "??" { print }' in post_staging
+    assert 'test -z "$(git status --porcelain=v1 --untracked-files=all)"' not in post_staging
+    assert summary["dep_id"] == "DEP-VAM-002-CODERABBIT-2026-08-25-REMEDIATION"
+    assert summary["created_at"].startswith("2026-08-25T")
 
 
 def test_vam002_final_review_records_keep_red_and_green_semantics_distinct() -> None:
@@ -621,9 +685,8 @@ def test_vam002_final14_review_dispositions_are_executable_and_truthful() -> Non
     builder_regression = (builder_path / "regression-evidence.md").read_text(
         encoding="utf-8"
     )
-    assert 'VAM002_PINNED_PATH="$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:' in (
-        builder_regression
-    )
+    assert 'VAM002_PYTHON_DIR="$(dirname "$VAULT_PYTHON_SHIM")"' in builder_regression
+    assert 'VAM002_PINNED_PATH="$VAM002_PYTHON_DIR:$SDDGOV_RUNTIME/bin:' in builder_regression
     assert "..." not in builder_regression
 
     current_rollback = (

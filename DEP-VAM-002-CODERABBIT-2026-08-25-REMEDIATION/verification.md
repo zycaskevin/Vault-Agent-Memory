@@ -22,3 +22,6 @@ This package repairs evidence and rollback reproducibility only. It is not a
 new independent review receipt and cannot authorize merge or publication.
 The repository-wide suite additionally requires its Subject-mission CI phase
 and historical topology harness; it is outside this VAM-002-only remediation.
+
+Second-review regression: the three affected boundary-freeze nodes passed, and
+their redacted terminal result is hash-bound as `terminal--artifact-4.txt`.

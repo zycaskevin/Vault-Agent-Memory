@@ -47,11 +47,12 @@ At the historical head, run these two named regressions before the revert:
 ```bash
 env PYTHONPATH=. "$VAULT_TEST_PYTHON" -m pytest -q \
   tests/test_memory_foundation_compare.py::test_strict_guard_fails_closed_for_unknown_scope_and_sensitivity \
+  tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract \
   tests/test_gateway.py::test_gateway_memory_api_facade_is_candidate_first_and_metadata_only
 ```
 
 They must pass at the historical head. After preparing the revert, run the
-same two nodes again; they must still pass, together with `git diff --cached
+same three nodes again; they must still pass, together with `git diff --cached
 --check` and repository governance verification. Confirm the staged path set
 matches the historical commit and no untracked or ignored rollback artifact
 remains.

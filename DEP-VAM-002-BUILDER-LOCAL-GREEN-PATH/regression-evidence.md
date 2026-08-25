@@ -11,11 +11,14 @@ reported pytest `9.1.1`.
 Before a second full gate, assert both command providers independently:
 
 ```bash
-VAM002_PINNED_PATH="$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:/usr/local/bin:/usr/bin:/bin"
+set -euo pipefail
+VAM002_PYTHON_DIR="$(dirname "$VAULT_PYTHON_SHIM")"
+VAM002_PINNED_PATH="$VAM002_PYTHON_DIR:$SDDGOV_RUNTIME/bin:/usr/local/bin:/usr/bin:/bin"
 test -x "$VAULT_PYTHON_SHIM"
 test -x "$SDDGOV_RUNTIME/bin/sddgov"
+test "$(command -v python)" = "$VAULT_PYTHON_SHIM"
 "$VAULT_PYTHON_SHIM" -c 'import pytest; assert pytest.__version__ == "9.1.1"'
-"$SDDGOV_RUNTIME/bin/sddgov" --version | grep -F '0.2.0-experimental.9'
+test "$("$SDDGOV_RUNTIME/bin/sddgov" --version)" = "0.2.0-experimental.9"
 env PATH="$VAM002_PINNED_PATH" "$SDDGOV_RUNTIME/bin/sddgov" ci local-gate .
 ```
 

@@ -1,7 +1,7 @@
 {
   "$schema": "../../schemas/debug-evidence-package.schema.json",
   "schema_version": "1.0",
-  "dep_id": "DEP-VAM-002-CODERABBIT-2026-08-26-REMEDIATION",
+  "dep_id": "DEP-VAM-002-CODERABBIT-2026-08-25-REMEDIATION",
   "issue": "VAM-002",
   "sdd_references": [
     "docs/specs/vam-002-memory-change-envelope.md"
@@ -35,7 +35,7 @@
     ]
   },
   "expected_behavior": "Every current-head CodeRabbit finding has either an executable correction or a clearly bounded immutable-history disposition; corrected rollback and reproduction instructions are deterministic and do not change VAM-002 runtime behavior.",
-  "actual_behavior": "The review found fourteen documentation, rollback, and evidence-chain gaps across the exact PR range c284e1c7bedf288a10009b98e5f2da525c3ee4bc..cbdd5e14b72beafcc772590cbac123b0eebd433f. This L1 remediation adds a canonical disposition list, pins executable commands, and preserves historical artifact provenance while recording a fresh binding-test proof.",
+  "actual_behavior": "The first review found fourteen documentation, rollback, and evidence-chain gaps across the exact PR range c284e1c7bedf288a10009b98e5f2da525c3ee4bc..cbdd5e14b72beafcc772590cbac123b0eebd433f. The second review of successor commit 4456c1ceabdce4bcfd24c33fa958990984172ff9 found seven additional reproducibility gaps. This L1 remediation pins executable providers and versions, exact rollback path sets, and every canonical disposition while preserving historical artifact provenance.",
   "environment": {
     "commit": "cbdd5e14b72beafcc772590cbac123b0eebd433f",
     "branch": "codex/vam-002-coderabbit-current-head-remediation-20260826",
@@ -54,6 +54,10 @@
     {
       "path": "shareable/artifacts/terminal--artifact-3.txt",
       "sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d"
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-4.txt",
+      "sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c"
     }
   ]
 }

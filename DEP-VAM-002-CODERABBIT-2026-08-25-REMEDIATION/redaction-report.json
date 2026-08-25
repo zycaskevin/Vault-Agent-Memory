@@ -23,6 +23,13 @@
       "redactions": {}
     },
     {
+      "source": "terminal--artifact-4.txt",
+      "output": "terminal--artifact-4.txt",
+      "source_sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "output_sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "redactions": {}
+    },
+    {
       "source": "terminal--boundary-freeze-green.txt",
       "output": "terminal--boundary-freeze-green.txt",
       "source_sha256": "f838ad69afc526744a4f6b77faf9e46a71b605c184fa479a1db880a24b6270c3",
@@ -37,6 +44,13 @@
       "redactions": {}
     },
     {
+      "source": "terminal--second-review-green.txt",
+      "output": "terminal--second-review-green.txt",
+      "source_sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "output_sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "redactions": {}
+    },
+    {
       "source": "terminal--vam002-regression-green.txt",
       "output": "terminal--vam002-regression-green.txt",
       "source_sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d",
@@ -46,6 +60,6 @@
   ],
   "blocked": [],
   "totals": {},
-  "dep_id": "DEP-VAM-002-CODERABBIT-2026-08-26-REMEDIATION",
-  "generated_at": "2026-08-25T16:17:02Z"
+  "dep_id": "DEP-VAM-002-CODERABBIT-2026-08-25-REMEDIATION",
+  "generated_at": "2026-08-25T16:44:43Z"
 }
