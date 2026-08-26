@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--artifact-1.txt",
+      "output": "terminal--artifact-1.txt",
+      "source_sha256": "f8a3e8c98cbffc85a8098e1d3e8d0060fa3b33506a20b5e807c6b0ee17097a7b",
+      "source_size": 581,
+      "output_sha256": "f8a3e8c98cbffc85a8098e1d3e8d0060fa3b33506a20b5e807c6b0ee17097a7b",
+      "output_size": 581,
+      "redactions": {}
+    },
+    {
+      "source": "terminal--artifact-2.txt",
+      "output": "terminal--artifact-2.txt",
+      "source_sha256": "c973a4655adc63e357951fb60da8e4d64010c70537e31ad8df7fb8e3329ac91a",
+      "source_size": 848,
+      "output_sha256": "c973a4655adc63e357951fb60da8e4d64010c70537e31ad8df7fb8e3329ac91a",
+      "output_size": 848,
+      "redactions": {}
+    },
+    {
+      "source": "terminal--artifact-3.txt",
+      "output": "terminal--artifact-3.txt",
+      "source_sha256": "bf85bd06396f9cbbaf1b717d2c86f06297f27d04addfe8bb23192215dd3624bd",
+      "source_size": 1444,
+      "output_sha256": "f6bf001483d4d5d32d36f852046420814b7c66d4117f6bfe2c70e10ce2082d01",
+      "output_size": 1486,
+      "redactions": {
+        "phone": 3
+      }
+    },
+    {
+      "source": "terminal--artifact-4.txt",
+      "output": "terminal--artifact-4.txt",
+      "source_sha256": "d79dccc73787eb42468bb8404164f75b17966ef0d9c52f6270f69d3d328fe94a",
+      "source_size": 1077,
+      "output_sha256": "d79dccc73787eb42468bb8404164f75b17966ef0d9c52f6270f69d3d328fe94a",
+      "output_size": 1077,
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "phone": 3
+  },
+  "dep_id": "DEP-VAM-002-AUDIT-DESCENDANT-ROLLBACK-GUARD",
+  "generated_at": "2026-08-24T15:24:08Z"
+}

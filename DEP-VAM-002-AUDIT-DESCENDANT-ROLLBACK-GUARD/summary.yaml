@@ -1,0 +1,46 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-AUDIT-DESCENDANT-ROLLBACK-GUARD",
+  "issue": "VAM-002",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-24T12:28:45Z",
+  "updated_at": "2026-08-24T15:24:22Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-24T12:28:45Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-24T12:31:44Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-24T12:31:44Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-24T12:31:44Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-24T12:39:50Z"
+      }
+    ]
+  },
+  "expected_behavior": "The guarded PR rollback must bind the reviewed head to the merge second parent while allowing only the exact merge gate and VAM-002 receipt as governed audit descendants.",
+  "actual_behavior": "The prior exact-parent equality rejected every legitimate gate-only or receipt-only audit descendant and therefore could make the authorized post-merge rollback impossible.",
+  "environment": {
+    "commit": "f28843b1777f002b342d35449e9ce7aaf4bfc83c",
+    "branch": "codex/vam-002-memory-change-envelope",
+    "runtime": "Python 3.11 with repository-pinned VAM-002 dependencies and merged Agentic SDD global-lock runtime 0.2.0-experimental.9"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

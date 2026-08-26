@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final-review-red-source.txt",
+      "sha256": "8bc85a88c61dee137d8f2dacede5cc3e722b9f1b80e4a596ee85791f5af62b88",
+      "collected_at": "2026-08-23T03:56:55Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final-review-green.txt",
+      "sha256": "1bde3dc1154ec178a45cb5b1ef106e295eff9aae18bdfe98ce154323a8a593e5",
+      "collected_at": "2026-08-23T04:02:13Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final-local-green-remote-fail.txt",
+      "sha256": "3669dd8ec14f22ec50c038ef858f1857918646a7183654fcf44e1ef542236fe1",
+      "collected_at": "2026-08-23T04:08:49Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final-local-green-origin-main-fail.txt",
+      "sha256": "b1abfccf06a55554cf14b2fdcfbdee95bca615b964847835472d715223e834cc",
+      "collected_at": "2026-08-23T04:18:08Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--origin-main-preparation-green.txt",
+      "sha256": "be0e0a762989e013531bb093dfdfe7a91cc60498ccc0c667149edc4014731042",
+      "collected_at": "2026-08-23T11:59:39Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final-exact-head-local-green.txt",
+      "sha256": "4b9a844c6633bb55b3384703345bc0e58fa8a084ce560e06e68c18c06f54481c",
+      "collected_at": "2026-08-23T12:08:57Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--final-exact-head-local-green.txt",
+      "sha256": "4b9a844c6633bb55b3384703345bc0e58fa8a084ce560e06e68c18c06f54481c",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--final-local-green-origin-main-fail.txt",
+      "sha256": "b1abfccf06a55554cf14b2fdcfbdee95bca615b964847835472d715223e834cc",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--final-local-green-remote-fail.txt",
+      "sha256": "3669dd8ec14f22ec50c038ef858f1857918646a7183654fcf44e1ef542236fe1",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--final-review-green.txt",
+      "sha256": "16a4f9af56f464030f8ce9b3a9a47b0a34ff41a84466046a5579ea4bac48c962",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--final-review-red-source.txt",
+      "sha256": "8bc85a88c61dee137d8f2dacede5cc3e722b9f1b80e4a596ee85791f5af62b88",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--origin-main-preparation-green.txt",
+      "sha256": "be0e0a762989e013531bb093dfdfe7a91cc60498ccc0c667149edc4014731042",
+      "shareable": true
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+command=git rev-parse HEAD HEAD^1 HEAD^2; git merge-base HEAD origin/main; inspect .sddgov/merge-gate.json
+integration_head=8358bb95e6f26f3ec2f7ff36009d67570092c6b4
+first_parent=68ddbe6c8300f7538774eb40cbf19c5f3e028016
+second_parent=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+merge_base=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+main_is_ancestor=PASS
+gate_base=db1763482f0f603ccd63817f26c73308bc186697
+gate_reviewed_head=fcac3c1f82d2b58a61fb55488175a32e599d5f5b
+gate_receipt=.sddgov/reviews/REV-VAM-003.json
+gate_rollback=DEP-VAM-003-L0-BOOTSTRAP-BOUNDARY/rollback.md
+gate_binds_current_head=FAIL

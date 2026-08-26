@@ -1,0 +1,14 @@
+pytest_command=/tmp/vam-python-path-vam001/python -m pytest -q tests/test_memory_change_envelope.py tests/test_memory_provider.py tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract tests/test_gateway.py::test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch tests/test_gateway.py::test_gateway_memory_api_facade_is_candidate_first_and_metadata_only tests/test_gateway.py::test_gateway_preserves_opaque_memory_reference_for_provider_validation tests/test_vault_boundary_freeze.py::test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python
+pytest_exit_status=0
+pytest_result=19 passed in 0.82s
+ruff_command=env PATH=$LOCKED_DEV_BIN:/usr/local/bin:/usr/bin:/bin ruff check tests/test_gateway.py tests/test_memory_change_envelope.py tests/test_vault_boundary_freeze.py vault/access_policy.py vault/gateway.py vault/gateway_memory_api.py vault/gateway_openapi.py vault/memory_change_envelope.py vault/memory_provider.py
+ruff_version=0.15.20 (locked in uv.lock)
+ruff_exit_status=0
+ruff_result=All checks passed
+module_size_command=/tmp/vam-python-path-vam001/python scripts/module_size_gate.py
+module_size_exit_status=0
+module_size_result=PASS; 159 modules scanned
+ci_contract=sddgov ci verify .; PASS
+diff_check=git diff --check; PASS
+real_http_regression=deferred to the exact committed private-checkout Local Green
+pre_fix_head=d2bed8a66895691e6765498490902b123129724a

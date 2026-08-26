@@ -1,0 +1,35 @@
+collector=terminal
+record_type=bounded_result_summary
+command=umask 022; env PATH=$SDDGOV_PR50_MERGED_BIN:$VAM002_PINNED_PYTHON_PATH:$SDDGOV_COMPAT_PATH:/usr/local/bin:/usr/bin:/bin GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 PYTHONDONTWRITEBYTECODE=1 sddgov ci local-gate .
+candidate_head=8847f94a58acc81a5e1b18357a6cbf50d00a35a7
+base=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+checkout_state=detached
+target_branch=codex/vam-002-memory-change-envelope
+worktree=$BUILDER_WORKTREE
+origin=https://github.com/zycaskevin/Vault-Agent-Memory.git
+origin_main=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+runtime_source_commit=92f4ba8388ecf1ef1f3407db6c49cef62f6ee196
+runtime_version=0.2.0-experimental.9
+runtime_global_lock=PASS wraps_entire_local_gate=yes
+pinned_python=$VAM002_PINNED_PYTHON
+python_version=3.11.15
+yaml_version=6.0.3
+pytest_version=9.1.1
+boundary_modes=0700
+tracked_physical_modes_pre=PASS count=1459
+doctor=PASS warning=embedded_governance_0.2.0-experimental.6_differs_from_cli_0.2.0-experimental.9
+ci_contract=PASS
+readme_smoke=PASS
+release_parity=PASS
+identity_isolated_subject_nodes=PASS count=446
+repository_pytest=PASS passed=2971 skipped=10 warnings=1 duration_seconds=120.32
+warning=tests/test_semantic_chunk_coverage.py:101 DeprecationWarning invalid escape sequence
+local_green_exit=0
+post_run_head_exact=yes
+post_run_worktree_clean=yes
+post_run_diff_check=PASS
+post_run_tracked_physical_modes=PASS count=1459
+frozen_subject_diff=PASS
+non_sandbox_run_count=1
+push_sign_trust_merge_deploy_shared_install=none
+live_hermes_or_production_data=not accessed

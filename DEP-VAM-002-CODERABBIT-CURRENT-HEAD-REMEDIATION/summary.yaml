@@ -1,0 +1,59 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-23T00:59:15Z",
+  "updated_at": "2026-08-23T01:25:42Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-23T00:59:15Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-23T01:06:30Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-23T01:06:30Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-23T01:10:08Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-23T01:25:42Z"
+      }
+    ]
+  },
+  "expected_behavior": "Every public Memory API read treats an omitted or whitespace-only sensitivity ceiling as low, change pagination obtains at most limit plus one policy-readable rows in one bounded query, candidate-first HTTP checks prove the active knowledge snapshot is unchanged, and protected evidence remains reproducible and historically truthful.",
+  "actual_behavior": "At exact public head 15eb5583d7fdf02358c4978cd22ab28ebd796ee4, whitespace bypassed the low default and exposed high-sensitivity reads, list_changes could execute an unbounded Python batch loop over hidden rows, the HTTP oracle checked only row count, and four evidence documents contained stale or incomplete verification claims.",
+  "environment": {
+    "commit": "5efde41f1a1846439f81a10c928687388b0f15fd",
+    "branch": "codex/vam-002-memory-change-envelope-ready",
+    "runtime": "CPython 3.11.15; pytest 9.1.1; Agentic SDD Governance 0.2.0-experimental.3"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--current-head-red.txt",
+      "sha256": "d9e46e181cbc62d4f83aae8e5710c3e215a1f2250f3e59d3c174130add0319cb"
+    },
+    {
+      "path": "shareable/artifacts/terminal--current-head-green.txt",
+      "sha256": "c1c25c9b5f028cf8813ef6713f0ea7a6a97c1ae458b18c7d0b725debc02d8947"
+    },
+    {
+      "path": "shareable/artifacts/terminal--exact-head-builder-local-green.txt",
+      "sha256": "3b39e22c119360c0607b52a7077b26527166ca5df438383e6ee6d6683674a0e1"
+    }
+  ]
+}

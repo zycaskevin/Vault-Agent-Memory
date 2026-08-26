@@ -59,6 +59,19 @@ def test_include_private_without_agent_does_not_restore_legacy_visibility():
     assert can_read_memory(private_row, policy) is False
 
 
+def test_active_read_policy_defaults_only_absent_governance_labels():
+    policy = normalize_read_policy(agent_id="work-agent", max_sensitivity="low")
+
+    assert can_read_memory({}, policy) is True
+    for invalid_row in (
+        {"scope": "", "sensitivity": "low"},
+        {"scope": None, "sensitivity": "low"},
+        {"scope": "project", "sensitivity": ""},
+        {"scope": "project", "sensitivity": None},
+    ):
+        assert can_read_memory(invalid_row, policy) is False
+
+
 def test_read_policy_can_restrict_memory_status_explicitly():
     active_only = normalize_read_policy(allowed_statuses=("active",))
 

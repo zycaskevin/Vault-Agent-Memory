@@ -1,0 +1,13 @@
+PR #500 full-suite compatibility exact-head Proof
+candidate_head=1a346913563f5437b7815f655393f0eee5a0da52
+prior_failure_http_count=closed by fixture-complete before/after invariant
+prior_failure_reason_codes=closed by precise fail-closed diagnostics
+doctor_ci_readme_release_parity=PASS
+identity_isolated_subject=446 passed
+repository_pytest=2967 passed, 10 skipped, 1 existing warning
+local_green_exit=0
+post_run_head_exact=yes
+post_run_worktree_clean=yes
+tracked_physical_modes=1429 exact, 0 mismatch
+frozen_subject_diff=empty
+live_data_mutation=none

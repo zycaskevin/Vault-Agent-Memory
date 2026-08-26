@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--final14-red.txt",
+      "output": "terminal--final14-red.txt",
+      "source_sha256": "1c201c8ff5cc7bc8827ea6b83b7b668d69b34ea63bdcfe7b4f9be99c048f238c",
+      "source_size": 801,
+      "output_sha256": "1c201c8ff5cc7bc8827ea6b83b7b668d69b34ea63bdcfe7b4f9be99c048f238c",
+      "output_size": 801,
+      "redactions": {}
+    },
+    {
+      "source": "terminal--final14-green.txt",
+      "output": "terminal--final14-green.txt",
+      "source_sha256": "8b0d0ed14b092f72540b88d28f9747c1be4326a88a5bdc4b0d2ec71903de267c",
+      "source_size": 1124,
+      "output_sha256": "8b0d0ed14b092f72540b88d28f9747c1be4326a88a5bdc4b0d2ec71903de267c",
+      "output_size": 1124,
+      "redactions": {}
+    },
+    {
+      "source": "terminal--final14-local-green-proof.txt",
+      "output": "terminal--final14-local-green-proof.txt",
+      "source_sha256": "3b9a7be00125f30229df5aa3ef924777d840e77d3d371f8a0b1fe2f31d1a4fb5",
+      "source_size": 1254,
+      "output_sha256": "39674e97b5a07eb2eb364dfa5e7dc4d66a7ddd7592d0ff53e4abef8133a23083",
+      "output_size": 1193,
+      "redactions": {
+        "local_path": 1
+      }
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "local_path": 1
+  },
+  "dep_id": "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION",
+  "generated_at": "2026-08-24T17:03:18Z"
+}

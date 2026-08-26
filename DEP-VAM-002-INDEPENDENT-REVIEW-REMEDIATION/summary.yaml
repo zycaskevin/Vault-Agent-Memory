@@ -1,0 +1,46 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-22T11:31:52Z",
+  "updated_at": "2026-08-22T12:00:36Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-22T11:31:52Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-22T11:34:40Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-22T11:37:14Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-22T11:44:47Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-22T12:00:36Z"
+      }
+    ]
+  },
+  "expected_behavior": "VAM-002 rejects invalid sensitivity ceilings, maps client input failures to non-success HTTP responses consistent with OpenAPI, binds revision semantics precisely, proves audit-query execution, and provides an executable fail-closed PR #500 rollback.",
+  "actual_behavior": "An invalid sensitivity label removes the ceiling and can expose high-sensitivity content; cursor errors return HTTP 200; the revision documentation overclaims audit_ref binding; one SQL assertion is vacuous; and rollback is prose-only.",
+  "environment": {
+    "commit": "f0a82733bc4854927f1877e31cac34fd1d415068",
+    "branch": "codex/vam-002-memory-change-envelope",
+    "runtime": "CPython 3.11; Agentic SDD Governance 0.2.0-experimental.6; isolated 0700 Builder checkout"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": []
+}

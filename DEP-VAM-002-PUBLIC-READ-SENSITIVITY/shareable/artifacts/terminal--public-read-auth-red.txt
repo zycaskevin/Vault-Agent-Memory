@@ -1,0 +1,8 @@
+command=/tmp/vam-python-path-vam001/python -m pytest -q tests/test_gateway.py::test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch tests/test_memory_change_envelope.py::test_provider_authorized_reads_require_nonempty_agent_identity
+exit_status=1
+result=2 failed in 0.28s
+memory_api_default_read_actual=status ok; bounded content included synthetic SECRET-HIGH
+memory_api_expected=status error; error max_sensitivity_invalid; no content/results/current
+provider_missing_agent_actual=status ok; private/high changes and metadata were readable
+provider_expected=status error agent_id_required for page/evidence; metadata/revision absent; no rows/content
+exact_pre_fix_head=d2bed8a66895691e6765498490902b123129724a

@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final14-red.txt",
+      "source_suffix": ".txt",
+      "media_type": "text/plain; charset=utf-8",
+      "sha256": "1c201c8ff5cc7bc8827ea6b83b7b668d69b34ea63bdcfe7b4f9be99c048f238c",
+      "size": 801,
+      "collected_at": "2026-08-24T16:43:55Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final14-green.txt",
+      "source_suffix": ".txt",
+      "media_type": "text/plain; charset=utf-8",
+      "sha256": "8b0d0ed14b092f72540b88d28f9747c1be4326a88a5bdc4b0d2ec71903de267c",
+      "size": 1124,
+      "collected_at": "2026-08-24T16:44:10Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--final14-local-green-proof.txt",
+      "source_suffix": ".txt",
+      "media_type": "text/plain; charset=utf-8",
+      "sha256": "3b9a7be00125f30229df5aa3ef924777d840e77d3d371f8a0b1fe2f31d1a4fb5",
+      "size": 1254,
+      "collected_at": "2026-08-24T17:02:40Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--final14-red.txt",
+      "sha256": "1c201c8ff5cc7bc8827ea6b83b7b668d69b34ea63bdcfe7b4f9be99c048f238c",
+      "size": 801,
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--final14-green.txt",
+      "sha256": "8b0d0ed14b092f72540b88d28f9747c1be4326a88a5bdc4b0d2ec71903de267c",
+      "size": 1124,
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--final14-local-green-proof.txt",
+      "sha256": "39674e97b5a07eb2eb364dfa5e7dc4d66a7ddd7592d0ff53e4abef8133a23083",
+      "size": 1193,
+      "shareable": true
+    }
+  ]
+}

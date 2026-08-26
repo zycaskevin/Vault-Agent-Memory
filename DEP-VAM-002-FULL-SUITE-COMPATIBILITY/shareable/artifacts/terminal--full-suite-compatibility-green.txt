@@ -1,0 +1,10 @@
+PR #500 compatibility targeted Green
+candidate_parent=7a64938bdc1e5aa483db013e4de4c8e78952fa20
+change_1=HTTP regression captures fixture-complete knowledge count and asserts it is unchanged after candidate-first requests
+change_2=unknown stored labels remain denied with exact unknown_scope+unknown_sensitivity diagnostics and no redundant unauthorized
+http_loopback_node=tests/test_gateway.py::test_gateway_http_memory_api_facade_routes: 1 passed
+governance_provider_selection=tests/test_memory_foundation_compare.py + direct sensitivity facade + agent policy + tests/test_memory_provider.py: 30 passed
+ruff=vault/governance_read_guard.py tests/test_gateway.py: PASS
+git_diff_check=PASS
+live_data_mutation=none
+complete_local_green=pending exact committed candidate

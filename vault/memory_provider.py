@@ -11,15 +11,106 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol, runtime_checkable
 
-from .access_policy import can_read_memory, filter_readable_memories, normalize_read_policy
+from .access_policy import (
+    InvalidMaxSensitivity,
+    ReadPolicy,
+    SENSITIVITY_RANK,
+    VALID_MEMORY_SCOPES,
+    can_read_memory,
+    filter_readable_memories,
+    normalize_read_policy,
+    strict_read_policy,
+)
 from .db import VaultDB
 from .governance_contract import governance_contract_payload
 from .memory import create_candidate, promote_candidate
+from .memory_change_envelope import (
+    MAX_BOUNDED_EVIDENCE_LINES,
+    MemoryChangeCursorError,
+    change_order_key,
+    decode_change_cursor,
+    encode_change_cursor,
+    memory_change_envelope,
+    normalize_change_limit,
+    read_policy_fingerprint,
+)
 from .multi_host import list_audit_log, record_audit_event
 from .search_utils import normalize_search_limit
 
+MEMORY_PROVIDER_INTERFACE_VERSION = "2026-08-21"
+_MEMORY_CHANGE_RECORDED_AT_SQL = "COALESCE(NULLIF(updated_at, ''), created_at, '')"
+_MEMORY_CHANGE_POLICY_COLUMNS = (
+    "id, scope, sensitivity, owner_agent, allowed_agents, status, "
+    "updated_at, created_at"
+)
 
-MEMORY_PROVIDER_INTERFACE_VERSION = "2026-07-09"
+
+def _memory_change_agent_authorization_sql(agent_id: str) -> tuple[str, list[Any]]:
+    """Return a SQLite predicate matching Vault's owner/allowlist policy."""
+    canonical_json = (
+        "CASE WHEN json_valid(COALESCE(allowed_agents, '')) "
+        "THEN CASE WHEN json_type(allowed_agents)='array' "
+        "THEN allowed_agents ELSE '[]' END ELSE '[]' END"
+    )
+    csv_agents = (
+        "LOWER(REPLACE(REPLACE(COALESCE(allowed_agents, ''), ', ', ','), ' ,', ','))"
+    )
+    return (
+        "(LOWER(TRIM(COALESCE(owner_agent, ''))) = ? OR "
+        f"EXISTS (SELECT 1 FROM json_each({canonical_json}) "
+        "WHERE LOWER(TRIM(CAST(value AS TEXT))) = ?) OR "
+        f"(NOT json_valid(COALESCE(allowed_agents, '')) AND "
+        f"INSTR(',' || {csv_agents} || ',', ',' || ? || ',') > 0))",
+        [agent_id, agent_id, agent_id],
+    )
+
+
+def _memory_change_visibility_sql(read_policy: ReadPolicy) -> tuple[str, list[Any]]:
+    """Translate the active read policy into one bounded SQLite query."""
+    sensitivity_sql = "LOWER(TRIM(COALESCE(sensitivity, '')))"
+    scope_sql = "LOWER(TRIM(COALESCE(scope, '')))"
+    max_rank = (
+        SENSITIVITY_RANK[read_policy.max_sensitivity]
+        if read_policy.max_sensitivity
+        else max(SENSITIVITY_RANK.values())
+    )
+    sensitivities = [
+        label for label, rank in SENSITIVITY_RANK.items() if rank <= max_rank
+    ]
+    sensitivity_placeholders = ",".join("?" for _ in sensitivities)
+    scope_placeholders = ",".join("?" for _ in VALID_MEMORY_SCOPES)
+    restricted_access_sql, restricted_parameters = (
+        _memory_change_agent_authorization_sql(read_policy.agent_id)
+    )
+    private_access_sql, private_parameters = _memory_change_agent_authorization_sql(
+        read_policy.agent_id
+    )
+    predicate = (
+        f"{sensitivity_sql} IN ({sensitivity_placeholders}) AND "
+        f"{scope_sql} IN ({scope_placeholders}) AND "
+        f"({sensitivity_sql} != 'restricted' OR {restricted_access_sql}) AND "
+        f"({scope_sql} != 'private' OR (? = 1 AND {private_access_sql}))"
+    )
+    return (
+        predicate,
+        [
+            *sensitivities,
+            *sorted(VALID_MEMORY_SCOPES),
+            *restricted_parameters,
+            int(read_policy.include_private),
+            *private_parameters,
+        ],
+    )
+_INVALID_MAX_SENSITIVITY = {
+    "status": "error",
+    "error": "max_sensitivity_invalid",
+    "message": "max_sensitivity must be low, medium, high, or restricted",
+}
+_AGENT_ID_REQUIRED = {
+    "status": "error",
+    "error": "agent_id_required",
+    "message": "agent_id is required for memory provider reads",
+}
 
 # Fields that must never be directly modified through update_memory
 _PROTECTED_UPDATE_FIELDS = frozenset({
@@ -50,6 +141,16 @@ def _validate_update_fields(before: dict[str, Any], fields: dict[str, Any]) -> t
         if field in fields:
             return False, f"protected_field:{field}"
 
+    if "scope" in fields:
+        scope = str(fields["scope"] or "").strip().lower()
+        if scope not in VALID_MEMORY_SCOPES:
+            return False, f"invalid_scope:{scope or 'empty'}"
+
+    if "sensitivity" in fields:
+        sensitivity = str(fields["sensitivity"] or "").strip().lower()
+        if sensitivity not in SENSITIVITY_RANK:
+            return False, f"invalid_sensitivity:{sensitivity or 'empty'}"
+
     # Validate status transition
     if "status" in fields:
         old_status = str(before.get("status") or "active").strip().lower()
@@ -63,6 +164,10 @@ def _validate_update_fields(before: dict[str, Any], fields: dict[str, Any]) -> t
     return True, ""
 
 MEMORY_PROVIDER_OPERATIONS = [
+    "list_changes",
+    "get_metadata",
+    "get_revision",
+    "read_bounded_evidence",
     "create_candidate",
     "search_active",
     "get_memory",
@@ -87,6 +192,49 @@ class MemoryProvider(Protocol):
 
     def create_candidate(self, **kwargs: Any) -> dict[str, Any]:
         """Create a review candidate; never write active memory directly."""
+
+    def list_changes(
+        self,
+        *,
+        cursor: str = "",
+        limit: int = 50,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> dict[str, Any]:
+        """List readable current-memory changes using an opaque cursor."""
+
+    def get_metadata(
+        self,
+        memory_id: int | str,
+        *,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> dict[str, Any] | None:
+        """Return one readable current-memory envelope without raw content."""
+
+    def get_revision(
+        self,
+        memory_id: int | str,
+        revision_id: str,
+        **kwargs: Any,
+    ) -> dict[str, Any] | None:
+        """Return current metadata only when its revision matches."""
+
+    def read_bounded_evidence(
+        self,
+        memory_id: int | str,
+        revision_id: str,
+        *,
+        line_start: int,
+        line_end: int,
+        max_lines: int = MAX_BOUNDED_EVIDENCE_LINES,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> dict[str, Any]:
+        """Read policy-filtered evidence bound to the current revision."""
 
     def search_active(
         self,
@@ -144,6 +292,9 @@ def memory_provider_contract_payload(*, provider_id: str = "sqlite") -> dict[str
             "hard_delete_by_remote_agent": False,
             "audit_metadata_required": True,
             "read_policy_filtering": True,
+            "change_pages_hide_filtered_counts": True,
+            "change_cursors_are_policy_bound": True,
+            "bounded_evidence_revision_required": True,
             "semantic_index_is_optional": True,
         },
         "backend_boundary": {
@@ -194,9 +345,273 @@ class SQLiteMemoryProvider:
                 "keyword_search": True,
                 "read_policy_filtering": True,
                 "semantic_index_optional": True,
+                "memory_change_envelope": True,
+                "cursor_change_listing": True,
+                "revision_bound_bounded_evidence": True,
                 "sync": False,
             },
         }
+
+    def list_changes(
+        self,
+        *,
+        cursor: str = "",
+        limit: int = 50,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> dict[str, Any]:
+        if not str(agent_id or "").strip():
+            return dict(_AGENT_ID_REQUIRED)
+        try:
+            read_policy = strict_read_policy(
+                agent_id=agent_id,
+                include_private=include_private,
+                max_sensitivity=max_sensitivity,
+            )
+        except InvalidMaxSensitivity:
+            return dict(_INVALID_MAX_SENSITIVITY)
+        policy_hash = read_policy_fingerprint(read_policy)
+        cursor_key: tuple[str, int] | None = None
+        if cursor:
+            try:
+                cursor_key = decode_change_cursor(cursor, policy_fingerprint=policy_hash)
+            except MemoryChangeCursorError as exc:
+                return {
+                    "status": "error",
+                    "error": exc.code,
+                    "message": "change cursor is invalid for the current read policy",
+                }
+
+        limit_i = normalize_change_limit(limit)
+        visibility_sql, visibility_parameters = _memory_change_visibility_sql(read_policy)
+        with VaultDB(self.resolved_db_path) as db:
+            # Keep policy scanning, selected-row hydration, and audit lookup on
+            # one WAL snapshot so a concurrent writer cannot change the page
+            # after its visible rows and cursor have already been chosen.
+            db.conn.execute("BEGIN")
+            cursor_sql = ""
+            parameters: list[Any] = []
+            if cursor_key is not None:
+                cursor_sql = (
+                    f"({_MEMORY_CHANGE_RECORDED_AT_SQL} > ? OR "
+                    f"({_MEMORY_CHANGE_RECORDED_AT_SQL} = ? AND id > ?)) AND "
+                )
+                parameters.extend((cursor_key[0], cursor_key[0], cursor_key[1]))
+            parameters.extend(visibility_parameters)
+            parameters.append(limit_i + 1)
+            visible = [
+                dict(row)
+                for row in db.conn.execute(
+                    f"""SELECT {_MEMORY_CHANGE_POLICY_COLUMNS}
+                        FROM knowledge
+                        WHERE {cursor_sql}({visibility_sql})
+                        ORDER BY {_MEMORY_CHANGE_RECORDED_AT_SQL}, id
+                        LIMIT ?""",
+                    parameters,
+                ).fetchall()
+            ]
+
+            selected_metadata = visible[:limit_i]
+            selected_ids = [int(row["id"]) for row in selected_metadata]
+            selected: list[dict[str, Any]] = []
+            audit_refs: dict[str, str] = {}
+            if selected_ids:
+                placeholders = ",".join("?" for _ in selected_ids)
+                rows_by_id = {
+                    int(row["id"]): dict(row)
+                    for row in db.conn.execute(
+                        f"SELECT * FROM knowledge WHERE id IN ({placeholders})",
+                        selected_ids,
+                    ).fetchall()
+                }
+                selected = [rows_by_id[row_id] for row_id in selected_ids if row_id in rows_by_id]
+                audit_refs = {
+                    str(row["target_id"]): f"audit:{int(row['audit_id'])}"
+                    for row in db.conn.execute(
+                        f"""SELECT target_id, MAX(id) AS audit_id
+                            FROM memory_audit_log
+                            WHERE target_type='knowledge'
+                              AND target_id IN ({placeholders})
+                            GROUP BY target_id""",
+                        [str(row_id) for row_id in selected_ids],
+                    ).fetchall()
+                }
+
+        changes = [
+            memory_change_envelope(row, audit_ref=audit_refs.get(str(row.get("id")), ""))
+            for row in selected
+        ]
+        next_cursor = str(cursor or "")
+        if selected:
+            recorded_at, row_id = change_order_key(selected[-1])
+            next_cursor = encode_change_cursor(
+                recorded_at=recorded_at,
+                memory_row_id=row_id,
+                policy_fingerprint=policy_hash,
+            )
+        return {
+            "status": "ok",
+            "changes": changes,
+            "count": len(changes),
+            "next_cursor": next_cursor,
+            "has_more": len(visible) > limit_i,
+            "provider": self.provider_id,
+            "safety": {
+                "read_policy_filtering": True,
+                "returns_raw_content": False,
+                "hidden_totals_exposed": False,
+                "cursor_advances_on_readable_changes_only": True,
+            },
+        }
+
+    def get_metadata(
+        self,
+        memory_id: int | str,
+        *,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> dict[str, Any] | None:
+        if not str(agent_id or "").strip():
+            return None
+        memory_id_i = _positive_memory_id(memory_id)
+        if memory_id_i is None:
+            return None
+        try:
+            read_policy = strict_read_policy(
+                agent_id=agent_id,
+                include_private=include_private,
+                max_sensitivity=max_sensitivity,
+            )
+        except InvalidMaxSensitivity:
+            return None
+        with VaultDB(self.resolved_db_path) as db:
+            row = db.get_knowledge(memory_id_i)
+            audit = db.conn.execute(
+                """SELECT id FROM memory_audit_log
+                   WHERE target_type='knowledge' AND target_id=?
+                   ORDER BY id DESC LIMIT 1""",
+                (str(memory_id_i),),
+            ).fetchone()
+        if not row or not can_read_memory(row, read_policy):
+            return None
+        audit_ref = f"audit:{int(audit['id'])}" if audit else ""
+        return memory_change_envelope(row, audit_ref=audit_ref)
+
+    def get_revision(
+        self,
+        memory_id: int | str,
+        revision_id: str,
+        **kwargs: Any,
+    ) -> dict[str, Any] | None:
+        metadata = self.get_metadata(memory_id, **kwargs)
+        if metadata is None or metadata.get("revision_id") != str(revision_id or ""):
+            return None
+        return metadata
+
+    def read_bounded_evidence(
+        self,
+        memory_id: int | str,
+        revision_id: str,
+        *,
+        line_start: int,
+        line_end: int,
+        max_lines: int = MAX_BOUNDED_EVIDENCE_LINES,
+        agent_id: str = "",
+        include_private: bool = False,
+        max_sensitivity: str = "",
+    ) -> dict[str, Any]:
+        if not str(agent_id or "").strip():
+            return dict(_AGENT_ID_REQUIRED)
+        try:
+            read_policy = strict_read_policy(
+                agent_id=agent_id,
+                include_private=include_private,
+                max_sensitivity=max_sensitivity,
+            )
+        except InvalidMaxSensitivity:
+            return dict(_INVALID_MAX_SENSITIVITY)
+        memory_id_i = _positive_memory_id(memory_id)
+        if memory_id_i is None:
+            return {"status": "error", "error": "memory_id_invalid"}
+        metadata = self.get_metadata(
+            memory_id_i,
+            agent_id=agent_id,
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+        )
+        if metadata is None:
+            return {"status": "error", "error": "not_found_or_not_readable"}
+        if (
+            read_policy.active
+            and metadata.get("lifecycle", {}).get("status") != "active"
+        ):
+            return {"status": "error", "error": "not_found_or_not_readable"}
+        expected_revision = str(revision_id or "")
+        if not expected_revision:
+            return {"status": "error", "error": "revision_id_required"}
+        if metadata["revision_id"] != expected_revision:
+            return {
+                "status": "error",
+                "error": "revision_mismatch",
+                "memory_id": str(memory_id_i),
+                "current_revision_id": metadata["revision_id"],
+            }
+
+        from .mcp_read import _vault_read_range_payload
+
+        try:
+            requested_max_lines = int(max_lines)
+        except (TypeError, ValueError):
+            requested_max_lines = MAX_BOUNDED_EVIDENCE_LINES
+        if requested_max_lines <= 0:
+            requested_max_lines = MAX_BOUNDED_EVIDENCE_LINES
+        effective_max_lines = min(requested_max_lines, MAX_BOUNDED_EVIDENCE_LINES)
+
+        payload = _vault_read_range_payload(
+            memory_id_i,
+            line_start=line_start,
+            line_end=line_end,
+            max_lines=effective_max_lines,
+            agent_id=agent_id,
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+            db_path=str(self.resolved_db_path),
+        )
+        if payload.get("error"):
+            payload.setdefault("status", "error")
+            return payload
+        after = self.get_metadata(
+            memory_id_i,
+            agent_id=agent_id,
+            include_private=include_private,
+            max_sensitivity=max_sensitivity,
+        )
+        if after is None or after.get("revision_id") != expected_revision:
+            return {
+                "status": "error",
+                "error": "revision_changed_during_read",
+                "memory_id": str(memory_id_i),
+            }
+        payload.update(
+            {
+                "status": "ok",
+                "memory_id": str(memory_id_i),
+                "revision_id": expected_revision,
+                "content_sha256": metadata["content_sha256"],
+                "audit_ref": metadata["audit_ref"],
+                "provider": self.provider_id,
+                "safety": {
+                    "bounded_read": True,
+                    "max_lines": effective_max_lines,
+                    "revision_bound": True,
+                    "read_policy_filtering": True,
+                    "returns_full_raw_content": False,
+                },
+            }
+        )
+        return payload
 
     def create_candidate(self, **kwargs: Any) -> dict[str, Any]:
         with VaultDB(self.resolved_db_path) as db:
@@ -273,6 +688,9 @@ class SQLiteMemoryProvider:
             ok, err = _validate_update_fields(before, fields)
             if not ok:
                 return {"status": "blocked", "error": err, "memory_id": int(memory_id)}
+            for field in ("scope", "sensitivity", "status"):
+                if field in fields:
+                    fields[field] = str(fields[field] or "").strip().lower()
             changed = db.update_knowledge(int(memory_id), **fields)
             if changed:
                 record_audit_event(
@@ -420,7 +838,17 @@ def _provider_safety_flags() -> dict[str, bool]:
         "metadata_only_audit": True,
         "metadata_only_timeline": True,
         "read_policy_filtering": True,
+        "change_pages_hide_filtered_counts": True,
+        "revision_bound_bounded_evidence": True,
     }
+
+
+def _positive_memory_id(value: Any) -> int | None:
+    try:
+        memory_id = int(value)
+    except (TypeError, ValueError):
+        return None
+    return memory_id if memory_id > 0 else None
 
 
 def _compact_memory_metadata(row: dict[str, Any]) -> dict[str, Any]:

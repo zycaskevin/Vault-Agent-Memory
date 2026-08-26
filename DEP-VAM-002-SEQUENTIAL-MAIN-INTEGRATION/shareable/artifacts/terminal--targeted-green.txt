@@ -1,0 +1,12 @@
+integration_head=8358bb95e6f26f3ec2f7ff36009d67570092c6b4
+main_parent=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+memory_change_and_provider=10 passed
+gateway_direct_change_contract=4 passed
+boundary_and_setup_regression=73 passed
+ruff_changed_python=PASS
+module_size_gate=PASS scanned_modules=159
+git_diff_check=PASS
+frozen_subject_diff=EMPTY
+dep_memory_change_envelope_strict=PASS
+dep_coderabbit_remediation_strict=PASS
+ci_contract_verify=PASS

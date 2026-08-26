@@ -1,0 +1,27 @@
+collector=terminal
+record_type=bounded_result_summary
+command=umask 022; env PATH=$VAM002_PINNED_PATH GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 PYTHONDONTWRITEBYTECODE=1 sddgov ci local-gate .
+candidate_head=f81fff6b129515917f3f8c2d6a59b69ac107a3ab
+implementation_commit=9308751b8616e5cccd51f2f1d0c00ca35f01b558
+base=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+worktree=$BUILDER_WORKTREE
+origin=https://github.com/zycaskevin/Vault-Agent-Memory.git
+origin_main=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+private_boundaries=0700
+tracked_physical_modes_pre=PASS count=1508 mismatches=0
+doctor=PASS
+ci_contract=PASS
+readme_smoke=PASS
+release_parity=PASS
+identity_isolated_subject_nodes=PASS count=446
+repository_pytest=PASS passed=2975 skipped=10 warnings=1 duration_seconds=270.29
+warning=tests/test_semantic_chunk_coverage.py:101 DeprecationWarning invalid escape sequence
+local_green_exit=0
+non_sandbox_run_count=1
+post_run_head_exact=yes
+post_run_worktree_clean=yes
+post_run_diff_check=PASS
+post_run_tracked_physical_modes=PASS count=1508 mismatches=0
+frozen_subject_diff=PASS
+push_sign_trust_merge_deploy_shared_install=none
+live_hermes_or_production_data=not accessed

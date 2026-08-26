@@ -1,0 +1,5 @@
+command=/tmp/vam-python-path-vam001/python -m pytest -q tests/test_memory_change_envelope.py::test_mixed_case_deleted_status_is_stored_and_emitted_canonically tests/test_memory_change_envelope.py::test_unknown_stored_sensitivity_fails_closed_for_all_provider_reads
+result=FAILED exit=1; 2 failed in 0.15s
+failure_1=update_memory accepted status Deleted but stored Deleted; expected canonical deleted
+failure_2=active read policy exposed malformed stored sensitivity top-secret in list_changes; expected row absent
+redaction=removed pytest temporary path and local username from traceback

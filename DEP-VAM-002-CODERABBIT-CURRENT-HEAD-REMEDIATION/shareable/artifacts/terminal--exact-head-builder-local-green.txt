@@ -1,0 +1,16 @@
+PR #500 current-head remediation Builder Local Green proof
+candidate_head=5efde41f1a1846439f81a10c928687388b0f15fd
+base_head=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+worktree=$BUILDER_WORKTREE
+command=umask 022; env PATH=$VAULT_PYTHON_SHIM:$SDDGOV_RUNTIME/bin:/usr/local/bin:/usr/bin:/bin GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 sddgov ci local-gate .
+doctor_ci_readme_release_parity=PASS
+identity_isolated_subject=446 passed
+repository_pytest=2969 passed, 10 skipped, 1 existing warning
+local_green_exit=0
+post_run_head_exact=yes
+post_run_worktree_clean=yes
+tracked_physical_modes=1443 exact, 0 mismatch
+frozen_subject_diff=empty
+git_diff_check=PASS
+live_data_mutation=none
+push_sign_trust_merge_deploy=none

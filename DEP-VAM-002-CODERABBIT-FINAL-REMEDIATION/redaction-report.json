@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--final-exact-head-local-green.txt",
+      "output": "terminal--final-exact-head-local-green.txt",
+      "source_sha256": "4b9a844c6633bb55b3384703345bc0e58fa8a084ce560e06e68c18c06f54481c",
+      "output_sha256": "4b9a844c6633bb55b3384703345bc0e58fa8a084ce560e06e68c18c06f54481c",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--final-local-green-origin-main-fail.txt",
+      "output": "terminal--final-local-green-origin-main-fail.txt",
+      "source_sha256": "b1abfccf06a55554cf14b2fdcfbdee95bca615b964847835472d715223e834cc",
+      "output_sha256": "b1abfccf06a55554cf14b2fdcfbdee95bca615b964847835472d715223e834cc",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--final-local-green-remote-fail.txt",
+      "output": "terminal--final-local-green-remote-fail.txt",
+      "source_sha256": "3669dd8ec14f22ec50c038ef858f1857918646a7183654fcf44e1ef542236fe1",
+      "output_sha256": "3669dd8ec14f22ec50c038ef858f1857918646a7183654fcf44e1ef542236fe1",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--final-review-green.txt",
+      "output": "terminal--final-review-green.txt",
+      "source_sha256": "1bde3dc1154ec178a45cb5b1ef106e295eff9aae18bdfe98ce154323a8a593e5",
+      "output_sha256": "16a4f9af56f464030f8ce9b3a9a47b0a34ff41a84466046a5579ea4bac48c962",
+      "redactions": {
+        "evidence_clarification": 1
+      }
+    },
+    {
+      "source": "terminal--final-review-red-source.txt",
+      "output": "terminal--final-review-red-source.txt",
+      "source_sha256": "8bc85a88c61dee137d8f2dacede5cc3e722b9f1b80e4a596ee85791f5af62b88",
+      "output_sha256": "8bc85a88c61dee137d8f2dacede5cc3e722b9f1b80e4a596ee85791f5af62b88",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--origin-main-preparation-green.txt",
+      "output": "terminal--origin-main-preparation-green.txt",
+      "source_sha256": "be0e0a762989e013531bb093dfdfe7a91cc60498ccc0c667149edc4014731042",
+      "output_sha256": "be0e0a762989e013531bb093dfdfe7a91cc60498ccc0c667149edc4014731042",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {
+    "evidence_clarification": 1
+  },
+  "dep_id": "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION",
+  "generated_at": "2026-08-23T12:08:57Z"
+}

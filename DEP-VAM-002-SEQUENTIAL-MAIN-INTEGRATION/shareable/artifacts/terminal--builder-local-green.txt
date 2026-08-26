@@ -1,0 +1,20 @@
+PR: #500
+Phase: Builder exact-head Local Green
+Worktree: $BUILDER_WORKTREE
+Branch: detached exact candidate
+HEAD: bee2543d02e3ad2c3436e6246703f31c743bdf72
+Base/main: c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+Command contract: sddgov ci local-gate . with CI-pinned core.abbrev=40 environment
+Result: PASS (exit 0)
+Governance doctor: PASS
+CI contract verify: PASS
+README command smoke: PASS
+Release parity: PASS
+Identity-isolated Subject nodes: 446 PASS
+Repository pytest: 2958 passed, 10 skipped, 1 existing invalid-escape warning
+Post-run HEAD: bee2543d02e3ad2c3436e6246703f31c743bdf72
+Post-run tracked/untracked status: clean
+Post-run physical tracked modes: exact index match; no group/world-writable worktree files
+Frozen Subject diff against base/main: empty
+Authorization: [REDACTED_AUTHORIZATION]
+Completed at: 2026-08-22T11:18:27Z

@@ -1,0 +1,76 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-2026-08-25-REMEDIATION",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-1.txt",
+      "sha256": "4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342",
+      "collected_at": "2026-08-25T16:12:21Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-2.txt",
+      "sha256": "f838ad69afc526744a4f6b77faf9e46a71b605c184fa479a1db880a24b6270c3",
+      "collected_at": "2026-08-25T16:13:32Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-3.txt",
+      "sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d",
+      "collected_at": "2026-08-25T16:17:02Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-4.txt",
+      "sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "collected_at": "2026-08-25T16:44:43Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--artifact-1.txt",
+      "sha256": "4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-2.txt",
+      "sha256": "f838ad69afc526744a4f6b77faf9e46a71b605c184fa479a1db880a24b6270c3",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-3.txt",
+      "sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-4.txt",
+      "sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--boundary-freeze-green.txt",
+      "sha256": "f838ad69afc526744a4f6b77faf9e46a71b605c184fa479a1db880a24b6270c3",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--current-head-binding-green.txt",
+      "sha256": "4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--second-review-green.txt",
+      "sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--vam002-regression-green.txt",
+      "sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d",
+      "shareable": true
+    }
+  ]
+}

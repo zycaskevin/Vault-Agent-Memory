@@ -1,0 +1,72 @@
+{
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-AUDIT-DESCENDANT-ROLLBACK-GUARD",
+  "raw": [
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-1.txt",
+      "source_suffix": ".txt",
+      "media_type": "text/plain; charset=utf-8",
+      "sha256": "f8a3e8c98cbffc85a8098e1d3e8d0060fa3b33506a20b5e807c6b0ee17097a7b",
+      "size": 581,
+      "collected_at": "2026-08-24T12:31:44Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-2.txt",
+      "source_suffix": ".txt",
+      "media_type": "text/plain; charset=utf-8",
+      "sha256": "c973a4655adc63e357951fb60da8e4d64010c70537e31ad8df7fb8e3329ac91a",
+      "size": 848,
+      "collected_at": "2026-08-24T12:39:24Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-3.txt",
+      "source_suffix": ".txt",
+      "media_type": "text/plain; charset=utf-8",
+      "sha256": "bf85bd06396f9cbbaf1b717d2c86f06297f27d04addfe8bb23192215dd3624bd",
+      "size": 1444,
+      "collected_at": "2026-08-24T12:46:17Z",
+      "shareable": false
+    },
+    {
+      "collector": "terminal",
+      "path": "private/raw/terminal--artifact-4.txt",
+      "source_suffix": ".txt",
+      "media_type": "text/plain; charset=utf-8",
+      "sha256": "d79dccc73787eb42468bb8404164f75b17966ef0d9c52f6270f69d3d328fe94a",
+      "size": 1077,
+      "collected_at": "2026-08-24T15:23:58Z",
+      "shareable": false
+    }
+  ],
+  "shareable": [
+    {
+      "path": "shareable/artifacts/terminal--artifact-1.txt",
+      "sha256": "f8a3e8c98cbffc85a8098e1d3e8d0060fa3b33506a20b5e807c6b0ee17097a7b",
+      "size": 581,
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-2.txt",
+      "sha256": "c973a4655adc63e357951fb60da8e4d64010c70537e31ad8df7fb8e3329ac91a",
+      "size": 848,
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-3.txt",
+      "sha256": "f6bf001483d4d5d32d36f852046420814b7c66d4117f6bfe2c70e10ce2082d01",
+      "size": 1486,
+      "shareable": true
+    },
+    {
+      "path": "shareable/artifacts/terminal--artifact-4.txt",
+      "sha256": "d79dccc73787eb42468bb8404164f75b17966ef0d9c52f6270f69d3d328fe94a",
+      "size": 1077,
+      "shareable": true
+    }
+  ]
+}

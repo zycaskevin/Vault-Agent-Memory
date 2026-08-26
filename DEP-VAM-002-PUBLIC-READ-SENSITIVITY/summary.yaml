@@ -1,0 +1,51 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-PUBLIC-READ-SENSITIVITY",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-22T13:35:46Z",
+  "updated_at": "2026-08-22T19:18:52Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-22T13:35:46Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-22T13:39:57Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-22T13:39:57Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-22T13:57:46Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-22T19:18:52Z"
+      }
+    ]
+  },
+  "expected_behavior": "Every VAM-002 provider read requires a non-empty agent identity; every public Memory API read facade rejects an unknown sensitivity ceiling before adapter dispatch; malformed stored governance labels fail closed; trusted updates store canonical labels; and tombstones are emitted consistently.",
+  "actual_behavior": "Missing provider identity, invalid facade sensitivity, unknown stored scope or sensitivity, and mixed-case lifecycle status could expose governed data or misclassify a tombstone; HTTP and normative evidence contracts were also incomplete.",
+  "environment": {
+    "commit": "initial Red at d2bed8a66895691e6765498490902b123129724a; follow-up Red/Fix/Green at b7326b344ef4bbf42e64691859fa6aaf396fb9f3 plus uncommitted test-only then bounded implementation/evidence changes; exact Proof at 1a346913563f5437b7815f655393f0eee5a0da52",
+    "branch": "codex/vam-002-memory-change-envelope",
+    "runtime": "CPython 3.11 repository development environment; Agentic SDD Governance 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--public-read-sensitivity-proof.txt",
+      "sha256": "d17d5de88294be14242d72bb5ce156a0ea8b6d9edd2edff0ddfb3d9db4ff671f"
+    }
+  ]
+}

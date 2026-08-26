@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--artifact-1.txt",
+      "output": "terminal--artifact-1.txt",
+      "source_sha256": "4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342",
+      "output_sha256": "4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--artifact-2.txt",
+      "output": "terminal--artifact-2.txt",
+      "source_sha256": "f838ad69afc526744a4f6b77faf9e46a71b605c184fa479a1db880a24b6270c3",
+      "output_sha256": "f838ad69afc526744a4f6b77faf9e46a71b605c184fa479a1db880a24b6270c3",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--artifact-3.txt",
+      "output": "terminal--artifact-3.txt",
+      "source_sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d",
+      "output_sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--artifact-4.txt",
+      "output": "terminal--artifact-4.txt",
+      "source_sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "output_sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--boundary-freeze-green.txt",
+      "output": "terminal--boundary-freeze-green.txt",
+      "source_sha256": "f838ad69afc526744a4f6b77faf9e46a71b605c184fa479a1db880a24b6270c3",
+      "output_sha256": "f838ad69afc526744a4f6b77faf9e46a71b605c184fa479a1db880a24b6270c3",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--current-head-binding-green.txt",
+      "output": "terminal--current-head-binding-green.txt",
+      "source_sha256": "4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342",
+      "output_sha256": "4bcefcc9f6c645923b9993ccf73ad92e6b400ca25458ea14e095857fc2131342",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--second-review-green.txt",
+      "output": "terminal--second-review-green.txt",
+      "source_sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "output_sha256": "35a1d58c48b74e0e3e7b158b5545a9552f2371583edfef1ea0d022c59f5a0a1c",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--vam002-regression-green.txt",
+      "output": "terminal--vam002-regression-green.txt",
+      "source_sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d",
+      "output_sha256": "1cd7ef8b4e12f78b5b43e00acb0994f9904f7f4d97a035dd568176451acef89d",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-002-CODERABBIT-2026-08-25-REMEDIATION",
+  "generated_at": "2026-08-25T16:44:43Z"
+}

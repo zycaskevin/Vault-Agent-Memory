@@ -1,0 +1,11 @@
+collector=terminal
+source_head=15eb5583d7fdf02358c4978cd22ab28ebd796ee4 plus remediation worktree
+command_1=env PYTHONPATH=. $VAULT_TEST_PYTHON -m pytest -q tests/test_memory_change_envelope.py tests/test_memory_provider.py tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract tests/test_gateway.py::test_memory_api_all_read_facades_reject_invalid_sensitivity_before_dispatch tests/test_gateway.py::test_gateway_memory_api_facade_is_candidate_first_and_metadata_only tests/test_gateway.py::test_gateway_preserves_opaque_memory_reference_for_provider_validation tests/test_vault_boundary_freeze.py::test_vam002_rollback_is_executable_and_fail_closed_under_optimized_python
+result_1=22 passed in 0.97s; exit 0
+command_2=env PYTHONPATH=. $VAULT_TEST_PYTHON -m pytest -q tests/test_gateway.py::test_gateway_http_memory_api_facade_routes
+result_2=1 passed in 0.70s outside sandbox for local loopback only; exit 0
+command_3=$RUFF check tests/test_gateway.py tests/test_memory_change_envelope.py tests/test_vault_boundary_freeze.py vault/access_policy.py vault/gateway.py vault/gateway_memory_api.py vault/gateway_openapi.py vault/governance_read_guard.py vault/memory_change_envelope.py vault/memory_provider.py
+result_3=All checks passed; exit 0
+command_4=git diff --check
+result_4=clean; exit 0
+privacy=synthetic temporary fixtures only; no live database or Hermes data

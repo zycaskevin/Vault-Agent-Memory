@@ -1,0 +1,10 @@
+collector=terminal
+base=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+reviewed_public_head=acb6de412587d614086d4ae824abc2c2db277153
+command=env PYTHONPATH=. $VAULT_TEST_PYTHON -m pytest -q tests/test_access_policy.py::test_active_read_policy_defaults_only_absent_governance_labels tests/test_memory_change_envelope.py::test_present_empty_governance_labels_fail_closed_across_provider_reads tests/test_gateway.py::test_memory_change_http_errors_use_non_success_status_and_openapi_contract
+result=FAIL failed=3 duration_seconds=0.38
+failure_1=present empty scope was readable under active policy
+failure_2=SQLite change page exposed a present empty-sensitivity row
+failure_3=OpenAPI PATCH and DELETE responses omitted HTTP 400
+fixtures=synthetic local SQLite only
+live_hermes_or_production_data=not accessed

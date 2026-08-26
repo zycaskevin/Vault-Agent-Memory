@@ -1,0 +1,11 @@
+PR #500 public-read sensitivity exact-head Proof
+candidate_head=1a346913563f5437b7815f655393f0eee5a0da52
+missing_agent_and_invalid_ceiling_regressions=PASS in complete repository suite
+unknown_stored_scope_and_sensitivity_regressions=PASS in complete repository suite
+mixed_case_tombstone_regression=PASS in complete repository suite
+identity_isolated_subject=446 passed
+repository_pytest=2967 passed, 10 skipped, 1 existing warning
+local_green_exit=0
+post_run_head_exact_and_clean=yes
+frozen_subject_diff=empty
+live_data_mutation=none

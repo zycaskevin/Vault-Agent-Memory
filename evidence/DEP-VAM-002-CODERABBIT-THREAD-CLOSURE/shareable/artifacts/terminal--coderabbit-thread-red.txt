@@ -1,0 +1,9 @@
+collector=terminal
+candidate_head=077fc5355703e4ba10fe61d7556c6c8368a8830c
+command=scan rollback Markdown for lines beginning with #500
+expected=zero lines beginning with #500
+actual=bad_lines=[13]
+result=FAIL
+source=DEP-VAM-002-INDEPENDENT-REVIEW-REMEDIATION/rollback.md
+review_thread=https://github.com/zycaskevin/Vault-Agent-Memory/pull/500#discussion_r3836142902
+live_hermes_or_production_data=not accessed

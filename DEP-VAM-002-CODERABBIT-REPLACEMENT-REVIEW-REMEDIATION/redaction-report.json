@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--exact-head-local-green.txt",
+      "output": "terminal--exact-head-local-green.txt",
+      "source_sha256": "12c4050d39b25b7f8c24faee382e70414073f0e1d1cd2c08e91713f156b5720e",
+      "source_size": 1019,
+      "output_sha256": "12c4050d39b25b7f8c24faee382e70414073f0e1d1cd2c08e91713f156b5720e",
+      "output_size": 1019,
+      "redactions": {}
+    },
+    {
+      "source": "terminal--replacement-review-green.txt",
+      "output": "terminal--replacement-review-green.txt",
+      "source_sha256": "380099c8c0ebf4a39c9b635e0ffefa1be72e28916804c80f89ec01eefc421727",
+      "source_size": 1799,
+      "output_sha256": "380099c8c0ebf4a39c9b635e0ffefa1be72e28916804c80f89ec01eefc421727",
+      "output_size": 1799,
+      "redactions": {}
+    },
+    {
+      "source": "terminal--replacement-review-red.txt",
+      "output": "terminal--replacement-review-red.txt",
+      "source_sha256": "9520c37150361cb3dbfa6cbbfb88cfbdb85e7a5eef68d6c4fbc14feffa69be78",
+      "source_size": 1174,
+      "output_sha256": "9520c37150361cb3dbfa6cbbfb88cfbdb85e7a5eef68d6c4fbc14feffa69be78",
+      "output_size": 1174,
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION",
+  "generated_at": "2026-08-24T12:23:24Z"
+}

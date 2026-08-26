@@ -1,0 +1,25 @@
+collector=terminal
+command=umask 022; env PATH=$PINNED_PATH GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=core.abbrev GIT_CONFIG_VALUE_0=40 sddgov ci local-gate .
+candidate_head=c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a
+base=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+worktree=$BUILDER_WORKTREE
+origin=https://github.com/zycaskevin/Vault-Agent-Memory.git
+origin_main=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+boundary_modes=0700
+tracked_physical_modes_pre=PASS count=1455
+doctor=PASS
+ci_contract=PASS
+readme_smoke=PASS
+release_parity=PASS
+identity_isolated_subject_nodes=PASS count=446
+repository_pytest=PASS passed=2970 skipped=10 warnings=1
+warning=tests/test_semantic_chunk_coverage.py:101 DeprecationWarning invalid escape sequence
+local_green_exit=0
+post_run_head_exact=yes
+post_run_worktree_clean=yes
+post_run_diff_check=PASS
+post_run_tracked_physical_modes=PASS count=1455
+frozen_subject_diff=PASS
+non_sandbox_retry_count=1
+push_sign_trust_merge_deploy=none
+live_hermes_or_production_data=not accessed

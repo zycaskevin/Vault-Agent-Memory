@@ -1,0 +1,71 @@
+{
+  "$schema": "../.agentic-sdd-governance/schemas/debug-evidence-package.schema.json",
+  "schema_version": "1.0",
+  "dep_id": "DEP-VAM-002-CODERABBIT-FINAL-REMEDIATION",
+  "issue": "docs/issues/VAM-002-memory-change-envelope.md",
+  "sdd_references": [
+    "docs/specs/vam-002-memory-change-envelope.md"
+  ],
+  "risk_level": "L1",
+  "created_at": "2026-08-23T03:55:03Z",
+  "updated_at": "2026-08-23T12:09:33Z",
+  "workflow": {
+    "phase": "proof",
+    "history": [
+      {
+        "phase": "red",
+        "at": "2026-08-23T03:55:03Z"
+      },
+      {
+        "phase": "evidence",
+        "at": "2026-08-23T03:57:19Z"
+      },
+      {
+        "phase": "fix",
+        "at": "2026-08-23T03:57:20Z"
+      },
+      {
+        "phase": "green",
+        "at": "2026-08-23T04:03:27Z"
+      },
+      {
+        "phase": "proof",
+        "at": "2026-08-23T12:09:33Z"
+      }
+    ]
+  },
+  "expected_behavior": "Rollback verification distinguishes expected RED reproduction from commands that must stay Green, evidence descriptions match the implemented full-row snapshot oracle, remediation scope classifies implementation versus non-production defects truthfully, and Markdown contract tests remain stable under line reflow.",
+  "actual_behavior": "At exact head 36ff168a8c8ffffcc93d12107add2d5ecac0fbd1, rollback.md required a known RED command to exit zero after rollback, two remediation records misdescribed the implemented scope/oracle, and the normative contract test inconsistently checked raw rather than normalized Markdown strings. At exact remediation head c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a, the first proof attempt was blocked by a local-filesystem origin; after the explicitly authorized origin correction, the next attempt was blocked because that pre-existing clone had no refs/remotes/origin/main. Both were Builder checkout-preparation failures. After fetching exact origin/main at base c284e1c7bedf288a10009b98e5f2da525c3ee4bc, the final explicitly authorized exact-head Local Green passed 446 identity-isolated nodes and 2970 repository tests with 10 skips and one pre-existing warning.",
+  "environment": {
+    "commit": "c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a",
+    "branch": "codex/vam-002-memory-change-envelope-ready",
+    "runtime": "CPython 3.11; Agentic SDD Governance 0.2.0-experimental.6"
+  },
+  "root_cause_status": "confirmed",
+  "attachments": [
+    {
+      "path": "shareable/artifacts/terminal--final-review-red-source.txt",
+      "sha256": "8bc85a88c61dee137d8f2dacede5cc3e722b9f1b80e4a596ee85791f5af62b88"
+    },
+    {
+      "path": "shareable/artifacts/terminal--final-review-green.txt",
+      "sha256": "16a4f9af56f464030f8ce9b3a9a47b0a34ff41a84466046a5579ea4bac48c962"
+    },
+    {
+      "path": "shareable/artifacts/terminal--final-local-green-remote-fail.txt",
+      "sha256": "3669dd8ec14f22ec50c038ef858f1857918646a7183654fcf44e1ef542236fe1"
+    },
+    {
+      "path": "shareable/artifacts/terminal--final-local-green-origin-main-fail.txt",
+      "sha256": "b1abfccf06a55554cf14b2fdcfbdee95bca615b964847835472d715223e834cc"
+    },
+    {
+      "path": "shareable/artifacts/terminal--origin-main-preparation-green.txt",
+      "sha256": "be0e0a762989e013531bb093dfdfe7a91cc60498ccc0c667149edc4014731042"
+    },
+    {
+      "path": "shareable/artifacts/terminal--final-exact-head-local-green.txt",
+      "sha256": "4b9a844c6633bb55b3384703345bc0e58fa8a084ce560e06e68c18c06f54481c"
+    }
+  ]
+}

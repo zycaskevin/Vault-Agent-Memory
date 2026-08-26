@@ -1,0 +1,15 @@
+collector=terminal
+candidate_head=c004c04cd1c1ed471ba39d6d4ad0f5e565dfea5a
+worktree=$BUILDER_WORKTREE
+origin=https://github.com/zycaskevin/Vault-Agent-Memory.git
+origin_main=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+merge_base_origin_main_head=c284e1c7bedf288a10009b98e5f2da525c3ee4bc
+boundary_modes=0700
+tracked_physical_modes=PASS
+tracked_path_count=1455
+head_exact=yes
+worktree_clean=yes
+local_green=NOT_RUN
+retry_authorization=NOT_PRESENT
+push_sign_trust_merge_deploy=none
+live_hermes_or_production_data=not accessed

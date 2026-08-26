@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "files": [
+    {
+      "source": "terminal--current-head-green.txt",
+      "output": "terminal--current-head-green.txt",
+      "source_sha256": "c1c25c9b5f028cf8813ef6713f0ea7a6a97c1ae458b18c7d0b725debc02d8947",
+      "output_sha256": "c1c25c9b5f028cf8813ef6713f0ea7a6a97c1ae458b18c7d0b725debc02d8947",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--current-head-red.txt",
+      "output": "terminal--current-head-red.txt",
+      "source_sha256": "d9e46e181cbc62d4f83aae8e5710c3e215a1f2250f3e59d3c174130add0319cb",
+      "output_sha256": "d9e46e181cbc62d4f83aae8e5710c3e215a1f2250f3e59d3c174130add0319cb",
+      "redactions": {}
+    },
+    {
+      "source": "terminal--exact-head-builder-local-green.txt",
+      "output": "terminal--exact-head-builder-local-green.txt",
+      "source_sha256": "3b39e22c119360c0607b52a7077b26527166ca5df438383e6ee6d6683674a0e1",
+      "output_sha256": "3b39e22c119360c0607b52a7077b26527166ca5df438383e6ee6d6683674a0e1",
+      "redactions": {}
+    }
+  ],
+  "blocked": [],
+  "totals": {},
+  "dep_id": "DEP-VAM-002-CODERABBIT-CURRENT-HEAD-REMEDIATION",
+  "generated_at": "2026-08-23T01:23:49Z"
+}
