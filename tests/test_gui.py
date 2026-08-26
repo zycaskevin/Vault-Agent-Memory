@@ -333,6 +333,7 @@ def test_gui_sync_conflict_detail_and_resolution(tmp_path):
             title="GUI Console Runbook",
             content="Remote content differs from the reviewed local runbook.",
             reason="remote sync conflict",
+            tags="gui,runbook,remote",
             source="remote_write_request",
             source_ref="remote_write_request:req-gui-resolve",
             trust=0.8,

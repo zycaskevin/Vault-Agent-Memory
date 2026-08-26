@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import uuid
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,61 @@ _SHORT_RULE_SIGNALS = (
     "must", "should", "always", "never", "only", "maximum", "minimum", "at most", "at least",
     "必須", "應", "只", "不得", "不要", "永遠", "最多", "至少", "上限", "下限",
 )
+_PROMOTION_REVIEW_TOKEN = object()
+
+
+@dataclass(frozen=True)
+class _PromotionReview:
+    """Runtime-injected review result; never populated from public payloads."""
+
+    kind: str
+    review_ref: str
+    actor_ref: str
+    reason: str
+    canonical_knowledge_id: int
+    _token: object = field(repr=False, compare=False)
+
+
+def _conflict_promotion_review(
+    *,
+    conflict_ref: str,
+    actor_ref: str,
+    reason: str,
+    canonical_knowledge_id: int,
+) -> _PromotionReview:
+    """Create a bounded review result after the conflict runtime validates it."""
+    conflict = str(conflict_ref or "").strip()
+    actor = str(actor_ref or "").strip()
+    review_reason = str(reason or "").strip()
+    knowledge_id = int(canonical_knowledge_id or 0)
+    if not conflict or not actor or not review_reason or knowledge_id <= 0:
+        raise ValueError(
+            "reviewed conflict promotion requires conflict, actor, reason, and canonical knowledge"
+        )
+    return _PromotionReview(
+        kind="conflict_resolution",
+        review_ref=conflict,
+        actor_ref=actor,
+        reason=review_reason,
+        canonical_knowledge_id=knowledge_id,
+        _token=_PROMOTION_REVIEW_TOKEN,
+    )
+
+
+def _review_allows_warnings(
+    review: _PromotionReview | None,
+    *,
+    duplicate: dict,
+    quality: dict,
+) -> bool:
+    """Allow only the duplicate selected by a validated conflict decision."""
+    if not isinstance(review, _PromotionReview) or review._token is not _PROMOTION_REVIEW_TOKEN:
+        return False
+    if review.kind != "conflict_resolution" or quality["status"] != "pass":
+        return False
+    findings = duplicate.get("findings") or []
+    expected = f"knowledge:{review.canonical_knowledge_id}"
+    return bool(findings) and all(finding.get("span") == expected for finding in findings)
 
 
 def normalize_title(title: str) -> str:
@@ -419,8 +475,14 @@ def create_candidate(db: VaultDB, **kwargs) -> dict:
         "gates": {"privacy": privacy["status"], "duplicate": duplicate["status"], "metadata": metadata["status"], "quality": quality["status"]},
         "gate_payload": gates,
     }
-    if not rejected:
+    if not rejected and duplicate["status"] == "pass" and quality["status"] == "pass":
         result["next_action"] = {"tool": "vault_memory_promote", "arguments": {"candidate_id": candidate_id, "confirm": True}}
+    elif not rejected:
+        result["next_action"] = {
+            "tool": "vault_memory_review",
+            "arguments": {"candidate_id": candidate_id},
+            "reason": "Resolve quality or duplicate warnings before promotion.",
+        }
     return result
 
 
@@ -450,7 +512,16 @@ def _unique_raw_path(project_dir: Path, title: str) -> Path:
     return path
 
 
-def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, project_dir: str | Path | None = None, compile: bool = True, build_map: bool = True) -> dict:
+def promote_candidate(
+    db: VaultDB,
+    candidate_id: str,
+    *,
+    confirm: bool = False,
+    project_dir: str | Path | None = None,
+    compile: bool = True,
+    build_map: bool = True,
+    _runtime_review: _PromotionReview | None = None,
+) -> dict:
     if not confirm:
         raise ValueError("promotion requires confirm=True")
     candidate = db.get_memory_candidate(candidate_id)
@@ -489,6 +560,33 @@ def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, 
             gates=gates,
         )
         return {"status": "blocked", "candidate_id": candidate_id, "knowledge_id": None, "gates": gates}
+
+    warning_gates = [
+        name
+        for name, result in (("duplicate", duplicate), ("quality", quality))
+        if result["status"] != "pass"
+    ]
+    review_applied = bool(warning_gates) and _review_allows_warnings(
+        _runtime_review,
+        duplicate=duplicate,
+        quality=quality,
+    )
+    if warning_gates and not review_applied:
+        db.update_memory_candidate(
+            candidate_id,
+            privacy_status=privacy["status"],
+            duplicate_status=duplicate["status"],
+            quality_status=quality["status"],
+            gate_payload_json=json.dumps(gates, ensure_ascii=False, sort_keys=True),
+        )
+        return {
+            "status": "review_required",
+            "candidate_id": candidate_id,
+            "knowledge_id": None,
+            "warning_gates": warning_gates,
+            "gates": gates,
+            "next_action": "Resolve the warnings or choose the canonical memory before promotion.",
+        }
 
     root = Path(project_dir) if project_dir is not None else db.db_path.parent
     raw_path = _unique_raw_path(root, candidate["title"])
@@ -554,7 +652,7 @@ def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, 
         knowledge_id=knowledge_id,
         gates=gates,
     )
-    return {
+    result = {
         "status": "promoted",
         "candidate_id": candidate_id,
         "knowledge_id": knowledge_id,
@@ -563,3 +661,11 @@ def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, 
         "knowledge": db.get_knowledge(knowledge_id),
         "candidate": db.get_memory_candidate(candidate_id),
     }
+    if review_applied and _runtime_review is not None:
+        result["review"] = {
+            "kind": _runtime_review.kind,
+            "review_ref": _runtime_review.review_ref,
+            "actor_ref": _runtime_review.actor_ref,
+            "canonical_knowledge_id": _runtime_review.canonical_knowledge_id,
+        }
+    return result

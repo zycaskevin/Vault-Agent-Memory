@@ -1,5 +1,5 @@
 from vault.db import VaultDB
-from vault.memory import create_candidate, quality_gate
+from vault.memory import create_candidate, promote_candidate, quality_gate
 
 
 def _types(result: dict) -> set[str]:
@@ -82,3 +82,80 @@ def test_semantic_fields_are_persisted_inside_legacy_gate_payload(tmp_path):
 
     assert created["gate_payload"]["quality"]["policy"] == "semantic-quality"
     assert '"semantic_completeness": "complete"' in row["gate_payload_json"]
+
+
+def test_warning_candidate_requires_review_before_promotion(tmp_path):
+    with VaultDB(tmp_path / "vault.db") as db:
+        created = create_candidate(
+            db,
+            title="產品價值",
+            content="你的產品真正有價值的是：",
+            tags="product,value",
+            reason="Captured from a conversation.",
+            source="test",
+        )
+        promoted = promote_candidate(
+            db,
+            created["candidate_id"],
+            confirm=True,
+            project_dir=tmp_path,
+        )
+
+        assert created["next_action"]["tool"] == "vault_memory_review"
+        assert promoted["status"] == "review_required"
+        assert promoted["knowledge_id"] is None
+        assert promoted["warning_gates"] == ["quality"]
+        assert db.get_memory_candidate(created["candidate_id"])["status"] == "candidate"
+        assert db.conn.execute("SELECT COUNT(*) AS n FROM knowledge").fetchone()["n"] == 0
+        assert not (tmp_path / "raw").exists()
+
+
+def test_duplicate_candidate_requires_canonical_choice_before_promotion(tmp_path):
+    with VaultDB(tmp_path / "vault.db") as db:
+        db.add_knowledge(
+            title="API retry ceiling",
+            content_raw="API retries must stop after three attempts.",
+            source="test",
+        )
+        created = create_candidate(
+            db,
+            title="API retry ceiling",
+            content="API retries must stop after three attempts.",
+            tags="api,retry",
+            reason="Repeated source observation.",
+            source="test",
+        )
+        promoted = promote_candidate(
+            db,
+            created["candidate_id"],
+            confirm=True,
+            project_dir=tmp_path,
+        )
+
+        assert promoted["status"] == "review_required"
+        assert "duplicate" in promoted["warning_gates"]
+        assert db.conn.execute("SELECT COUNT(*) AS n FROM knowledge").fetchone()["n"] == 1
+        assert not (tmp_path / "raw").exists()
+
+
+def test_clean_candidate_still_promotes_under_strict_contract(tmp_path):
+    with VaultDB(tmp_path / "vault.db") as db:
+        created = create_candidate(
+            db,
+            title="API retry ceiling",
+            content="API retries must stop after three attempts.",
+            tags="api,retry",
+            reason="Reviewed operational rule.",
+            source="test",
+        )
+        promoted = promote_candidate(
+            db,
+            created["candidate_id"],
+            confirm=True,
+            project_dir=tmp_path,
+            compile=False,
+        )
+
+        assert created["next_action"]["tool"] == "vault_memory_promote"
+        assert promoted["status"] == "promoted"
+        assert promoted["knowledge_id"] is not None

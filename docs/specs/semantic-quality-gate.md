@@ -25,5 +25,5 @@ make a candidate useful or useless.
 
 The additive semantic fields are persisted inside the existing candidate gate payload,
 so existing candidate rows and callers remain readable without a schema rewrite.
-Promotion Contract v2 and authenticated reviewed overrides are separate work;
-this slice does not treat a caller-supplied identity as review authority.
+Promotion follows the separate canonical Promotion Contract. Caller-supplied
+identity, reviewer, or override fields are never review authority.
