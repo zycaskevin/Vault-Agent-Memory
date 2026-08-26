@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "algorithm": "ed25519",
+  "review": {
+    "review_id": "REV-VAM-002-CURRENT-HEAD-REMEDIATION",
+    "reviewer_id": "codex-vam002-independent-reviewer-20260826",
+    "builder_id": "codex",
+    "change_digest": "20b15664311fd0602024c632d42e0e8caf036cac2997927bc173edee1029cabe",
+    "gate_metadata_digest": "3bb8d82da15973317fb476399f066f6c025d676ec91b0f62e5f0ecf931ad487b",
+    "verdict": "approved",
+    "issued_at": "2026-08-26T00:17:37Z",
+    "expires_at": "2026-08-26T01:17:37Z",
+    "nonce": "310DK3AO5umLs62-kVA5SG_s"
+  },
+  "signature": "qscM7HN1gE6Q02HoQBCzZR9E+GN6JN268EJS+rDMpi+mVdXD18NJ7pHwHHtGE/8lNYq6D+1TnemeLvyOJ8YpAw=="
+}
