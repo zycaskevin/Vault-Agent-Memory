@@ -137,6 +137,29 @@ def test_provider_rejects_non_object_application_metadata(tmp_path):
         )
 
 
+@pytest.mark.parametrize("non_finite", [float("nan"), float("inf"), float("-inf")])
+def test_provider_rejects_non_finite_application_metadata(tmp_path, non_finite):
+    project = tmp_path / "project"
+    project.mkdir()
+    with VaultDB(project / "vault.db"):
+        pass
+
+    provider = sqlite_memory_provider(project)
+    with pytest.raises(ValueError, match="application_metadata must contain JSON values"):
+        provider.create_memory_object_candidate(
+            {
+                "kind": "knowledge",
+                "title": "Non-finite metadata",
+                "content": "Application metadata must remain valid interoperable JSON.",
+                "application_metadata": {"score": non_finite},
+            },
+            reason="Reject non-standard numeric values.",
+        )
+
+    with VaultDB(project / "vault.db") as db:
+        assert db.conn.execute("SELECT count(*) FROM memory_candidates").fetchone()[0] == 0
+
+
 def test_gateway_create_accepts_additive_kind_and_confidence_aliases(tmp_path):
     project = tmp_path / "project"
     project.mkdir()

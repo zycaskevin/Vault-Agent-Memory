@@ -61,7 +61,9 @@ label.
 
 Candidate creation also round-trips caller-supplied JSON `application_metadata`
 as opaque data through the existing candidate compatibility payload. Vault does
-not interpret its keys, and no database migration is required.
+not interpret its keys, and no database migration is required. The value must
+be standards-compliant JSON; non-finite numbers such as `NaN` and infinities
+are rejected before candidate storage.
 
 ## Provider operations
 

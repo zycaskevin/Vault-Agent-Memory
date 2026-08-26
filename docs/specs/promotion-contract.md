@@ -26,6 +26,9 @@ id. CLI, MCP, GUI request payloads cannot construct or forward this internal
 review value. Supplying fields such as `reviewer`, `promotion_mode`, or
 `canonical_knowledge_id` in a public request has no authority.
 
+Only an `open` conflict may be resolved. A resolved conflict ID cannot be reused
+to promote or archive memory again, even if a caller repeats the confirmation.
+
 Vault stores memory and review provenance; it does not model human identity,
 personality, or relationships. Authentication of the runtime actor remains an
 integration responsibility outside the Memory Object domain.

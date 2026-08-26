@@ -39,9 +39,14 @@ _OPAQUE_TITLE_RE = re.compile(
     r"(?:^|[\s_\-:#])(?:[0-9a-f]{8,64}|(?=[0-9a-z]{16,64}(?:$|[\s_\-:#]))(?=[0-9a-z]*[0-9])[0-9a-z]{16,64})(?:$|[\s_\-:#])",
     flags=re.IGNORECASE,
 )
-_SHORT_RULE_SIGNALS = (
-    "must", "should", "always", "never", "only", "maximum", "minimum", "at most", "at least",
-    "必須", "應", "只", "不得", "不要", "永遠", "最多", "至少", "上限", "下限",
+_ENGLISH_SHORT_RULE_RE = re.compile(
+    r"\b(?:must|should|always|never|only|maximum|minimum|at most|at least)\b",
+    flags=re.IGNORECASE,
+)
+_CHINESE_SHORT_RULE_RE = re.compile(
+    r"(?:必須|不得|不要|永遠|最多|至少|上限|下限|只能|只可|僅能|僅可|應該|應當|"
+    r"應(?:先|後|在|於|由|回傳|返回|保持|使用|避免|停止|限制|拒絕|保留|記錄|驗證|"
+    r"執行|提供|允許|要求|符合|支援|採用|儲存|處理))"
 )
 _PROMOTION_REVIEW_TOKEN = object()
 
@@ -186,7 +191,12 @@ def normalize_metadata(
     else:
         try:
             application_metadata_i = json.loads(
-                json.dumps(application_metadata, ensure_ascii=False, sort_keys=True)
+                json.dumps(
+                    application_metadata,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    allow_nan=False,
+                )
             )
         except (TypeError, ValueError) as exc:
             raise ValueError("application_metadata must contain JSON values") from exc
@@ -249,7 +259,10 @@ def quality_gate(meta: dict) -> dict:
     short_complete_rule = (
         6 <= len(content) < 40
         and content.rstrip().endswith((".", "。", "!", "！"))
-        and any(signal in normalized_content for signal in _SHORT_RULE_SIGNALS)
+        and bool(
+            _ENGLISH_SHORT_RULE_RE.search(normalized_content)
+            or _CHINESE_SHORT_RULE_RE.search(content)
+        )
         and not question_only
         and not meta_instruction_only
         and not dangling_punctuation

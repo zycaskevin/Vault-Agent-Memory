@@ -436,6 +436,8 @@ def resolve_conflict(
     if not row:
         raise KeyError(f"conflict not found: {conflict_id}")
     row_d = dict(row)
+    if str(row_d.get("status") or "").strip().lower() != "open":
+        raise ValueError("conflict_not_open")
     applied_changes = _apply_conflict_resolution(
         db,
         row_d,

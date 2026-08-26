@@ -77,6 +77,20 @@ def test_revision_conflict_and_audit_helpers(tmp_path):
         assert list_conflicts(db, status="open", limit=5) == []
         assert any(row["action"] == "conflict:resolved" for row in list_audit_log(db, limit=10))
 
+        with pytest.raises(ValueError, match="conflict_not_open"):
+            resolve_conflict(
+                db,
+                conflicts[0]["id"],
+                resolution="accept_remote",
+                reason="A closed conflict must not be reusable.",
+                actor_agent="review-agent",
+                apply_memory_change=True,
+                project_dir=tmp_path,
+                compile=False,
+            )
+        assert db.get_knowledge(knowledge_id)["status"] == "active"
+        assert db.get_memory_candidate(candidate["candidate_id"])["status"] == "candidate"
+
 
 def test_accept_remote_conflict_requires_explicit_memory_apply(tmp_path):
     db_path = tmp_path / "vault.db"

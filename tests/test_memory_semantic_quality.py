@@ -1,3 +1,5 @@
+import pytest
+
 from vault.db import VaultDB
 from vault.memory import create_candidate, promote_candidate, quality_gate
 
@@ -79,6 +81,32 @@ def test_complete_short_rule_can_pass_without_reason_padding():
     assert result["status"] == "pass"
     assert result["semantic_completeness"] == "complete"
     assert result["future_utility"] == "useful"
+
+
+def test_explicit_chinese_modal_rule_can_pass():
+    result = quality_gate(
+        {"title": "API 回傳格式", "content": "API 應回傳 JSON。", "tags": "api,response"}
+    )
+
+    assert result["status"] == "pass"
+    assert result["semantic_completeness"] == "complete"
+
+
+@pytest.mark.parametrize("content", ["系統回應很快。", "設定相應完成。", "服務反應正常。"])
+def test_chinese_words_containing_ying_are_not_rule_signals(content):
+    result = quality_gate({"title": "系統狀態", "content": content, "tags": "status"})
+
+    assert result["status"] == "warn"
+    assert "content_too_short" in _types(result)
+
+
+def test_english_word_containing_modal_substring_is_not_a_rule_signal():
+    result = quality_gate(
+        {"title": "Service status", "content": "The mustard service is healthy.", "tags": "status"}
+    )
+
+    assert result["status"] == "warn"
+    assert "content_too_short" in _types(result)
 
 
 def test_semantic_fields_are_persisted_inside_legacy_gate_payload(tmp_path):

@@ -649,10 +649,12 @@ def gui_resolve_sync_conflict(
         return {"status": "error", "error": "review_reason_required"}
     with VaultDB(db_path) as db:
         conflict = db.conn.execute(
-            "SELECT knowledge_id FROM memory_conflicts WHERE id=?", (cid,)
+            "SELECT status, knowledge_id FROM memory_conflicts WHERE id=?", (cid,)
         ).fetchone()
         if not conflict:
             return {"status": "error", "error": "not_found", "conflict_id": cid}
+        if str(conflict["status"] or "").strip().lower() != "open":
+            return {"status": "error", "error": "conflict_not_open", "conflict_id": cid}
         if resolution_i == "accept_remote" and int(conflict["knowledge_id"] or 0) <= 0:
             return {
                 "status": "error",

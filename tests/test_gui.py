@@ -384,6 +384,19 @@ def test_gui_sync_conflict_detail_and_resolution(tmp_path):
         promoted_id = db.get_memory_candidate(result["candidate_id"])["promoted_knowledge_id"]
         assert db.get_knowledge(promoted_id)["status"] == "active"
 
+    repeated = gui_resolve_sync_conflict(
+        project,
+        conflict["id"],
+        resolution="accept_remote",
+        reason="A resolved conflict cannot be accepted again.",
+        confirm=f"{conflict['id']}:accept_remote",
+    )
+    assert repeated == {
+        "status": "error",
+        "error": "conflict_not_open",
+        "conflict_id": conflict["id"],
+    }
+
 
 def test_gui_accept_remote_requires_canonical_knowledge(tmp_path):
     project, _ = _make_project(tmp_path)
