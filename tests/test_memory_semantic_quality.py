@@ -92,7 +92,17 @@ def test_explicit_chinese_modal_rule_can_pass():
     assert result["semantic_completeness"] == "complete"
 
 
-@pytest.mark.parametrize("content", ["系統回應很快。", "設定相應完成。", "服務反應正常。"])
+@pytest.mark.parametrize(
+    "content",
+    [
+        "系統回應很快。",
+        "設定相應完成。",
+        "服務反應正常。",
+        "系統回應保持穩定。",
+        "服務反應在正常範圍。",
+        "設定相應處理完成。",
+    ],
+)
 def test_chinese_words_containing_ying_are_not_rule_signals(content):
     result = quality_gate({"title": "系統狀態", "content": content, "tags": "status"})
 
