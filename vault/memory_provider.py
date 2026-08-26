@@ -680,6 +680,7 @@ class SQLiteMemoryProvider:
             expires_at=str(lifecycle.get("expires_at") or ""),
             valid_from=str(lifecycle.get("valid_from") or ""),
             valid_until=str(lifecycle.get("valid_until") or ""),
+            application_metadata=memory.get("application_metadata"),
         )
         candidate = result.get("candidate") if isinstance(result.get("candidate"), dict) else {}
         result["memory_object"] = MemoryObject.from_record(candidate).as_dict() if candidate else None

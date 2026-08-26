@@ -58,6 +58,19 @@ def test_hash_suffix_title_is_opaque():
     assert result["title_quality"] == "opaque"
 
 
+def test_long_readable_word_title_is_not_opaque():
+    result = quality_gate(
+        {
+            "title": "Internationalization responsibilities",
+            "content": "Internationalization responsibilities must remain explicit.",
+            "tags": "localization,ownership",
+        }
+    )
+
+    assert "opaque_title" not in _types(result)
+    assert result["title_quality"] == "readable"
+
+
 def test_complete_short_rule_can_pass_without_reason_padding():
     result = quality_gate(
         {"title": "API 重試上限", "content": "API 重試最多 3 次。", "tags": "api,retry", "reason": ""}

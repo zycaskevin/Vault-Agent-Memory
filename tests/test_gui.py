@@ -363,6 +363,14 @@ def test_gui_sync_conflict_detail_and_resolution(tmp_path):
     blocked = gui_resolve_sync_conflict(project, conflict["id"], resolution="accept_remote", confirm="")
     assert blocked["error"] == "confirmation_required"
 
+    missing_reason = gui_resolve_sync_conflict(
+        project,
+        conflict["id"],
+        resolution="accept_remote",
+        confirm=f"{conflict['id']}:accept_remote",
+    )
+    assert missing_reason["error"] == "review_reason_required"
+
     resolved = gui_resolve_sync_conflict(
         project,
         conflict["id"],
@@ -375,6 +383,45 @@ def test_gui_sync_conflict_detail_and_resolution(tmp_path):
         assert db.get_knowledge(knowledge_id)["status"] == "archived"
         promoted_id = db.get_memory_candidate(result["candidate_id"])["promoted_knowledge_id"]
         assert db.get_knowledge(promoted_id)["status"] == "active"
+
+
+def test_gui_accept_remote_requires_canonical_knowledge(tmp_path):
+    project, _ = _make_project(tmp_path)
+    with VaultDB(project / "vault.db") as db:
+        candidate = create_candidate(
+            db,
+            title="Unbound remote candidate",
+            content="Remote candidate content must stay pending until it has a canonical target.",
+            reason="Test a conflict without canonical knowledge.",
+            source="remote_write_request",
+            source_ref="remote_write_request:unbound",
+            memory_type="remote_candidate",
+        )
+        db.conn.execute(
+            """INSERT INTO memory_conflicts
+               (id, created_at, updated_at, status, knowledge_id, left_revision_id,
+                right_revision_id, candidate_id, conflict_type, reason, resolution_json)
+               VALUES('conf_unbound', 'now', 'now', 'open', NULL, '', '', ?,
+                      'manual_test', 'unbound conflict', '{}')""",
+            (candidate["candidate_id"],),
+        )
+        db.conn.commit()
+
+    result = gui_resolve_sync_conflict(
+        project,
+        "conf_unbound",
+        resolution="accept_remote",
+        reason="Reviewed but no canonical target exists.",
+        confirm="conf_unbound:accept_remote",
+    )
+
+    assert result == {
+        "status": "error",
+        "error": "canonical_knowledge_required",
+        "conflict_id": "conf_unbound",
+    }
+    with VaultDB(project / "vault.db") as db:
+        assert db.get_memory_candidate(candidate["candidate_id"])["status"] == "candidate"
 
 
 def test_gui_obsidian_conflict_detail_and_resolution(tmp_path):

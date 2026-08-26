@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass, field
-from typing import Any, Mapping
+from typing import Any
 
 
 MEMORY_LAYER_CONTRACT_VERSION = "1.0"
@@ -55,6 +57,20 @@ def legacy_memory_type_metadata(value: Any) -> dict[str, str]:
     return {"legacy_memory_type": stored_type}
 
 
+def application_metadata_from_record(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Recover opaque application metadata from candidate compatibility storage."""
+    payload = record.get("gate_payload_json")
+    if isinstance(payload, str):
+        try:
+            payload = json.loads(payload)
+        except (TypeError, ValueError):
+            payload = {}
+    if not isinstance(payload, Mapping):
+        return {}
+    metadata = payload.get("application_metadata")
+    return dict(metadata) if isinstance(metadata, Mapping) else {}
+
+
 @dataclass(frozen=True)
 class MemoryObject:
     """Stable application-facing view over a Vault memory or candidate row."""
@@ -71,15 +87,16 @@ class MemoryObject:
     schema_version: str = MEMORY_LAYER_CONTRACT_VERSION
 
     @classmethod
-    def from_record(cls, record: Mapping[str, Any]) -> "MemoryObject":
+    def from_record(cls, record: Mapping[str, Any]) -> MemoryObject:
         """Adapt current storage rows without changing or reinterpreting them."""
         stored_type = str(record.get("memory_type") or "knowledge").strip() or "knowledge"
         requested_kind = record.get("memory_kind") or stored_type
-        application_metadata: dict[str, Any] = {
+        application_metadata = application_metadata_from_record(record)
+        application_metadata.update({
             key: record.get(key)
             for key in ("layer", "category", "tags")
             if record.get(key) not in (None, "")
-        }
+        })
         application_metadata.update(legacy_memory_type_metadata(stored_type))
         return cls(
             id=str(record.get("id") or record.get("candidate_id") or ""),

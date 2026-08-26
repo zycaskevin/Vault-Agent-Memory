@@ -10,8 +10,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .compiler import VaultCompiler, simple_aaak_compress, generate_summary
+from .compiler import VaultCompiler, generate_summary, simple_aaak_compress
 from .db import VaultDB, normalize_governance_metadata
+from .memory_object import application_metadata_from_record
 from .privacy import redact_secrets, scan_privacy
 
 _VALID_LAYERS = {"L0", "L1", "L2", "L3"}
@@ -35,7 +36,7 @@ _DEICTIC_TERMS = (
 )
 _DANGLING_ENDINGS = (":", "：", "-", "—", "–", ",", "，", ";", "；")
 _OPAQUE_TITLE_RE = re.compile(
-    r"(?:^|[\s_\-:#])(?:[0-9a-f]{8,64}|[0-9a-z]{16,64})(?:$|[\s_\-:#])",
+    r"(?:^|[\s_\-:#])(?:[0-9a-f]{8,64}|(?=[0-9a-z]{16,64}(?:$|[\s_\-:#]))(?=[0-9a-z]*[0-9])[0-9a-z]{16,64})(?:$|[\s_\-:#])",
     flags=re.IGNORECASE,
 )
 _SHORT_RULE_SIGNALS = (
@@ -154,6 +155,7 @@ def normalize_metadata(
     valid_from: str = "",
     valid_until: str = "",
     supersedes_id: int | str | None = None,
+    application_metadata: dict[str, Any] | None = None,
 ) -> dict:
     if isinstance(tags, list):
         tags_s = ",".join(str(t).strip() for t in tags if str(t).strip())
@@ -177,6 +179,17 @@ def normalize_metadata(
         valid_until=valid_until,
         supersedes_id=supersedes_id,
     )
+    if application_metadata is None:
+        application_metadata_i: dict[str, Any] = {}
+    elif not isinstance(application_metadata, dict):
+        raise ValueError("application_metadata must be a JSON object")
+    else:
+        try:
+            application_metadata_i = json.loads(
+                json.dumps(application_metadata, ensure_ascii=False, sort_keys=True)
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("application_metadata must contain JSON values") from exc
     return {
         "title": normalize_title(title),
         "content": (content or "").strip(),
@@ -187,6 +200,7 @@ def normalize_metadata(
         "source": (source or "memory").strip() or "memory",
         "source_ref": (source_ref or "").strip(),
         "reason": (reason or "").strip(),
+        "application_metadata": application_metadata_i,
         **governance,
     }
 
@@ -327,8 +341,18 @@ def duplicate_gate(db: VaultDB, title: str, content: str, *, exclude_candidate_i
     return {"status": "warn" if findings else "pass", "findings": findings}
 
 
-def _gate_payload(privacy: dict, duplicate: dict, metadata: dict, quality: dict) -> dict:
-    return {"privacy": privacy, "duplicate": duplicate, "metadata": metadata, "quality": quality}
+def _gate_payload(
+    privacy: dict,
+    duplicate: dict,
+    metadata: dict,
+    quality: dict,
+    *,
+    application_metadata: dict[str, Any] | None = None,
+) -> dict:
+    payload = {"privacy": privacy, "duplicate": duplicate, "metadata": metadata, "quality": quality}
+    if application_metadata:
+        payload["application_metadata"] = application_metadata
+    return payload
 
 
 def _all_gates_pass(result: dict) -> bool:
@@ -436,18 +460,26 @@ def create_candidate(db: VaultDB, **kwargs) -> dict:
                 meta["reason"],
                 meta["owner_agent"],
                 meta["allowed_agents"],
+                json.dumps(meta["application_metadata"], ensure_ascii=False, sort_keys=True),
             ]
         )
     )
     duplicate = duplicate_gate(db, meta["title"], meta["content"])
     metadata = metadata_gate(meta)
     quality = quality_gate(meta)
-    gates = _gate_payload(privacy, duplicate, metadata, quality)
     rejected = privacy["status"] == "fail" or metadata["status"] == "fail"
     stored_meta = dict(meta)
     if privacy["status"] == "fail":
         for field in ("title", "content", "source_ref", "reason"):
             stored_meta[field] = redact_secrets(stored_meta.get(field, ""))
+        stored_meta["application_metadata"] = {}
+    gates = _gate_payload(
+        privacy,
+        duplicate,
+        metadata,
+        quality,
+        application_metadata=stored_meta.get("application_metadata"),
+    )
     candidate_id = f"mem_{uuid.uuid4().hex[:12]}"
     candidate = {
         "id": candidate_id,
@@ -532,6 +564,7 @@ def promote_candidate(
     if candidate["status"] == "rejected":
         return {"status": "blocked", "candidate_id": candidate_id, "knowledge_id": None, "candidate": candidate}
 
+    candidate_application_metadata = application_metadata_from_record(candidate)
     privacy = scan_privacy(
         "\n".join(
             [
@@ -541,13 +574,22 @@ def promote_candidate(
                 candidate["reason"],
                 candidate.get("owner_agent", ""),
                 candidate.get("allowed_agents", ""),
+                json.dumps(candidate_application_metadata, ensure_ascii=False, sort_keys=True),
             ]
         )
     )
     duplicate = duplicate_gate(db, candidate["title"], candidate["content"], exclude_candidate_id=candidate_id)
     metadata = metadata_gate(candidate)
     quality = quality_gate(candidate)
-    gates = _gate_payload(privacy, duplicate, metadata, quality)
+    gates = _gate_payload(
+        privacy,
+        duplicate,
+        metadata,
+        quality,
+        application_metadata=(
+            candidate_application_metadata if privacy["status"] != "fail" else {}
+        ),
+    )
     if privacy["status"] == "fail" or metadata["status"] == "fail":
         db.update_memory_candidate(candidate_id, status="rejected", privacy_status=privacy["status"], duplicate_status=duplicate["status"], quality_status=quality["status"], gate_payload_json=json.dumps(gates, ensure_ascii=False, sort_keys=True))
         blocked_candidate = db.get_memory_candidate(candidate_id) or candidate

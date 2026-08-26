@@ -20,8 +20,11 @@ DEFAULT_CORPUS = (
 
 def replay(corpus_path: Path) -> dict:
     corpus = json.loads(corpus_path.read_text(encoding="utf-8"))
+    cases = corpus.get("cases")
+    if not isinstance(cases, list) or not cases:
+        raise ValueError("corpus cases must be a non-empty list")
     results = []
-    for case in corpus.get("cases") or []:
+    for case in cases:
         gate = quality_gate(case)
         finding_types = {finding["type"] for finding in gate["findings"]}
         expected_finding = case.get("expected_finding")

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from vault.db import VaultDB
 from vault.gateway_memory_api import gateway_memory_create
 from vault.gateway_openapi import gateway_openapi
@@ -90,6 +92,10 @@ def test_provider_exposes_candidate_first_memory_object_adapter(tmp_path):
             "confidence": 0.88,
             "provenance": {"source": "external-runtime", "source_ref": "decision:1"},
             "governance": {"scope": "project", "sensitivity": "low"},
+            "application_metadata": {
+                "runtime": "hermes",
+                "labels": ["reviewed", "external"],
+            },
         },
         reason="Preserve the integration boundary.",
         actor_agent="external-runtime",
@@ -97,6 +103,11 @@ def test_provider_exposes_candidate_first_memory_object_adapter(tmp_path):
 
     assert candidate["memory_object"]["kind"] == "decision"
     assert candidate["memory_object"]["confidence"] == 0.88
+    assert candidate["memory_object"]["application_metadata"]["runtime"] == "hermes"
+    assert candidate["memory_object"]["application_metadata"]["labels"] == [
+        "reviewed",
+        "external",
+    ]
     assert candidate["memory_layer"]["vault_role"] == "memory_provider"
     assert candidate["safety"]["writes_active_knowledge"] is False
     assert provider.get_memory_object(memory_id)["kind"] == "event"
@@ -105,6 +116,25 @@ def test_provider_exposes_candidate_first_memory_object_adapter(tmp_path):
     with VaultDB(project / "vault.db") as db:
         assert db.conn.execute("SELECT count(*) FROM knowledge").fetchone()[0] == 1
         assert db.conn.execute("SELECT count(*) FROM memory_candidates").fetchone()[0] == 1
+
+
+def test_provider_rejects_non_object_application_metadata(tmp_path):
+    project = tmp_path / "project"
+    project.mkdir()
+    with VaultDB(project / "vault.db"):
+        pass
+
+    provider = sqlite_memory_provider(project)
+    with pytest.raises(ValueError, match="application_metadata must be a JSON object"):
+        provider.create_memory_object_candidate(
+            {
+                "kind": "knowledge",
+                "title": "Invalid metadata",
+                "content": "Application metadata must keep the public object shape.",
+                "application_metadata": ["not", "an", "object"],
+            },
+            reason="Validate the stable envelope.",
+        )
 
 
 def test_gateway_create_accepts_additive_kind_and_confidence_aliases(tmp_path):

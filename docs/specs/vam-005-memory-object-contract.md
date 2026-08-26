@@ -59,6 +59,10 @@ An unknown legacy `memory_type` maps to `kind=knowledge` and is preserved in
 `application_metadata.legacy_memory_type`. Vault does not interpret the legacy
 label.
 
+Candidate creation also round-trips caller-supplied JSON `application_metadata`
+as opaque data through the existing candidate compatibility payload. Vault does
+not interpret its keys, and no database migration is required.
+
 ## Provider operations
 
 The Memory Provider Interface adds:
