@@ -23,6 +23,13 @@ A short rule may pass when it is a complete, tagged statement with an explicit
 rule signal such as `must`, `不得`, `最多`, or `上限`. Length alone does not
 make a candidate useful or useless.
 
+The repository includes a 55-case synthetic Hermes corpus. Its replay command
+is read-only and has no database, promotion, connector, or live-data authority:
+
+```bash
+python scripts/replay_memory_admission_corpus.py
+```
+
 The additive semantic fields are persisted inside the existing candidate gate payload,
 so existing candidate rows and callers remain readable without a schema rewrite.
 Promotion follows the separate canonical Promotion Contract. Caller-supplied
