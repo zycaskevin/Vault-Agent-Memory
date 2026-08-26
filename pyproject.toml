@@ -72,3 +72,6 @@ target-version = "py310"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Subject/identity controls are preserved historical origin material. They are
+# not part of Vault Core's product test surface after the ownership extraction.
+addopts = ["--ignore-glob=tests/test_subject*.py"]

@@ -21,8 +21,26 @@ _GENERIC_TITLES = {"note", "notes", "memory", "misc", "update", "todo", "untitle
 _QUALITY_SIGNALS = {
     "because", "caused", "fix", "fixed", "decision", "decided", "prefer", "avoid",
     "step", "error", "bug", "reason", "limit", "constraint", "解法", "修復", "原因",
-    "決策", "偏好", "避免", "步驟", "錯誤", "限制", "問題", "因此",
+    "決策", "偏好", "避免", "步驟", "錯誤", "限制", "因此",
 }
+_META_INSTRUCTION_PATTERNS = (
+    r"^(?:請)?記住(?:這|那)?(?:段|個|件)?(?:內容|事情|資訊)?[。.!！]?$",
+    r"^(?:please\s+)?remember\s+(?:this|that)(?:\s+(?:content|information))?[.!]?$",
+    r"^(?:把|將)(?:這|那)(?:段|個|件)?(?:內容|事情|資訊)?(?:存|寫)(?:起來|進記憶|入庫)[。.!！]?$",
+)
+_DEICTIC_TERMS = (
+    "這個", "這件事", "這段", "這些", "那個", "那件事", "那段", "那些", "它", "他們",
+    "this", "that", "these", "those", "it", "they",
+)
+_DANGLING_ENDINGS = (":", "：", "-", "—", "–", ",", "，", ";", "；")
+_OPAQUE_TITLE_RE = re.compile(
+    r"(?:^|[\s_\-:#])(?:[0-9a-f]{8,64}|[0-9a-z]{16,64})(?:$|[\s_\-:#])",
+    flags=re.IGNORECASE,
+)
+_SHORT_RULE_SIGNALS = (
+    "must", "should", "always", "never", "only", "maximum", "minimum", "at most", "at least",
+    "必須", "應", "只", "不得", "不要", "永遠", "最多", "至少", "上限", "下限",
+)
 
 
 def normalize_title(title: str) -> str:
@@ -130,24 +148,93 @@ def metadata_gate(meta: dict) -> dict:
 
 
 def quality_gate(meta: dict) -> dict:
-    """Warn on memories that are likely hard to retrieve or low-value noise."""
+    """Evaluate candidate semantics without treating provenance text as content.
+
+    The result remains backward compatible with the original ``status`` and
+    ``findings`` keys while exposing typed, additive semantic quality fields.
+    This gate does not infer a person, identity, or relationship model.
+    """
     findings: list[dict[str, Any]] = []
     title = normalize_title(meta.get("title", ""))
     content = str(meta.get("content", "") or "").strip()
     tags = str(meta.get("tags", "") or "").strip()
-    reason = str(meta.get("reason", "") or "").strip()
-    lower_blob = normalize_text(f"{title} {content} {reason} {tags}")
+    lower_blob = normalize_text(f"{title} {content} {tags}")
+    normalized_content = normalize_text(content)
+    title_key = normalize_text(title)
 
-    if len(content) < 40:
+    question_only = bool(content) and content.rstrip().endswith(("?", "？"))
+    meta_instruction_only = any(re.fullmatch(pattern, content.strip(), flags=re.IGNORECASE) for pattern in _META_INSTRUCTION_PATTERNS)
+    dangling_punctuation = bool(content) and content.rstrip().endswith(_DANGLING_ENDINGS)
+    deictic_terms = [
+        term
+        for term in _DEICTIC_TERMS
+        if (
+            term in normalized_content
+            if not term.isascii()
+            else re.search(rf"(?<!\w){re.escape(term)}(?!\w)", normalized_content)
+        )
+    ]
+    deictic_without_anchor = bool(deictic_terms) and len(normalized_content) <= 36
+    opaque_title = bool(_OPAQUE_TITLE_RE.search(title_key))
+    short_complete_rule = (
+        6 <= len(content) < 40
+        and content.rstrip().endswith((".", "。", "!", "！"))
+        and any(signal in normalized_content for signal in _SHORT_RULE_SIGNALS)
+        and not question_only
+        and not meta_instruction_only
+        and not dangling_punctuation
+        and not deictic_without_anchor
+    )
+    standalone_statement = (
+        len(content) >= 40
+        and content.rstrip().endswith((".", "。", "!", "！"))
+        and not question_only
+        and not meta_instruction_only
+        and not dangling_punctuation
+        and not deictic_without_anchor
+    )
+
+    if len(content) < 40 and not short_complete_rule:
         findings.append({"type": "content_too_short", "severity": "warn", "span": content[:40] or "[EMPTY]"})
-    if normalize_text(title) in _GENERIC_TITLES:
+    if title_key in _GENERIC_TITLES:
         findings.append({"type": "generic_title", "severity": "warn", "span": title or "[EMPTY]"})
+    if opaque_title:
+        findings.append({"type": "opaque_title", "severity": "warn", "field": "title"})
     if not tags:
         findings.append({"type": "missing_tags", "severity": "warn", "span": "[EMPTY]"})
-    if not any(signal in lower_blob for signal in _QUALITY_SIGNALS):
+    if (
+        not short_complete_rule
+        and not standalone_statement
+        and not any(signal in lower_blob for signal in _QUALITY_SIGNALS)
+    ):
         findings.append({"type": "low_context", "severity": "warn", "span": content[:80] or "[EMPTY]"})
+    if question_only:
+        findings.append({"type": "question_only", "severity": "warn", "field": "content"})
+    if meta_instruction_only:
+        findings.append({"type": "meta_instruction_only", "severity": "warn", "field": "content"})
+    if dangling_punctuation:
+        findings.append({"type": "dangling_punctuation", "severity": "warn", "field": "content"})
+    if deictic_without_anchor:
+        findings.append({"type": "deictic_without_anchor", "severity": "warn", "field": "content"})
 
-    return {"status": "warn" if findings else "pass", "findings": findings}
+    blocking_semantic_types = {
+        "question_only", "meta_instruction_only", "dangling_punctuation",
+        "deictic_without_anchor", "opaque_title",
+    }
+    finding_types = {finding["type"] for finding in findings}
+    status = "warn" if findings else "pass"
+    return {
+        "status": status,
+        "disposition": "review_required" if findings else "accept",
+        "policy": "semantic-quality",
+        "findings": findings,
+        "semantic_completeness": "incomplete" if finding_types & blocking_semantic_types else "complete",
+        "authorship_state": "unknown",
+        "decision_state": "question" if question_only else "unknown",
+        "context_dependency": "anchor_required" if deictic_without_anchor else "standalone",
+        "future_utility": "low" if meta_instruction_only else "uncertain" if "low_context" in finding_types else "useful",
+        "title_quality": "opaque" if opaque_title else "generic" if title_key in _GENERIC_TITLES else "readable",
+    }
 
 
 def duplicate_gate(db: VaultDB, title: str, content: str, *, exclude_candidate_id: str | None = None) -> dict:
