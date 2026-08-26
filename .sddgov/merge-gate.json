@@ -4,7 +4,7 @@
   "head_sha": "21ecf9ce68ec94aaaa1851579c7a90b384c7641e",
   "risk_level": "L2",
   "builder_id": "codex",
-  "change_digest": "20b15664311fd0602024c632d42e0e8caf036cac2997927bc173edee1029cabe",
+  "change_digest": "da5dc7517c6a23d6cb51a5e38d76d8c9eee6d6b8dafd3a66d1bde4b225fe8325",
   "deps": [
     "evidence/DEP-VAM-002-MEMORY-CHANGE-ENVELOPE",
     "evidence/DEP-VAM-002-CODERABBIT-REMEDIATION",
