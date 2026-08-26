@@ -1,10 +1,10 @@
 {
   "schema_version": "1.0",
   "base_sha": "c284e1c7bedf288a10009b98e5f2da525c3ee4bc",
-  "head_sha": "4673d8deb5090bb29cafa073cd750afea4b73864",
+  "head_sha": "21ecf9ce68ec94aaaa1851579c7a90b384c7641e",
   "risk_level": "L2",
   "builder_id": "codex",
-  "change_digest": "c88b368a418f6b16afba4cab7e101e4eddb82b25fe9ac137f19f15924bc52f0e",
+  "change_digest": "20b15664311fd0602024c632d42e0e8caf036cac2997927bc173edee1029cabe",
   "deps": [
     "evidence/DEP-VAM-002-MEMORY-CHANGE-ENVELOPE",
     "evidence/DEP-VAM-002-CODERABBIT-REMEDIATION",
@@ -18,8 +18,9 @@
     "evidence/DEP-VAM-002-CODERABBIT-THREAD-CLOSURE",
     "DEP-VAM-002-CODERABBIT-REPLACEMENT-REVIEW-REMEDIATION",
     "DEP-VAM-002-AUDIT-DESCENDANT-ROLLBACK-GUARD",
-    "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION"
+    "DEP-VAM-002-CODERABBIT-FINAL14-REMEDIATION",
+    "DEP-VAM-002-CODERABBIT-2026-08-25-REMEDIATION"
   ],
   "rollback_path": "DEP-VAM-002-SEQUENTIAL-MAIN-INTEGRATION/rollback.md",
-  "protected_file_review": ".sddgov/reviews/REV-VAM-002.json"
+  "protected_file_review": ".sddgov/reviews/REV-VAM-002-CURRENT-HEAD-REMEDIATION.json"
 }
