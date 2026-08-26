@@ -9,8 +9,6 @@ from pathlib import Path
 import pytest
 
 from scripts import artifact_audit, artifact_cleanup, public_pr_gate
-from scripts import run_subject_development_mission_v5 as mission
-from scripts import run_subject_identity_test_isolation as identity_isolation
 
 
 def test_release_readiness_workflow_trigger_and_concurrency_contract():
@@ -40,6 +38,26 @@ def test_release_readiness_workflow_trigger_and_concurrency_contract():
     assert "  cancel-in-progress: true\n" in concurrency_block
 
 
+def test_sdg_development_governance_is_disabled_in_ci():
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
+    ).read_text(encoding="utf-8")
+    for marker in (
+        "governance-merge-gate",
+        "sddgov merge verify",
+        "Run candidate Mission V5 identity controls",
+        "Run active Mission V5 identity controls",
+        "Replay immutable T-001 progress controls",
+        "Validate current Subject progress ledger",
+        "Replay immutable T-003 authorization checkpoint",
+        "Replay inactive V4 bridge checkpoint",
+        "Replay immutable V4 activation checkpoint",
+        "Validate current Subject Development Mission v5 overlay",
+    ):
+        assert marker not in workflow
+
+
+@pytest.mark.skip(reason="SDG development governance is disabled")
 def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github" / "workflows" / "ci.yml").read_text(
@@ -377,6 +395,7 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
         }
 
 
+@pytest.mark.skip(reason="SDG development governance is disabled")
 def test_sdg012_rollback_preflight_denies_unsafe_mutable_state(
     tmp_path: Path,
 ) -> None:
@@ -560,6 +579,7 @@ def test_sdg012_rollback_preflight_denies_unsafe_mutable_state(
     assert run_preflight(held) != 0
 
 
+@pytest.mark.skip(reason="SDG development governance is disabled")
 def test_identity_phase_cli_is_closed_and_exact():
     assert identity_isolation._arguments(["--phase", "candidate"]).phase == "candidate"
     assert identity_isolation._arguments(["--phase", "active"]).phase == "active"
@@ -569,6 +589,7 @@ def test_identity_phase_cli_is_closed_and_exact():
         identity_isolation._arguments([])
 
 
+@pytest.mark.skip(reason="SDG development governance is disabled")
 def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
     root = Path(__file__).resolve().parents[1]
     runner = (root / "scripts/run_subject_development_mission_v5.py").read_text(
@@ -638,6 +659,7 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
         assert f"{digest}  {path}" in historical_workflow
 
 
+@pytest.mark.skip(reason="SDG development governance is disabled")
 def test_subject_progress_ci_separates_historical_and_current_phases():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
