@@ -45,7 +45,6 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     workflow = (root / ".github" / "workflows" / "ci.yml").read_text(
         encoding="utf-8"
     )
-    gate_job = workflow.split("\n  governance-merge-gate:\n", 1)[1]
     test_job = workflow.split("\n  test:\n", 1)[1].split(
         "\n  readme-command-smoke:\n", 1
     )[0]
@@ -103,8 +102,8 @@ def test_mission_v5_ci_routes_candidate_and_active_controls_without_skips():
     ):
         assert value in rollback_fields["verify"]
 
-    assert "continue-on-error" not in gate_job
-    assert "--deselect" not in gate_job
+    assert "governance-merge-gate" not in workflow
+    assert "sddgov merge verify" not in workflow
     assert test_job.count("--ignore=tests/test_subject_development_mission_v5.py") == 1
     assert (
         test_job.count("--ignore=tests/test_subject_task_authorization_dispatch_v5.py")
