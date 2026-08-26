@@ -657,23 +657,107 @@ def test_sdg011_pins_exact_sdg010_delivery_and_executable_rollback() -> None:
         assert f"{digest}  {path}" in historical_workflow
 
 
-def test_subject_progress_governance_controls_are_disabled():
+def test_subject_progress_ci_separates_historical_and_current_phases():
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "ci.yml"
     ).read_text(encoding="utf-8")
     test_job = workflow.split("\n  test:\n", 1)[1].split(
         "\n  readme-command-smoke:\n", 1
     )[0]
+
     assert test_job.count("      - name: Run current-state tests\n") == 1
-    assert test_job.count("--ignore=") == 6
-    for marker in (
-        "Replay immutable T-001 progress controls",
-        "Validate current Subject progress ledger",
-        "Replay immutable T-003 authorization checkpoint",
-        "Replay inactive V4 bridge checkpoint",
-        "Replay immutable V4 activation checkpoint",
-    ):
-        assert marker not in test_job
+    ignored = {
+        "tests/test_subject_progress.py",
+        "tests/test_subject_task_authorization_dispatch.py",
+        "tests/test_subject_development_mission_v4.py",
+        "tests/test_subject_task_authorization_dispatch_v4.py",
+        "tests/test_subject_development_mission_v5.py",
+        "tests/test_subject_task_authorization_dispatch_v5.py",
+    }
+    for path in ignored:
+        assert test_job.count(f"--ignore={path}") == 1
+    assert test_job.count("--ignore=") == len(ignored)
+    assert "--deselect" not in test_job
+    assert "continue-on-error" not in test_job
+    assert " -k " not in test_job
+    assert "xfail" not in test_job.lower()
+
+    assert (
+        "SUBJECT_PRE_T002_CHECKPOINT: "
+        "8ec045a7b39c5aa9684f61d9099eb62b3142983d"
+    ) not in test_job
+    assert (
+        "T001_PROGRESS_TEST_SHA256: "
+        "6be4d93375205ee1f9ba414aa2704ee075ca583050238892d54030e7adadd3e6"
+    ) not in test_job
+    assert (
+        "T001_PROGRESS_VALIDATOR_SHA256: "
+        "8cb33ef1f9b688be90fb093e0fd4437b245c2a9b2dbac3f3141c65005619416f"
+    ) not in test_job
+    assert (
+        "T001_PROGRESS_LEDGER_SHA256: "
+        "ab723c1adde2739f54deba7fee85d86a95002f167703354695503363154d30e6"
+    ) not in test_job
+    assert (
+        'git merge-base --is-ancestor "$SUBJECT_PRE_T002_CHECKPOINT" HEAD'
+        not in test_job
+    )
+    assert (
+        'git worktree add --detach "$replay_root" "$SUBJECT_PRE_T002_CHECKPOINT"'
+        not in test_job
+    )
+    assert "tests/test_subject_progress.py | sha256sum -c -" not in test_job
+    assert "scripts/validate_subject_progress.py | sha256sum -c -" not in test_job
+    assert (
+        "specs/subject-distillation/implementation-progress.json | sha256sum -c -"
+        not in test_job
+    )
+    assert (
+        "PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider \\\n"
+        "            tests/test_subject_progress.py"
+    ) not in test_job
+    assert (
+        "python scripts/validate_subject_progress.py \\\n"
+        "            --manifest specs/subject-distillation/baseline-manifest.json"
+    ) not in test_job
+    assert (
+        "python scripts/validate_subject_task_authorization_dispatch.py \\\n"
+        "            --ledger"
+    ) not in test_job
+    trust_pins = {
+        "scripts/validate_subject_task_authorization_dispatch.py": "0e455b726ee09f35283f1975ad30a08d988a71ddc71efb0fd02fdba09a922f33",
+        "scripts/run_subject_task_authorization_v3.py": "7076d547be933c30e2e8321a3ee47799794137dfe295e6f09f558373cf959b8c",
+        "scripts/update_subject_task_progress_v3.py": "ef0cc8fe7e2fe27928160c28cb92821ac85dbe549acce3f3bf9e7a9528b969ab",
+        "scripts/validate_subject_task_authorization_v3.py": "1251ff4f35373ed8a5b54403f971fa54c3bc71b0b062f0caa939ed1415b2f01b",
+        "specs/subject-distillation/task-authorization-v3.contract.json": "9ff7ddceffdde6690fce4acf1b1f9d16f2d0f93412f5e5f55d94d118b7af5c5a",
+        "specs/subject-distillation/task-authorization-v3.schema.json": "f226e841e2e5442d9a2fe4443762764c984f409699d696e66cbe49aec79177df",
+        "specs/subject-distillation/task-scopes/T-003.json": "7bf80b0b2e0abf1a762663ca179361ef65d1bcaa5a2af373697f6a22dca1e359",
+        "tests/test_subject_task_authorization_dispatch.py": "8601f9ff2b8475c6c9eda577cd27c26fe3c6665f3cf9ad9174dedb5975448616",
+    }
+    for path, digest in trust_pins.items():
+        assert f"{digest}  {path}" not in test_job
+    assert "cat <<'EOF' | sha256sum -c -" not in test_job
+    assert (
+        "PYTHONDONTWRITEBYTECODE=1 python -m pytest -q -p no:cacheprovider \\\n"
+        "            tests/test_subject_task_authorization_dispatch.py"
+    ) not in test_job
+    assert "validate_subject_task_authorization_v2.py \\\n" not in test_job
+    assert (
+        "SUBJECT_V4_ACTIVATION_CHECKPOINT: "
+        "03dcdabc873658cd7de24dfeeef8b85090cf2321"
+    ) not in test_job
+    assert (
+        'git worktree add --detach "$replay_root" '
+        '"$SUBJECT_V4_ACTIVATION_CHECKPOINT"'
+    ) not in test_job
+    assert (
+        "tests/test_subject_development_mission_v4.py \\\n"
+        "            tests/test_subject_task_authorization_dispatch_v4.py"
+    ) not in test_job
+    assert (
+        "python scripts/validate_subject_task_authorization_dispatch_v5.py \\\n"
+        "            --ledger"
+    ) not in test_job
 
 
 def test_artifact_audit_classifies_safe_generated_cache(tmp_path: Path):
