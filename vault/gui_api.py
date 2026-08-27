@@ -645,7 +645,22 @@ def gui_resolve_sync_conflict(
         return {"status": "error", "error": "invalid_resolution"}
     if not cid or str(confirm or "") != confirmation_token(cid, resolution_i):
         return {"status": "error", "error": "confirmation_required"}
+    if resolution_i == "accept_remote" and not str(reason or "").strip():
+        return {"status": "error", "error": "review_reason_required"}
     with VaultDB(db_path) as db:
+        conflict = db.conn.execute(
+            "SELECT status, knowledge_id FROM memory_conflicts WHERE id=?", (cid,)
+        ).fetchone()
+        if not conflict:
+            return {"status": "error", "error": "not_found", "conflict_id": cid}
+        if str(conflict["status"] or "").strip().lower() != "open":
+            return {"status": "error", "error": "conflict_not_open", "conflict_id": cid}
+        if resolution_i == "accept_remote" and int(conflict["knowledge_id"] or 0) <= 0:
+            return {
+                "status": "error",
+                "error": "canonical_knowledge_required",
+                "conflict_id": cid,
+            }
         row = resolve_conflict(
             db,
             cid,

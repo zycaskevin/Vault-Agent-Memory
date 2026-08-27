@@ -436,10 +436,13 @@ def resolve_conflict(
     if not row:
         raise KeyError(f"conflict not found: {conflict_id}")
     row_d = dict(row)
+    if str(row_d.get("status") or "").strip().lower() != "open":
+        raise ValueError("conflict_not_open")
     applied_changes = _apply_conflict_resolution(
         db,
         row_d,
         resolution=resolution,
+        review_reason=reason,
         actor_agent=actor_agent,
         apply_memory_change=apply_memory_change,
         project_dir=project_dir,
@@ -479,6 +482,7 @@ def _apply_conflict_resolution(
     conflict: dict[str, Any],
     *,
     resolution: str,
+    review_reason: str = "",
     actor_agent: str = "",
     apply_memory_change: bool = False,
     project_dir: str | Path | None = None,
@@ -528,7 +532,14 @@ def _apply_conflict_resolution(
     if not apply_memory_change:
         raise ValueError("accept_remote requires apply_memory_change=True")
 
-    from .memory import promote_candidate
+    from .memory import _conflict_promotion_review, promote_candidate
+
+    review = _conflict_promotion_review(
+        conflict_ref=str(conflict.get("id") or ""),
+        actor_ref=actor_agent,
+        reason=review_reason,
+        canonical_knowledge_id=int(knowledge_id or 0),
+    )
 
     promotion = promote_candidate(
         db,
@@ -537,7 +548,10 @@ def _apply_conflict_resolution(
         project_dir=project_dir,
         compile=compile,
         build_map=build_map,
+        _runtime_review=review,
     )
+    if promotion.get("status") != "promoted":
+        raise ValueError("reviewed conflict candidate is not eligible for promotion")
     promoted_id = int(promotion.get("knowledge_id") or 0)
     applied.append({"target": "candidate", "id": candidate_id, "action": "promoted", "knowledge_id": promoted_id})
 

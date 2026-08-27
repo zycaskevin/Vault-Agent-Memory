@@ -6,11 +6,13 @@ import hashlib
 import json
 import re
 import uuid
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from .compiler import VaultCompiler, simple_aaak_compress, generate_summary
+from .compiler import VaultCompiler, generate_summary, simple_aaak_compress
 from .db import VaultDB, normalize_governance_metadata
+from .memory_object import application_metadata_from_record
 from .privacy import redact_secrets, scan_privacy
 
 _VALID_LAYERS = {"L0", "L1", "L2", "L3"}
@@ -21,8 +23,87 @@ _GENERIC_TITLES = {"note", "notes", "memory", "misc", "update", "todo", "untitle
 _QUALITY_SIGNALS = {
     "because", "caused", "fix", "fixed", "decision", "decided", "prefer", "avoid",
     "step", "error", "bug", "reason", "limit", "constraint", "解法", "修復", "原因",
-    "決策", "偏好", "避免", "步驟", "錯誤", "限制", "問題", "因此",
+    "決策", "偏好", "避免", "步驟", "錯誤", "限制", "因此",
 }
+_META_INSTRUCTION_PATTERNS = (
+    r"^(?:請)?記住(?:這|那)?(?:段|個|件)?(?:內容|事情|資訊)?[。.!！]?$",
+    r"^(?:please\s+)?remember\s+(?:this|that)(?:\s+(?:content|information))?[.!]?$",
+    r"^(?:把|將)(?:這|那)(?:段|個|件)?(?:內容|事情|資訊)?(?:存|寫)(?:起來|進記憶|入庫)[。.!！]?$",
+)
+_DEICTIC_TERMS = (
+    "這個", "這件事", "這段", "這些", "那個", "那件事", "那段", "那些", "它", "他們",
+    "this", "that", "these", "those", "it", "they",
+)
+_DANGLING_ENDINGS = (":", "：", "-", "—", "–", ",", "，", ";", "；")
+_OPAQUE_TITLE_RE = re.compile(
+    r"(?:^|[\s_\-:#])(?:[0-9a-f]{8,64}|(?=[0-9a-z]{16,64}(?:$|[\s_\-:#]))(?=[0-9a-z]*[0-9])[0-9a-z]{16,64})(?:$|[\s_\-:#])",
+    flags=re.IGNORECASE,
+)
+_ENGLISH_SHORT_RULE_RE = re.compile(
+    r"\b(?:must|should|always|never|only|maximum|minimum|at most|at least)\b",
+    flags=re.IGNORECASE,
+)
+_CHINESE_SHORT_RULE_RE = re.compile(
+    r"(?:必須|不得|不要|永遠|最多|至少|上限|下限|只能|只可|僅能|僅可|"
+    r"(?<![回相反響因適對效供答感順])應(?:該|當|先|後|在|於|由|回傳|返回|保持|"
+    r"使用|避免|停止|限制|拒絕|保留|記錄|驗證|執行|提供|允許|要求|符合|支援|"
+    r"採用|儲存|處理))"
+)
+_PROMOTION_REVIEW_TOKEN = object()
+
+
+@dataclass(frozen=True)
+class _PromotionReview:
+    """Runtime-injected review result; never populated from public payloads."""
+
+    kind: str
+    review_ref: str
+    actor_ref: str
+    reason: str
+    canonical_knowledge_id: int
+    _token: object = field(repr=False, compare=False)
+
+
+def _conflict_promotion_review(
+    *,
+    conflict_ref: str,
+    actor_ref: str,
+    reason: str,
+    canonical_knowledge_id: int,
+) -> _PromotionReview:
+    """Create a bounded review result after the conflict runtime validates it."""
+    conflict = str(conflict_ref or "").strip()
+    actor = str(actor_ref or "").strip()
+    review_reason = str(reason or "").strip()
+    knowledge_id = int(canonical_knowledge_id or 0)
+    if not conflict or not actor or not review_reason or knowledge_id <= 0:
+        raise ValueError(
+            "reviewed conflict promotion requires conflict, actor, reason, and canonical knowledge"
+        )
+    return _PromotionReview(
+        kind="conflict_resolution",
+        review_ref=conflict,
+        actor_ref=actor,
+        reason=review_reason,
+        canonical_knowledge_id=knowledge_id,
+        _token=_PROMOTION_REVIEW_TOKEN,
+    )
+
+
+def _review_allows_warnings(
+    review: _PromotionReview | None,
+    *,
+    duplicate: dict,
+    quality: dict,
+) -> bool:
+    """Allow only the duplicate selected by a validated conflict decision."""
+    if not isinstance(review, _PromotionReview) or review._token is not _PROMOTION_REVIEW_TOKEN:
+        return False
+    if review.kind != "conflict_resolution" or quality["status"] != "pass":
+        return False
+    findings = duplicate.get("findings") or []
+    expected = f"knowledge:{review.canonical_knowledge_id}"
+    return bool(findings) and all(finding.get("span") == expected for finding in findings)
 
 
 def normalize_title(title: str) -> str:
@@ -80,6 +161,7 @@ def normalize_metadata(
     valid_from: str = "",
     valid_until: str = "",
     supersedes_id: int | str | None = None,
+    application_metadata: dict[str, Any] | None = None,
 ) -> dict:
     if isinstance(tags, list):
         tags_s = ",".join(str(t).strip() for t in tags if str(t).strip())
@@ -103,6 +185,22 @@ def normalize_metadata(
         valid_until=valid_until,
         supersedes_id=supersedes_id,
     )
+    if application_metadata is None:
+        application_metadata_i: dict[str, Any] = {}
+    elif not isinstance(application_metadata, dict):
+        raise ValueError("application_metadata must be a JSON object")
+    else:
+        try:
+            application_metadata_i = json.loads(
+                json.dumps(
+                    application_metadata,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    allow_nan=False,
+                )
+            )
+        except (TypeError, ValueError) as exc:
+            raise ValueError("application_metadata must contain JSON values") from exc
     return {
         "title": normalize_title(title),
         "content": (content or "").strip(),
@@ -113,6 +211,7 @@ def normalize_metadata(
         "source": (source or "memory").strip() or "memory",
         "source_ref": (source_ref or "").strip(),
         "reason": (reason or "").strip(),
+        "application_metadata": application_metadata_i,
         **governance,
     }
 
@@ -130,24 +229,96 @@ def metadata_gate(meta: dict) -> dict:
 
 
 def quality_gate(meta: dict) -> dict:
-    """Warn on memories that are likely hard to retrieve or low-value noise."""
+    """Evaluate candidate semantics without treating provenance text as content.
+
+    The result remains backward compatible with the original ``status`` and
+    ``findings`` keys while exposing typed, additive semantic quality fields.
+    This gate does not infer a person, identity, or relationship model.
+    """
     findings: list[dict[str, Any]] = []
     title = normalize_title(meta.get("title", ""))
     content = str(meta.get("content", "") or "").strip()
     tags = str(meta.get("tags", "") or "").strip()
-    reason = str(meta.get("reason", "") or "").strip()
-    lower_blob = normalize_text(f"{title} {content} {reason} {tags}")
+    lower_blob = normalize_text(f"{title} {content} {tags}")
+    normalized_content = normalize_text(content)
+    title_key = normalize_text(title)
 
-    if len(content) < 40:
+    question_only = bool(content) and content.rstrip().endswith(("?", "？"))
+    meta_instruction_only = any(re.fullmatch(pattern, content.strip(), flags=re.IGNORECASE) for pattern in _META_INSTRUCTION_PATTERNS)
+    dangling_punctuation = bool(content) and content.rstrip().endswith(_DANGLING_ENDINGS)
+    deictic_terms = [
+        term
+        for term in _DEICTIC_TERMS
+        if (
+            term in normalized_content
+            if not term.isascii()
+            else re.search(rf"(?<!\w){re.escape(term)}(?!\w)", normalized_content)
+        )
+    ]
+    deictic_without_anchor = bool(deictic_terms) and len(normalized_content) <= 36
+    opaque_title = bool(_OPAQUE_TITLE_RE.search(title_key))
+    short_complete_rule = (
+        6 <= len(content) < 40
+        and content.rstrip().endswith((".", "。", "!", "！"))
+        and bool(
+            _ENGLISH_SHORT_RULE_RE.search(normalized_content)
+            or _CHINESE_SHORT_RULE_RE.search(content)
+        )
+        and not question_only
+        and not meta_instruction_only
+        and not dangling_punctuation
+        and not deictic_without_anchor
+    )
+    standalone_statement = (
+        len(content) >= 40
+        and content.rstrip().endswith((".", "。", "!", "！"))
+        and not question_only
+        and not meta_instruction_only
+        and not dangling_punctuation
+        and not deictic_without_anchor
+    )
+
+    if len(content) < 40 and not short_complete_rule:
         findings.append({"type": "content_too_short", "severity": "warn", "span": content[:40] or "[EMPTY]"})
-    if normalize_text(title) in _GENERIC_TITLES:
+    if title_key in _GENERIC_TITLES:
         findings.append({"type": "generic_title", "severity": "warn", "span": title or "[EMPTY]"})
+    if opaque_title:
+        findings.append({"type": "opaque_title", "severity": "warn", "field": "title"})
     if not tags:
         findings.append({"type": "missing_tags", "severity": "warn", "span": "[EMPTY]"})
-    if not any(signal in lower_blob for signal in _QUALITY_SIGNALS):
+    if (
+        not short_complete_rule
+        and not standalone_statement
+        and not any(signal in lower_blob for signal in _QUALITY_SIGNALS)
+    ):
         findings.append({"type": "low_context", "severity": "warn", "span": content[:80] or "[EMPTY]"})
+    if question_only:
+        findings.append({"type": "question_only", "severity": "warn", "field": "content"})
+    if meta_instruction_only:
+        findings.append({"type": "meta_instruction_only", "severity": "warn", "field": "content"})
+    if dangling_punctuation:
+        findings.append({"type": "dangling_punctuation", "severity": "warn", "field": "content"})
+    if deictic_without_anchor:
+        findings.append({"type": "deictic_without_anchor", "severity": "warn", "field": "content"})
 
-    return {"status": "warn" if findings else "pass", "findings": findings}
+    blocking_semantic_types = {
+        "question_only", "meta_instruction_only", "dangling_punctuation",
+        "deictic_without_anchor", "opaque_title",
+    }
+    finding_types = {finding["type"] for finding in findings}
+    status = "warn" if findings else "pass"
+    return {
+        "status": status,
+        "disposition": "review_required" if findings else "accept",
+        "policy": "semantic-quality",
+        "findings": findings,
+        "semantic_completeness": "incomplete" if finding_types & blocking_semantic_types else "complete",
+        "authorship_state": "unknown",
+        "decision_state": "question" if question_only else "unknown",
+        "context_dependency": "anchor_required" if deictic_without_anchor else "standalone",
+        "future_utility": "low" if meta_instruction_only else "uncertain" if "low_context" in finding_types else "useful",
+        "title_quality": "opaque" if opaque_title else "generic" if title_key in _GENERIC_TITLES else "readable",
+    }
 
 
 def duplicate_gate(db: VaultDB, title: str, content: str, *, exclude_candidate_id: str | None = None) -> dict:
@@ -184,8 +355,18 @@ def duplicate_gate(db: VaultDB, title: str, content: str, *, exclude_candidate_i
     return {"status": "warn" if findings else "pass", "findings": findings}
 
 
-def _gate_payload(privacy: dict, duplicate: dict, metadata: dict, quality: dict) -> dict:
-    return {"privacy": privacy, "duplicate": duplicate, "metadata": metadata, "quality": quality}
+def _gate_payload(
+    privacy: dict,
+    duplicate: dict,
+    metadata: dict,
+    quality: dict,
+    *,
+    application_metadata: dict[str, Any] | None = None,
+) -> dict:
+    payload = {"privacy": privacy, "duplicate": duplicate, "metadata": metadata, "quality": quality}
+    if application_metadata:
+        payload["application_metadata"] = application_metadata
+    return payload
 
 
 def _all_gates_pass(result: dict) -> bool:
@@ -293,18 +474,26 @@ def create_candidate(db: VaultDB, **kwargs) -> dict:
                 meta["reason"],
                 meta["owner_agent"],
                 meta["allowed_agents"],
+                json.dumps(meta["application_metadata"], ensure_ascii=False, sort_keys=True),
             ]
         )
     )
     duplicate = duplicate_gate(db, meta["title"], meta["content"])
     metadata = metadata_gate(meta)
     quality = quality_gate(meta)
-    gates = _gate_payload(privacy, duplicate, metadata, quality)
     rejected = privacy["status"] == "fail" or metadata["status"] == "fail"
     stored_meta = dict(meta)
     if privacy["status"] == "fail":
         for field in ("title", "content", "source_ref", "reason"):
             stored_meta[field] = redact_secrets(stored_meta.get(field, ""))
+        stored_meta["application_metadata"] = {}
+    gates = _gate_payload(
+        privacy,
+        duplicate,
+        metadata,
+        quality,
+        application_metadata=stored_meta.get("application_metadata"),
+    )
     candidate_id = f"mem_{uuid.uuid4().hex[:12]}"
     candidate = {
         "id": candidate_id,
@@ -332,8 +521,14 @@ def create_candidate(db: VaultDB, **kwargs) -> dict:
         "gates": {"privacy": privacy["status"], "duplicate": duplicate["status"], "metadata": metadata["status"], "quality": quality["status"]},
         "gate_payload": gates,
     }
-    if not rejected:
+    if not rejected and duplicate["status"] == "pass" and quality["status"] == "pass":
         result["next_action"] = {"tool": "vault_memory_promote", "arguments": {"candidate_id": candidate_id, "confirm": True}}
+    elif not rejected:
+        result["next_action"] = {
+            "tool": "vault_memory_review",
+            "arguments": {"candidate_id": candidate_id},
+            "reason": "Resolve quality or duplicate warnings before promotion.",
+        }
     return result
 
 
@@ -363,7 +558,16 @@ def _unique_raw_path(project_dir: Path, title: str) -> Path:
     return path
 
 
-def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, project_dir: str | Path | None = None, compile: bool = True, build_map: bool = True) -> dict:
+def promote_candidate(
+    db: VaultDB,
+    candidate_id: str,
+    *,
+    confirm: bool = False,
+    project_dir: str | Path | None = None,
+    compile: bool = True,
+    build_map: bool = True,
+    _runtime_review: _PromotionReview | None = None,
+) -> dict:
     if not confirm:
         raise ValueError("promotion requires confirm=True")
     candidate = db.get_memory_candidate(candidate_id)
@@ -374,6 +578,7 @@ def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, 
     if candidate["status"] == "rejected":
         return {"status": "blocked", "candidate_id": candidate_id, "knowledge_id": None, "candidate": candidate}
 
+    candidate_application_metadata = application_metadata_from_record(candidate)
     privacy = scan_privacy(
         "\n".join(
             [
@@ -383,13 +588,22 @@ def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, 
                 candidate["reason"],
                 candidate.get("owner_agent", ""),
                 candidate.get("allowed_agents", ""),
+                json.dumps(candidate_application_metadata, ensure_ascii=False, sort_keys=True),
             ]
         )
     )
     duplicate = duplicate_gate(db, candidate["title"], candidate["content"], exclude_candidate_id=candidate_id)
     metadata = metadata_gate(candidate)
     quality = quality_gate(candidate)
-    gates = _gate_payload(privacy, duplicate, metadata, quality)
+    gates = _gate_payload(
+        privacy,
+        duplicate,
+        metadata,
+        quality,
+        application_metadata=(
+            candidate_application_metadata if privacy["status"] != "fail" else {}
+        ),
+    )
     if privacy["status"] == "fail" or metadata["status"] == "fail":
         db.update_memory_candidate(candidate_id, status="rejected", privacy_status=privacy["status"], duplicate_status=duplicate["status"], quality_status=quality["status"], gate_payload_json=json.dumps(gates, ensure_ascii=False, sort_keys=True))
         blocked_candidate = db.get_memory_candidate(candidate_id) or candidate
@@ -402,6 +616,33 @@ def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, 
             gates=gates,
         )
         return {"status": "blocked", "candidate_id": candidate_id, "knowledge_id": None, "gates": gates}
+
+    warning_gates = [
+        name
+        for name, result in (("duplicate", duplicate), ("quality", quality))
+        if result["status"] != "pass"
+    ]
+    review_applied = bool(warning_gates) and _review_allows_warnings(
+        _runtime_review,
+        duplicate=duplicate,
+        quality=quality,
+    )
+    if warning_gates and not review_applied:
+        db.update_memory_candidate(
+            candidate_id,
+            privacy_status=privacy["status"],
+            duplicate_status=duplicate["status"],
+            quality_status=quality["status"],
+            gate_payload_json=json.dumps(gates, ensure_ascii=False, sort_keys=True),
+        )
+        return {
+            "status": "review_required",
+            "candidate_id": candidate_id,
+            "knowledge_id": None,
+            "warning_gates": warning_gates,
+            "gates": gates,
+            "next_action": "Resolve the warnings or choose the canonical memory before promotion.",
+        }
 
     root = Path(project_dir) if project_dir is not None else db.db_path.parent
     raw_path = _unique_raw_path(root, candidate["title"])
@@ -467,7 +708,7 @@ def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, 
         knowledge_id=knowledge_id,
         gates=gates,
     )
-    return {
+    result = {
         "status": "promoted",
         "candidate_id": candidate_id,
         "knowledge_id": knowledge_id,
@@ -476,3 +717,11 @@ def promote_candidate(db: VaultDB, candidate_id: str, *, confirm: bool = False, 
         "knowledge": db.get_knowledge(knowledge_id),
         "candidate": db.get_memory_candidate(candidate_id),
     }
+    if review_applied and _runtime_review is not None:
+        result["review"] = {
+            "kind": _runtime_review.kind,
+            "review_ref": _runtime_review.review_ref,
+            "actor_ref": _runtime_review.actor_ref,
+            "canonical_knowledge_id": _runtime_review.canonical_knowledge_id,
+        }
+    return result

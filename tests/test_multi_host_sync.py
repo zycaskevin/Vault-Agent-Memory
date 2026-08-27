@@ -77,6 +77,20 @@ def test_revision_conflict_and_audit_helpers(tmp_path):
         assert list_conflicts(db, status="open", limit=5) == []
         assert any(row["action"] == "conflict:resolved" for row in list_audit_log(db, limit=10))
 
+        with pytest.raises(ValueError, match="conflict_not_open"):
+            resolve_conflict(
+                db,
+                conflicts[0]["id"],
+                resolution="accept_remote",
+                reason="A closed conflict must not be reusable.",
+                actor_agent="review-agent",
+                apply_memory_change=True,
+                project_dir=tmp_path,
+                compile=False,
+            )
+        assert db.get_knowledge(knowledge_id)["status"] == "active"
+        assert db.get_memory_candidate(candidate["candidate_id"])["status"] == "candidate"
+
 
 def test_accept_remote_conflict_requires_explicit_memory_apply(tmp_path):
     db_path = tmp_path / "vault.db"
@@ -241,6 +255,56 @@ def test_accept_remote_conflict_promotes_candidate_and_archives_local(tmp_path):
         assert "local_knowledge_archived_for_remote_accept" in operations
 
 
+def test_accept_remote_review_cannot_override_quality_warning(tmp_path):
+    with VaultDB(tmp_path / "vault.db") as db:
+        knowledge_id = db.add_knowledge(
+            "Shared deployment rule",
+            "Current rule says smoke tests run after deploy.",
+            source="local",
+        )
+        candidate = create_candidate(
+            db,
+            title="Shared deployment rule",
+            content="這個要保留下來。",
+            reason="Remote fragment needs review.",
+            source="remote_write_request",
+            source_ref="remote_write_request:req-low-quality",
+            scope="shared",
+            sensitivity="low",
+        )
+        revision = record_memory_revision(
+            db,
+            title="Shared deployment rule",
+            content="這個要保留下來。",
+            operation="remote_candidate_imported",
+            status="candidate_created",
+            candidate_id=candidate["candidate_id"],
+            remote_request_id="req-low-quality",
+            source_agent="remote-agent",
+        )
+        conflict = detect_candidate_conflicts(
+            db,
+            candidate_id=candidate["candidate_id"],
+            revision_id=revision["revision_id"],
+        )[0]
+
+        with pytest.raises(ValueError, match="not eligible"):
+            resolve_conflict(
+                db,
+                conflict["id"],
+                resolution="accept_remote",
+                reason="Reviewed but still incomplete.",
+                actor_agent="review-agent",
+                apply_memory_change=True,
+                project_dir=tmp_path,
+                compile=False,
+            )
+
+        assert db.get_knowledge(knowledge_id)["status"] == "active"
+        assert db.get_memory_candidate(candidate["candidate_id"])["status"] == "candidate"
+        assert list_conflicts(db, status="open", limit=5)[0]["id"] == conflict["id"]
+
+
 def test_sync_cli_revisions_conflicts_audit_and_resolve(tmp_path, capsys):
     from vault.cli import main
 
@@ -272,7 +336,7 @@ def test_sync_cli_revisions_conflicts_audit_and_resolve(tmp_path, capsys):
             remote_request_id="req-cli",
             source_agent="remote-agent",
         )
-        conflict = db.conn.execute(
+        db.conn.execute(
             """INSERT INTO memory_conflicts
                (id, created_at, updated_at, status, knowledge_id, left_revision_id,
                 right_revision_id, candidate_id, conflict_type, reason, resolution_json)
